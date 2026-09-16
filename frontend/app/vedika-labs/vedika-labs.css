@@ -1,0 +1,763 @@
+/* =========================================================================
+   VEDIKA 3D SCIENCE SIMULATOR LABS - STYLESHEET
+   Matching UI design of Vedika AI Hub with 4-tab cards, active lab details,
+   vibrant scientific particle bot, shimmer aura, and floating neon doodles
+   ========================================================================= */
+
+.vedika-lab-hub-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
+  overflow: hidden;
+  background: #030712;
+  color: #F8FAFC;
+  font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Subtle background ambient mesh */
+.vedika-lab-bg-mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle at 18% 25%, rgba(var(--active-accent-rgb), 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 82% 65%, rgba(var(--active-accent-rgb), 0.14) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.4) 0%, #030712 100%);
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+/* Inner 2-column flex wrapper */
+.vedika-lab-hub-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1440px;
+  height: 100%;
+  max-height: calc(100vh - 64px);
+  margin: 0 auto;
+  padding: 24px 36px 18px 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  box-sizing: border-box;
+}
+
+/* =========================================================================
+   LEFT COLUMN: Header, Shrunken 4-Tab Carousel, Active Info & Controls
+   ========================================================================= */
+.vedika-lab-left-col {
+  flex: 0 0 52%;
+  max-width: 650px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+/* Header */
+.vedika-lab-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vedika-lab-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.vedika-lab-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #E2E8F0;
+  font-size: 0.80rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.vedika-lab-back-btn:hover {
+  background: rgba(var(--active-accent-rgb), 0.2);
+  border-color: var(--active-accent);
+  color: #FFFFFF;
+  transform: translateX(-3px);
+  box-shadow: 0 0 16px var(--active-accent-glow);
+}
+
+.vedika-lab-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(var(--active-accent-rgb), 0.12);
+  border: 1px solid rgba(var(--active-accent-rgb), 0.28);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--active-accent);
+  text-transform: uppercase;
+  transition: all 0.4s ease;
+}
+
+.vedika-lab-main-title {
+  margin: 4px 0 0;
+  font-size: clamp(1.85rem, 2.6vw, 2.35rem);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: #FFFFFF;
+}
+
+.vedika-lab-title-gradient {
+  background: linear-gradient(135deg, var(--active-accent) 0%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.5s ease;
+}
+
+.vedika-lab-subtitle-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.vedika-lab-subtitle {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: #94A3B8;
+  letter-spacing: 0.01em;
+}
+
+.vedika-lab-subtitle-glow-bar {
+  width: 44px;
+  height: 2.5px;
+  border-radius: 9999px;
+  background: var(--active-accent);
+  box-shadow: 0 0 10px var(--active-accent);
+  transition: all 0.5s ease;
+}
+
+/* =========================================================================
+   ACCORDION CAROUSEL: EXPANDING ACTIVE TAB + EQUAL COLLAPSED TABS
+   ========================================================================= */
+.vedika-lab-accordion-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  height: 395px;
+  margin: 12px 0 8px;
+  box-sizing: border-box;
+}
+
+.vedika-lab-carousel-card {
+  position: relative;
+  border-radius: 22px;
+  backdrop-filter: blur(16px);
+  outline: none;
+  cursor: pointer;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: 
+    flex 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease;
+}
+
+/* Collapsed state: Equal sizes, compact sleek vertical tabs */
+.vedika-lab-carousel-card.collapsed {
+  flex: 1 1 70px;
+  min-width: 60px;
+  max-width: 85px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.65);
+  opacity: 0.76;
+  padding: 18px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vedika-lab-carousel-card.collapsed:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  border-color: rgba(var(--card-rgb), 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 18px rgba(var(--card-rgb), 0.25);
+  background: linear-gradient(180deg, rgba(var(--card-rgb), 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+
+.vedika-lab-card-collapsed-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.vedika-lab-shrunken-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.35s ease;
+}
+
+.vedika-lab-carousel-card.collapsed:hover .vedika-lab-shrunken-card-icon {
+  background: rgba(var(--card-rgb), 0.22);
+  border-color: rgba(var(--card-rgb), 0.5);
+  box-shadow: 0 0 16px rgba(var(--card-rgb), 0.35);
+}
+
+.vedika-lab-collapsed-title-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  padding: 10px 0;
+}
+
+.vedika-lab-collapsed-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #CBD5E1;
+  letter-spacing: 0.04em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.vedika-lab-carousel-card.collapsed:hover .vedika-lab-collapsed-title {
+  color: #FFFFFF;
+}
+
+.vedika-lab-collapsed-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+}
+
+.vedika-lab-carousel-card.collapsed:hover .vedika-lab-collapsed-arrow {
+  color: #FFFFFF;
+  background: var(--card-accent);
+  border-color: var(--card-accent);
+  box-shadow: 0 0 10px var(--card-glow);
+}
+
+/* Expanded state: Prominent, displaying all details neatly */
+.vedika-lab-carousel-card.active {
+  flex: 4.5 1 340px;
+  border: 1.5px solid var(--card-accent);
+  background: linear-gradient(160deg, rgba(var(--card-rgb), 0.16) 0%, rgba(15, 23, 42, 0.88) 100%);
+  box-shadow: 
+    0 0 35px rgba(var(--card-rgb), 0.35),
+    0 16px 40px rgba(0, 0, 0, 0.55),
+    inset 0 0 20px rgba(var(--card-rgb), 0.10);
+  cursor: default;
+  padding: 20px 22px;
+}
+
+.vedika-lab-card-expanded-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  animation: cardFadeSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vedika-lab-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.vedika-lab-card-index-indicator {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.vedika-lab-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.vedika-lab-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vedika-lab-card-icon-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--card-rgb), 0.22);
+  border: 1px solid rgba(var(--card-rgb), 0.5);
+  box-shadow: 0 0 16px rgba(var(--card-rgb), 0.35);
+  flex-shrink: 0;
+}
+
+.vedika-lab-card-tagline {
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: var(--card-accent);
+  letter-spacing: 0.02em;
+}
+
+.vedika-lab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(var(--active-accent-rgb), 0.14);
+  border: 1px solid rgba(var(--active-accent-rgb), 0.35);
+  color: var(--active-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vedika-lab-detail-title {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.025em;
+}
+
+.vedika-lab-detail-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #94A3B8;
+  line-height: 1.45;
+  max-width: 540px;
+}
+
+/* Tags row */
+.vedika-lab-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.vedika-lab-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #CBD5E1;
+}
+
+.vedika-lab-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.vedika-lab-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 9999px;
+  background: var(--active-accent);
+  color: #FFFFFF;
+  font-size: 0.90rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px var(--active-accent-glow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vedika-lab-launch-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 26px var(--active-accent-glow);
+  filter: brightness(1.1);
+}
+
+.vedika-lab-launch-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.vedika-lab-launch-btn.entering {
+  opacity: 0.92;
+  box-shadow: 0 0 28px var(--active-accent-glow);
+  pointer-events: none;
+}
+
+.vedika-lab-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  animation: spin 0.75s linear infinite;
+}
+
+/* =========================================================================
+   BOTTOM CONTROLS & PAGINATION
+   ========================================================================= */
+.vedika-lab-footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.vedika-lab-nav-arrow {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.vedika-lab-nav-arrow:hover {
+  background: rgba(var(--active-accent-rgb), 0.22);
+  border-color: var(--active-accent);
+  color: #FFFFFF;
+  box-shadow: 0 0 14px var(--active-accent-glow);
+  transform: scale(1.08);
+}
+
+.vedika-lab-dots-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vedika-lab-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vedika-lab-nav-dot:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.vedika-lab-nav-dot.active {
+  width: 26px;
+  background: var(--active-accent);
+  box-shadow: 0 0 14px var(--active-accent-glow);
+}
+
+/* =========================================================================
+   RIGHT COLUMN: Particle Bot with Light Shimmer Glow & Neon Doodles
+   ========================================================================= */
+.vedika-lab-right-col {
+  flex: 0 0 48%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+/* Multi-layered Shimmer Glow */
+.vedika-lab-shimmer-glow-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(var(--active-accent-rgb), 0.28) 0%,
+    rgba(var(--active-accent-rgb), 0.12) 40%,
+    transparent 72%
+  );
+  filter: blur(48px);
+  pointer-events: none;
+  z-index: 0;
+  animation: shimmerPulse 4s ease-in-out infinite;
+  transition: background 0.6s ease;
+}
+
+.vedika-lab-shimmer-glow-radial {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(var(--active-accent-rgb), 0.38) 0%,
+    transparent 65%
+  );
+  filter: blur(32px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vedika-lab-shimmer-glow-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.18) 0%,
+    transparent 60%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: 0;
+  animation: pulseCore 3s ease-in-out infinite alternate;
+}
+
+@keyframes shimmerPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseCore {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.10); opacity: 1; }
+}
+
+/* Floating Quotes Layer */
+.vedika-lab-doodles-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.vedika-lab-quote-pill {
+  position: absolute;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(var(--active-accent-rgb), 0.40);
+  box-shadow: 
+    0 0 16px rgba(var(--active-accent-rgb), 0.28),
+    0 6px 18px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  animation: floatSlow 6s ease-in-out infinite alternate;
+  white-space: nowrap;
+}
+
+.vedika-lab-neon-doodle {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px var(--active-accent));
+  animation: doodleFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes floatSlow {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(1.5deg); }
+  100% { transform: translateY(3px) rotate(-1.5deg); }
+}
+
+@keyframes doodleFloat {
+  0% { transform: translateY(0px) scale(0.98); }
+  50% { transform: translateY(-8px) scale(1.03); }
+  100% { transform: translateY(2px) scale(1); }
+}
+
+.vedika-lab-bot-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+
+
+
+/* =========================================================================
+   RESPONSIVE LAYOUT
+   ========================================================================= */
+@media (max-width: 1024px) {
+  .vedika-lab-hub-container {
+    height: auto;
+    min-height: calc(100vh - 64px);
+    max-height: none;
+    overflow-y: auto;
+    padding: 24px 16px;
+  }
+
+  .vedika-lab-hub-inner {
+    flex-direction: column-reverse;
+    gap: 32px;
+    height: auto;
+    max-height: none;
+    padding: 0;
+  }
+
+  .vedika-lab-left-col {
+    flex: 1 1 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .vedika-lab-right-col {
+    flex: 0 0 380px;
+    width: 100%;
+    height: 380px;
+  }
+
+  .vedika-lab-accordion-carousel {
+    height: auto;
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vedika-lab-accordion-carousel {
+    flex-direction: column;
+    height: auto;
+    gap: 10px;
+  }
+
+  .vedika-lab-carousel-card.collapsed {
+    flex: 0 0 54px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: 54px;
+    padding: 8px 16px;
+    flex-direction: row;
+  }
+
+  .vedika-lab-card-collapsed-content {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .vedika-lab-collapsed-title-wrap {
+    padding: 0 12px;
+    justify-content: flex-start;
+  }
+
+  .vedika-lab-collapsed-title {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .vedika-lab-carousel-card.active {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 16px 14px;
+  }
+
+  .vedika-lab-right-col {
+    flex: 0 0 300px;
+    height: 300px;
+  }
+}
+

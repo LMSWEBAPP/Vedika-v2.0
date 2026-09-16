@@ -1,0 +1,2324 @@
+{
+  "1": {
+    "id": "1",
+    "title": "Python Programming",
+    "tagline": "From zero to Python hero in structured modules",
+    "modules": [
+      {
+        "id": "1_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "rfscVS0vtbw",
+            "overview": "Welcome to Python Programming. In this lesson, we will explore course goals, environment setup, and practical applications.",
+            "pts": [
+              "Understand course outline and objectives",
+              "Learn practical real-world Python use cases",
+              "Setup Python and VS Code"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "2": {
+    "id": "2",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "2_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "2_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "_uQrJ0TkZlc",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "3": {
+    "id": "3",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "3_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "3_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "4": {
+    "id": "4",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "4_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "4_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228412700": {
+    "id": "1789228412700",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228412700_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228412700_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232474276": {
+    "id": "1789232474276",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232474276_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232474276_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228405992": {
+    "id": "1789228405992",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228405992_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228405992_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228371981": {
+    "id": "1789228371981",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228371981_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228371981_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789205224090": {
+    "id": "1789205224090",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789205224090_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789205224090_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            }
+          },
+          {
+            "id": "les_1789214143702",
+            "title": "hi",
+            "dur": "10 min",
+            "vid": "https://www.youtube.com/watch?v=5Pm_s2wzxo0",
+            "overview": "",
+            "pts": [
+              "Key concept introduction."
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "# Write your code here\n",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232465918": {
+    "id": "1789232465918",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232465918_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232465918_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232458273": {
+    "id": "1789232458273",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232458273_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232458273_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232449595": {
+    "id": "1789232449595",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232449595_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232449595_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232440028": {
+    "id": "1789232440028",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232440028_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232440028_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232430337": {
+    "id": "1789232430337",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232430337_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232430337_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232421567": {
+    "id": "1789232421567",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232421567_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232421567_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232412699": {
+    "id": "1789232412699",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232412699_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232412699_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232401765": {
+    "id": "1789232401765",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232401765_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232401765_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789232392204": {
+    "id": "1789232392204",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789232392204_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789232392204_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228482056": {
+    "id": "1789228482056",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228482056_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228482056_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228461789": {
+    "id": "1789228461789",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228461789_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228461789_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228448965": {
+    "id": "1789228448965",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228448965_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228448965_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "1789228389906": {
+    "id": "1789228389906",
+    "title": "Course Syllabus Outline",
+    "tagline": "Define modules and lessons for students.",
+    "modules": [
+      {
+        "id": "1789228389906_m1",
+        "title": "Introduction",
+        "emoji": "🚀",
+        "accent": "#5B8CF8",
+        "lessons": [
+          {
+            "id": "1789228389906_l1",
+            "title": "What is this course?",
+            "dur": "5 min",
+            "vid": "",
+            "overview": "Welcome to the course. Here is a brief explanation of what we will cover.",
+            "pts": [
+              "Course overview",
+              "Course requirements"
+            ],
+            "quizQuestions": [],
+            "codingExercise": {
+              "hasExercise": false,
+              "language": "python",
+              "instruction": "",
+              "starterCode": "",
+              "solutionCode": "",
+              "testCases": []
+            },
+            "pdf": ""
+          }
+        ]
+      }
+    ]
+  },
+  "a-guide-to-frappe-learning": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0001 Introduction",
+        "title": "Introduction",
+        "lessons": [
+          {
+            "id": "0004 What are Learning Management Systems?",
+            "title": "What are Learning Management Systems?",
+            "youtube": "QhA4h6qD4wY",
+            "duration": "15 mins",
+            "overview": "What are Learning Management Systems?",
+            "bulletPoints": [
+              "Core concept: What are Learning Management Systems?",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0005 What is Frappe Learning?",
+            "title": "What is Frappe Learning?",
+            "youtube": "gFXVCWmVQvQ",
+            "duration": "15 mins",
+            "overview": "What is Frappe Learning?",
+            "bulletPoints": [
+              "Core concept: What is Frappe Learning?",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0002 Adding content to your lessons",
+        "title": "Adding content to your lessons",
+        "lessons": [
+          {
+            "id": "0006 Video Content",
+            "title": "Video Content",
+            "youtube": "QhA4h6qD4wY",
+            "duration": "15 mins",
+            "overview": "Video Content",
+            "bulletPoints": [
+              "Core concept: Video Content",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0007 Content from Google Suite",
+            "title": "Content from Google Suite",
+            "youtube": "QhA4h6qD4wY",
+            "duration": "15 mins",
+            "overview": "Content from Google Suite",
+            "bulletPoints": [
+              "Core concept: Content from Google Suite",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "class-10-biology-2": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0184 Chapter 5: Life Process",
+        "title": "Chapter 5: Life Process",
+        "lessons": [
+          {
+            "id": "0199 Test Life Process Lesson",
+            "title": "Test Life Process Lesson",
+            "youtube": "yE3GlzspUJk",
+            "duration": "15 mins",
+            "overview": "Test Life Process Lesson",
+            "bulletPoints": [
+              "Core concept: Test Life Process Lesson",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0200 what is life",
+            "title": "what is life",
+            "youtube": "e0KhpV6V9YY",
+            "duration": "15 mins",
+            "overview": "what is life",
+            "bulletPoints": [
+              "Core concept: what is life",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0185 Life Process",
+            "title": "Life Process",
+            "youtube": "JzihOwFW3gI",
+            "duration": "15 mins",
+            "overview": "Updated Overview Test",
+            "bulletPoints": [
+              "Core concept: Life Process",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "10-hour-full-financial-education-course": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0107 Introduction",
+        "title": "Introduction",
+        "lessons": []
+      },
+      {
+        "id": "0109 Money Mindset",
+        "title": "Money Mindset",
+        "lessons": []
+      },
+      {
+        "id": "0115 Personal Finance",
+        "title": "Personal Finance",
+        "lessons": []
+      },
+      {
+        "id": "0122 Time Value of Money",
+        "title": "Time Value of Money",
+        "lessons": []
+      },
+      {
+        "id": "0128 Personal Saving",
+        "title": "Personal Saving",
+        "lessons": []
+      },
+      {
+        "id": "0138 Managing Debt",
+        "title": "Managing Debt",
+        "lessons": []
+      },
+      {
+        "id": "0148 Investing",
+        "title": "Investing",
+        "lessons": [
+          {
+            "id": "0150 Understanding What Effects Interest Rates",
+            "title": "Understanding What Effects Interest Rates",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of understanding what effects interest rates and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Understanding What Effects Interest Rates",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0151 How to Invest in Treasury Bonds",
+            "title": "How to Invest in Treasury Bonds",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of how to invest in treasury bonds and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: How to Invest in Treasury Bonds",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0152 Investing in Funds",
+            "title": "Investing in Funds",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of investing in funds and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Investing in Funds",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0153 Stocks",
+            "title": "Stocks",
+            "youtube": "and Crypto",
+            "duration": "15 mins",
+            "overview": "15 mins",
+            "bulletPoints": [
+              "Core concept: Stocks",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0154 Stock Market Investing",
+        "title": "Stock Market Investing",
+        "lessons": [
+          {
+            "id": "0155 Stock Market Investing with Gregg",
+            "title": "Stock Market Investing with Gregg",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of stock market investing with gregg and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Stock Market Investing with Gregg",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0156 Market Timing Part 1",
+            "title": "Market Timing Part 1",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of market timing part 1 and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Market Timing Part 1",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0157 Market Timing Part 2 - When is it Safe to Buy Again?",
+            "title": "Market Timing Part 2 - When is it Safe to Buy Again?",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of market timing part 2 - when is it safe to buy again? and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Market Timing Part 2 - When is it Safe to Buy Again?",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0158 Market Analysis and Picking Stocks to Buy",
+            "title": "Market Analysis and Picking Stocks to Buy",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of market analysis and picking stocks to buy and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Market Analysis and Picking Stocks to Buy",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0159 Position Management",
+            "title": "Position Management",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of position management and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Position Management",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0160 Money Management",
+            "title": "Money Management",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of money management and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Money Management",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0161 Creating My Financial Plan",
+        "title": "Creating My Financial Plan",
+        "lessons": [
+          {
+            "id": "0162 Introduction My Financial Plan",
+            "title": "Introduction My Financial Plan",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of introduction my financial plan and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Introduction My Financial Plan",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0163 Creating a Personal Finance Roadmap",
+            "title": "Creating a Personal Finance Roadmap",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of creating a personal finance roadmap and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Creating a Personal Finance Roadmap",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0164 Goal Target Setting",
+            "title": "Goal Target Setting",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of goal target setting and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Goal Target Setting",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0165 Importance of Emergency Funds to Help Reach Your Goals",
+            "title": "Importance of Emergency Funds to Help Reach Your Goals",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of importance of emergency funds to help reach your goals and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Importance of Emergency Funds to Help Reach Your Goals",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0166 Working with Financial Advisors",
+            "title": "Working with Financial Advisors",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of working with financial advisors and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Working with Financial Advisors",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0167 Why Insurance",
+        "title": "Why Insurance",
+        "lessons": [
+          {
+            "id": "0168 Introduction to Insurance",
+            "title": "Introduction to Insurance",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of introduction to insurance and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Introduction to Insurance",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0169 Insurance as an Investment",
+            "title": "Insurance as an Investment",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of insurance as an investment and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Insurance as an Investment",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0170 Types of Insurance",
+            "title": "Types of Insurance",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of types of insurance and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Types of Insurance",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0171 Insurance Policies",
+            "title": "Insurance Policies",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of insurance policies and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Insurance Policies",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0172 Taxes",
+        "title": "Taxes",
+        "lessons": [
+          {
+            "id": "0173 Intro Video",
+            "title": "Intro Video",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of intro video and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Intro Video",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0174 Tax & how Taxes Work",
+            "title": "Tax & how Taxes Work",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of tax & how taxes work and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Tax & how Taxes Work",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0175 The Progressive Tax System",
+            "title": "The Progressive Tax System",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of the progressive tax system and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: The Progressive Tax System",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0176 Understanding Personal Income Tax",
+            "title": "Understanding Personal Income Tax",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of understanding personal income tax and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Understanding Personal Income Tax",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0177 Calculating Your Income Tax",
+            "title": "Calculating Your Income Tax",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of calculating your income tax and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Calculating Your Income Tax",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0178 Tax Credits and Deductions",
+            "title": "Tax Credits and Deductions",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of tax credits and deductions and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Tax Credits and Deductions",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0179 Tax Tools and Resources",
+            "title": "Tax Tools and Resources",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of tax tools and resources and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Tax Tools and Resources",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0180 Taxes and Your Personal Financial Plan",
+            "title": "Taxes and Your Personal Financial Plan",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of taxes and your personal financial plan and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: Taxes and Your Personal Financial Plan",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0181 One on One Coaching/consultation",
+        "title": "One on One Coaching/consultation",
+        "lessons": [
+          {
+            "id": "0182 One on One Coaching/consultation",
+            "title": "One on One Coaching/consultation",
+            "youtube": "5_9W68OjJkY",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of one on one coaching/consultation and its role in achieving financial freedom.",
+            "bulletPoints": [
+              "Core concept: One on One Coaching/consultation",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "financial-literacy-full-course": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0086 1. Course Introduction",
+        "title": "1. Course Introduction",
+        "lessons": [
+          {
+            "id": "0087 Intro",
+            "title": "Intro",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of intro and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Intro",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0088 Course Structure",
+            "title": "Course Structure",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of course structure and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Course Structure",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0089 2. Money Management",
+        "title": "2. Money Management",
+        "lessons": [
+          {
+            "id": "0090 Budgeting",
+            "title": "Budgeting",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of budgeting and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Budgeting",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0091 Money Personality Quiz",
+            "title": "Money Personality Quiz",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of money personality quiz and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Money Personality Quiz",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0092 Financial Goals",
+            "title": "Financial Goals",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of financial goals and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Financial Goals",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0093 3. Credit & Debt",
+        "title": "3. Credit & Debt",
+        "lessons": [
+          {
+            "id": "0094 Consumer Credit",
+            "title": "Consumer Credit",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of consumer credit and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Consumer Credit",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0095 Loans & Debt",
+            "title": "Loans & Debt",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of loans & debt and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Loans & Debt",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0096 4. Wealth Protection & Growth",
+        "title": "4. Wealth Protection & Growth",
+        "lessons": [
+          {
+            "id": "0097 Insurance",
+            "title": "Insurance",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of insurance and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Insurance",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0098 Investments & Retirement",
+            "title": "Investments & Retirement",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of investments & retirement and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Investments & Retirement",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0099 Scams & Frauds",
+            "title": "Scams & Frauds",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of scams & frauds and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Scams & Frauds",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0100 5. Income",
+        "title": "5. Income",
+        "lessons": [
+          {
+            "id": "0101 Taxes & Banking",
+            "title": "Taxes & Banking",
+            "youtube": "4 mins",
+            "duration": "15 mins",
+            "overview": "ouvbeb2wSGA&t=2730s",
+            "bulletPoints": [
+              "Core concept: Taxes & Banking",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0102 Taxes & Banking",
+            "title": "Taxes & Banking",
+            "youtube": "2 mins",
+            "duration": "15 mins",
+            "overview": "ouvbeb2wSGA&t=2948s",
+            "bulletPoints": [
+              "Core concept: Taxes & Banking",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0103 Taxes & Banking",
+            "title": "Taxes & Banking",
+            "youtube": "5 mins",
+            "duration": "15 mins",
+            "overview": "ouvbeb2wSGA&t=3091s",
+            "bulletPoints": [
+              "Core concept: Taxes & Banking",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0104 6. Major Purchases",
+        "title": "6. Major Purchases",
+        "lessons": [
+          {
+            "id": "0105 Car Buying",
+            "title": "Car Buying",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of car buying and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Car Buying",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0106 Housing",
+            "title": "Housing",
+            "youtube": "ouvbeb2wSGA",
+            "duration": "15 mins",
+            "overview": "A comprehensive breakdown of housing and its importance to financial literacy.",
+            "bulletPoints": [
+              "Core concept: Housing",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "learn-python-full-course-for-beginners-tutorial": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0046 Installing Python & PyCharm",
+        "title": "Installing Python & PyCharm",
+        "lessons": [
+          {
+            "id": "0047 Installing Python & PyCharm",
+            "title": "Installing Python & PyCharm",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "How to install Python 3 and set up PyCharm as the IDE.",
+            "bulletPoints": [
+              "Core concept: Installing Python & PyCharm",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0048 Setup & Hello World",
+        "title": "Setup & Hello World",
+        "lessons": [
+          {
+            "id": "0049 Setup & Hello World",
+            "title": "Setup & Hello World",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Creating the first Python project and writing a simple Hello World program.",
+            "bulletPoints": [
+              "Core concept: Setup & Hello World",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0050 Drawing a Shape",
+        "title": "Drawing a Shape",
+        "lessons": [
+          {
+            "id": "0051 Drawing a Shape",
+            "title": "Drawing a Shape",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using consecutive print statements to draw a shape and understanding code execution order.",
+            "bulletPoints": [
+              "Core concept: Drawing a Shape",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0052 Python Basics",
+        "title": "Python Basics",
+        "lessons": [
+          {
+            "id": "0053 Variables & Data Types",
+            "title": "Variables & Data Types",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Introduction to variables, naming conventions, and storing strings, numbers, and booleans.",
+            "bulletPoints": [
+              "Core concept: Variables & Data Types",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0054 Working With Strings",
+            "title": "Working With Strings",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Working with strings, concatenation, escape characters, and string functions like lower() and upper().",
+            "bulletPoints": [
+              "Core concept: Working With Strings",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0055 Working With Numbers",
+            "title": "Working With Numbers",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using numbers, basic arithmetic operations, order of operations, and math functions.",
+            "bulletPoints": [
+              "Core concept: Working With Numbers",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0056 Getting Input From Users",
+            "title": "Getting Input From Users",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Getting user input using the input() function and storing it in variables.",
+            "bulletPoints": [
+              "Core concept: Getting Input From Users",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0057 Building a Basic Calculator",
+            "title": "Building a Basic Calculator",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Building a basic calculator that takes user input and performs addition using int() and float().",
+            "bulletPoints": [
+              "Core concept: Building a Basic Calculator",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0058 Mad Libs Game",
+            "title": "Mad Libs Game",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Creating a Mad Libs game by taking multiple user inputs and formatting them into a story.",
+            "bulletPoints": [
+              "Core concept: Mad Libs Game",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0059 Data Structures & Logic",
+        "title": "Data Structures & Logic",
+        "lessons": [
+          {
+            "id": "0060 Lists",
+            "title": "Lists",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Introduction to lists, storing multiple values, and accessing elements by index.",
+            "bulletPoints": [
+              "Core concept: Lists",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0061 List Functions",
+            "title": "List Functions",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using list functions like append(), insert(), remove(), pop(), and sort().",
+            "bulletPoints": [
+              "Core concept: List Functions",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0062 Tuples",
+            "title": "Tuples",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Understanding tuples, immutable data structures, and the difference between tuples and lists.",
+            "bulletPoints": [
+              "Core concept: Tuples",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0063 Functions",
+            "title": "Functions",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Defining and calling functions to organize code and perform specific tasks.",
+            "bulletPoints": [
+              "Core concept: Functions",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0064 Return Statement",
+            "title": "Return Statement",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using the return keyword to get information back from a function.",
+            "bulletPoints": [
+              "Core concept: Return Statement",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0065 If Statements",
+            "title": "If Statements",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using if statements, else, and elif for conditional logic and making decisions.",
+            "bulletPoints": [
+              "Core concept: If Statements",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0066 If Statements & Comparisons",
+            "title": "If Statements & Comparisons",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Advanced if statements using comparison operators like ==, !=, >, <.",
+            "bulletPoints": [
+              "Core concept: If Statements & Comparisons",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0067 Building a better Calculator",
+            "title": "Building a better Calculator",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Building a more advanced calculator capable of addition, subtraction, multiplication, and division.",
+            "bulletPoints": [
+              "Core concept: Building a better Calculator",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0068 Dictionaries",
+            "title": "Dictionaries",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using dictionaries to store information in key-value pairs.",
+            "bulletPoints": [
+              "Core concept: Dictionaries",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0069 While Loop",
+            "title": "While Loop",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using while loops to repeatedly execute code as long as a condition is true.",
+            "bulletPoints": [
+              "Core concept: While Loop",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0070 Building a Guessing Game",
+            "title": "Building a Guessing Game",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Building a guessing game using while loops, variables, and if statements to limit guesses.",
+            "bulletPoints": [
+              "Core concept: Building a Guessing Game",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0071 For Loops",
+            "title": "For Loops",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Iterating over collections like strings, lists, and ranges using for loops.",
+            "bulletPoints": [
+              "Core concept: For Loops",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0072 Exponent Function",
+            "title": "Exponent Function",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Creating a custom exponent function using a for loop to raise a number to a power.",
+            "bulletPoints": [
+              "Core concept: Exponent Function",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0073 2D Lists & Nested Loops",
+            "title": "2D Lists & Nested Loops",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Creating 2D lists (grids) and parsing through them using nested for loops.",
+            "bulletPoints": [
+              "Core concept: 2D Lists & Nested Loops",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0074 Building a Translator",
+            "title": "Building a Translator",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Building a basic translator that converts vowels to 'g' using strings and loops.",
+            "bulletPoints": [
+              "Core concept: Building a Translator",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0075 Advanced Concepts & OOP",
+        "title": "Advanced Concepts & OOP",
+        "lessons": [
+          {
+            "id": "0076 Comments",
+            "title": "Comments",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Writing comments using hashtags and multi-line strings for code documentation.",
+            "bulletPoints": [
+              "Core concept: Comments",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0077 Try / Except",
+            "title": "Try / Except",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Catching and handling errors and exceptions using try and except blocks.",
+            "bulletPoints": [
+              "Core concept: Try / Except",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0078 Reading Files",
+            "title": "Reading Files",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Opening and reading external text files using open(), read(), and readlines().",
+            "bulletPoints": [
+              "Core concept: Reading Files",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0079 Writing to Files",
+            "title": "Writing to Files",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Writing to and appending to external files using write mode 'w' and append mode 'a'.",
+            "bulletPoints": [
+              "Core concept: Writing to Files",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0080 Modules & Pip",
+            "title": "Modules & Pip",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Understanding modules, importing external Python files, and using pip to install third-party modules.",
+            "bulletPoints": [
+              "Core concept: Modules & Pip",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0081 Classes & Objects",
+            "title": "Classes & Objects",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Introduction to Object-Oriented Programming, creating classes, and instantiating objects.",
+            "bulletPoints": [
+              "Core concept: Classes & Objects",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0082 Building a Multiple Choice Quiz",
+            "title": "Building a Multiple Choice Quiz",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Building a multiple choice quiz by applying classes, loops, and conditional logic.",
+            "bulletPoints": [
+              "Core concept: Building a Multiple Choice Quiz",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0083 Object Functions",
+            "title": "Object Functions",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Defining and using functions within classes to modify or get information about objects.",
+            "bulletPoints": [
+              "Core concept: Object Functions",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0084 Inheritance",
+            "title": "Inheritance",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Understanding inheritance to inherit attributes and methods from another class.",
+            "bulletPoints": [
+              "Core concept: Inheritance",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0085 Python Interpreter",
+            "title": "Python Interpreter",
+            "youtube": "rfscVS0vtbw",
+            "duration": "15 mins",
+            "overview": "Using the Python interpreter (command prompt/terminal) for quick code execution.",
+            "bulletPoints": [
+              "Core concept: Python Interpreter",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "sql-tutorial-full-database-course-for-beginners": {
+    "ok": true,
+    "modules": [
+      {
+        "id": "0017 1. Introduction & Setup",
+        "title": "1. Introduction & Setup",
+        "lessons": [
+          {
+            "id": "0018 Introduction",
+            "title": "Introduction",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Course overview and introduction to SQL and RDBMS.",
+            "bulletPoints": [
+              "Core concept: Introduction",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0019 MySQL Mac Installation",
+            "title": "MySQL Mac Installation",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Step-by-step guide to installing MySQL Server and PopSQL on a Mac.",
+            "bulletPoints": [
+              "Core concept: MySQL Mac Installation",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0020 Creating Tables",
+            "title": "Creating Tables",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Using the CREATE TABLE statement and defining column data types in SQL.",
+            "bulletPoints": [
+              "Core concept: Creating Tables",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0021 Inserting Data",
+            "title": "Inserting Data",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Using the INSERT INTO statement to add rows of data into a database table.",
+            "bulletPoints": [
+              "Core concept: Inserting Data",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0022 Constraints",
+            "title": "Constraints",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Applying table constraints like NOT NULL, UNIQUE, DEFAULT, and AUTO_INCREMENT.",
+            "bulletPoints": [
+              "Core concept: Constraints",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0023 Update & Delete",
+            "title": "Update & Delete",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Modifying existing data using UPDATE and removing data using DELETE statements.",
+            "bulletPoints": [
+              "Core concept: Update & Delete",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0024 2. SQL Fundamentals & CRUD",
+        "title": "2. SQL Fundamentals & CRUD",
+        "lessons": [
+          {
+            "id": "0025 Basic Queries",
+            "title": "Basic Queries",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Writing fundamental SELECT statements to retrieve and filter data.",
+            "bulletPoints": [
+              "Core concept: Basic Queries",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0026 Company Database Intro",
+            "title": "Company Database Intro",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Introduction to a more complex company database schema used for advanced querying.",
+            "bulletPoints": [
+              "Core concept: Company Database Intro",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0027 Creating Company Database",
+            "title": "Creating Company Database",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Implementing the company database schema by creating multiple related tables.",
+            "bulletPoints": [
+              "Core concept: Creating Company Database",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0028 Functions",
+            "title": "Functions",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Using SQL aggregate functions like COUNT, AVG, SUM, and grouping data.",
+            "bulletPoints": [
+              "Core concept: Functions",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0029 More Basic Queries",
+            "title": "More Basic Queries",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Exploring more ways to write SELECT queries, using aliases (AS), and selecting distinct values.",
+            "bulletPoints": [
+              "Core concept: More Basic Queries",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0030 3. Intermediate SQL & Functions",
+        "title": "3. Intermediate SQL & Functions",
+        "lessons": [
+          {
+            "id": "0031 What is a Database?",
+            "title": "What is a Database?",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Understanding what databases are, types of databases, and CRUD operations.",
+            "bulletPoints": [
+              "Core concept: What is a Database?",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0032 Wildcards",
+            "title": "Wildcards",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Using the LIKE keyword and wildcards (% and _) to match string patterns.",
+            "bulletPoints": [
+              "Core concept: Wildcards",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0033 Union",
+            "title": "Union",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Combining the result sets of two or more SELECT statements using UNION.",
+            "bulletPoints": [
+              "Core concept: Union",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0034 Joins",
+            "title": "Joins",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Using INNER, LEFT, and RIGHT JOINs to combine rows from multiple tables based on related columns.",
+            "bulletPoints": [
+              "Core concept: Joins",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0035 4. Advanced SQL Queries & Triggers",
+        "title": "4. Advanced SQL Queries & Triggers",
+        "lessons": [
+          {
+            "id": "0036 Nested Queries",
+            "title": "Nested Queries",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Writing queries within queries to use the result of one SELECT statement to filter another.",
+            "bulletPoints": [
+              "Core concept: Nested Queries",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0037 On Delete",
+            "title": "On Delete",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Handling foreign key deletions using ON DELETE SET NULL and ON DELETE CASCADE.",
+            "bulletPoints": [
+              "Core concept: On Delete",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0038 Triggers",
+            "title": "Triggers",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Creating triggers to automatically execute SQL code when a specific event occurs on a table.",
+            "bulletPoints": [
+              "Core concept: Triggers",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0039 ER Diagrams Intro",
+            "title": "ER Diagrams Intro",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Introduction to Entity-Relationship (ER) Diagrams, entities, attributes, and relationships.",
+            "bulletPoints": [
+              "Core concept: ER Diagrams Intro",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0040 Designing an ER Diagram",
+            "title": "Designing an ER Diagram",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Step-by-step guide to mapping business requirements into an ER Diagram.",
+            "bulletPoints": [
+              "Core concept: Designing an ER Diagram",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0041 Converting ER Diagrams to Schemas",
+            "title": "Converting ER Diagrams to Schemas",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Translating an ER diagram into an actual relational database schema (tables and keys).",
+            "bulletPoints": [
+              "Core concept: Converting ER Diagrams to Schemas",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0042 5. Database Design & ER Diagrams",
+        "title": "5. Database Design & ER Diagrams",
+        "lessons": [
+          {
+            "id": "0043 Tables & Keys",
+            "title": "Tables & Keys",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Core concepts of relational databases including rows, columns, primary keys, and foreign keys.",
+            "bulletPoints": [
+              "Core concept: Tables & Keys",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0044 SQL Basics",
+            "title": "SQL Basics",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Introduction to Structured Query Language (SQL) and its various components (DDL, DML, DQL, DCL).",
+            "bulletPoints": [
+              "Core concept: SQL Basics",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          },
+          {
+            "id": "0045 MySQL Windows Installation",
+            "title": "MySQL Windows Installation",
+            "youtube": "HXV3zeQKqGY",
+            "duration": "15 mins",
+            "overview": "Step-by-step guide to installing MySQL Server and PopSQL on a Windows machine.",
+            "bulletPoints": [
+              "Core concept: MySQL Windows Installation",
+              "Interactive exercise and code review",
+              "Summary review and checkpoint quiz"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
