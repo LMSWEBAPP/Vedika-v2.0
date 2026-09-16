@@ -131,6 +131,18 @@ export default function VedikaParticleBot({
   const isEnteringRef = useRef(isEntering);
   isEnteringRef.current = isEntering;
 
+  const morphToImageRef = useRef(null);
+  const prevSrcRef = useRef(src);
+
+  useEffect(() => {
+    if (prevSrcRef.current !== src) {
+      prevSrcRef.current = src;
+      if (morphToImageRef.current) {
+        morphToImageRef.current(src);
+      }
+    }
+  }, [src]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -180,19 +192,15 @@ export default function VedikaParticleBot({
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
-    function initParticles() {
-      const naturalW = img.naturalWidth || img.width;
-      const naturalH = img.naturalHeight || img.height;
-      if (!naturalW || !naturalH) {
-        return;
-      }
+    function sampleFromImage(sourceImg) {
+      const naturalW = sourceImg.naturalWidth || sourceImg.width;
+      const naturalH = sourceImg.naturalHeight || sourceImg.height;
+      if (!naturalW || !naturalH) return null;
 
       updateCanvasSize();
-
       const rect = container.getBoundingClientRect();
       const isMobile = window.innerWidth < 768;
 
-      // Fit inside viewport: from near navbar to viewport bottom
       const topOffset = Math.max(rect.top > 0 ? rect.top : 70, 64);
       const viewportAvailableHeight = window.innerHeight - topOffset - 24;
       const safeContainerHeight = isMobile
@@ -209,38 +217,30 @@ export default function VedikaParticleBot({
         targetHeight = Math.max(10, Math.floor(targetWidth / aspect));
       }
 
-      // Sample directly from image at natural pixel resolution with exact integer coordinates
       const offscreen = document.createElement('canvas');
       offscreen.width = naturalW;
       offscreen.height = naturalH;
 
       const offCtx = offscreen.getContext('2d');
-      if (!offCtx) return;
+      if (!offCtx) return null;
 
-      offCtx.drawImage(img, 0, 0, naturalW, naturalH);
+      offCtx.drawImage(sourceImg, 0, 0, naturalW, naturalH);
 
       let imgData;
       try {
         imgData = offCtx.getImageData(0, 0, naturalW, naturalH);
       } catch (err) {
         console.warn('VedikaParticleBot: getImageData skipped', err);
-        return;
+        return null;
       }
 
-      if (!imgData || !imgData.data) return;
+      if (!imgData || !imgData.data) return null;
       const data = imgData.data;
 
-      // Anchor position on screen
-      const robotX = rect.left + (rect.width - targetWidth) / 2;
-      const robotY = rect.top + (rect.height - targetHeight) / 2;
-
-      // Scaling factors from natural image space to target layout space
       const scaleX = targetWidth / naturalW;
       const scaleY = targetHeight / naturalH;
-
-      const newParticles = [];
-      // Calibrated step size provides crisp 60fps rendering while maintaining rich visual density
       const step = isMobile ? 4 : 3;
+      const targets = [];
 
       for (let y = 0; y < naturalH; y += step) {
         for (let x = 0; x < naturalW; x += step) {
@@ -252,13 +252,11 @@ export default function VedikaParticleBot({
 
           if (a < 36) continue;
 
-          // Black & White / Vibrant color mapping
           const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
           const maxC = Math.max(r, g, b);
           const minC = Math.min(r, g, b);
           const alphaNorm = a / 255;
 
-          // Discard dark background pixels and residual neutral checkerboard/white-space noise
           if (luminance < 14 && maxC < 20) continue;
           if (maxC - minC <= 10 && maxC >= 195 && a < 220) continue;
 
@@ -269,7 +267,6 @@ export default function VedikaParticleBot({
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
             if (saturation > 0.18 && maxC > 45) {
-              // Vibrant neon elements (purple book/aura, blue laptop/screen, amber puzzle, green tie/tablet)
               const boost = 1.25;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
@@ -277,21 +274,18 @@ export default function VedikaParticleBot({
               baseAlpha = Math.min(1, Math.max(0.78, alphaNorm) * 1.05);
               pSize = 1.60 + Math.random() * 0.35;
             } else if (luminance > 165) {
-              // Shiny white robot armor & helmet reflections
               baseR = 255;
               baseG = 255;
               baseB = 255;
               baseAlpha = (0.92 + ((luminance - 165) / 90) * 0.08) * alphaNorm;
               pSize = 1.65 + Math.random() * 0.30;
             } else if (luminance > 80) {
-              // Midtone visor and silver armor
               baseR = Math.min(255, Math.round(r * 1.06));
               baseG = Math.min(255, Math.round(g * 1.06));
               baseB = Math.min(255, Math.round(b * 1.12));
               baseAlpha = 0.85 * alphaNorm;
               pSize = 1.40 + Math.random() * 0.25;
             } else {
-              // Dark contours, joints, crevices
               baseR = Math.round(r * 1.0);
               baseG = Math.round(g * 1.0);
               baseB = Math.round(b * 1.05);
@@ -299,7 +293,6 @@ export default function VedikaParticleBot({
               pSize = 1.10 + Math.random() * 0.25;
             }
           } else {
-            // Classic Monochrome
             if (luminance > 165) {
               pSize = 1.60 + Math.random() * 0.30;
               baseR = 255;
@@ -321,57 +314,78 @@ export default function VedikaParticleBot({
             }
           }
 
-          const pColor = `rgba(${baseR}, ${baseG}, ${baseB}, ${baseAlpha.toFixed(2)})`;
-
-          // Relative coordinate inside robot figure mapped accurately to target layout size
           const relX = (x + (Math.random() - 0.5) * 0.35) * scaleX;
           const relY = (y + (Math.random() - 0.5) * 0.35) * scaleY;
+          const pColor = `rgba(${baseR}, ${baseG}, ${baseB}, ${baseAlpha.toFixed(2)})`;
 
-          // 100% of particles spawn outside/in-depth on load
-          let spawnX, spawnY, spawnZ;
-          const isFrontEntrance = Math.random() < 0.24;
-
-          if (isFrontEntrance) {
-            spawnZ = -280 - Math.random() * 200;
-            spawnX = robotX + relX + (Math.random() - 0.5) * 50;
-            spawnY = robotY + relY + (Math.random() - 0.5) * 50;
-          } else {
-            spawnX = canvasWidth + 40 + Math.random() * 280;
-            spawnY = robotY + relY + (Math.random() - 0.5) * (canvasHeight * 0.55);
-            spawnZ = (Math.random() - 0.5) * 60;
-          }
-
-          // Bruno Imbrizi intrinsic particle angle and depth attributes
-          const angle = Math.random() * Math.PI * 2;
-          const rnd = 0.6 + Math.random() * 1.4;
-
-          newParticles.push({
-            pindex: newParticles.length,
+          targets.push({
             relX,
             relY,
-            angle,
-            rnd,
-            x: isInitialized ? (robotX + relX) : spawnX,
-            y: isInitialized ? (robotY + relY) : spawnY,
-            z: isInitialized ? 0 : spawnZ,
-            vx: (Math.random() - 0.5) * 1.0,
-            vy: (Math.random() - 0.5) * 1.0,
-            vz: 0,
             size: pSize,
             color: pColor,
             baseR,
             baseG,
             baseB,
-            baseAlpha,
-            entryDelay: isInitialized ? 0 : Math.floor(Math.random() * 3),
-            hasEntered: isInitialized,
-            introSpeed: 0.18 + Math.random() * 0.05,
-            spring: 0.085 + Math.random() * 0.02,
-            friction: 0.80 + Math.random() * 0.03,
-            floatPower: 15.0 + Math.random() * 7.0,
-            seed: Math.random() * 1000
+            baseAlpha
           });
         }
+      }
+      return targets;
+    }
+
+    function initParticles() {
+      const targets = sampleFromImage(img);
+      if (!targets || targets.length === 0) return;
+
+      const rect = container.getBoundingClientRect();
+      const robotX = rect.left + (rect.width - targetWidth) / 2;
+      const robotY = rect.top + (rect.height - targetHeight) / 2;
+
+      const newParticles = [];
+      for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        let spawnX, spawnY, spawnZ;
+        const isFrontEntrance = Math.random() < 0.24;
+
+        if (isFrontEntrance) {
+          spawnZ = -280 - Math.random() * 200;
+          spawnX = robotX + t.relX + (Math.random() - 0.5) * 50;
+          spawnY = robotY + t.relY + (Math.random() - 0.5) * 50;
+        } else {
+          spawnX = canvasWidth + 40 + Math.random() * 280;
+          spawnY = robotY + t.relY + (Math.random() - 0.5) * (canvasHeight * 0.55);
+          spawnZ = (Math.random() - 0.5) * 60;
+        }
+
+        const angle = Math.random() * Math.PI * 2;
+        const rnd = 0.6 + Math.random() * 1.4;
+
+        newParticles.push({
+          pindex: newParticles.length,
+          relX: t.relX,
+          relY: t.relY,
+          angle,
+          rnd,
+          x: spawnX,
+          y: spawnY,
+          z: spawnZ,
+          vx: (Math.random() - 0.5) * 1.0,
+          vy: (Math.random() - 0.5) * 1.0,
+          vz: 0,
+          size: t.size,
+          color: t.color,
+          baseR: t.baseR,
+          baseG: t.baseG,
+          baseB: t.baseB,
+          baseAlpha: t.baseAlpha,
+          entryDelay: Math.floor(Math.random() * 3),
+          hasEntered: false,
+          introSpeed: 0.18 + Math.random() * 0.05,
+          spring: 0.085 + Math.random() * 0.02,
+          friction: 0.80 + Math.random() * 0.03,
+          floatPower: 15.0 + Math.random() * 7.0,
+          seed: Math.random() * 1000
+        });
       }
 
       particles = newParticles;
@@ -696,6 +710,84 @@ export default function VedikaParticleBot({
       img.onload = onImageReady;
     }
 
+    // In-place particle morphing when src updates without unmounting canvas
+    morphToImageRef.current = (newSrc) => {
+      const morphImg = new Image();
+      morphImg.crossOrigin = 'anonymous';
+      morphImg.onload = () => {
+        if (!isMounted) return;
+        const targets = sampleFromImage(morphImg);
+        if (!targets || targets.length === 0) return;
+
+        const rect = container.getBoundingClientRect();
+        const robotX = rect.left + (rect.width - targetWidth) / 2;
+        const robotY = rect.top + (rect.height - targetHeight) / 2;
+
+        const existingCount = particles.length;
+        const targetCount = targets.length;
+
+        for (let i = 0; i < targetCount; i++) {
+          const t = targets[i];
+          if (i < existingCount) {
+            const p = particles[i];
+            p.relX = t.relX;
+            p.relY = t.relY;
+            p.size = t.size;
+            p.color = t.color;
+            p.baseR = t.baseR;
+            p.baseG = t.baseG;
+            p.baseB = t.baseB;
+            p.baseAlpha = t.baseAlpha;
+            p.hasEntered = true;
+            // Soft morphing impulse
+            p.vx += (Math.random() - 0.5) * 3.5;
+            p.vy += (Math.random() - 0.5) * 3.5;
+            p.vz += (Math.random() - 0.5) * 20;
+          } else {
+            const donor = particles[Math.floor(Math.random() * existingCount)] || { x: robotX + t.relX, y: robotY + t.relY, z: 0 };
+            particles.push({
+              pindex: particles.length,
+              relX: t.relX,
+              relY: t.relY,
+              angle: Math.random() * Math.PI * 2,
+              rnd: 0.6 + Math.random() * 1.4,
+              x: donor.x + (Math.random() - 0.5) * 15,
+              y: donor.y + (Math.random() - 0.5) * 15,
+              z: donor.z || 0,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              vz: 0,
+              size: t.size,
+              color: t.color,
+              baseR: t.baseR,
+              baseG: t.baseG,
+              baseB: t.baseB,
+              baseAlpha: t.baseAlpha,
+              entryDelay: 0,
+              hasEntered: true,
+              introSpeed: 0.18 + Math.random() * 0.05,
+              spring: 0.085 + Math.random() * 0.02,
+              friction: 0.80 + Math.random() * 0.03,
+              floatPower: 15.0 + Math.random() * 7.0,
+              seed: Math.random() * 1000
+            });
+          }
+        }
+
+        if (existingCount > targetCount) {
+          for (let i = targetCount; i < existingCount; i++) {
+            const fallbackTarget = targets[i % targetCount];
+            particles[i].relX = fallbackTarget.relX;
+            particles[i].relY = fallbackTarget.relY;
+            particles[i].color = fallbackTarget.color;
+            particles[i].size = fallbackTarget.size * 0.8;
+          }
+        }
+        hasNotifiedSettled = false;
+      };
+      morphImg.src = newSrc;
+    };
+
     return () => {
       isMounted = false;
       cancelAnimationFrame(animId);
@@ -705,7 +797,7 @@ export default function VedikaParticleBot({
       window.removeEventListener('click', handleClick);
       window.removeEventListener('resize', handleResize);
     };
-  }, [src, width, height, colorMode]);
+  }, [width, height, colorMode]);
 
   return (
     <div

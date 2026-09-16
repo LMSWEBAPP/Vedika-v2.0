@@ -161,7 +161,7 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
-  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview';
+  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview';
 
   return (
     <div style={{

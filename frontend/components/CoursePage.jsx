@@ -258,14 +258,14 @@ function CourseDeckWidget({
         background: 'transparent',
         border: 'none',
         borderRadius: 0,
-        padding: isMobile ? '12px 0' : '20px 0',
-        marginBottom: 32,
+        padding: isMobile ? '4px 0' : '8px 0',
+        marginBottom: 8,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
-        gap: isMobile ? 18 : 26
+        gap: isMobile ? 10 : 14
       }}>
         {/* Category Carousel Title Pill */}
         <div style={{
@@ -275,9 +275,9 @@ function CourseDeckWidget({
           background: `${T.accent}14`,
           border: `1px solid ${T.accent}30`,
           color: T.accent,
-          padding: '6px 14px',
+          padding: '4px 12px',
           borderRadius: 20,
-          fontSize: 12,
+          fontSize: 11.5,
           fontWeight: 700,
           letterSpacing: '0.04em',
           textTransform: 'uppercase'
@@ -1278,117 +1278,96 @@ export default function CoursePage() {
       display: 'flex',
       flexDirection: 'column',
       width: '100%',
-      background: T.bg
+      height: 'calc(100vh - 64px)',
+      maxHeight: 'calc(100vh - 64px)',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      background: T.bg,
+      boxSizing: 'border-box'
     }}>
       <div style={{
         width: '100%',
-        padding: isMobile ? '20px 16px' : '32px 36px',
+        maxWidth: 1440,
+        margin: '0 auto',
+        padding: isMobile ? '12px 14px' : '14px 28px 10px',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxSizing: 'border-box'
       }} className="no-scrollbar">
-        {/* Top Hero Section with 2-Column Layout & Prominent Left Faded Particle Canvas */}
+        {/* Compact Top Action Toolbar: Search & Practice Playground */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1.25fr',
-          gap: isMobile ? 20 : 16,
+          display: 'flex',
           alignItems: 'center',
-          marginBottom: 32
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+          marginBottom: 10
         }}>
-          {/* Left Side: Exact Text & Search / Playground Controls */}
-          <div>
-            <h1 style={{
-              fontSize: isMobile ? 32 : 46,
-              fontWeight: 900,
-              color: T.text,
-              lineHeight: 1.12,
-              letterSpacing: '-0.04em',
-              margin: '0 0 16px 0',
-              fontFamily: 'var(--font-outfit), sans-serif'
-            }}>
-              Learn. Practice.<br />
-              Master with <span style={{ color: '#F97316' }}>Vedika.</span>
-            </h1>
-            <p style={{
-              fontSize: isMobile ? 14 : 15.5,
-              color: T.muted,
-              lineHeight: 1.6,
-              maxWidth: 540,
-              margin: '0 0 24px 0'
-            }}>
-              Your all-in-one learning platform to explore courses, practice coding, and build real-world skills.
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              {/* Real-Time Course Search Bar */}
-              <div style={{ position: 'relative', width: isMobile ? '100%' : 300 }}>
-                <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search courses, instructors, tags..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 36px 10px 38px',
-                    borderRadius: 12,
-                    background: T.s2,
-                    border: `1px solid ${T.border}`,
-                    color: T.text,
-                    fontSize: 13,
-                    outline: 'none',
-                    fontFamily: 'inherit',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = T.accent}
-                  onBlur={(e) => e.target.style.borderColor = T.border}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    style={{
-                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: T.muted, cursor: 'pointer', display: 'flex', alignItems: 'center'
-                    }}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-
+          {/* Real-Time Course Search Bar */}
+          <div style={{ position: 'relative', width: isMobile ? '100%' : 300, flexShrink: 0 }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search courses, instructors, tags..."
+              style={{
+                width: '100%',
+                padding: '7px 32px 7px 34px',
+                borderRadius: 10,
+                background: T.s2,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+                fontSize: 12.5,
+                outline: 'none',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s ease'
+              }}
+              onFocus={(e) => e.target.style.borderColor = T.accent}
+              onBlur={(e) => e.target.style.borderColor = T.border}
+            />
+            {searchQuery && (
               <button
-                data-practice-trigger="true"
-                onClick={(e) => {
-                  if (typeof window !== 'undefined') {
-                    const r = e.currentTarget.getBoundingClientRect();
-                    window.__lastPracticeTriggerRect = { left: r.left, top: r.top, width: r.width, height: r.height };
-                  }
-                  setIsPlaygroundOpen(!isPlaygroundOpen);
-                }}
+                onClick={() => setSearchQuery('')}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: isPlaygroundOpen ? `${T.accent}15` : T.s2,
-                  border: `1px solid ${isPlaygroundOpen ? T.accent : T.border}`,
-                  color: isPlaygroundOpen ? T.accent : T.text,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: '9.5px 16px',
-                  borderRadius: 12,
-                  transition: 'all 0.15s'
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: T.muted, cursor: 'pointer', display: 'flex', alignItems: 'center'
                 }}
               >
-                <Terminal size={14} />
-                {isPlaygroundOpen ? 'Close Playground' : 'Practice Playground'}
+                <X size={13} />
               </button>
-            </div>
+            )}
           </div>
 
-          {/* Right Side: Prominent Faded Interactive Particles Component */}
-          <div style={{ height: isMobile ? 250 : 310, width: '100%' }}>
-            <InteractiveParticles />
-          </div>
+          {/* Practice Playground Launch Button */}
+          <button
+            data-practice-trigger="true"
+            onClick={(e) => {
+              if (typeof window !== 'undefined') {
+                const r = e.currentTarget.getBoundingClientRect();
+                window.__lastPracticeTriggerRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+              }
+              setIsPlaygroundOpen(!isPlaygroundOpen);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: isPlaygroundOpen ? `${T.accent}15` : T.s2,
+              border: `1px solid ${isPlaygroundOpen ? T.accent : T.border}`,
+              color: isPlaygroundOpen ? T.accent : T.text,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '7px 14px',
+              borderRadius: 10,
+              transition: 'all 0.15s',
+              marginLeft: isMobile ? 0 : 'auto'
+            }}
+          >
+            <Terminal size={13} />
+            {isPlaygroundOpen ? 'Close Playground' : 'Practice Playground'}
+          </button>
         </div>
 
         {/* 100% Width Category Pills Carousel */}

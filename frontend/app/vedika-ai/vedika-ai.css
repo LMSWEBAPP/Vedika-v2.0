@@ -8,9 +8,10 @@
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - 64px);
   min-height: calc(100vh - 64px);
-  overflow: hidden;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #030712;
   color: #F8FAFC;
   font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
@@ -40,13 +41,13 @@
   width: 100%;
   max-width: 1440px;
   height: 100%;
-  max-height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
   margin: 0 auto;
-  padding: 24px 36px 18px 42px;
+  padding: 14px 36px 12px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
+  gap: 24px;
   box-sizing: border-box;
 }
 
@@ -56,11 +57,10 @@
 .vedika-ai-left-col {
   flex: 0 0 52%;
   max-width: 650px;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding-bottom: 8px;
+  justify-content: flex-start;
+  gap: 10px;
   box-sizing: border-box;
   z-index: 3;
 }
@@ -69,27 +69,29 @@
 .vedika-ai-header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .vedika-ai-top-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   flex-wrap: wrap;
+  margin-bottom: 2px;
 }
 
 .vedika-ai-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
+  gap: 7px;
+  padding: 5px 13px;
+  height: 32px;
   border-radius: 9999px;
   background: rgba(15, 23, 42, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #E2E8F0;
-  font-size: 0.80rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   outline: none;
@@ -97,6 +99,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   user-select: none;
+  flex-shrink: 0;
 }
 
 .vedika-ai-back-btn:hover {
@@ -112,21 +115,23 @@
   align-items: center;
   gap: 6px;
   width: fit-content;
-  padding: 4px 12px;
+  padding: 4px 11px;
+  height: 30px;
   border-radius: 9999px;
   background: rgba(var(--active-accent-rgb), 0.12);
   border: 1px solid rgba(var(--active-accent-rgb), 0.28);
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.08em;
   color: var(--active-accent);
   text-transform: uppercase;
   transition: all 0.4s ease;
+  box-sizing: border-box;
 }
 
 .vedika-ai-main-title {
-  margin: 4px 0 0;
-  font-size: clamp(1.85rem, 2.6vw, 2.35rem);
+  margin: 2px 0 0;
+  font-size: clamp(1.65rem, 2.3vw, 2.10rem);
   font-weight: 850;
   letter-spacing: -0.035em;
   line-height: 1.15;
@@ -173,14 +178,14 @@
   align-items: stretch;
   gap: 12px;
   width: 100%;
-  height: 380px;
-  margin: 12px 0 8px;
+  height: clamp(320px, 46vh, 360px);
+  margin: 4px 0 2px;
   box-sizing: border-box;
 }
 
 .vedika-ai-carousel-card {
   position: relative;
-  border-radius: 22px;
+  border-radius: 20px;
   backdrop-filter: blur(16px);
   outline: none;
   cursor: pointer;
@@ -197,12 +202,12 @@
 /* Collapsed state: Equal sizes, compact sleek vertical tabs */
 .vedika-ai-carousel-card.collapsed {
   flex: 1 1 70px;
-  min-width: 60px;
-  max-width: 85px;
+  min-width: 58px;
+  max-width: 82px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 23, 42, 0.65);
   opacity: 0.76;
-  padding: 18px 8px;
+  padding: 14px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -234,11 +239,11 @@
   flex: 1;
   width: 100%;
   overflow: hidden;
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 .vedika-ai-collapsed-title {
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #CBD5E1;
   letter-spacing: 0.04em;
@@ -262,7 +267,7 @@
     0 16px 40px rgba(0, 0, 0, 0.55),
     inset 0 0 20px rgba(var(--card-rgb), 0.10);
   cursor: default;
-  padding: 22px 24px;
+  padding: 16px 20px;
 }
 
 .vedika-ai-card-expanded-content {
@@ -289,33 +294,56 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   width: 100%;
+}
+
+.vedika-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: calc(100% - 65px);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(var(--active-accent-rgb), 0.14);
+  border: 1px solid rgba(var(--active-accent-rgb), 0.35);
+  color: var(--active-accent);
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .vedika-ai-card-index-indicator {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
 }
 
 .vedika-ai-card-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 10px 0;
+  gap: 8px;
+  margin: 4px 0;
 }
 
 .vedika-ai-card-title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .vedika-ai-card-icon-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,61 +354,45 @@
 }
 
 .vedika-ai-card-tagline {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--card-accent);
   letter-spacing: 0.02em;
 }
 
-
-.vedika-ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  width: fit-content;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  background: rgba(var(--active-accent-rgb), 0.14);
-  border: 1px solid rgba(var(--active-accent-rgb), 0.35);
-  color: var(--active-accent);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .vedika-ai-detail-title {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: 1.30rem;
   font-weight: 800;
   color: #FFFFFF;
   letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .vedika-ai-detail-desc {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #94A3B8;
-  line-height: 1.45;
-  max-width: 540px;
+  line-height: 1.35;
+  max-width: 520px;
 }
 
 .vedika-ai-action-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .vedika-ai-launch-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 22px;
+  padding: 8px 18px;
   border-radius: 9999px;
   background: var(--active-accent);
   color: #FFFFFF;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   border: none;
@@ -426,13 +438,13 @@
 .vedika-ai-footer-controls {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 2px;
 }
 
 .vedika-ai-nav-arrow {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);

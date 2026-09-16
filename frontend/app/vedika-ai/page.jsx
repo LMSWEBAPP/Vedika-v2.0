@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ArrowLeft, Brain, Code, Zap, GraduationCap, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
@@ -86,20 +86,56 @@ const CARDS = [
   }
 ];
 
+const initialHubState = {
+  activeIdx: 0,
+  isSettled: false,
+  isNavigating: false,
+  isWarping: false
+};
+
+function hubReducer(state, action) {
+  switch (action.type) {
+    case 'SET_TAB':
+      if (state.isNavigating || state.activeIdx === action.payload) return state;
+      return { ...state, activeIdx: action.payload, isSettled: false, isWarping: false };
+    case 'PREV_TAB':
+      if (state.isNavigating) return state;
+      return {
+        ...state,
+        activeIdx: state.activeIdx > 0 ? state.activeIdx - 1 : action.payload - 1,
+        isSettled: false,
+        isWarping: false
+      };
+    case 'NEXT_TAB':
+      if (state.isNavigating) return state;
+      return {
+        ...state,
+        activeIdx: state.activeIdx < action.payload - 1 ? state.activeIdx + 1 : 0,
+        isSettled: false,
+        isWarping: false
+      };
+    case 'SET_SETTLED':
+      return { ...state, isSettled: true };
+    case 'START_NAVIGATING':
+      return { ...state, isNavigating: true };
+    case 'START_WARPING':
+      return { ...state, isWarping: true };
+    default:
+      return state;
+  }
+}
+
 export default function VedikaAIHub() {
   const router = useRouter();
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [isSettled, setIsSettled] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [isWarping, setIsWarping] = useState(false);
+  const [state, dispatch] = useReducer(hubReducer, initialHubState);
+  const { activeIdx, isSettled, isNavigating, isWarping } = state;
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   const cards = CARDS;
-
   const activeCard = cards[activeIdx] || cards[0];
 
   const handleBotSettled = useCallback(() => {
-    setIsSettled(true);
+    dispatch({ type: 'SET_SETTLED' });
   }, []);
 
   // Preload all 4 robot images and prefetch routes on mount for instantaneous transitions
@@ -115,28 +151,20 @@ export default function VedikaAIHub() {
     });
   }, [router]);
 
-  // ONLY switch tabs on click (never on hover!)
+  // Tab click selects tab and morphs the particle robot smoothly without page navigation
   const handleTabClick = (idx) => {
     if (isNavigating) return;
-    if (idx !== activeIdx) {
-      setActiveIdx(idx);
-      setIsSettled(false);
-      setIsWarping(false);
-    } else {
-      // Clicking the already active tab card launches into that page
-      handleEnterPage(cards[idx].url);
-    }
+    dispatch({ type: 'SET_TAB', payload: idx });
   };
 
-  // Navigate into destination page only after particle animation
+  // Navigate into destination page ONLY when action button is clicked
   const handleEnterPage = (url) => {
     if (isNavigating) return;
-    setIsNavigating(true);
+    dispatch({ type: 'START_NAVIGATING' });
 
-    // Wait briefly if particles are actively in transit, then trigger warp acceleration and route
-    const delay = isSettled ? 0 : 200;
+    const delay = isSettled ? 0 : 180;
     setTimeout(() => {
-      setIsWarping(true);
+      dispatch({ type: 'START_WARPING' });
       setTimeout(() => {
         router.push(url);
       }, 340);
@@ -144,18 +172,12 @@ export default function VedikaAIHub() {
   };
 
   const handlePrev = useCallback(() => {
-    if (isNavigating) return;
-    setActiveIdx((prev) => (prev > 0 ? prev - 1 : cards.length - 1));
-    setIsSettled(false);
-    setIsWarping(false);
-  }, [cards.length, isNavigating]);
+    dispatch({ type: 'PREV_TAB', payload: cards.length });
+  }, [cards.length]);
 
   const handleNext = useCallback(() => {
-    if (isNavigating) return;
-    setActiveIdx((prev) => (prev < cards.length - 1 ? prev + 1 : 0));
-    setIsSettled(false);
-    setIsWarping(false);
-  }, [cards.length, isNavigating]);
+    dispatch({ type: 'NEXT_TAB', payload: cards.length });
+  }, [cards.length]);
 
   // Keyboard arrow keys
   useEffect(() => {
@@ -517,7 +539,6 @@ export default function VedikaAIHub() {
           {/* Interactive Particle Bot Canvas */}
           <div className="vedika-ai-bot-wrapper">
             <VedikaParticleBot
-              key={activeCard.botImage}
               src={activeCard.botImage}
               colorMode="vibrant"
               width={520}

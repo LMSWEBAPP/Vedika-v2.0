@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ArrowLeft, Calculator, Atom, FlaskConical, Dna, ChevronLeft, ChevronRight, Sparkles, Compass, Flame, Orbit } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
@@ -89,25 +89,54 @@ const LAB_CARDS = [
   }
 ];
 
+const initialLabsState = {
+  activeIdx: 1, // Default to Physics Lab
+  isSettled: false,
+  isNavigating: false,
+  isWarping: false
+};
+
+function labsReducer(state, action) {
+  switch (action.type) {
+    case 'SET_TAB':
+      if (state.isNavigating || state.activeIdx === action.payload) return state;
+      return { ...state, activeIdx: action.payload, isSettled: false, isWarping: false, isNavigating: false };
+    case 'PREV_TAB':
+      if (state.isNavigating) return state;
+      return {
+        ...state,
+        activeIdx: state.activeIdx > 0 ? state.activeIdx - 1 : action.payload - 1,
+        isSettled: false,
+        isWarping: false
+      };
+    case 'NEXT_TAB':
+      if (state.isNavigating) return state;
+      return {
+        ...state,
+        activeIdx: state.activeIdx < action.payload - 1 ? state.activeIdx + 1 : 0,
+        isSettled: false,
+        isWarping: false
+      };
+    case 'SET_SETTLED':
+      return { ...state, isSettled: true };
+    case 'START_NAVIGATING':
+      return { ...state, isNavigating: true, isWarping: true };
+    default:
+      return state;
+  }
+}
+
 export default function VedikaLabsHub() {
   const router = useRouter();
-  const [activeIdx, setActiveIdx] = useState(1); // Default to Physics Lab as shown in user prompt
-  const [isSettled, setIsSettled] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [isWarping, setIsWarping] = useState(false);
+  const [state, dispatch] = useReducer(labsReducer, initialLabsState);
+  const { activeIdx, isSettled, isNavigating, isWarping } = state;
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   const cards = LAB_CARDS;
   const activeCard = cards[activeIdx] || cards[0];
 
   const handleBotSettled = useCallback(() => {
-    setIsSettled(true);
-  }, []);
-
-  // Ensure navigation state is clean on mount
-  useEffect(() => {
-    setIsNavigating(false);
-    setIsWarping(false);
+    dispatch({ type: 'SET_SETTLED' });
   }, []);
 
   // Preload sub-lab routes on mount
@@ -123,37 +152,26 @@ export default function VedikaLabsHub() {
 
   // Tab click selects the lab cleanly
   const handleTabClick = (idx) => {
-    if (idx !== activeIdx) {
-      setActiveIdx(idx);
-      setIsSettled(false);
-      setIsWarping(false);
-      setIsNavigating(false);
-    }
+    dispatch({ type: 'SET_TAB', payload: idx });
   };
 
   // Launch page with smooth warp dissolution
   const handleEnterPage = (url) => {
     if (isNavigating) return;
-    setIsNavigating(true);
-    setIsWarping(true);
+    dispatch({ type: 'START_NAVIGATING' });
     setTimeout(() => {
       router.push(url);
     }, 280);
   };
 
   const handlePrev = useCallback(() => {
-    if (isNavigating) return;
-    setActiveIdx((prev) => (prev > 0 ? prev - 1 : cards.length - 1));
-    setIsSettled(false);
-    setIsWarping(false);
-  }, [cards.length, isNavigating]);
+    dispatch({ type: 'PREV_TAB', payload: cards.length });
+  }, [cards.length]);
 
   const handleNext = useCallback(() => {
-    if (isNavigating) return;
-    setActiveIdx((prev) => (prev < cards.length - 1 ? prev + 1 : 0));
-    setIsSettled(false);
-    setIsWarping(false);
-  }, [cards.length, isNavigating]);
+    dispatch({ type: 'NEXT_TAB', payload: cards.length });
+  }, [cards.length]);
+
 
   // Keyboard navigation
   useEffect(() => {
@@ -519,7 +537,6 @@ export default function VedikaLabsHub() {
           {/* Interactive Scientific Particle Bot Canvas */}
           <div className="vedika-lab-bot-wrapper">
             <VedikaParticleBot
-              key={activeCard.botImage}
               src={activeCard.botImage}
               colorMode="vibrant"
               width={520}

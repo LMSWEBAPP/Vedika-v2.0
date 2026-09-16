@@ -8,7 +8,7 @@ import { html } from '@codemirror/lang-html';
 import { usePyodide } from '@/hooks/usePyodide';
 import {
   Play, RotateCcw, Save, Check, Copy, ChevronLeft, ChevronRight,
-  ChevronDown, X, Plus, Terminal as TerminalIcon, CheckSquare,
+  ChevronDown, ChevronUp, X, Plus, Terminal as TerminalIcon, CheckSquare,
   Eye, FileText, Code, Settings, Sparkles, Loader2, Target,
   FileCode, FolderTree, RefreshCw, ExternalLink, Monitor, Tablet,
   Smartphone, Award, AlertCircle, HelpCircle, Lightbulb, Zap, Globe,
@@ -819,6 +819,7 @@ export default function CodePuzzle() {
 
   // Resizable split percentages
   const [bottomSplitPercent, setBottomSplitPercent] = useState(38);
+  const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(460);
   const isDraggingBottomRef = useRef(false);
   const isDraggingRightRef = useRef(false);
@@ -2006,7 +2007,7 @@ export default function CodePuzzle() {
           {/* Breadcrumb Path */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
             <span style={{ color: '#64748B' }}>Workspace Sandbox</span>
-            <span style={{ color: '#475569' }}>&gt;</span>
+            <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
             
             {/* Category Selector (Python vs HTML / Web) */}
             <CustomDropdown
@@ -2020,7 +2021,7 @@ export default function CodePuzzle() {
               ]}
             />
 
-            <span style={{ color: '#475569' }}>&gt;</span>
+            <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
             
             {/* Puzzle Selector Dropdown */}
             {category === 'html' ? (
@@ -2538,6 +2539,15 @@ export default function CodePuzzle() {
 
             {/* Unified CodeMirror Editor Canvas */}
             <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              <style>{`
+                .cm-editor, .cm-editor .cm-scroller, .cm-editor .cm-content {
+                  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Monaco, Consolas, monospace !important;
+                  font-feature-settings: "calt" 1, "liga" 1;
+                }
+                .guide-wizard-panel {
+                  font-family: 'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif !important;
+                }
+              `}</style>
               <CodeMirror
                 key={activeFileName}
                 value={activeFile.content || ''}
@@ -2646,85 +2656,121 @@ export default function CodePuzzle() {
             </div>
           </div>
 
-          {/* Horizontal Resizer Bar */}
-          <div
-            onMouseDown={handleBottomMouseDown}
-            style={{
-              height: 5,
-              background: isDraggingBottomRef.current ? 'rgba(168, 85, 247, 0.5)' : 'rgba(255, 255, 255, 0.08)',
-              cursor: 'row-resize',
-              width: '100%',
-              flexShrink: 0,
-              zIndex: 10,
-              transition: 'background 0.15s'
-            }}
-          />
+          {/* Horizontal Resizer & Bottom Terminal (Only rendered in Python/programming mode, completely omitted in HTML mode) */}
+          {category !== 'html' && (
+            <>
+              {/* Horizontal Resizer Bar */}
+              {!isTerminalCollapsed && (
+                <div
+                  onMouseDown={handleBottomMouseDown}
+                  style={{
+                    height: 5,
+                    background: isDraggingBottomRef.current ? 'rgba(168, 85, 247, 0.5)' : 'rgba(255, 255, 255, 0.08)',
+                    cursor: 'row-resize',
+                    width: '100%',
+                    flexShrink: 0,
+                    zIndex: 10,
+                    transition: 'background 0.15s'
+                  }}
+                />
+              )}
 
-          {/* ── 4. BOTTOM PANEL (Console Terminal) ── */}
-          <div style={{
-            height: `${bottomSplitPercent}%`,
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#07090F',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}>
-            {/* Panel Header */}
-            <div style={{
-              height: 36,
-              background: '#090C15',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 14px',
-              flexShrink: 0
-            }}>
-              {/* Header Title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <TerminalIcon size={14} color="#A855F7" />
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#94A3B8', textTransform: 'uppercase' }}>
-                  Console Terminal
-                </span>
-              </div>
-
-              {/* Right: Clear Console Button */}
-              <button
-                onClick={() => {
-                  if (terminalInstanceRef.current) terminalInstanceRef.current.clear();
-                  setRawOutputLog('');
-                }}
-                style={{
+              {/* ── 4. BOTTOM PANEL (Console Terminal) ── */}
+              <div style={{
+                height: isTerminalCollapsed ? 36 : `${bottomSplitPercent}%`,
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#07090F',
+                overflow: 'hidden',
+                flexShrink: 0,
+                transition: 'height 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}>
+                {/* Panel Header */}
+                <div style={{
+                  height: 36,
+                  background: '#090C15',
+                  borderBottom: isTerminalCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748B',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'color 0.15s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#F1F5F9'}
-                onMouseLeave={e => e.currentTarget.style.color = '#64748B'}
-              >
-                <RotateCcw size={12} />
-                <span>Clear</span>
-              </button>
-            </div>
+                  justifyContent: 'space-between',
+                  padding: '0 14px',
+                  flexShrink: 0
+                }}>
+                  {/* Header Title */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <TerminalIcon size={14} color="#A855F7" />
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#94A3B8', textTransform: 'uppercase' }}>
+                      Console Terminal
+                    </span>
+                  </div>
 
-            {/* Terminal Console Body */}
-            <div
-              style={{
-                flex: 1,
-                padding: '6px 8px',
-                overflow: 'hidden'
-              }}
-            >
-              <div ref={terminalElRef} style={{ width: '100%', height: '100%' }} />
-            </div>
-          </div>
+                  {/* Right Actions: Collapse/Expand Toggle + Clear Console */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      onClick={() => setIsTerminalCollapsed(prev => !prev)}
+                      title={isTerminalCollapsed ? "Expand Terminal" : "Collapse Terminal"}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: 5,
+                        padding: '3px 8px',
+                        color: '#94A3B8',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#F1F5F9'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                    >
+                      {isTerminalCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      <span>{isTerminalCollapsed ? 'Expand' : 'Collapse'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (terminalInstanceRef.current) terminalInstanceRef.current.clear();
+                        setRawOutputLog('');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        background: 'none',
+                        border: 'none',
+                        color: '#64748B',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'color 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#F1F5F9'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#64748B'}
+                    >
+                      <RotateCcw size={12} />
+                      <span>Clear</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Terminal Console Body (hidden when collapsed) */}
+                {!isTerminalCollapsed && (
+                  <div
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      overflow: 'hidden',
+                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace"
+                    }}
+                  >
+                    <div ref={terminalElRef} style={{ width: '100%', height: '100%' }} />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Vertical Resizer Bar for Right Panel */}
@@ -2815,7 +2861,7 @@ export default function CodePuzzle() {
           </div>
 
           {/* Right Panel Content Scroll Area */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: activeRightTab === 'preview' ? 10 : 16 }}>
+          <div className="guide-wizard-panel" style={{ flex: 1, overflowY: 'auto', padding: activeRightTab === 'preview' ? 10 : 16, fontFamily: "'Plus Jakarta Sans', var(--font-outfit), 'Inter', sans-serif" }}>
 
             {/* ── TAB: LIVE PREVIEW (For HTML / Web) ── */}
             {category === 'html' && activeRightTab === 'preview' && (

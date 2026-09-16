@@ -325,42 +325,109 @@ export default function Dashboard() {
         position: 'relative'
       }}>
 
-        {/* Left Side: Classy 2-Line Title */}
+        {/* Left Side: Classy 2-Line Title with Staggered Syllable Typography Animation */}
         <div style={{
           zIndex: 2,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           paddingLeft: isMobile ? 0 : 12,
-          gap: 4
+          gap: 6
         }}>
+          <style>{`
+            @keyframes sylFromLeft {
+              0% {
+                opacity: 0;
+                transform: translateX(-50px) scale(0.85);
+                filter: blur(14px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+                filter: blur(0);
+              }
+            }
+            @keyframes sylFromCenter {
+              0% {
+                opacity: 0;
+                transform: scale(0.6) translateY(20px);
+                filter: blur(16px);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0);
+              }
+            }
+            @keyframes sylFromRight {
+              0% {
+                opacity: 0;
+                transform: translateX(50px) scale(0.85);
+                filter: blur(14px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+                filter: blur(0);
+              }
+            }
+            .syl-ve {
+              display: inline-block;
+              animation: sylFromLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards;
+            }
+            .syl-di {
+              display: inline-block;
+              animation: sylFromCenter 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s backwards;
+            }
+            .syl-ka {
+              display: inline-block;
+              animation: sylFromRight 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.36s backwards;
+            }
+            .syl-ai {
+              display: inline-block;
+              margin-right: 0.24em;
+              animation: sylFromLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.50s backwards;
+            }
+            .syl-tu {
+              display: inline-block;
+              animation: sylFromCenter 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.64s backwards;
+            }
+            .syl-tor {
+              display: inline-block;
+              animation: sylFromRight 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.78s backwards;
+            }
+          `}</style>
           <h1 style={{
-            fontSize: isMobile ? 42 : 72,
+            fontSize: isMobile ? 52 : 'clamp(68px, 7.8vw, 108px)',
             fontWeight: 900,
-            lineHeight: 1.02,
-            letterSpacing: '0.06em',
+            lineHeight: 0.98,
+            letterSpacing: '-0.035em',
             margin: 0,
             color: '#FFFFFF',
-            fontFamily: "'Cinzel', serif",
+            fontFamily: "'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif",
             textTransform: 'uppercase',
-            textShadow: '0 4px 30px rgba(255, 255, 255, 0.15)'
+            textShadow: '0 4px 35px rgba(255, 255, 255, 0.18)'
           }}>
-            VEDIKA
+            <span className="syl-ve">VE</span>
+            <span className="syl-di">DI</span>
+            <span className="syl-ka">KA</span>
           </h1>
           <h2 style={{
-            fontSize: isMobile ? 36 : 64,
-            fontWeight: 800,
-            lineHeight: 1.05,
-            letterSpacing: '0.08em',
+            fontSize: isMobile ? 44 : 'clamp(56px, 6.6vw, 92px)',
+            fontWeight: 850,
+            lineHeight: 1.02,
+            letterSpacing: '-0.025em',
             margin: 0,
             background: 'linear-gradient(135deg, #FFFFFF 0%, #D8B4FE 45%, #818CF8 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            fontFamily: "'Cinzel', serif",
+            fontFamily: "'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif",
             textTransform: 'uppercase',
-            filter: 'drop-shadow(0 4px 20px rgba(168, 85, 247, 0.3))'
+            filter: 'drop-shadow(0 6px 28px rgba(168, 85, 247, 0.35))'
           }}>
-            AI TUTOR
+            <span className="syl-ai">AI</span>
+            <span className="syl-tu">TU</span>
+            <span className="syl-tor">TOR</span>
           </h2>
         </div>
 

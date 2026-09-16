@@ -227,9 +227,14 @@ export default function GeneralTutor() {
   const isMobile = useMediaQuery(isMobileMQ);
   const rPad = isMobile ? 14 : 28;
   const rGap = isMobile ? 8 : 12;
-  const msgMaxW = isMobile ? '100%' : 720;
-  const bubbleMaxW = isMobile ? '100%' : 480;
+  const msgMaxW = '100%';
+  const bubbleMaxW = isMobile ? '100%' : '88%';
   const fCol = isMobile ? '1fr' : '1fr 1fr';
+
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isInputHovered, setIsInputHovered] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isInputPinned, setIsInputPinned] = useState(false);
 
   function getDateLabel(dateStr) {
     if (!dateStr) return 'Older';
@@ -920,10 +925,9 @@ export default function GeneralTutor() {
       <MobileNav title="Ask your AI Tutor" accent={T.purple} items={[]} dropdownItems={NAV} extras={tutorExtras} />
       <div style={{ display: 'flex', height: '100%', maxHeight: '100%', width: '100%', background: T.bg, overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
-
-        {/* ── HEADER ── */}
-        <div style={{ padding: isMobile ? '10px 14px' : '14px 28px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: T.s1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: rGap }}>
+        {/* ── COMPACT HEADER ── */}
+        <div style={{ padding: isMobile ? '6px 12px' : '8px 20px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: T.s1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => router.push('/vedika-ai')}
               title="Back to Vedika AI"
@@ -931,14 +935,15 @@ export default function GeneralTutor() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: isMobile ? '6px 8px' : '6px 12px',
-                borderRadius: 10,
+                gap: 5,
+                padding: '4px 10px',
+                height: 28,
+                borderRadius: 8,
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: `1px solid ${T.border}`,
                 color: '#94A3B8',
                 cursor: 'pointer',
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: 600,
                 fontFamily: 'inherit',
                 transition: 'all 0.2s ease',
@@ -957,42 +962,42 @@ export default function GeneralTutor() {
                 e.currentTarget.style.transform = 'none';
               }}
             >
-              <ChevronLeft size={isMobile ? 18 : 16} />
+              <ChevronLeft size={14} />
               {!isMobile && <span>Vedika AI</span>}
             </button>
-            <div style={{ width: isMobile ? 32 : 38, height: isMobile ? 32 : 38, borderRadius: 10, background: `${T.purple}18`, border: `1px solid ${T.purple}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Brain size={isMobile ? 15 : 18} color={T.purple} />
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${T.purple}18`, border: `1px solid ${T.purple}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Brain size={14} color={T.purple} />
             </div>
             <div>
-              <h2 style={{ color: T.text, fontSize: isMobile ? 15 : 18, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Ask your AI Tutor</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>AI Tutor</span>
-                <Lock size={10} color={T.dim} />
+              <h2 style={{ color: T.text, fontSize: isMobile ? 13 : 14.5, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>Ask your AI Tutor</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: T.muted, fontWeight: 500 }}>AI Tutor</span>
+                <Lock size={9} color={T.dim} />
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {isMobile && streamingText && (
-              <Loader2 size={14} color={T.accent} className="custom-spin" />
+              <Loader2 size={13} color={T.accent} className="custom-spin" />
             )}
             
-            <div style={{ display: 'flex', background: T.s2, borderRadius: 18, padding: 2, border: `1px solid ${T.border}` }}>
+            <div style={{ display: 'flex', background: T.s2, borderRadius: 16, padding: 2, border: `1px solid ${T.border}` }}>
               <button onClick={() => setActiveTab('text')}
                 style={{
                   border: 'none', background: activeTab === 'text' ? T.purple : 'transparent',
-                  color: activeTab === 'text' ? '#fff' : T.muted, borderRadius: 15,
-                  padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', transition: 'all 0.2s'
+                  color: activeTab === 'text' ? '#fff' : T.muted, borderRadius: 13,
+                  padding: '3px 10px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit', transition: 'all 0.2s'
                 }}>
                 Text
               </button>
               <button onClick={() => setActiveTab('voice')}
                 style={{
                   border: 'none', background: activeTab === 'voice' ? T.purple : 'transparent',
-                  color: activeTab === 'voice' ? '#fff' : T.muted, borderRadius: 15,
-                  padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', transition: 'all 0.2s'
+                  color: activeTab === 'voice' ? '#fff' : T.muted, borderRadius: 13,
+                  padding: '3px 10px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit', transition: 'all 0.2s'
                 }}>
                 Voice
               </button>
@@ -1432,128 +1437,213 @@ export default function GeneralTutor() {
         </div>
       </div>
 
-        {/* ── BOTTOM: Mode/Depth selects + Input ── */}
-        <div style={{ flexShrink: 0, borderTop: `1px solid ${T.border}`, background: 'rgba(11, 15, 25, 0.95)', padding: isMobile ? '10px 14px 14px' : '12px 28px 16px', backdropFilter: 'blur(12px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14, marginBottom: 10, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 10.5, color: T.muted, fontWeight: 700, letterSpacing: '0.07em' }}>LEARNING MODE</label>
-              <div style={{ position: 'relative' }}>
-                <select value={mode} onChange={e => setMode(e.target.value)}
-                  style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${modeColors[mode] ? modeColors[mode] + '60' : 'rgba(255, 255, 255, 0.12)'}`, borderRadius: 10, padding: '7px 34px 7px 12px', color: modeColors[mode] || T.text, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', outline: 'none', minWidth: 130, fontFamily: 'inherit' }}>
-                  {MODES.map(m => <option key={m} value={m} style={{ background: T.s1, color: T.text }}>{m}</option>)}
-                </select>
-                <ChevronRight size={13} color={modeColors[mode] || T.muted} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 10.5, color: T.muted, fontWeight: 700, letterSpacing: '0.07em' }}>RESPONSE DEPTH</label>
-              <div style={{ position: 'relative' }}>
-                <select value={length} onChange={e => setLength(e.target.value)}
-                  style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${length === 'Short' ? T.amber + '60' : length === 'Medium' ? T.accent + '60' : T.purple + '60'}`, borderRadius: 10, padding: '7px 34px 7px 12px', color: length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', outline: 'none', minWidth: 130, fontFamily: 'inherit' }}>
-                  {LENGTHS.map(l => <option key={l} value={l} style={{ background: T.s1, color: T.text }}>{l}</option>)}
-                </select>
-                <ChevronRight size={13} color={length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 6, marginLeft: isMobile ? 0 : 'auto', padding: '6px 14px', background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 9999 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
-              <span style={{ fontSize: isMobile ? 10 : 11, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.04em' }}>{mode.toUpperCase()} &middot; {length.toUpperCase()}</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(168, 85, 247, 0.28)', borderRadius: 16, padding: '10px 16px', position: 'relative', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)' }}>
-              {showAtMenu && filteredDocs.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: 'calc(100% + 8px)',
-                  left: 0,
-                  right: 0,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  background: T.s2,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 10,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  zIndex: 100,
-                  padding: '6px 0',
-                  textAlign: 'left'
-                }}>
-                  <div style={{ padding: '4px 12px', fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '0.05em', borderBottom: `1px solid ${T.border}`, marginBottom: 4 }}>
-                    CHOOSE PDF TO ATTACH
-                  </div>
-                  {filteredDocs.map((doc, idx) => (
-                    <div
-                      key={doc.id}
-                      onMouseEnter={() => setAtMenuIndex(idx)}
-                      style={{
-                        padding: '8px 12px',
-                        fontSize: 13,
-                        color: T.text,
-                        cursor: 'pointer',
-                        background: idx === atMenuIndex ? `${T.purple}15` : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        transition: 'background 0.1s'
-                      }}
-                    >
-                      <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                        <span>📄</span>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                        <span style={{ fontSize: 10, color: T.muted }}>({new Date(doc.creation).toLocaleDateString()})</span>
-                      </div>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (confirm(`Are you sure you want to permanently delete "${doc.name}" from your library?`)) {
-                            await handleLibraryDelete(doc.id);
-                          }
-                        }}
-                        style={{
-                          background: 'none', border: 'none', color: T.red, cursor: 'pointer', padding: '4px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
-                        }}
-                        title="Delete from library"
-                      >
-                        <Trash size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploading ? T.purple : '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
-                title="Upload PDF Context">
-                {uploading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Paperclip size={18} />}
-              </button>
-              <button onClick={() => setActiveTab('voice')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} title="Open Voice Tutor">
-                <Mic size={18} />
-              </button>
-              <textarea ref={inputRef} value={topic} onChange={handleTextareaChange}
-                placeholder="Type your message to Vedika..." rows={1}
-                onKeyDown={handleKeyDown}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F8FAFC', fontSize: 14, lineHeight: 1.6, resize: 'none', fontFamily: 'inherit', padding: 0, minHeight: 24, maxHeight: 120 }} />
-            </div>
-            <button onClick={handleSend} disabled={loading}
+        {/* ── BOTTOM: Collapsible Mode/Depth + Collapsible Chat Input ── */}
+        <div
+          onMouseEnter={() => setIsInputHovered(true)}
+          onMouseLeave={() => setIsInputHovered(false)}
+          style={{
+            flexShrink: 0,
+            borderTop: `1px solid ${T.border}`,
+            background: 'rgba(11, 15, 25, 0.96)',
+            padding: isMobile ? '8px 12px 10px' : '8px 24px 12px',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            position: 'relative',
+            zIndex: 10
+          }}
+        >
+          {/* Collapsible Learning Mode & Depth Selects (Default Collapsed) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isConfigOpen ? 8 : 4, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setIsConfigOpen(prev => !prev)}
+              type="button"
               style={{
-                width: 46,
-                height: 46,
-                borderRadius: 14,
-                background: loading ? T.dim : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-                border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: loading ? 'none' : '0 4px 18px rgba(168, 85, 247, 0.4)',
-                transition: 'all 0.2s ease'
-              }}>
-              {loading ? <Loader2 size={18} color="#fff" style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} color="#fff" />}
+                gap: 6,
+                padding: '3px 10px',
+                borderRadius: 9999,
+                background: 'rgba(15, 23, 42, 0.7)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#94A3B8',
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
+              <span>{mode.toUpperCase()} &middot; {length.toUpperCase()}</span>
+              <ChevronRight size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
             </button>
+
+            {isConfigOpen && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'fadeIn 0.2s ease', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>MODE:</label>
+                  <div style={{ position: 'relative' }}>
+                    <select value={mode} onChange={e => setMode(e.target.value)}
+                      style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${modeColors[mode] ? modeColors[mode] + '60' : 'rgba(255, 255, 255, 0.12)'}`, borderRadius: 8, padding: '4px 26px 4px 10px', color: modeColors[mode] || T.text, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }}>
+                      {MODES.map(m => <option key={m} value={m} style={{ background: T.s1, color: T.text }}>{m}</option>)}
+                    </select>
+                    <ChevronRight size={11} color={modeColors[mode] || T.muted} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>DEPTH:</label>
+                  <div style={{ position: 'relative' }}>
+                    <select value={length} onChange={e => setLength(e.target.value)}
+                      style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${length === 'Short' ? T.amber + '60' : length === 'Medium' ? T.accent + '60' : T.purple + '60'}`, borderRadius: 8, padding: '4px 26px 4px 10px', color: length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }}>
+                      {LENGTHS.map(l => <option key={l} value={l} style={{ background: T.s1, color: T.text }}>{l}</option>)}
+                    </select>
+                    <ChevronRight size={11} color={length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Full Input Bar or Collapsed Floating Pill to the Right */}
+          {messages.length > 0 && !isInputHovered && !isInputFocused && !topic && !isInputPinned ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '2px 0' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInputPinned(true);
+                  setIsInputFocused(true);
+                  setTimeout(() => inputRef.current?.focus(), 50);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '7px 16px',
+                  borderRadius: 9999,
+                  background: 'rgba(15, 23, 42, 0.90)',
+                  border: '1px solid rgba(168, 85, 247, 0.38)',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
+                  color: '#CBD5E1',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.8)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.38)';
+                  e.currentTarget.style.transform = 'none';
+                }}
+              >
+                <Paperclip size={13} color="#94A3B8" />
+                <span>Type next question to Vedika...</span>
+                <Send size={13} color="#A855F7" />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, animation: 'fadeIn 0.25s ease' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(168, 85, 247, 0.28)', borderRadius: 14, padding: '7px 14px', position: 'relative', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)' }}>
+                {showAtMenu && filteredDocs.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 8px)',
+                    left: 0,
+                    right: 0,
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    background: T.s2,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 10,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 100,
+                    padding: '6px 0',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ padding: '4px 12px', fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '0.05em', borderBottom: `1px solid ${T.border}`, marginBottom: 4 }}>
+                      CHOOSE PDF TO ATTACH
+                    </div>
+                    {filteredDocs.map((doc, idx) => (
+                      <div
+                        key={doc.id}
+                        onMouseEnter={() => setAtMenuIndex(idx)}
+                        style={{
+                          padding: '8px 12px',
+                          fontSize: 13,
+                          color: T.text,
+                          cursor: 'pointer',
+                          background: idx === atMenuIndex ? `${T.purple}15` : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          transition: 'background 0.1s'
+                        }}
+                      >
+                        <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                          <span>📄</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                          <span style={{ fontSize: 10, color: T.muted }}>({new Date(doc.creation).toLocaleDateString()})</span>
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to permanently delete "${doc.name}" from your library?`)) {
+                              await handleLibraryDelete(doc.id);
+                            }
+                          }}
+                          style={{
+                            background: 'none', border: 'none', color: T.red, cursor: 'pointer', padding: '4px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
+                          }}
+                          title="Delete from library"
+                        >
+                          <Trash size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploading ? T.purple : '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                  title="Upload PDF Context">
+                  {uploading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Paperclip size={16} />}
+                </button>
+                <button onClick={() => setActiveTab('voice')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                  title="Switch to Voice AI">
+                  <Mic size={16} />
+                </button>
+                <textarea ref={inputRef} value={topic}
+                  onChange={handleTextareaChange}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  placeholder="Type your message to Vedika..." rows={1}
+                  onKeyDown={handleKeyDown}
+                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F8FAFC', fontSize: 13.5, lineHeight: 1.5, resize: 'none', fontFamily: 'inherit', padding: 0, minHeight: 22, maxHeight: 110 }} />
+              </div>
+              <button onClick={handleSend} disabled={loading}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: loading ? T.dim : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
+                  border: 'none',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: loading ? 'none' : '0 4px 16px rgba(168, 85, 247, 0.35)',
+                  transition: 'all 0.2s ease'
+                }}>
+                {loading ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} color="#fff" />}
+              </button>
+            </div>
+          )}
         </div>
       </>
     )}
