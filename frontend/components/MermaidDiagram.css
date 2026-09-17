@@ -721,31 +721,33 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 }
 
 /* Live Draw Building State on Mermaid SVG: FORCE HIDE all elements until drawn */
-.mermaid-svg-wrapper.building .node,
-.mermaid-svg-wrapper.building g.node,
-.mermaid-svg-wrapper.building .node *,
+.mermaid-svg-wrapper.building g.edgePaths,
+.mermaid-svg-wrapper.building g.edgeLabels,
 .mermaid-svg-wrapper.building .edgePath,
 .mermaid-svg-wrapper.building g.edgePath,
-.mermaid-svg-wrapper.building .edgePath *,
+.mermaid-svg-wrapper.building path.flowchart-link,
+.mermaid-svg-wrapper.building .flowchart-link,
 .mermaid-svg-wrapper.building .edgeLabel,
-.mermaid-svg-wrapper.building .marker {
+.mermaid-svg-wrapper.building .marker,
+.mermaid-svg-wrapper.building marker {
   opacity: 0 !important;
   visibility: hidden !important;
 }
 
-/* Blueprint Wireframe Node (When Cursor Is Drafting) */
-.mermaid-svg-wrapper .stitch-node-wireframe,
-.mermaid-svg-wrapper.building .stitch-node-wireframe,
-.mermaid-svg-wrapper.building g.node.stitch-node-wireframe {
+.mermaid-svg-wrapper.building g.node,
+.mermaid-svg-wrapper.building .node {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Wireframe Node (When Cursor Is Drafting) */
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe,
+.mermaid-svg-wrapper.building .node.stitch-node-wireframe,
+.mermaid-svg-wrapper .stitch-node-wireframe {
   opacity: 1 !important;
   visibility: visible !important;
   transform-origin: center center;
   animation: stitchWireframePulse 0.9s infinite alternate cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-.mermaid-svg-wrapper.building .stitch-node-wireframe * {
-  opacity: 1 !important;
-  visibility: visible !important;
 }
 
 .mermaid-svg-wrapper .stitch-node-wireframe rect,
@@ -783,17 +785,12 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 }
 
 /* Solidified Card (After AI Stamping) */
-.mermaid-svg-wrapper .stitch-node-solidified,
-.mermaid-svg-wrapper.building .stitch-node-solidified,
-.mermaid-svg-wrapper.building g.node.stitch-node-solidified {
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified,
+.mermaid-svg-wrapper.building .node.stitch-node-solidified,
+.mermaid-svg-wrapper .stitch-node-solidified {
   opacity: 1 !important;
   visibility: visible !important;
   animation: stitchSolidifyBloom 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.mermaid-svg-wrapper.building .stitch-node-solidified * {
-  opacity: 1 !important;
-  visibility: visible !important;
 }
 
 .mermaid-svg-wrapper .stitch-node-solidified rect,
@@ -823,19 +820,17 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 }
 
 /* Connector Laser Draw Effect */
-.mermaid-svg-wrapper .stitch-edge-drawing,
 .mermaid-svg-wrapper.building .stitch-edge-drawing,
-.mermaid-svg-wrapper.building g.edgePath.stitch-edge-drawing {
+.mermaid-svg-wrapper.building g.edgePath.stitch-edge-drawing,
+.mermaid-svg-wrapper.building path.flowchart-link.stitch-edge-drawing,
+.mermaid-svg-wrapper.building path.stitch-edge-drawing,
+.mermaid-svg-wrapper .stitch-edge-drawing {
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-.mermaid-svg-wrapper.building .stitch-edge-drawing * {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.mermaid-svg-wrapper .stitch-edge-drawing path {
+.mermaid-svg-wrapper .stitch-edge-drawing path,
+.mermaid-svg-wrapper path.stitch-edge-drawing {
   stroke: #38BDF8 !important;
   stroke-width: 2.5px !important;
   stroke-dasharray: 400;
@@ -844,20 +839,18 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
 }
 
-.mermaid-svg-wrapper .stitch-edge-drawn,
 .mermaid-svg-wrapper.building .stitch-edge-drawn,
-.mermaid-svg-wrapper.building g.edgePath.stitch-edge-drawn {
+.mermaid-svg-wrapper.building g.edgePath.stitch-edge-drawn,
+.mermaid-svg-wrapper.building path.flowchart-link.stitch-edge-drawn,
+.mermaid-svg-wrapper.building path.stitch-edge-drawn,
+.mermaid-svg-wrapper .stitch-edge-drawn {
   opacity: 1 !important;
   visibility: visible !important;
   transition: opacity 0.3s ease;
 }
 
-.mermaid-svg-wrapper.building .stitch-edge-drawn * {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.mermaid-svg-wrapper .stitch-edge-drawn path {
+.mermaid-svg-wrapper .stitch-edge-drawn path,
+.mermaid-svg-wrapper path.stitch-edge-drawn {
   stroke: #60A5FA !important;
   stroke-width: 1.5px !important;
   stroke-dasharray: none !important;
