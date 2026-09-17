@@ -196,7 +196,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3; /* Behind foreground bot which is z-index 6 */
+  z-index: 10; /* Elevated above pedestal and bot layer */
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -213,12 +213,8 @@
   justify-content: center;
   perspective: 950px; /* Reduced perspective distance dramatically enhances 3D depth and curve */
   transform-style: preserve-3d;
-  pointer-events: auto;
+  pointer-events: none;
   user-select: none;
-}
-
-.cards-bounded-viewport:active {
-  cursor: grabbing;
 }
 
 .cards-stage-track {
@@ -231,6 +227,7 @@
   perspective: 950px;
   transform-style: preserve-3d;
   overflow: visible;
+  pointer-events: none;
 }
 
 /* Classy Curved Holographic Floor Guide Track with Feathered Ends */
@@ -268,6 +265,8 @@
   backface-visibility: hidden;
   will-change: transform, opacity;
   user-select: none;
+  pointer-events: auto; /* Direct, unobstructed click reception */
+  z-index: 10;
 }
 
 /* Selected Card: lifts forward prominently with vibrant neon glow */
@@ -452,8 +451,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 6; /* IN FRONT OF HOLOGRAPHIC CARDS */
-  pointer-events: none;
+  z-index: 6;
+  pointer-events: none !important;
 }
 
 /* Foreground Cute Bot Floating Naturally */
@@ -464,7 +463,11 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 8px;
-  pointer-events: auto;
+  pointer-events: none !important;
+}
+
+.vedika-labs-bot-foreground * {
+  pointer-events: none !important;
 }
 
 .bot-pedestal-shadow {
@@ -476,6 +479,7 @@
   background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 75%);
   filter: blur(8px);
   z-index: -1;
+  pointer-events: none !important;
 }
 
 .vedika-bot-character-img {
@@ -485,7 +489,7 @@
   object-fit: contain;
   filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(var(--active-color-rgb), 0.35));
   animation: botHoverFloating 4s ease-in-out infinite alternate;
-  pointer-events: auto;
+  pointer-events: none !important;
 }
 
 @keyframes botHoverFloating {

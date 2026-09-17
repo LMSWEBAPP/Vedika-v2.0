@@ -272,10 +272,10 @@ export default function VedikaLabsHub() {
                   // Semi-Spherical Curved Formation (Dome arc cupping around the focal center):
                   // 0: Math Lab (Far Left) | 1: Physics Lab (Inner Left) | BOT (Center) | 2: Chem Lab (Inner Right) | 3: Bio Lab (Far Right)
                   const FIXED_SLOTS = [
-                    { x: -410, y: -12, z: 46,  rotX: 7, rotY: 34,  rotZ: -3.5 }, // 0: Math Lab (Far Left spherical bank)
-                    { x: -225, y: 4,   z: -22, rotX: 3, rotY: 15,  rotZ: -1.2 }, // 1: Physics Lab (Inner Left)
-                    { x: 225,  y: 4,   z: -22, rotX: 3, rotY: -15, rotZ: 1.2 },  // 2: Chemistry Lab (Inner Right)
-                    { x: 410,  y: -12, z: 46,  rotX: 7, rotY: -34, rotZ: 3.5 }   // 3: Biology Lab (Far Right spherical bank)
+                    { x: -420, y: -12, z: 46,  rotX: 7, rotY: 34,  rotZ: -3.5 }, // 0: Math Lab (Far Left spherical bank)
+                    { x: -230, y: 4,   z: -22, rotX: 3, rotY: 15,  rotZ: -1.2 }, // 1: Physics Lab (Inner Left)
+                    { x: 230,  y: 4,   z: -22, rotX: 3, rotY: -15, rotZ: 1.2 },  // 2: Chemistry Lab (Inner Right)
+                    { x: 420,  y: -12, z: 46,  rotX: 7, rotY: -34, rotZ: 3.5 }   // 3: Biology Lab (Far Right spherical bank)
                   ];
 
                   const slot = FIXED_SLOTS[idx];
@@ -296,9 +296,10 @@ export default function VedikaLabsHub() {
                         '--card-theme-rgb': lab.colorRgb,
                         '--card-glow': lab.glowColor,
                         transform: `translateX(${transX}px) translateY(${transY}px) translateZ(${transZ}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${scaleVal})`,
-                        zIndex: isSelected ? 5 : 2,
+                        zIndex: isSelected ? 15 : 12,
                         opacity: isSelected ? 1 : 0.82,
                         cursor: 'pointer',
+                        pointerEvents: 'auto',
                         transition: 'transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.35s ease, filter 0.35s ease'
                       }}
                       onClick={() => {
@@ -700,12 +701,12 @@ export default function VedikaLabsHub() {
           </div>
 
           {/* FOREGROUND BOT CHARACTER */}
-          <div className="vedika-labs-pedestal-stage">
+          <div className="vedika-labs-pedestal-stage" style={{ pointerEvents: 'none' }}>
             {/* Middle Bot from Home Page (VedikaParticleBot with natural vibrant colors & crisp particles) */}
-            <div className="vedika-labs-bot-foreground">
+            <div className="vedika-labs-bot-foreground" style={{ pointerEvents: 'none' }}>
               {/* Floating ambient glow under bot feet */}
-              <div className="bot-pedestal-shadow" />
-              <div style={{ width: 320, height: 320, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="bot-pedestal-shadow" style={{ pointerEvents: 'none' }} />
+              <div style={{ width: 320, height: 320, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                 <VedikaParticleBot
                   src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
                   width={320}
