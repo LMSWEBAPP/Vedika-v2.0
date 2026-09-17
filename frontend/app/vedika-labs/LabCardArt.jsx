@@ -423,19 +423,177 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
 });
 
 /**
- * 3. CHEMISTRY LAB ART - OPTION 9 VOLUMETRIC GLOWING FLASK
+ * 3. CHEMISTRY LAB ART - OPTION 9 VOLUMETRIC GLOWING FLASK WITH LIVE RISING FIZZ & EVAPORATING VAPOR
  * - Grand 3D glass Erlenmeyer flask hovering over emerald pedestal
- * - Volumetric glowing emerald/teal liquid with curved meniscus
- * - Active effervescent bubbles rising and fizzing to the surface
+ * - Volumetric glowing emerald liquid with curved meniscus
+ * - High-speed effervescent fizzy bubbles rising rapidly to the surface
+ * - Bubbles burst at meniscus and EVAPORATE upward through the neck and billow into the air
  * - Floating molecular satellite nodes
  */
 export const ChemistryLabArt = memo(function ChemistryLabArt() {
+  const canvasRef = useRef(null);
   const accentRgb = '16, 185, 129';
   const gradKey = '16_185_129';
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId;
+    const width = 175;
+    const height = 235;
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    // 1. Live Rapid Effervescent Fizz Bubbles
+    const bubbles = Array.from({ length: 32 }, () => ({
+      x: 70 + Math.random() * 35,
+      y: 105 + Math.random() * 42,
+      r: 0.8 + Math.random() * 1.8,
+      vy: 1.4 + Math.random() * 1.8, // Rapid upward speed
+      wobbleSpeed: 4 + Math.random() * 6,
+      phase: Math.random() * Math.PI * 2,
+      popped: false
+    }));
+
+    // 2. Rising Evaporating Vapor Plumes (billowing out of the neck)
+    const vapors = Array.from({ length: 22 }, () => ({
+      x: 85 + (Math.random() - 0.5) * 8,
+      y: 35 + Math.random() * 65,
+      r: 2.5 + Math.random() * 4.5,
+      vy: 0.7 + Math.random() * 1.1, // Rising upward
+      vx: (Math.random() - 0.5) * 0.6,
+      alpha: 0.1 + Math.random() * 0.7,
+      maxR: 9 + Math.random() * 7
+    }));
+
+    // Conical boundary check for flask body
+    function getFlaskWidth(y) {
+      if (y >= 100 && y <= 152) {
+        // Conical base: expands from width ~40 at y=100 to ~72 at y=152
+        const t = (y - 100) / 52;
+        return 20 + t * 18;
+      }
+      return 10; // In neck
+    }
+
+    let t = 0;
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+      t += 0.03;
+
+      // A. RENDER EVAPORATING VAPOR (Floating Upward & Expanding into Air)
+      for (let v of vapors) {
+        v.y -= v.vy;
+        v.x += v.vx;
+
+        // If above neck (y < 46), expand outward and evaporate
+        if (v.y < 46) {
+          v.r = Math.min(v.maxR, v.r + 0.12);
+          v.alpha -= 0.012; // Evaporate
+          v.vx += (Math.random() - 0.5) * 0.1;
+        } else {
+          // Inside neck: stay channeled
+          v.x += (87.5 - v.x) * 0.05;
+        }
+
+        // Reset vapor at meniscus
+        if (v.y < 8 || v.alpha <= 0) {
+          v.y = 96 + Math.random() * 6; // Starts at liquid surface
+          v.x = 87.5 + (Math.random() - 0.5) * 10;
+          v.r = 2.0 + Math.random() * 2.5;
+          v.alpha = 0.55 + Math.random() * 0.35;
+          v.vx = (Math.random() - 0.5) * 0.4;
+        }
+
+        // Draw soft volumetric evaporating mist puff
+        const grad = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, v.r);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${v.alpha * 0.9})`);
+        grad.addColorStop(0.4, `rgba(167, 243, 208, ${v.alpha * 0.7})`);
+        grad.addColorStop(0.8, `rgba(52, 211, 153, ${v.alpha * 0.3})`);
+        grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // B. RENDER LIVE RISING EFFERVESCENT FIZZ BUBBLES
+      for (let b of bubbles) {
+        b.y -= b.vy;
+        b.x += Math.sin(t * b.wobbleSpeed + b.phase) * 0.45;
+
+        // Keep inside conical liquid boundaries
+        const halfW = getFlaskWidth(b.y);
+        if (b.x < 87.5 - halfW) b.x = 87.5 - halfW + 1;
+        if (b.x > 87.5 + halfW) b.x = 87.5 + halfW - 1;
+
+        // When bubble hits the liquid surface (meniscus at y = 100), it bursts!
+        if (b.y <= 100) {
+          // Burst flash on meniscus
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(b.x, 100, b.r * 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Respawn bubble at bottom of flask
+          b.y = 142 + Math.random() * 8;
+          b.x = 87.5 + (Math.random() - 0.5) * (getFlaskWidth(b.y) * 1.6);
+          b.r = 0.8 + Math.random() * 1.8;
+          b.vy = 1.4 + Math.random() * 1.8;
+        } else {
+          // Draw Rising Fizz Bubble (with specular gleam)
+          const bubbleAlpha = Math.min(1.0, 0.4 + (150 - b.y) / 50);
+
+          // Outer Glow
+          ctx.fillStyle = `rgba(167, 243, 208, ${bubbleAlpha * 0.75})`;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r * 1.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Core Solid Pearl
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Specular Dot
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    }
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
   return (
     <div className="art-chem-detailed" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* 1. Canvas Layer for Live Rising Fizz & Evaporating Vapor */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 3
+        }}
+      />
+
+      {/* 2. SVG Layer for Flask Structure, Pedestal, Liquid Body & Reflections */}
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1 }}>
         <defs>
           <pattern id="chemGrid" width="18" height="18" patternUnits="userSpaceOnUse">
             <circle cx="9" cy="9" r="0.6" fill="rgba(16, 185, 129, 0.22)" />
@@ -465,10 +623,10 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
 
           {/* Glass Outer Wall Specular Shading */}
           <linearGradient id="glassWallGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
             <stop offset="15%" stopColor="rgba(255, 255, 255, 0.2)" />
             <stop offset="85%" stopColor="rgba(16, 185, 129, 0.15)" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.75" />
           </linearGradient>
 
           {/* Molecular Node Glossy Spheres */}
@@ -530,38 +688,6 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
             strokeLinecap="round"
             strokeOpacity="0.75"
           />
-
-          {/* Active Effervescent Rising Bubbles */}
-          <g className="live-flask-bubbles">
-            <circle cx="82" cy="138" r="3.2" fill="#FFFFFF" opacity="0.9" className="bubble-float-1" />
-            <circle cx="94" cy="130" r="2.4" fill="#E0F2FE" opacity="0.85" className="bubble-float-2" />
-            <circle cx="76" cy="120" r="2.8" fill="#FFFFFF" opacity="0.9" className="bubble-float-3" />
-            <circle cx="98" cy="115" r="2.2" fill="#BAE6FD" opacity="0.8" className="bubble-float-1" />
-            <circle cx="86" cy="106" r="3.5" fill="#FFFFFF" opacity="0.95" className="bubble-float-2" />
-            {/* Tiny Popping Micro-Bubbles Near Meniscus */}
-            <circle cx="78" cy="98" r="1.4" fill="#FFFFFF" />
-            <circle cx="92" cy="97" r="1.2" fill="#FFFFFF" />
-            <circle cx="87.5" cy="95" r="1.6" fill="#FFFFFF" />
-          </g>
-
-          {/* Luminous Rising Vapor / Mist Above Neck */}
-          <g className="live-flask-vapor" opacity="0.7">
-            <path
-              d="M 85 44 C 82 32, 93 26, 87 18"
-              fill="none"
-              stroke="#A7F3D0"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeDasharray="3 3"
-            />
-            <path
-              d="M 90 44 C 94 34, 86 28, 91 16"
-              fill="none"
-              stroke="#6EE7B7"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-          </g>
         </g>
 
         {/* Floating Molecular Satellite Cluster (Option 9 Style) */}
@@ -578,12 +704,11 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
 });
 
 /**
- * 4. BIOLOGY LAB ART - ICONIC 3D DNA DOUBLE HELIX
- * - Authentic, slender double helix with 2 continuous twisting golden ribbons
- * - Segment-by-segment 3D depth sorting (Z-buffer) with true front/back occlusion
+ * 4. BIOLOGY LAB ART - ICONIC 3D DNA DOUBLE HELIX (DIAGONAL ORIENTATION)
+ * - Tilted dynamically along a diagonal axis across the card (Option 10 aesthetic)
+ * - 2 continuous twisting golden ribbons with smooth 3D depth sorting
  * - Distinct base-pair horizontal ladder rungs with dual nucleobase colors & central H-bond
  * - Glowing nucleotide bead nodes and shimmering ambient bioluminescent genetic dust
- * - Perfectly centered and standing majestically above the cybernetic illuminated pedestal
  */
 export const BiologyLabArt = memo(function BiologyLabArt() {
   const canvasRef = useRef(null);
@@ -607,9 +732,9 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
     ctx.scale(dpr, dpr);
 
     // Floating Ambient Bioluminescent Genetic Spores
-    const spores = Array.from({ length: 16 }, () => ({
+    const spores = Array.from({ length: 18 }, () => ({
       x: Math.random() * width,
-      y: 20 + Math.random() * 150,
+      y: 20 + Math.random() * 160,
       r: 0.7 + Math.random() * 1.3,
       vy: 0.25 + Math.random() * 0.45,
       alpha: 0.3 + Math.random() * 0.65,
@@ -617,11 +742,13 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
     }));
 
     // Double Helix Geometry Constants
-    const centerX = 87.5; // Directly aligned with the center of the pedestal
-    const topY = 22;      // Elegant tall reach
-    const bottomY = 168;  // Lands just above the pedestal emitter
-    const helixHeight = bottomY - topY; // 146px tall
-    const helixRadius = 22; // Slender, perfectly proportioned
+    const centerX = 87.5;
+    const centerY = 96;
+    const diagonalTilt = -25 * (Math.PI / 180); // Diagonal angle (Option 10 tilt)
+    const topY = 24;      // Elegant tall reach
+    const bottomY = 168;  // Lands just above pedestal emitter
+    const helixHeight = bottomY - topY; // 144px tall
+    const helixRadius = 21; // Slender, perfectly proportioned
     const totalTurns = 1.35; // Distinct, graceful sinusoidal figure-8 loops
     const numRungs = 16;     // Cleanly spaced nucleotide ladder rungs
     const numSteps = 70;     // Discretized ribbon segments for continuous smooth curves
@@ -639,9 +766,9 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
       // 1. Render Floating Ambient Bioluminescent Spores
       for (let s of spores) {
         s.y -= s.vy;
-        if (s.y < topY - 10) {
-          s.y = bottomY - 5;
-          s.x = centerX - helixRadius * 1.6 + Math.random() * (helixRadius * 3.2);
+        if (s.y < 15) {
+          s.y = 175;
+          s.x = Math.random() * width;
         }
         ctx.fillStyle = s.color;
         ctx.globalAlpha = s.alpha * 0.75;
@@ -651,7 +778,13 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
       }
       ctx.globalAlpha = 1.0;
 
-      angle += 0.016; // Smooth, majestic 3D rotation speed
+      angle += 0.016; // Smooth continuous 3D rotation speed
+
+      // Apply Diagonal Orientation Matrix
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(diagonalTilt);
+      ctx.translate(-centerX, -centerY);
 
       // 2. Build 3D Render Queue with Depth Ordering
       const drawQueue = [];
@@ -700,9 +833,9 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
       // B. Compute Horizontal Base-Pair Rungs & Nucleotide Junction Beads
       for (let j = 0; j < numRungs; j++) {
-        const t = (j + 0.5) / numRungs;
-        const y = topY + t * helixHeight;
-        const theta = angle + t * Math.PI * 2 * totalTurns;
+        const tRung = (j + 0.5) / numRungs;
+        const y = topY + tRung * helixHeight;
+        const theta = angle + tRung * Math.PI * 2 * totalTurns;
 
         // Strand 1 node
         const x1 = centerX + Math.cos(theta) * helixRadius;
@@ -719,7 +852,7 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
           type: 'rung',
           x1, y1: y,
           x2, y2: y,
-          z: 0, // Axis line is at z=0
+          z: 0,
           leftColor: pair.left,
           rightColor: pair.right
         });
@@ -748,7 +881,6 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
       // 4. Render 3D Depth Sorted Elements
       for (let item of drawQueue) {
-        // depthFactor: 0 = far back, 0.5 = middle, 1.0 = closest to viewer
         const depthFactor = (item.z + helixRadius) / (helixRadius * 2);
         const isFront = item.z > 0;
 
@@ -759,7 +891,6 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
           if (isFront) {
             // Front Ribbon: Bold, intense golden-neon with radiant glow
-            // Outer Glow Pass
             ctx.strokeStyle = item.strand === 1 ? 'rgba(245, 158, 11, 0.5)' : 'rgba(251, 191, 36, 0.45)';
             ctx.lineWidth = 5.0;
             ctx.lineCap = 'round';
@@ -808,7 +939,7 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
           ctx.fillStyle = '#FFFFFF';
           ctx.fill();
         } else if (item.type === 'node') {
-          const radius = 1.8 + depthFactor * 1.6; // 1.8px (back) to 3.4px (front)
+          const radius = 1.8 + depthFactor * 1.6;
 
           // Outer Glow for front nodes
           if (isFront) {
@@ -834,6 +965,8 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
         }
       }
 
+      ctx.restore();
+
       animId = requestAnimationFrame(render);
     }
 
@@ -843,7 +976,7 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
   return (
     <div className="art-bio-detailed" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* 3D Particle Canvas for Authentic DNA Sequence */}
+      {/* 3D Particle Canvas for Diagonal DNA Sequence */}
       <canvas
         ref={canvasRef}
         style={{
@@ -896,13 +1029,13 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
         {/* Cybernetic Pedestal Base */}
         <HoloPedestal accentColor="#F59E0B" accentRgb={accentRgb} filterId="amberPedestalGlow" />
 
-        {/* 3D Glossy Botanical Leaves Framing the DNA Helix */}
-        <g className="live-bio-leaf-left" transform="translate(14, 42) rotate(-22)" filter="url(#amberPedestalGlow)">
+        {/* 3D Glossy Botanical Leaves Framing the Diagonal DNA Helix */}
+        <g className="live-bio-leaf-left" transform="translate(18, 136) rotate(-40)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 14 3, 24 16, 26 28 C 14 28, 4 20, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 10 12, 18 20, 26 28" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
 
-        <g className="live-bio-leaf-right" transform="translate(132, 70) rotate(32)" filter="url(#amberPedestalGlow)">
+        <g className="live-bio-leaf-right" transform="translate(128, 42) rotate(35)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 16 4, 28 18, 30 32 C 16 32, 4 22, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 12 14, 22 22, 30 32" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
