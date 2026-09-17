@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ZoomIn, ZoomOut, RotateCcw, Code, Copy, Check, Sparkles, AlertCircle, Maximize2, ChevronDown, X, ArrowLeft, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Code, Copy, Check, Sparkles, AlertCircle, Maximize2, ChevronDown, X, ArrowLeft, Move, History, MessageSquare, User } from 'lucide-react';
 import StitchAICursor from './StitchAICursor';
 import './MermaidDiagram.css';
 
@@ -76,7 +76,7 @@ function sanitizeMermaid(raw) {
   return code;
 }
 
-export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
+export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate }) {
   const containerRef = useRef(null);
   const modalViewportRef = useRef(null);
   const [mounted, setMounted] = useState(false);
@@ -84,12 +84,13 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   const [renderError, setRenderError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(1);
-  const [modalZoom, setModalZoom] = useState(1);
+  const [modalZoom, setModalZoom] = useState(0.65); // Initial compact zoom to fit all boxes in view!
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
   const [isModalOpen, setIsModalOpen] = useState(true); // Fullscreen expand modal open by default for Visual Summary!
   const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true); // Left-hand side chat history drawer open by default!
 
   // Mouse drag panning state for modal viewport
   const [isPanning, setIsPanning] = useState(false);
@@ -350,30 +351,46 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
     setMounted(true);
   }, []);
 
+  const autoFitModalChart = useCallback(() => {
+    if (!modalViewportRef.current) return;
+    const svgEl = modalViewportRef.current.querySelector('svg');
+    if (!svgEl) return;
+
+    const svgRect = svgEl.getBoundingClientRect();
+    const vpH = modalViewportRef.current.clientHeight || 650;
+    const vpW = modalViewportRef.current.clientWidth || 800;
+
+    if (svgRect.height > 0) {
+      const currentZ = modalZoom || 0.65;
+      const rawH = svgRect.height / currentZ;
+      const rawW = svgRect.width / currentZ;
+
+      const targetH = vpH - 100;
+      const targetW = vpW - 120;
+
+      const scaleH = targetH / rawH;
+      const scaleW = targetW / rawW;
+
+      // Cap ideal between 0.22 and 0.65 so all initial boxes fit comfortably in the viewport!
+      const ideal = Math.max(0.22, Math.min(0.65, Math.min(scaleH, scaleW)));
+      setModalZoom(Number(ideal.toFixed(2)));
+    }
+  }, [modalZoom]);
+
   // Reset modal scroll and state whenever modal is opened
   useEffect(() => {
     if (isModalOpen) {
       setIsModalKeypointsOpen(false); // Collapsed by default
-      setModalZoom(1);
-      // Wait for layout paint to ensure scroll starts at the absolute top (0,0) and auto-fit tall charts
       const timer = setTimeout(() => {
         if (modalViewportRef.current) {
           modalViewportRef.current.scrollTop = 0;
           modalViewportRef.current.scrollLeft = 0;
-          const svgEl = modalViewportRef.current.querySelector('svg');
-          if (svgEl) {
-            const svgH = svgEl.clientHeight || svgEl.getBoundingClientRect().height;
-            const vpH = modalViewportRef.current.clientHeight;
-            if (svgH > vpH * 0.85 && svgH > 0) {
-              const ideal = Math.max(0.45, Math.min(0.95, (vpH - 140) / svgH));
-              setModalZoom(Number(ideal.toFixed(2)));
-            }
-          }
+          autoFitModalChart();
         }
-      }, 50);
+      }, 70);
       return () => clearTimeout(timer);
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, autoFitModalChart]);
 
   // Generate unique render ID per component mount to prevent SVG collisions
   const uniqueIdRef = useRef(`mermaid_${Math.random().toString(36).substr(2, 9)}`);
@@ -405,16 +422,16 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             tertiaryColor: '#0F172A',
             edgeLabelBackground: '#161D30',
             fontFamily: 'var(--font-outfit), sans-serif',
-            fontSize: '11.5px',
+            fontSize: '11px',
             nodeBorder: '1.25px'
           },
           securityLevel: 'loose',
           flowchart: {
             htmlLabels: true,
             curve: 'basis',
-            nodeSpacing: 25,
-            rankSpacing: 32,
-            padding: 8
+            nodeSpacing: 18,
+            rankSpacing: 24,
+            padding: 12
           }
         });
 
@@ -425,14 +442,17 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-          return `<svg ${attrs} style="${style}; max-width: min(100%, 520px); margin: 0 auto; display: block;"`;
+          return `<svg ${attrs} style="${style}; max-width: min(100%, 360px); margin: 0 auto; display: block;"`;
         });
         if (!cleanSvg.includes('style=')) {
-          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 520px); margin: 0 auto; display: block;" ');
+          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 360px); margin: 0 auto; display: block;" ');
         }
         if (isMounted) {
           setSvgHtml(cleanSvg);
           setLoading(false);
+          setTimeout(() => {
+            autoFitModalChart();
+          }, 60);
         }
       } catch (err) {
         console.warn('Mermaid rendering failed, attempting simplified fallback:', err);
@@ -444,14 +464,17 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-              return `<svg ${attrs} style="${style}; max-width: min(100%, 520px); margin: 0 auto; display: block;"`;
+              return `<svg ${attrs} style="${style}; max-width: min(100%, 360px); margin: 0 auto; display: block;"`;
             });
             if (!cleanSvg.includes('style=')) {
-              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 520px); margin: 0 auto; display: block;" ');
+              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 360px); margin: 0 auto; display: block;" ');
             }
             if (isMounted) {
               setSvgHtml(cleanSvg);
               setLoading(false);
+              setTimeout(() => {
+                autoFitModalChart();
+              }, 60);
               return;
             }
           } catch (fbErr) {
@@ -470,7 +493,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
     return () => {
       isMounted = false;
     };
-  }, [activeChartCode, points]);
+  }, [activeChartCode, points, autoFitModalChart]);
 
   // Trigger Stitch AI live draw once the active viewport & its SVG nodes are mounted
   useEffect(() => {
@@ -1065,6 +1088,28 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                   <span>Back to Chat</span>
                 </button>
 
+                {/* Left-Side Chat History Drawer Toggle Button */}
+                <button
+                  type="button"
+                  className={`mermaid-btn mermaid-modal-history-btn ${isHistoryOpen ? 'active' : ''}`}
+                  style={{
+                    ...btnBaseStyle,
+                    color: isHistoryOpen ? '#38BDF8' : '#94A3B8',
+                    borderColor: isHistoryOpen ? 'rgba(56, 189, 248, 0.45)' : btnBaseStyle.borderColor,
+                    background: isHistoryOpen ? 'rgba(56, 189, 248, 0.15)' : btnBaseStyle.background,
+                    padding: '7px 13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontWeight: 700
+                  }}
+                  onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                  title={isHistoryOpen ? "Hide Chat History Drawer" : "Show Chat History Drawer on Left"}
+                >
+                  <History size={13} color={isHistoryOpen ? "#38BDF8" : "#94A3B8"} />
+                  <span>Chat History {chatHistory && chatHistory.length > 0 ? `(${chatHistory.length})` : ''}</span>
+                </button>
+
                 <div className="mermaid-title-area" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
                     className="mermaid-badge"
@@ -1193,7 +1238,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
               </div>
             </div>
 
-            {/* Modal Main Body: Flowchart on left (full height), Key Takeaways Drawer on right */}
+            {/* Modal Main Body: History on left, Flowchart in center, Key Takeaways on right */}
             <div
               className="mermaid-modal-body"
               style={{
@@ -1203,9 +1248,105 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                 minHeight: 0,
                 overflow: 'hidden',
                 position: 'relative',
-                height: 'calc(100% - 56px)'
+                height: 'calc(100% - 94px)'
               }}
             >
+              {/* Left-Side Chat History Drawer */}
+              {isHistoryOpen && (
+                <aside
+                  className="mermaid-modal-history-sidebar"
+                  style={{
+                    width: 320,
+                    maxWidth: 350,
+                    flexShrink: 0,
+                    height: '100%',
+                    background: '#0B0F19',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '10px 0 30px rgba(0, 0, 0, 0.45)',
+                    zIndex: 15
+                  }}
+                >
+                  <div
+                    className="mermaid-modal-sidebar-header"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 18px',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'rgba(16, 22, 36, 0.85)',
+                      flexShrink: 0
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#F8FAFC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <History size={14} color="#38BDF8" />
+                      <span>Chat History</span>
+                      {chatHistory && chatHistory.length > 0 && (
+                        <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', border: '1px solid rgba(56, 189, 248, 0.35)', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
+                          {chatHistory.length}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      onClick={() => setIsHistoryOpen(false)}
+                      title="Collapse Chat History"
+                      aria-label="Collapse Chat History"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {chatHistory && chatHistory.length > 0 ? (
+                      chatHistory.map((m, idx) => {
+                        const isUser = m.role === 'user';
+                        const text = m.text || m.content || '';
+                        const hasInfographic = m.activeFeature === 'infographic' || m.features?.infographic;
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 6,
+                              padding: '10px 12px',
+                              borderRadius: 10,
+                              background: isUser ? 'rgba(56, 189, 248, 0.06)' : 'rgba(255, 255, 255, 0.03)',
+                              border: `1px solid ${isUser ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.06)'}`,
+                              fontSize: 12
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontWeight: 600 }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isUser ? '#38BDF8' : '#C084FC' }}>
+                                {isUser ? <User size={12} /> : <Sparkles size={12} />}
+                                <span>{isUser ? 'You' : 'Vedika AI'}</span>
+                              </span>
+                              <span style={{ color: '#64748B', fontSize: 10 }}>#{idx + 1}</span>
+                            </div>
+                            <div style={{ color: '#CBD5E1', lineHeight: 1.45, maxHeight: 110, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: 11.5 }}>
+                              {text ? (text.length > 220 ? `${text.slice(0, 220)}...` : text) : 'Session interaction'}
+                            </div>
+                            {hasInfographic && (
+                              <span style={{ alignSelf: 'flex-start', fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                Active Infographic 🎯
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div style={{ padding: '24px 12px', textAlign: 'center', color: '#64748B', fontSize: 11.5 }}>
+                        <MessageSquare size={20} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
+                        <span>No prior chat messages in this session yet.</span>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              )}
               <div
                 className={`mermaid-modal-viewport ${isPanning ? 'panning' : ''}`}
                 ref={modalViewportRef}

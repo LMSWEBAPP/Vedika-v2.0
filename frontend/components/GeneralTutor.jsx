@@ -1269,6 +1269,7 @@ export default function GeneralTutor() {
                                 <MermaidDiagram
                                   chart={msg.features.infographic.mermaid}
                                   points={msg.features.infographic.points}
+                                  chatHistory={messages}
                                   onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
                                 />
                               </div>
