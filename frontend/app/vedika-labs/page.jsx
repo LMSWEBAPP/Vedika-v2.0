@@ -88,10 +88,10 @@ const LABS_DATA = [
 ];
 
 const FIXED_SLOTS = [
-  { x: -365, y: -6, z: 12, rotX: 1, rotY: 13, rotZ: -0.5 }, // 0: Math Lab (Left curved bank)
-  { x: -165, y: 2,  z: -6, rotX: 0, rotY: 4.5, rotZ: 0 },  // 1: Physics Lab (Center-Left)
-  { x: 165,  y: 2,  z: -6, rotX: 0, rotY: -4.5, rotZ: 0 }, // 2: Chemistry Lab (Center-Right)
-  { x: 365,  y: -6, z: 12, rotX: 1, rotY: -13, rotZ: 0.5 }  // 3: Biology Lab (Right curved bank)
+  { x: -455, y: -8, z: 16, rotX: 1.2, rotY: 15.5, rotZ: -0.8 }, // 0: Math Lab (Left curved bank)
+  { x: -262, y: 2,  z: -6, rotX: 0,   rotY: 5,    rotZ: 0 },    // 1: Physics Lab (Center-Left)
+  { x: 262,  y: 2,  z: -6, rotX: 0,   rotY: -5,   rotZ: 0 },   // 2: Chemistry Lab (Center-Right)
+  { x: 455,  y: -8, z: 16, rotX: 1.2, rotY: -15.5, rotZ: 0.8 }  // 3: Biology Lab (Right curved bank)
 ];
 
 const METRICS_BAR = [
@@ -352,11 +352,11 @@ export default function VedikaLabsHub() {
           <div className="vedika-labs-pedestal-stage" style={{ pointerEvents: 'none' }}>
             <div className="vedika-labs-bot-foreground" style={{ pointerEvents: 'none' }}>
               <div className="bot-pedestal-shadow" style={{ pointerEvents: 'none' }} />
-              <div style={{ width: 220, height: 220, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ width: 300, height: 300, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                 <VedikaParticleBot
                   src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
-                  width={220}
-                  height={220}
+                  width={300}
+                  height={300}
                   inline={true}
                   colorMode="vibrant"
                 />

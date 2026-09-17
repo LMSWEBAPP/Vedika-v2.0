@@ -1,117 +1,129 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 
 /**
- * MATH LAB ART
- * Live Features:
- * - Seamless continuous oscillating mathematical sine wave propagation
- * - Secondary harmonic wave stream
- * - Floating/tilting 3D isometric wireframe cube
- * - Ambient levitating metallic Pi (π) with specular gleam
- * - Wireframe pyramid depth geometry
+ * 1. MATH LAB ART - 3D Sci-Fi Implementation
+ * - 3D Sculpted Metallic Pi (π) with Bevel Highlight & Extruded Depth
+ * - 3D Volumetric Rotating Wireframe Cube with Glowing Vertex Nodes
+ * - Continuous 3D Parametric Wave Surface with Laser Harmonic Flow
+ * - 3D Wireframe Tetrahedron Pyramid
  */
 export const MathLabArt = memo(function MathLabArt() {
   return (
     <div className="art-math-detailed">
-      <svg className="art-svg-scene" viewBox="0 0 170 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="mathGrid" width="16" height="16" patternUnits="userSpaceOnUse">
-            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(168, 85, 247, 0.16)" strokeWidth="0.8"/>
+          <pattern id="math3DGrid" width="18" height="18" patternUnits="userSpaceOnUse">
+            <path d="M 18 0 L 0 0 0 18" fill="none" stroke="rgba(168, 85, 247, 0.18)" strokeWidth="0.8"/>
+            <circle cx="18" cy="18" r="0.8" fill="rgba(192, 132, 252, 0.4)" />
           </pattern>
-          <linearGradient id="piGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FAF5FF" />
-            <stop offset="35%" stopColor="#D8B4FE" />
-            <stop offset="70%" stopColor="#A855F7" />
-            <stop offset="100%" stopColor="#6B21A8" />
+          {/* Metallic 3D Pi Gradients */}
+          <linearGradient id="pi3DMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="25%" stopColor="#E9D5FF" />
+            <stop offset="50%" stopColor="#C084FC" />
+            <stop offset="75%" stopColor="#9333EA" />
+            <stop offset="100%" stopColor="#581C87" />
           </linearGradient>
-          <filter id="piGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#A855F7" floodOpacity="0.85" />
+          <linearGradient id="pi3DEdge" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FAF5FF" />
+            <stop offset="100%" stopColor="#7E22CE" />
+          </linearGradient>
+          <radialGradient id="nodeGlow" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="40%" stopColor="#C084FC" />
+            <stop offset="100%" stopColor="#7E22CE" />
+          </radialGradient>
+          <filter id="purple3DGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#A855F7" floodOpacity="0.8" />
           </filter>
-          <filter id="neonPurpleGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#C084FC" floodOpacity="0.9" />
+          <filter id="laserBeamGlow">
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#E9D5FF" floodOpacity="1" />
           </filter>
-          <clipPath id="mathWaveClip">
-            <rect x="0" y="80" width="170" height="130" />
+          <clipPath id="mathSurfaceClip">
+            <rect x="0" y="85" width="175" height="125" />
           </clipPath>
         </defs>
         
-        {/* Background Math Coordinate Grid */}
-        <rect x="0" y="0" width="170" height="240" fill="url(#mathGrid)" />
+        {/* Background Coordinate Perspective Grid */}
+        <rect x="0" y="0" width="175" height="235" fill="url(#math3DGrid)" />
         
-        {/* Circular tech ring behind Pi */}
-        <circle cx="50" cy="115" r="42" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" strokeDasharray="3 3" />
-        <circle cx="50" cy="115" r="54" stroke="rgba(168, 85, 247, 0.15)" strokeWidth="0.8" />
+        {/* 3D Circular Polar Rings */}
+        <ellipse cx="50" cy="115" rx="46" ry="24" stroke="rgba(168, 85, 247, 0.3)" strokeWidth="1" strokeDasharray="3 3" />
+        <ellipse cx="50" cy="115" rx="60" ry="32" stroke="rgba(168, 85, 247, 0.18)" strokeWidth="0.8" />
 
-        {/* 3D Wireframe Cube (Isometric Top-Right) with Floating Live Animation */}
-        <g className="live-math-cube" transform="translate(108, 24)" filter="url(#neonPurpleGlow)">
-          <polygon points="24,0 48,12 24,24 0,12" fill="rgba(168, 85, 247, 0.18)" stroke="#C084FC" strokeWidth="1.4" />
-          <polygon points="0,12 24,24 24,50 0,38" fill="rgba(168, 85, 247, 0.24)" stroke="#C084FC" strokeWidth="1.4" />
-          <polygon points="24,24 48,12 48,38 24,50" fill="rgba(168, 85, 247, 0.12)" stroke="#C084FC" strokeWidth="1.4" />
-          <line x1="24" y1="0" x2="24" y2="24" stroke="rgba(192, 132, 252, 0.6)" strokeWidth="0.8" />
-          <line x1="0" y1="25" x2="48" y2="25" stroke="rgba(192, 132, 252, 0.4)" strokeWidth="0.8" />
+        {/* 3D VOLUMETRIC ISOMETRIC ROTATING CUBE */}
+        <g className="live-math-cube-3d" transform="translate(112, 26)" filter="url(#purple3DGlow)">
+          {/* Top Facet */}
+          <polygon points="26,0 52,13 26,26 0,13" fill="rgba(192, 132, 252, 0.28)" stroke="#E9D5FF" strokeWidth="1.2" />
+          {/* Left Facet */}
+          <polygon points="0,13 26,26 26,54 0,41" fill="rgba(168, 85, 247, 0.38)" stroke="#C084FC" strokeWidth="1.2" />
+          {/* Right Facet */}
+          <polygon points="26,26 52,13 52,41 26,54" fill="rgba(126, 34, 206, 0.22)" stroke="#C084FC" strokeWidth="1.2" />
+          {/* 3D Internal Axis Grid Lines */}
+          <line x1="26" y1="0" x2="26" y2="26" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="0.8" />
+          <line x1="0" y1="27" x2="52" y2="27" stroke="rgba(233, 213, 255, 0.4)" strokeWidth="0.8" />
+          {/* Glowing Vertex Spheres */}
+          <circle cx="26" cy="0" r="2.2" fill="url(#nodeGlow)" />
+          <circle cx="52" cy="13" r="2.2" fill="url(#nodeGlow)" />
+          <circle cx="0" cy="13" r="2.2" fill="url(#nodeGlow)" />
+          <circle cx="26" cy="26" r="2.8" fill="url(#nodeGlow)" />
+          <circle cx="26" cy="54" r="2.2" fill="url(#nodeGlow)" />
         </g>
 
-        {/* LIVE SINE WAVE OSCILLATION (Continuous Seamless Propagation) */}
-        <g clipPath="url(#mathWaveClip)">
-          {/* Background Ambient Sine Flow */}
+        {/* 3D CONTINUOUS OSCILLATING HARMONIC SINE SURFACE */}
+        <g clipPath="url(#mathSurfaceClip)">
+          {/* Base Volumetric Ribbon Glow */}
           <g className="live-math-sine-ambient">
             <path
-              d="M -70 152 C -52.5 125, -35 178, -17.5 152 C 0 125, 17.5 178, 35 152 C 52.5 125, 70 178, 87.5 152 C 105 125, 122.5 178, 140 152 C 157.5 125, 175 178, 192.5 152 C 210 125, 227.5 178, 245 152 C 262.5 125, 280 178, 297.5 152 C 315 125, 332.5 178, 350 152"
+              d="M -70 150 C -52.5 120, -35 180, -17.5 150 C 0 120, 17.5 180, 35 150 C 52.5 120, 70 180, 87.5 150 C 105 120, 122.5 180, 140 150 C 157.5 120, 175 180, 192.5 150 C 210 120, 227.5 180, 245 150 C 262.5 120, 280 180, 297.5 150 C 315 120, 332.5 180, 350 150"
               fill="none"
               stroke="#A855F7"
-              strokeWidth="6"
-              strokeOpacity="0.32"
+              strokeWidth="8"
+              strokeOpacity="0.25"
               strokeLinecap="round"
             />
           </g>
 
-          {/* Primary High-Voltage Neon Sine Wave */}
-          <g className="live-math-sine-primary" filter="url(#neonPurpleGlow)">
+          {/* Primary 3D Laser Beam Wave */}
+          <g className="live-math-sine-primary" filter="url(#laserBeamGlow)">
             <path
-              d="M -70 152 C -52.5 125, -35 178, -17.5 152 C 0 125, 17.5 178, 35 152 C 52.5 125, 70 178, 87.5 152 C 105 125, 122.5 178, 140 152 C 157.5 125, 175 178, 192.5 152 C 210 125, 227.5 178, 245 152 C 262.5 125, 280 178, 297.5 152 C 315 125, 332.5 178, 350 152"
+              d="M -70 150 C -52.5 120, -35 180, -17.5 150 C 0 120, 17.5 180, 35 150 C 52.5 120, 70 180, 87.5 150 C 105 120, 122.5 180, 140 150 C 157.5 120, 175 180, 192.5 150 C 210 120, 227.5 180, 245 150 C 262.5 120, 280 180, 297.5 150 C 315 120, 332.5 180, 350 150"
               fill="none"
-              stroke="#E9D5FF"
+              stroke="#FAF5FF"
               strokeWidth="2.8"
               strokeLinecap="round"
             />
           </g>
 
-          {/* Fast Micro-Harmonic Sine Tracer */}
+          {/* Secondary Fast Harmonic Wave Tracer */}
           <g className="live-math-sine-secondary">
             <path
-              d="M -35 152 C -26.25 138, -17.5 166, -8.75 152 C 0 138, 8.75 166, 17.5 152 C 26.25 138, 35 166, 43.75 152 C 52.5 138, 61.25 166, 70 152 C 78.75 138, 87.5 166, 96.25 152 C 105 138, 113.75 166, 122.5 152 C 131.25 138, 140 166, 148.75 152 C 157.5 138, 166.25 166, 175 152 C 183.75 138, 192.5 166, 201.25 152 C 210 138, 218.75 166, 227.5 152"
+              d="M -35 150 C -26.25 135, -17.5 165, -8.75 150 C 0 135, 8.75 165, 17.5 150 C 26.25 135, 35 165, 43.75 150 C 52.5 135, 61.25 165, 70 150 C 78.75 135, 87.5 165, 96.25 150 C 105 135, 113.75 165, 122.5 150 C 131.25 135, 140 165, 148.75 150 C 157.5 135, 166.25 165, 175 150 C 183.75 135, 192.5 165, 201.25 150 C 210 135, 218.75 165, 227.5 150"
               fill="none"
-              stroke="#C084FC"
+              stroke="#D8B4FE"
               strokeWidth="1.2"
               strokeDasharray="3 3"
-              opacity="0.75"
+              opacity="0.8"
             />
           </g>
         </g>
 
-        {/* 3D Metallic Pi (π) Symbol with Gentle Live Floating */}
-        <g className="live-math-pi" filter="url(#piGlow)">
-          <text
-            x="34"
-            y="136"
-            fill="url(#piGrad)"
-            fontSize="66"
-            fontWeight="900"
-            fontFamily="system-ui, serif"
-            stroke="#581C87"
-            strokeWidth="1.5"
-            letterSpacing="-2"
-          >
-            π
-          </text>
+        {/* 3D SCULPTED METALLIC Pi (π) SYMBOL */}
+        <g className="live-math-pi-3d" filter="url(#purple3DGlow)">
+          {/* 3D Extruded Shadow Layer */}
+          <text x="35" y="137" fill="#3B0764" fontSize="68" fontWeight="900" fontFamily="serif" opacity="0.9">π</text>
+          {/* Main Metallic Body */}
+          <text x="33" y="135" fill="url(#pi3DMetal)" stroke="url(#pi3DEdge)" strokeWidth="1.5" fontSize="68" fontWeight="900" fontFamily="serif">π</text>
         </g>
 
-        {/* 3D Wireframe Pyramid / Tetrahedron (Bottom-Left) */}
-        <g transform="translate(14, 154)" filter="url(#neonPurpleGlow)">
-          <polygon points="26,0 0,42 26,52" fill="rgba(168, 85, 247, 0.22)" stroke="#C084FC" strokeWidth="1.4" />
-          <polygon points="26,0 52,42 26,52" fill="rgba(168, 85, 247, 0.14)" stroke="#C084FC" strokeWidth="1.4" />
-          <line x1="0" y1="42" x2="52" y2="42" stroke="#E9D5FF" strokeWidth="1.2" strokeDasharray="2 2" />
+        {/* 3D Isometric Tetrahedron Pyramid (Bottom-Left) */}
+        <g transform="translate(14, 150)" filter="url(#purple3DGlow)">
+          <polygon points="28,0 0,44 28,54" fill="rgba(192, 132, 252, 0.25)" stroke="#E9D5FF" strokeWidth="1.2" />
+          <polygon points="28,0 56,44 28,54" fill="rgba(147, 51, 234, 0.16)" stroke="#C084FC" strokeWidth="1.2" />
+          <line x1="0" y1="44" x2="56" y2="44" stroke="#FAF5FF" strokeWidth="1" strokeDasharray="2 2" />
+          <circle cx="28" cy="0" r="2" fill="url(#nodeGlow)" />
         </g>
       </svg>
     </div>
@@ -119,114 +131,131 @@ export const MathLabArt = memo(function MathLabArt() {
 });
 
 /**
- * PHYSICS LAB ART
- * Live Features:
- * - True classic Newton's Cradle pendulum with momentum conservation:
- *   Left ball swings out, swings down, impacts stationary middle balls;
- *   Right ball swings out with kinetic momentum, returns, and impacts;
- * - Rotating orbital electron rings
- * - Floating space spheres with specular highlights
+ * 2. PHYSICS LAB ART - 3D Sci-Fi Implementation
+ * - Real 3D Chrome Spheres with Multi-Source Specular Highlights & Ambient Occlusion
+ * - 3D Chrome Suspension Frame with Cylindrical Crossbar & Tensile Cables
+ * - True Real-Time Momentum Conservation Newton's Cradle Pendulum Physics
+ * - 3D Orbital Electron System with 3D Rotating Spheres
  */
 export const PhysicsLabArt = memo(function PhysicsLabArt() {
   return (
     <div className="art-physics-detailed">
-      <svg className="art-svg-scene" viewBox="0 0 170 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="chromeBar" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#38BDF8" />
-            <stop offset="30%" stopColor="#F0F9FF" />
+          {/* 3D Chrome Cylindrical Bar Gradient */}
+          <linearGradient id="chromeBar3D" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F0F9FF" />
+            <stop offset="25%" stopColor="#38BDF8" />
             <stop offset="60%" stopColor="#0284C7" />
-            <stop offset="100%" stopColor="#38BDF8" />
+            <stop offset="85%" stopColor="#075985" />
+            <stop offset="100%" stopColor="#0C4A6E" />
           </linearGradient>
-          <radialGradient id="sphereGrad" cx="30%" cy="28%" r="70%">
+          {/* Realistic 3D Chrome Sphere Gradient (Dual Specular Keylight + Blue Rim) */}
+          <radialGradient id="chromeSphere3D" cx="28%" cy="26%" r="72%">
             <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="20%" stopColor="#BAE6FD" />
-            <stop offset="55%" stopColor="#0284C7" />
-            <stop offset="100%" stopColor="#082F49" />
+            <stop offset="20%" stopColor="#E0F2FE" />
+            <stop offset="42%" stopColor="#38BDF8" />
+            <stop offset="70%" stopColor="#0284C7" />
+            <stop offset="90%" stopColor="#03456C" />
+            <stop offset="100%" stopColor="#022135" />
           </radialGradient>
-          <radialGradient id="sphereGradActive" cx="32%" cy="28%" r="68%">
+          <radialGradient id="chromeSphereActive3D" cx="28%" cy="26%" r="72%">
             <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="25%" stopColor="#7DD3FC" />
-            <stop offset="65%" stopColor="#00D4FF" />
-            <stop offset="100%" stopColor="#03254C" />
+            <stop offset="24%" stopColor="#7DD3FC" />
+            <stop offset="50%" stopColor="#00D4FF" />
+            <stop offset="78%" stopColor="#0284C7" />
+            <stop offset="95%" stopColor="#082F49" />
+            <stop offset="100%" stopColor="#021B2B" />
           </radialGradient>
-          <filter id="blueGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00D4FF" floodOpacity="0.85" />
+          <filter id="physics3DGlow" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#00D4FF" floodOpacity="0.8" />
           </filter>
-          <filter id="impactShockGlow">
-            <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#38BDF8" floodOpacity="1" />
+          <filter id="cradleImpactGlow">
+            <feDropShadow dx="0" dy="0" stdDeviation="10" floodColor="#38BDF8" floodOpacity="1" />
           </filter>
         </defs>
 
-        {/* Live Rotating Orbital Electron / Planetary Rings */}
-        <g className="live-physics-orbit" transform="translate(85, 120)">
-          <ellipse cx="0" cy="0" rx="74" ry="34" stroke="rgba(56, 189, 248, 0.35)" strokeWidth="1" fill="none" />
-          <ellipse cx="0" cy="0" rx="86" ry="46" stroke="rgba(56, 189, 248, 0.20)" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
-          <circle cx="70" cy="10" r="2.5" fill="#38BDF8" />
-          <circle cx="-65" cy="-12" r="2" fill="#E0F2FE" />
+        {/* 3D Perspective Convergence Floor Grid */}
+        <g stroke="rgba(56, 189, 248, 0.15)" strokeWidth="0.8">
+          <line x1="88" y1="130" x2="0" y2="235" />
+          <line x1="88" y1="130" x2="40" y2="235" />
+          <line x1="88" y1="130" x2="88" y2="235" />
+          <line x1="88" y1="130" x2="135" y2="235" />
+          <line x1="88" y1="130" x2="175" y2="235" />
+          <ellipse cx="88" cy="200" rx="72" ry="18" fill="none" strokeDasharray="3 3" />
         </g>
 
-        {/* Floating Glossy Blue Spheres in Space */}
-        <g className="live-physics-float-sphere" transform="translate(18, 160)" filter="url(#blueGlow)">
-          <circle cx="16" cy="16" r="16" fill="url(#sphereGrad)" />
-          <ellipse cx="12" cy="11" rx="5" ry="3" fill="rgba(255,255,255,0.75)" />
+        {/* 3D Rotating Orbital Rings */}
+        <g className="live-physics-orbit" transform="translate(88, 120)">
+          <ellipse cx="0" cy="0" rx="76" ry="34" stroke="rgba(56, 189, 248, 0.35)" strokeWidth="1" fill="none" />
+          <ellipse cx="0" cy="0" rx="88" ry="46" stroke="rgba(56, 189, 248, 0.18)" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
+          <circle cx="72" cy="11" r="3" fill="url(#chromeSphere3D)" filter="url(#physics3DGlow)" />
+          <circle cx="-68" cy="-14" r="2.5" fill="url(#chromeSphere3D)" />
         </g>
-        <g className="live-physics-float-sphere-small" transform="translate(136, 28)">
-          <circle cx="8" cy="8" r="8" fill="url(#sphereGrad)" />
+
+        {/* Floating Glossy 3D Blue Chrome Spheres in Space */}
+        <g className="live-physics-float-sphere" transform="translate(18, 155)" filter="url(#physics3DGlow)">
+          <circle cx="16" cy="16" r="16" fill="url(#chromeSphere3D)" />
+          {/* Specular Glint */}
+          <ellipse cx="11" cy="10" rx="5" ry="3" fill="rgba(255,255,255,0.85)" />
+          <circle cx="10" cy="9" r="1.5" fill="#FFFFFF" />
         </g>
-        <circle cx="124" cy="175" r="4.5" fill="url(#sphereGrad)" />
+        <g className="live-physics-float-sphere-small" transform="translate(138, 28)">
+          <circle cx="8.5" cy="8.5" r="8.5" fill="url(#chromeSphere3D)" />
+          <ellipse cx="6" cy="5" rx="2.5" ry="1.5" fill="rgba(255,255,255,0.8)" />
+        </g>
+        <circle cx="128" cy="170" r="4.5" fill="url(#chromeSphere3D)" />
 
-        {/* NEWTON'S CRADLE (Authentic Real Pendulum Mechanics) */}
-        <g transform="translate(16, 40)" filter="url(#blueGlow)">
-          {/* Top Horizontal Chrome Suspension Bar */}
-          <rect x="8" y="0" width="124" height="6" rx="3" fill="url(#chromeBar)" />
-          <rect x="12" y="1" width="116" height="1.5" fill="rgba(255,255,255,0.8)" />
+        {/* 3D NEWTON'S CRADLE (True Mechanical Momentum Conservation) */}
+        <g transform="translate(18, 38)" filter="url(#physics3DGlow)">
+          {/* Top 3D Cylindrical Chrome Bar */}
+          <rect x="6" y="0" width="128" height="7" rx="3.5" fill="url(#chromeBar3D)" />
+          <rect x="10" y="1.2" width="120" height="1.8" fill="rgba(255,255,255,0.9)" />
 
-          {/* Impact kinetic shock flash (pulsing on collisions) */}
-          <circle className="live-newton-impact-flash-left" cx="39" cy="68" r="7" fill="rgba(56, 189, 248, 0.9)" filter="url(#impactShockGlow)" opacity="0" />
-          <circle className="live-newton-impact-flash-right" cx="95" cy="68" r="7" fill="rgba(56, 189, 248, 0.9)" filter="url(#impactShockGlow)" opacity="0" />
+          {/* Kinetic Collision Impact Shockwave Flashes */}
+          <circle className="live-newton-impact-flash-left" cx="39" cy="68" r="8" fill="rgba(56, 189, 248, 0.95)" filter="url(#cradleImpactGlow)" opacity="0" />
+          <circle className="live-newton-impact-flash-right" cx="95" cy="68" r="8" fill="rgba(56, 189, 248, 0.95)" filter="url(#cradleImpactGlow)" opacity="0" />
 
-          {/* BALL 1 (Left Active Pendulum: Swings out left, impacts Ball 2) */}
+          {/* BALL 1 (Left Active Arm: Swings out, accelerates down, strikes Ball 2) */}
           <g className="live-newton-arm-left">
-            <line x1="28" y1="6" x2="28" y2="60" stroke="#7DD3FC" strokeWidth="1.2" strokeLinecap="round" />
-            <circle cx="28" cy="68" r="10" fill="url(#sphereGradActive)" />
-            <ellipse cx="25" cy="64" rx="3.5" ry="2" fill="rgba(255,255,255,0.8)" />
+            <line x1="28" y1="6" x2="28" y2="58" stroke="#7DD3FC" strokeWidth="1.2" strokeLinecap="round" />
+            <circle cx="28" cy="68" r="10.5" fill="url(#chromeSphereActive3D)" />
+            {/* Specular Keylight Reflection */}
+            <ellipse cx="25" cy="64" rx="3.5" ry="2.2" fill="rgba(255,255,255,0.85)" />
+            <circle cx="24" cy="63" r="1" fill="#FFFFFF" />
           </g>
 
-          {/* BALL 2 (Middle Stationary Ball) */}
+          {/* BALL 2 (Middle Stationary Sphere) */}
           <g>
-            <line x1="47" y1="6" x2="47" y2="60" stroke="#7DD3FC" strokeWidth="1" />
-            <circle cx="47" cy="68" r="10" fill="url(#sphereGrad)" />
-            <ellipse cx="44" cy="64" rx="3.5" ry="2" fill="rgba(255,255,255,0.7)" />
+            <line x1="47" y1="6" x2="47" y2="58" stroke="#7DD3FC" strokeWidth="1.2" />
+            <circle cx="47" cy="68" r="10.5" fill="url(#chromeSphere3D)" />
+            <ellipse cx="44" cy="64" rx="3.5" ry="2.2" fill="rgba(255,255,255,0.8)" />
+            <circle cx="43" cy="63" r="1" fill="#FFFFFF" />
           </g>
 
-          {/* BALL 3 (Middle Stationary Ball) */}
+          {/* BALL 3 (Middle Stationary Sphere) */}
           <g>
-            <line x1="66" y1="6" x2="66" y2="60" stroke="#7DD3FC" strokeWidth="1" />
-            <circle cx="66" cy="68" r="10" fill="url(#sphereGrad)" />
-            <ellipse cx="63" cy="64" rx="3.5" ry="2" fill="rgba(255,255,255,0.7)" />
+            <line x1="66" y1="6" x2="66" y2="58" stroke="#7DD3FC" strokeWidth="1.2" />
+            <circle cx="66" cy="68" r="10.5" fill="url(#chromeSphere3D)" />
+            <ellipse cx="63" cy="64" rx="3.5" ry="2.2" fill="rgba(255,255,255,0.8)" />
+            <circle cx="62" cy="63" r="1" fill="#FFFFFF" />
           </g>
 
-          {/* BALL 4 (Middle Stationary Ball) */}
+          {/* BALL 4 (Middle Stationary Sphere) */}
           <g>
-            <line x1="85" y1="6" x2="85" y2="60" stroke="#7DD3FC" strokeWidth="1" />
-            <circle cx="85" cy="68" r="10" fill="url(#sphereGrad)" />
-            <ellipse cx="82" cy="64" rx="3.5" ry="2" fill="rgba(255,255,255,0.7)" />
+            <line x1="85" y1="6" x2="85" y2="58" stroke="#7DD3FC" strokeWidth="1.2" />
+            <circle cx="85" cy="68" r="10.5" fill="url(#chromeSphere3D)" />
+            <ellipse cx="82" cy="64" rx="3.5" ry="2.2" fill="rgba(255,255,255,0.8)" />
+            <circle cx="81" cy="63" r="1" fill="#FFFFFF" />
           </g>
 
-          {/* BALL 5 (Right Active Pendulum: Swings out right upon impact from Ball 1) */}
+          {/* BALL 5 (Right Active Arm: Launches out with momentum, returns, strikes Ball 4) */}
           <g className="live-newton-arm-right">
-            <line x1="104" y1="6" x2="104" y2="60" stroke="#7DD3FC" strokeWidth="1.2" strokeLinecap="round" />
-            <circle cx="104" cy="68" r="10" fill="url(#sphereGradActive)" />
-            <ellipse cx="101" cy="64" rx="3.5" ry="2" fill="rgba(255,255,255,0.8)" />
+            <line x1="104" y1="6" x2="104" y2="58" stroke="#7DD3FC" strokeWidth="1.2" strokeLinecap="round" />
+            <circle cx="104" cy="68" r="10.5" fill="url(#chromeSphereActive3D)" />
+            <ellipse cx="101" cy="64" rx="3.5" ry="2.2" fill="rgba(255,255,255,0.85)" />
+            <circle cx="100" cy="63" r="1" fill="#FFFFFF" />
           </g>
-        </g>
-
-        {/* Sci-Fi Diagonal Tick Marks */}
-        <g transform="translate(122, 192)" stroke="rgba(56, 189, 248, 0.45)" strokeWidth="1.2">
-          <line x1="0" y1="18" x2="18" y2="0" />
-          <line x1="8" y1="20" x2="24" y2="4" />
-          <line x1="16" y1="22" x2="30" y2="8" />
         </g>
       </svg>
     </div>
@@ -234,109 +263,121 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
 });
 
 /**
- * CHEMISTRY LAB ART
- * Live Features:
- * - Real effervescent fizzing bubbles rising and popping inside the conical Erlenmeyer flask
- * - Rising vapor fizz mist wafting from flask neck
- * - Subtle liquid surface meniscus sloshing
- * - 3D Ball-and-Stick molecule floating & rotating in isometric space
+ * 3. CHEMISTRY LAB ART - 3D Sci-Fi Implementation
+ * - Volumetric 3D Glass Erlenmeyer Flask with Refractive Edge Caustics
+ * - Active Sparkling Effervescent Micro-Bubbles with Rising Vapor Mist
+ * - 3D Glossy Molecular Lattice Structure with Specular Spheres & Cylindrical Bonds
+ * - Secondary 3D Boiling Flask with Convection Solution
  */
 export const ChemistryLabArt = memo(function ChemistryLabArt() {
   return (
     <div className="art-chem-detailed">
-      <svg className="art-svg-scene" viewBox="0 0 170 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="hexGrid" width="24" height="41.56" patternUnits="userSpaceOnUse">
+          <pattern id="hexGrid3D" width="24" height="41.56" patternUnits="userSpaceOnUse">
             <path d="M12 0 L24 6.93 L24 20.78 L12 27.71 L0 20.78 L0 6.93 Z" fill="none" stroke="rgba(0, 229, 163, 0.16)" strokeWidth="0.8"/>
             <path d="M12 41.56 L24 34.63 L24 20.78 L12 27.71 L0 20.78 L0 34.63 Z" fill="none" stroke="rgba(0, 229, 163, 0.16)" strokeWidth="0.8"/>
           </pattern>
-          <linearGradient id="liquidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.88" />
-            <stop offset="60%" stopColor="#00E5A3" stopOpacity="0.96" />
-            <stop offset="100%" stopColor="#047857" />
-          </linearGradient>
-          <radialGradient id="atomGrad" cx="35%" cy="32%" r="65%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="35%" stopColor="#34D399" />
-            <stop offset="80%" stopColor="#059669" />
+          {/* Volumetric Glowing Fluid Gradient */}
+          <linearGradient id="liquidFluid3D" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#34D399" stopOpacity="0.82" />
+            <stop offset="35%" stopColor="#00E5A3" stopOpacity="0.95" />
+            <stop offset="75%" stopColor="#059669" />
             <stop offset="100%" stopColor="#064E3B" />
+          </linearGradient>
+          {/* 3D Glossy Atom Sphere Gradient */}
+          <radialGradient id="atomSphere3D" cx="30%" cy="28%" r="70%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="25%" stopColor="#6EE7B7" />
+            <stop offset="60%" stopColor="#00E5A3" />
+            <stop offset="85%" stopColor="#047857" />
+            <stop offset="100%" stopColor="#022C22" />
           </radialGradient>
-          <filter id="chemGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <radialGradient id="bubbleSpec" cx="35%" cy="32%" r="65%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+            <stop offset="60%" stopColor="#A7F3D0" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.2" />
+          </radialGradient>
+          <filter id="chem3DGlow" x="-25%" y="-25%" width="150%" height="150%">
             <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00E5A3" floodOpacity="0.85" />
           </filter>
         </defs>
 
         {/* Background Hexagonal Carbon Lattice Grid */}
-        <rect x="0" y="0" width="170" height="240" fill="url(#hexGrid)" />
+        <rect x="0" y="0" width="175" height="235" fill="url(#hexGrid3D)" />
 
-        {/* 3D Ball-and-Stick Molecular Model (Top-Right) with Floating Live Drift */}
-        <g className="live-chem-molecule" transform="translate(94, 22)" filter="url(#chemGlow)">
-          <line x1="28" y1="12" x2="52" y2="28" stroke="#34D399" strokeWidth="3" strokeLinecap="round" />
-          <line x1="28" y1="12" x2="8" y2="34" stroke="#34D399" strokeWidth="3" strokeLinecap="round" />
-          <line x1="52" y1="28" x2="44" y2="54" stroke="#34D399" strokeWidth="3" strokeLinecap="round" />
-          <line x1="8" y1="34" x2="22" y2="58" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 3D FLOATING MOLECULAR STRUCTURE (Top-Right) */}
+        <g className="live-chem-molecule" transform="translate(96, 20)" filter="url(#chem3DGlow)">
+          {/* 3D Cylindrical Chemical Bonds */}
+          <line x1="28" y1="12" x2="52" y2="28" stroke="#34D399" strokeWidth="3.2" strokeLinecap="round" />
+          <line x1="28" y1="12" x2="8" y2="34" stroke="#34D399" strokeWidth="3.2" strokeLinecap="round" />
+          <line x1="52" y1="28" x2="44" y2="54" stroke="#34D399" strokeWidth="3.2" strokeLinecap="round" />
+          <line x1="8" y1="34" x2="22" y2="58" stroke="#34D399" strokeWidth="2.8" strokeLinecap="round" />
 
-          <circle cx="28" cy="12" r="10" fill="url(#atomGrad)" />
-          <circle cx="52" cy="28" r="9" fill="url(#atomGrad)" />
-          <circle cx="8" cy="34" r="8" fill="url(#atomGrad)" />
-          <circle cx="44" cy="54" r="7.5" fill="url(#atomGrad)" />
-          <circle cx="22" cy="58" r="6" fill="url(#atomGrad)" />
+          {/* 3D Glossy Atom Spheres */}
+          <circle cx="28" cy="12" r="10.5" fill="url(#atomSphere3D)" />
+          <ellipse cx="25" cy="9" rx="3.5" ry="2" fill="rgba(255,255,255,0.85)" />
+
+          <circle cx="52" cy="28" r="9.5" fill="url(#atomSphere3D)" />
+          <ellipse cx="49" cy="25" rx="3" ry="1.8" fill="rgba(255,255,255,0.85)" />
+
+          <circle cx="8" cy="34" r="8.5" fill="url(#atomSphere3D)" />
+          <ellipse cx="6" cy="32" rx="2.5" ry="1.5" fill="rgba(255,255,255,0.85)" />
+
+          <circle cx="44" cy="54" r="8" fill="url(#atomSphere3D)" />
+          <circle cx="22" cy="58" r="6.5" fill="url(#atomSphere3D)" />
         </g>
 
-        {/* Conical Erlenmeyer Flask (Center-Left) with Active Fizz & Rising Bubbles */}
-        <g transform="translate(14, 88)" filter="url(#chemGlow)">
-          {/* Flask Liquid Fill */}
+        {/* 3D VOLUMETRIC ERLENMEYER FLASK (Center-Left) with Active Fizz Stream */}
+        <g transform="translate(14, 84)" filter="url(#chem3DGlow)">
+          {/* Internal Fluid Body */}
           <path
             d="M 28 54 L 46 54 L 66 98 C 68 102, 65 106, 60 106 L 14 106 C 9 106, 6 102, 8 98 Z"
-            fill="url(#liquidGrad)"
+            fill="url(#liquidFluid3D)"
           />
 
-          {/* Liquid Meniscus with Gentle Wavy Surface */}
-          <ellipse className="live-chem-meniscus" cx="37" cy="54" rx="9" ry="2.5" fill="#6EE7B7" />
+          {/* 3D Meniscus Liquid Surface with Wave Sway */}
+          <ellipse className="live-chem-meniscus" cx="37" cy="54" rx="9.5" ry="2.8" fill="#6EE7B7" />
 
-          {/* LIVE EFFERVESCENT BUBBLE FIZZ STREAM */}
+          {/* LIVE 3D SPARKLING EFFERVESCENT BUBBLES */}
           <g className="live-chem-fizz-layer">
-            <circle className="chem-fizz-b1" cx="24" cy="100" r="2.2" fill="#FFFFFF" />
-            <circle className="chem-fizz-b2" cx="33" cy="104" r="3.2" fill="#ECFDF5" />
-            <circle className="chem-fizz-b3" cx="42" cy="98"  r="2.5" fill="#A7F3D0" />
-            <circle className="chem-fizz-b4" cx="49" cy="102" r="1.8" fill="#FFFFFF" />
-            <circle className="chem-fizz-b5" cx="28" cy="95"  r="2.8" fill="#ECFDF5" />
-            <circle className="chem-fizz-b6" cx="38" cy="92"  r="2.0" fill="#FFFFFF" />
-            <circle className="chem-fizz-b7" cx="45" cy="88"  r="1.6" fill="#A7F3D0" />
+            <circle className="chem-fizz-b1" cx="24" cy="100" r="2.8" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b2" cx="33" cy="104" r="3.6" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b3" cx="42" cy="98"  r="3.0" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b4" cx="50" cy="102" r="2.2" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b5" cx="28" cy="95"  r="3.2" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b6" cx="38" cy="92"  r="2.5" fill="url(#bubbleSpec)" />
+            <circle className="chem-fizz-b7" cx="46" cy="88"  r="2.0" fill="url(#bubbleSpec)" />
           </g>
 
-          {/* Rising Vapor Mist Puffs from Neck */}
+          {/* Rising Vapor Fizz Mist Puffs */}
           <g className="live-chem-vapor-stream">
-            <circle className="chem-vapor-p1" cx="37" cy="14" r="3.5" fill="rgba(110, 231, 183, 0.7)" />
-            <circle className="chem-vapor-p2" cx="35" cy="6"  r="4.2" fill="rgba(52, 211, 153, 0.5)" />
-            <circle className="chem-vapor-p3" cx="39" cy="-2" r="5.0" fill="rgba(167, 243, 208, 0.3)" />
+            <circle className="chem-vapor-p1" cx="37" cy="14" r="3.8" fill="rgba(110, 231, 183, 0.75)" />
+            <circle className="chem-vapor-p2" cx="35" cy="6"  r="4.5" fill="rgba(52, 211, 153, 0.55)" />
+            <circle className="chem-vapor-p3" cx="39" cy="-2" r="5.2" fill="rgba(167, 243, 208, 0.35)" />
           </g>
 
-          {/* Glass Contour & Neck */}
+          {/* 3D Glass Outer Shell & Beveled Rim */}
           <path
             d="M 31 16 L 31 38 L 8 98 C 5 104, 9 110, 16 110 L 58 110 C 65 110, 69 104, 66 98 L 43 38 L 43 16 M 28 16 L 46 16"
             fill="none"
             stroke="#A7F3D0"
-            strokeWidth="2.2"
+            strokeWidth="2.4"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Glass Highlight Reflection */}
-          <path d="M 16 94 L 34 46" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" />
+          {/* 3D Glass Specular Reflection Highlight */}
+          <path d="M 15 96 L 33 46" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M 32 44 L 32 20" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round" />
         </g>
 
-        {/* Round-Bottom Boiling Flask (Center-Right) with Secondary Bubbles */}
-        <g transform="translate(86, 120)" filter="url(#chemGlow)">
-          <path
-            d="M 18 36 A 24 24 0 0 0 54 36 Z"
-            fill="url(#liquidGrad)"
-          />
-          <ellipse cx="36" cy="36" rx="18" ry="4" fill="#6EE7B7" />
-
-          {/* Micro-bubbling in boiling flask */}
-          <circle className="chem-fizz-b3" cx="30" cy="50" r="2.2" fill="#FFFFFF" />
-          <circle className="chem-fizz-b1" cx="42" cy="46" r="1.8" fill="#ECFDF5" />
+        {/* 3D Boiling Round Flask (Center-Right) */}
+        <g transform="translate(88, 118)" filter="url(#chem3DGlow)">
+          <path d="M 18 36 A 24 24 0 0 0 54 36 Z" fill="url(#liquidFluid3D)" />
+          <ellipse cx="36" cy="36" rx="18" ry="4.2" fill="#6EE7B7" />
+          <circle className="chem-fizz-b2" cx="30" cy="50" r="2.5" fill="url(#bubbleSpec)" />
+          <circle className="chem-fizz-b5" cx="42" cy="46" r="2.0" fill="url(#bubbleSpec)" />
 
           <path
             d="M 32 6 L 32 18 C 22 22, 12 32, 12 42 C 12 55, 23 66, 36 66 C 49 66, 60 55, 60 42 C 60 32, 50 22, 40 18 L 40 6 M 29 6 L 43 6"
@@ -346,7 +387,7 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <path d="M 18 44 A 18 18 0 0 0 30 58" stroke="rgba(255,255,255,0.65)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+          <path d="M 18 44 A 18 18 0 0 0 30 58" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
         </g>
       </svg>
     </div>
@@ -354,107 +395,270 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
 });
 
 /**
- * BIOLOGY LAB ART
- * Live Features:
- * - Live diagonal movement of the DNA sequence (traveling helical flow across the diagonal axis)
- * - Organic swaying botanical leaves
- * - Pulsing cellular vesicle with cytoplasmic respiration
+ * 4. BIOLOGY LAB ART - Live Particle Animation DNA Sequence!
+ * - Interactive 3D Canvas-Powered Bioluminescent Particle Double Helix
+ * - Two intertwining helical particle ribbons with depth-projected 3D rotation
+ * - Particle nucleobase rungs (A-T, G-C) glowing in amber, emerald, cyan, and rose
+ * - Ambient floating bioluminescent spore sparks drifting in the background
+ * - 3D Translucent Cell Organelle & Botanical Leaves
  */
 export const BiologyLabArt = memo(function BiologyLabArt() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId;
+    let t = 0;
+    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2);
+    const width = 175;
+    const height = 235;
+
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    ctx.scale(dpr, dpr);
+
+    // Color palette for nucleobase particle pairs
+    const rungColors = [
+      { c1: '#F59E0B', c2: '#38BDF8' }, // Adenine - Thymine
+      { c1: '#10B981', c2: '#F43F5E' }, // Guanine - Cytosine
+      { c1: '#FBBF24', c2: '#60A5FA' },
+      { c1: '#34D399', c2: '#FB7185' }
+    ];
+
+    // Ambient floating spores
+    const spores = Array.from({ length: 16 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: 0.8 + Math.random() * 1.6,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -0.2 - Math.random() * 0.4,
+      alpha: 0.2 + Math.random() * 0.6
+    }));
+
+    function render() {
+      t += 0.038;
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Draw Ambient Floating Bioluminescent Spores
+      for (let s of spores) {
+        s.y += s.vy;
+        s.x += s.vx;
+        if (s.y < 0) s.y = height;
+        if (s.x < 0) s.x = width;
+        if (s.x > width) s.x = 0;
+
+        ctx.fillStyle = `rgba(245, 158, 11, ${s.alpha * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. 3D Diagonal Particle DNA Helix Geometry
+      // Center and tilt of the diagonal strand
+      const originX = 88;
+      const originY = 118;
+      const tiltAngle = -0.62; // ~-35 degrees diagonal slope
+      const cosA = Math.cos(tiltAngle);
+      const sinA = Math.sin(tiltAngle);
+
+      const radius = 24;
+      const step = 6.2;
+      const totalSteps = 36;
+      const startDist = -(totalSteps * step) / 2;
+
+      // Collect all 3D particle nodes to sort by depth (z)
+      const particleRenderList = [];
+
+      for (let i = 0; i < totalSteps; i++) {
+        const u = startDist + i * step;
+        const theta = (i * 0.38) + t;
+
+        // 3D coordinates along helix axis
+        const x1 = radius * Math.cos(theta);
+        const z1 = radius * Math.sin(theta);
+
+        const x2 = radius * Math.cos(theta + Math.PI);
+        const z2 = radius * Math.sin(theta + Math.PI);
+
+        // Project onto diagonal 2D screen coordinates
+        // Strand A
+        const screenX1 = originX + u * cosA - x1 * sinA;
+        const screenY1 = originY + u * sinA + x1 * cosA;
+        const depth1 = z1;
+
+        // Strand B
+        const screenX2 = originX + u * cosA - x2 * sinA;
+        const screenY2 = originY + u * sinA + x2 * cosA;
+        const depth2 = z2;
+
+        // Connecting Base-Pair Rungs (Every other step)
+        if (i % 2 === 0) {
+          const colorPair = rungColors[(i / 2) % rungColors.length];
+          const midDepth = (depth1 + depth2) / 2;
+
+          particleRenderList.push({
+            type: 'rung',
+            x1: screenX1, y1: screenY1,
+            x2: screenX2, y2: screenY2,
+            z: midDepth,
+            c1: colorPair.c1,
+            c2: colorPair.c2
+          });
+
+          // Rung intermediate node particles
+          const midX = (screenX1 + screenX2) / 2;
+          const midY = (screenY1 + screenY2) / 2;
+          particleRenderList.push({
+            type: 'particle',
+            x: midX, y: midY,
+            z: midDepth + 2,
+            radius: 1.8,
+            color: '#FFFFFF',
+            isCore: true
+          });
+        }
+
+        // Particle on Strand A
+        particleRenderList.push({
+          type: 'particle',
+          x: screenX1, y: screenY1,
+          z: depth1,
+          radius: 2.8 + (depth1 / radius) * 1.2,
+          color: '#F59E0B',
+          glowColor: 'rgba(245, 158, 11, 0.8)'
+        });
+
+        // Particle on Strand B
+        particleRenderList.push({
+          type: 'particle',
+          x: screenX2, y: screenY2,
+          z: depth2,
+          radius: 2.8 + (depth2 / radius) * 1.2,
+          color: '#10B981',
+          glowColor: 'rgba(16, 185, 129, 0.8)'
+        });
+      }
+
+      // Sort by Z (Depth sorting: back to front)
+      particleRenderList.sort((a, b) => a.z - b.z);
+
+      // Render sorted 3D particles & bonds
+      for (let item of particleRenderList) {
+        const depthFactor = (item.z + radius) / (radius * 2); // 0 (far) to 1 (near)
+        const alpha = Math.max(0.25, Math.min(1.0, 0.35 + depthFactor * 0.65));
+
+        if (item.type === 'rung') {
+          // Draw connecting base-pair hydrogen bond
+          ctx.beginPath();
+          ctx.moveTo(item.x1, item.y1);
+          ctx.lineTo(item.x2, item.y2);
+          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
+          ctx.lineWidth = 1.6;
+          ctx.stroke();
+
+          // Endpoint color dots
+          ctx.fillStyle = item.c1;
+          ctx.beginPath();
+          ctx.arc(item.x1, item.y1, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = item.c2;
+          ctx.beginPath();
+          ctx.arc(item.x2, item.y2, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.type === 'particle') {
+          const r = Math.max(0.8, item.radius);
+
+          // Outer Glow
+          if (depthFactor > 0.4 && item.glowColor) {
+            ctx.fillStyle = item.glowColor;
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, r * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Core Particle
+          ctx.fillStyle = item.isCore ? `rgba(255, 255, 255, ${alpha})` : item.color;
+          ctx.beginPath();
+          ctx.arc(item.x, item.y, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Specular Glint on front particles
+          if (depthFactor > 0.6) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(item.x - r * 0.3, item.y - r * 0.3, r * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    }
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
   return (
-    <div className="art-bio-detailed">
-      <svg className="art-svg-scene" viewBox="0 0 170 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div className="art-bio-detailed" style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* 3D Particle Canvas for Live DNA Sequence */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 2
+        }}
+      />
+
+      {/* SVG Layer for Botanical Leaves and 3D Cell Vesicle */}
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1 }}>
         <defs>
-          <pattern id="bioGrid" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="11" cy="11" r="1" fill="rgba(245, 158, 11, 0.2)" />
+          <pattern id="bioDotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="10" cy="10" r="0.9" fill="rgba(245, 158, 11, 0.22)" />
           </pattern>
-          <linearGradient id="dnaStrandGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FEF3C7" />
-            <stop offset="45%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#B45309" />
-          </linearGradient>
-          <linearGradient id="dnaStrandGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="leafGrad3D" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#A7F3D0" />
-            <stop offset="50%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#047857" />
+            <stop offset="35%" stopColor="#34D399" />
+            <stop offset="70%" stopColor="#059669" />
+            <stop offset="100%" stopColor="#064E3B" />
           </linearGradient>
-          <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#A7F3D0" />
-            <stop offset="40%" stopColor="#34D399" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-          <radialGradient id="cellGrad" cx="38%" cy="36%" r="64%">
-            <stop offset="0%" stopColor="rgba(254, 243, 199, 0.45)" />
-            <stop offset="40%" stopColor="rgba(245, 158, 11, 0.25)" />
-            <stop offset="85%" stopColor="rgba(16, 185, 129, 0.45)" />
-            <stop offset="100%" stopColor="rgba(5, 150, 105, 0.65)" />
+          <radialGradient id="cellGrad3D" cx="35%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="rgba(254, 243, 199, 0.75)" />
+            <stop offset="35%" stopColor="rgba(245, 158, 11, 0.45)" />
+            <stop offset="70%" stopColor="rgba(16, 185, 129, 0.55)" />
+            <stop offset="100%" stopColor="rgba(5, 150, 105, 0.85)" />
           </radialGradient>
-          <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#F59E0B" floodOpacity="0.85" />
+          <filter id="bioGlow3D" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#F59E0B" floodOpacity="0.8" />
           </filter>
-          <filter id="leafGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#10B981" floodOpacity="0.8" />
-          </filter>
-          <clipPath id="bioDnaClip">
-            <rect x="0" y="0" width="170" height="240" />
-          </clipPath>
         </defs>
 
         {/* Background Organic Dot Matrix */}
-        <rect x="0" y="0" width="170" height="240" fill="url(#bioGrid)" />
+        <rect x="0" y="0" width="175" height="235" fill="url(#bioDotGrid)" />
 
-        {/* LIVE DIAGONAL DNA SEQUENCE (Moving smoothly along diagonal trajectory) */}
-        <g clipPath="url(#bioDnaClip)">
-          <g className="live-bio-dna-diagonal-container" transform="translate(68, 118) rotate(-34)" filter="url(#goldGlow)">
-            <g className="live-bio-dna-track">
-              {/* Repeating Base Pair Rungs along the diagonal helix */}
-              {[-120, -90, -60, -30, 0, 30, 60, 90, 120, 150, 180].map((pos, i) => {
-                const isEven = i % 2 === 0;
-                return (
-                  <g key={i} transform={`translate(${pos}, 0)`}>
-                    <line x1="0" y1="-14" x2="0" y2="14" stroke={isEven ? '#FDE68A' : '#6EE7B7'} strokeWidth="2.2" strokeLinecap="round" />
-                    <circle cx="0" cy="-14" r="2.8" fill={isEven ? '#F59E0B' : '#10B981'} />
-                    <circle cx="0" cy="14"  r="2.8" fill={isEven ? '#38BDF8' : '#F43F5E'} />
-                    <circle cx="0" cy="0"   r="1.8" fill="#FFFFFF" />
-                  </g>
-                );
-              })}
-
-              {/* Helix Strand A (Sinusoidal ribbon) */}
-              <path
-                d="M -150 0 C -135 -20, -105 -20, -90 0 C -75 20, -45 20, -30 0 C -15 -20, 15 -20, 30 0 C 45 20, 75 20, 90 0 C 105 -20, 135 -20, 150 0 C 165 20, 195 20, 210 0"
-                fill="none"
-                stroke="url(#dnaStrandGrad1)"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-              />
-
-              {/* Helix Strand B (Intertwined complementary ribbon) */}
-              <path
-                d="M -150 0 C -135 20, -105 20, -90 0 C -75 -20, -45 -20, -30 0 C -15 20, 15 20, 30 0 C 45 -20, 75 -20, 90 0 C 105 20, 135 20, 150 0 C 165 -20, 195 -20, 210 0"
-                fill="none"
-                stroke="url(#dnaStrandGrad2)"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-              />
-            </g>
-          </g>
-        </g>
-
-        {/* LUSH GREEN BOTANICAL LEAVES (Gentle Organic Breathing Sway) */}
-        <g className="live-bio-leaf-left" transform="translate(18, 36) rotate(-22)" filter="url(#leafGlow)">
-          <path d="M 0 0 C 14 3, 24 16, 26 28 C 14 28, 4 20, 0 0 Z" fill="url(#leafGrad)" />
+        {/* 3D Glossy Botanical Leaves (Top-Left & Mid-Right) */}
+        <g className="live-bio-leaf-left" transform="translate(18, 32) rotate(-22)" filter="url(#bioGlow3D)">
+          <path d="M 0 0 C 14 3, 24 16, 26 28 C 14 28, 4 20, 0 0 Z" fill="url(#leafGrad3D)" />
           <path d="M 0 0 C 10 12, 18 20, 26 28" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
 
-        <g className="live-bio-leaf-right" transform="translate(112, 98) rotate(34)" filter="url(#leafGlow)">
-          <path d="M 0 0 C 16 4, 28 18, 30 32 C 16 32, 4 22, 0 0 Z" fill="url(#leafGrad)" />
+        <g className="live-bio-leaf-right" transform="translate(118, 92) rotate(32)" filter="url(#bioGlow3D)">
+          <path d="M 0 0 C 16 4, 28 18, 30 32 C 16 32, 4 22, 0 0 Z" fill="url(#leafGrad3D)" />
           <path d="M 0 0 C 12 14, 22 22, 30 32" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
 
-        {/* CELL VESICLE / SPHERE (Pulsing Rhythmic Cytoplasmic Respiration) */}
-        <g className="live-bio-cell" transform="translate(104, 152)" filter="url(#goldGlow)">
-          <circle cx="28" cy="28" r="26" fill="url(#cellGrad)" stroke="#F59E0B" strokeWidth="1.8" />
+        {/* 3D VOLUMETRIC CELL VESICLE SPHERE (Bottom-Right) */}
+        <g className="live-bio-cell" transform="translate(106, 148)" filter="url(#bioGlow3D)">
+          <circle cx="28" cy="28" r="26" fill="url(#cellGrad3D)" stroke="#F59E0B" strokeWidth="1.8" />
           <circle cx="28" cy="28" r="10" fill="#10B981" stroke="#34D399" strokeWidth="1.2" />
           <circle cx="26" cy="26" r="3" fill="#ECFDF5" />
           <ellipse className="live-bio-organelle" cx="18" cy="22" rx="4" ry="2.2" fill="#F59E0B" opacity="0.85" transform="rotate(-30 18 22)" />
