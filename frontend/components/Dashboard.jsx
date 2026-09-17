@@ -314,7 +314,7 @@ export default function Dashboard() {
       {/* ──────────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.05fr 0.95fr',
+        gridTemplateColumns: isMobile ? '1fr' : '1.14fr 0.86fr',
         alignItems: 'center',
         gap: isMobile ? 20 : 36,
         padding: isMobile ? '8px 0' : '4px 0 8px 0',
@@ -325,110 +325,164 @@ export default function Dashboard() {
         position: 'relative'
       }}>
 
-        {/* Left Side: Classy 2-Line Title with Staggered Syllable Typography Animation */}
+        {/* Left Side: Codepen-style Kinetic Masked Sliding Syllable Typography */}
         <div style={{
           zIndex: 2,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          paddingLeft: isMobile ? 0 : 12,
-          gap: 6
+          paddingLeft: isMobile ? 12 : 'clamp(44px, 5.5vw, 92px)',
+          gap: isMobile ? 8 : 12
         }}>
           <style>{`
-            @keyframes sylFromLeft {
+            @keyframes maskSlideInRight {
               0% {
-                opacity: 0;
-                transform: translateX(-50px) scale(0.85);
-                filter: blur(14px);
+                transform: translate3d(108%, 0, 0);
               }
               100% {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-                filter: blur(0);
+                transform: translate3d(0, 0, 0);
               }
             }
-            @keyframes sylFromCenter {
+            @keyframes maskSlideInLeft {
               0% {
-                opacity: 0;
-                transform: scale(0.6) translateY(20px);
-                filter: blur(16px);
+                transform: translate3d(-108%, 0, 0);
               }
               100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-                filter: blur(0);
+                transform: translate3d(0, 0, 0);
               }
             }
-            @keyframes sylFromRight {
-              0% {
-                opacity: 0;
-                transform: translateX(50px) scale(0.85);
-                filter: blur(14px);
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-                filter: blur(0);
-              }
+            .hero-title-h1 {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+              user-select: none;
             }
-            .syl-ve {
+            .hero-title-row {
+              display: flex;
+              align-items: baseline;
+              flex-wrap: nowrap;
+            }
+            .hero-title-row-2 {
+              padding-left: ${isMobile ? '0px' : 'clamp(20px, 2.6vw, 46px)'};
+            }
+            .title-charts-cont {
+              display: inline-flex;
+              overflow: hidden;
+              position: relative;
+              vertical-align: top;
+            }
+            .title-charts-cont u {
+              display: inline-flex;
+              text-decoration: none;
+              overflow: hidden;
+              position: relative;
+              padding: 4px 0;
+              margin: -4px 0;
+            }
+            .title-charts-cont span {
               display: inline-block;
-              animation: sylFromLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards;
+              will-change: transform;
+              -webkit-transform: translate3d(0, 0, 0);
+              transform: translate3d(0, 0, 0);
+              backface-visibility: hidden;
+              -webkit-backface-visibility: hidden;
+            }
+            /* Syllable animation definitions matching Codepen CustomEase: cubic-bezier(0.52, 0, 0.48, 1) */
+            .syl-ve {
+              animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.04s both;
             }
             .syl-di {
-              display: inline-block;
-              animation: sylFromCenter 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s backwards;
+              animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.22s both;
             }
             .syl-ka {
-              display: inline-block;
-              animation: sylFromRight 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.36s backwards;
+              animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.40s both;
             }
             .syl-ai {
-              display: inline-block;
-              margin-right: 0.24em;
-              animation: sylFromLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.50s backwards;
+              animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.18s both;
             }
             .syl-tu {
-              display: inline-block;
-              animation: sylFromCenter 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.64s backwards;
+              animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.36s both;
             }
             .syl-tor {
-              display: inline-block;
-              animation: sylFromRight 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.78s backwards;
+              animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.54s both;
+            }
+            .row2-gradient-text {
+              background: linear-gradient(135deg, #FFFFFF 0%, #D8B4FE 45%, #818CF8 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              filter: drop-shadow(0 6px 28px rgba(168, 85, 247, 0.35));
+            }
+            [data-theme="light"] .row2-gradient-text {
+              background: linear-gradient(135deg, #4338CA 0%, #7C3AED 50%, #9333EA 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              filter: drop-shadow(0 4px 20px rgba(124, 58, 237, 0.25));
             }
           `}</style>
-          <h1 style={{
-            fontSize: isMobile ? 52 : 'clamp(68px, 7.8vw, 108px)',
-            fontWeight: 900,
-            lineHeight: 0.98,
-            letterSpacing: '-0.035em',
-            margin: 0,
-            color: '#FFFFFF',
-            fontFamily: "'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif",
-            textTransform: 'uppercase',
-            textShadow: '0 4px 35px rgba(255, 255, 255, 0.18)'
-          }}>
-            <span className="syl-ve">VE</span>
-            <span className="syl-di">DI</span>
-            <span className="syl-ka">KA</span>
-          </h1>
-          <h2 style={{
-            fontSize: isMobile ? 44 : 'clamp(56px, 6.6vw, 92px)',
-            fontWeight: 850,
-            lineHeight: 1.02,
-            letterSpacing: '-0.025em',
-            margin: 0,
-            background: 'linear-gradient(135deg, #FFFFFF 0%, #D8B4FE 45%, #818CF8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontFamily: "'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif",
-            textTransform: 'uppercase',
-            filter: 'drop-shadow(0 6px 28px rgba(168, 85, 247, 0.35))'
-          }}>
-            <span className="syl-ai">AI</span>
-            <span className="syl-tu">TU</span>
-            <span className="syl-tor">TOR</span>
-          </h2>
+          
+          <div className="hero-title-h1">
+            {/* ROW 1: "VEDIKA" with masked sliding syllables */}
+            <div
+              className="hero-title-row hero-title-row-1"
+              style={{
+                fontSize: isMobile ? 'clamp(46px, 12vw, 68px)' : 'clamp(82px, 8.8vw, 138px)',
+                fontWeight: 900,
+                lineHeight: 0.94,
+                letterSpacing: '-0.035em',
+                color: 'var(--text, #FFFFFF)',
+                fontFamily: "'Plus Jakarta Sans', 'Syne', var(--font-outfit), -apple-system, sans-serif",
+                textTransform: 'uppercase',
+                textShadow: '0 4px 35px rgba(255, 255, 255, 0.18)'
+              }}
+            >
+              <div className="title-charts-cont" id="syl-ve">
+                <u>
+                  <span className="syl-ve">VE</span>
+                </u>
+              </div>
+              <div className="title-charts-cont" id="syl-di">
+                <u>
+                  <span className="syl-di">DI</span>
+                </u>
+              </div>
+              <div className="title-charts-cont" id="syl-ka">
+                <u>
+                  <span className="syl-ka">KA</span>
+                </u>
+              </div>
+            </div>
+
+            {/* ROW 2: "AI TUTOR" with offset & masked sliding syllables */}
+            <div
+              className="hero-title-row hero-title-row-2"
+              style={{
+                fontSize: isMobile ? 'clamp(40px, 10.5vw, 60px)' : 'clamp(72px, 7.8vw, 122px)',
+                fontWeight: 850,
+                lineHeight: 0.98,
+                letterSpacing: '-0.03em',
+                fontFamily: "'Plus Jakarta Sans', 'Syne', var(--font-outfit), -apple-system, sans-serif",
+                textTransform: 'uppercase'
+              }}
+            >
+              <div className="title-charts-cont" id="syl-ai" style={{ marginRight: isMobile ? '12px' : 'clamp(16px, 2vw, 32px)' }}>
+                <u>
+                  <span className="syl-ai row2-gradient-text">AI</span>
+                </u>
+              </div>
+              <div className="title-charts-cont" id="syl-tu">
+                <u>
+                  <span className="syl-tu row2-gradient-text">TU</span>
+                </u>
+              </div>
+              <div className="title-charts-cont" id="syl-tor">
+                <u>
+                  <span className="syl-tor row2-gradient-text">TOR</span>
+                </u>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Side: Black & White Interactive Particle Bot */}
