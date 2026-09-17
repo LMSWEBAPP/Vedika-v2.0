@@ -241,28 +241,28 @@
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 1020px;
-  height: 62px; /* Deeper curved arc matching the widened card curve */
+  width: 860px;
+  height: 54px; /* Deeper curved arc matching the seamless card arc */
   border-radius: 50%;
-  border-bottom: 2px solid rgba(var(--active-color-rgb), 0.5);
-  box-shadow: 0 10px 24px rgba(var(--active-color-rgb), 0.4);
+  border-bottom: 2px solid rgba(var(--active-color-rgb), 0.55);
+  box-shadow: 0 10px 26px rgba(var(--active-color-rgb), 0.45);
   pointer-events: none;
   filter: blur(1px);
-  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
   transition: all 0.5s ease;
 }
 
-/* Hologram Card Base: Arranged in 2-Left / 2-Right Wing Formation with 260px Center Aperture */
+/* Hologram Card Base: Seamless curved wall matching reference mockup with generous proportions */
 .vedika-hologram-card {
   position: absolute;
   left: 50%;
   top: 50%;
-  margin-left: -70px;
-  margin-top: -130px;
-  width: 140px;
-  height: 260px;
-  border-radius: 18px;
+  margin-left: -95px;
+  margin-top: -170px;
+  width: 190px;
+  height: 340px;
+  border-radius: 22px;
   cursor: pointer;
   outline: none;
   flex-shrink: 0;
@@ -273,6 +273,7 @@
   pointer-events: auto; /* Direct, unobstructed click reception */
   z-index: 10;
   contain: layout style;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
 }
 
 /* Selected Card: lifts forward prominently with vibrant neon glow */
@@ -284,49 +285,50 @@
   opacity: 0.95 !important;
 }
 
-/* Translucent Soft Glass Panel with Semi-Spherical Curvature Sheen */
+/* Translucent Soft Glass Panel with Cubic-Bezier Edge Curvature & Specular Highlight */
 .card-glass-panel {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 20px;
-  background: radial-gradient(ellipse at 50% 15%, rgba(var(--card-theme-rgb), 0.22) 0%, rgba(15, 23, 42, 0.72) 65%, rgba(6, 11, 24, 0.88) 100%);
-  border: 1px solid rgba(var(--card-theme-rgb), 0.42);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 50% 15%, rgba(var(--card-theme-rgb), 0.22) 0%, rgba(15, 23, 42, 0.72) 65%, rgba(6, 11, 24, 0.90) 100%);
+  border: 1px solid rgba(var(--card-theme-rgb), 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: 
-    0 10px 28px -4px rgba(0, 0, 0, 0.42),
-    0 0 18px -2px rgba(var(--card-theme-rgb), 0.22),
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 0 16px rgba(var(--card-theme-rgb), 0.14);
-  padding: 10px 10px 8px;
+    0 12px 32px -6px rgba(0, 0, 0, 0.55),
+    0 0 20px -2px rgba(var(--card-theme-rgb), 0.28),
+    inset 0 1px 2px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 0 18px rgba(var(--card-theme-rgb), 0.16);
+  padding: 12px 12px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
   box-sizing: border-box;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .vedika-hologram-card.selected-glow .card-glass-panel {
   border-color: var(--card-theme);
   box-shadow: 
-    0 0 32px var(--card-glow),
-    0 14px 34px -4px rgba(0, 0, 0, 0.5),
-    inset 0 1px 3px rgba(255, 255, 255, 0.4),
-    inset 0 0 22px rgba(var(--card-theme-rgb), 0.28);
+    0 0 36px var(--card-glow),
+    0 18px 42px -6px rgba(0, 0, 0, 0.65),
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.5),
+    inset 0 0 26px rgba(var(--card-theme-rgb), 0.35);
 }
 
 /* Fast GPU-composited Glow Aura for Active Card */
 .card-active-glow-aura {
   position: absolute;
   inset: 0;
-  border-radius: 20px;
+  border-radius: 22px;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 10%, rgba(var(--card-theme-rgb), 0.25) 0%, transparent 70%);
-  box-shadow: inset 0 0 20px rgba(var(--card-theme-rgb), 0.35);
+  background: radial-gradient(circle at 50% 12%, rgba(var(--card-theme-rgb), 0.28) 0%, transparent 72%);
+  box-shadow: inset 0 0 24px rgba(var(--card-theme-rgb), 0.38);
   opacity: 1;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
 /* Card Header */
@@ -334,7 +336,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding-left: 1px;
+  padding-left: 2px;
   position: relative;
   z-index: 4;
 }
@@ -342,40 +344,40 @@
 .card-header-top-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .card-tech-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--card-theme);
-  box-shadow: 0 0 6px var(--card-theme);
+  box-shadow: 0 0 8px var(--card-theme);
   flex-shrink: 0;
 }
 
 .card-lab-headline {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 1.02rem;
   font-weight: 800;
   color: #FFFFFF;
   letter-spacing: -0.01em;
 }
 
 .card-headline-accent-bar {
-  width: 24px;
+  width: 28px;
   height: 2.5px;
   border-radius: 2px;
-  margin-top: 3px;
-  margin-left: 10px;
-  box-shadow: 0 0 6px var(--card-theme);
+  margin-top: 4px;
+  margin-left: 12px;
+  box-shadow: 0 0 8px var(--card-theme);
 }
 
 /* Detailed Classic Thematic Artwork Container */
 .card-thematic-art {
   position: relative;
   width: 100%;
-  height: 182px;
+  height: 258px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -401,19 +403,254 @@
   shape-rendering: geometricPrecision;
 }
 
-/* Newton's Cradle Kinetic Momentum Swing */
-@keyframes newtonSwing {
-  0%, 60%, 100% {
+/* =========================================================================
+   LIVE ACTIONS & DYNAMIC MECHANICAL ANIMATIONS
+   ========================================================================= */
+
+/* 1. MATH LAB: Real Oscillating Sine Wave Flow & 3D Geometry */
+.live-math-sine-primary {
+  animation: liveMathSineFlow 2.8s linear infinite;
+}
+
+.live-math-sine-ambient {
+  animation: liveMathSineFlow 2.8s linear infinite;
+}
+
+.live-math-sine-secondary {
+  animation: liveMathSineHarmonic 1.4s linear infinite;
+}
+
+@keyframes liveMathSineFlow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-70px); }
+}
+
+@keyframes liveMathSineHarmonic {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-35px); }
+}
+
+.live-math-cube {
+  animation: liveMathCubeHover 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes liveMathCubeHover {
+  0% { transform: translate(108px, 24px) rotate(0deg); }
+  50% { transform: translate(108px, 18px) rotate(3deg); }
+  100% { transform: translate(108px, 24px) rotate(0deg); }
+}
+
+.live-math-pi {
+  animation: liveMathPiPulse 3.8s ease-in-out infinite alternate;
+}
+
+@keyframes liveMathPiPulse {
+  0% { transform: translateY(0); filter: drop-shadow(0 4px 6px #A855F7); }
+  50% { transform: translateY(-4px); filter: drop-shadow(0 8px 14px #C084FC); }
+  100% { transform: translateY(0); filter: drop-shadow(0 4px 6px #A855F7); }
+}
+
+/* 2. PHYSICS LAB: Authentic Newton's Cradle Pendulum Physics */
+.live-newton-arm-left {
+  transform-origin: 28px 6px;
+  animation: liveNewtonPendulumLeft 2.2s infinite;
+}
+
+.live-newton-arm-right {
+  transform-origin: 104px 6px;
+  animation: liveNewtonPendulumRight 2.2s infinite;
+}
+
+@keyframes liveNewtonPendulumLeft {
+  0% {
+    transform: rotate(-30deg);
+    animation-timing-function: cubic-bezier(0.48, 0.04, 0.82, 0.25);
+  }
+  24% {
+    transform: rotate(0deg);
+    animation-timing-function: step-end;
+  }
+  25%, 74% {
     transform: rotate(0deg);
   }
-  25% {
-    transform: rotate(-22deg);
+  75% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.18, 0.72, 0.52, 1);
+  }
+  87.5% {
+    transform: rotate(-30deg);
+    animation-timing-function: cubic-bezier(0.48, 0.04, 0.82, 0.25);
+  }
+  100% {
+    transform: rotate(0deg);
   }
 }
 
-.newton-ball-active {
-  transform-origin: 104px 6px;
-  animation: newtonSwing 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+@keyframes liveNewtonPendulumRight {
+  0%, 24% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.18, 0.72, 0.52, 1);
+  }
+  37.5% {
+    transform: rotate(30deg);
+    animation-timing-function: cubic-bezier(0.48, 0.04, 0.82, 0.25);
+  }
+  50% {
+    transform: rotate(0deg);
+    animation-timing-function: step-end;
+  }
+  51%, 100% {
+    transform: rotate(0deg);
+  }
+}
+
+.live-newton-impact-flash-left {
+  animation: liveNewtonFlashLeft 2.2s infinite;
+}
+
+.live-newton-impact-flash-right {
+  animation: liveNewtonFlashRight 2.2s infinite;
+}
+
+@keyframes liveNewtonFlashLeft {
+  0%, 23% { opacity: 0; transform: scale(0.6); }
+  25% { opacity: 0.95; transform: scale(1.4); }
+  28%, 100% { opacity: 0; transform: scale(0.6); }
+}
+
+@keyframes liveNewtonFlashRight {
+  0%, 48% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 0.95; transform: scale(1.4); }
+  53%, 100% { opacity: 0; transform: scale(0.6); }
+}
+
+.live-physics-orbit {
+  animation: livePhysicsOrbitRotate 18s linear infinite;
+}
+
+@keyframes livePhysicsOrbitRotate {
+  0% { transform: translate(85px, 120px) rotate(-32deg); }
+  100% { transform: translate(85px, 120px) rotate(328deg); }
+}
+
+.live-physics-float-sphere {
+  animation: livePhysicsSphereFloat 4s ease-in-out infinite alternate;
+}
+
+.live-physics-float-sphere-small {
+  animation: livePhysicsSphereFloat 5s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes livePhysicsSphereFloat {
+  0% { transform: translate(18px, 160px); }
+  50% { transform: translate(18px, 153px); }
+  100% { transform: translate(18px, 160px); }
+}
+
+/* 3. CHEMISTRY LAB: Effervescent Beaker Fizz & Bubbles */
+.live-chem-fizz-layer circle {
+  animation-name: liveChemBubbleRise;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in;
+}
+
+.chem-fizz-b1 { animation-duration: 2.1s; animation-delay: 0s; }
+.chem-fizz-b2 { animation-duration: 2.7s; animation-delay: 0.5s; }
+.chem-fizz-b3 { animation-duration: 1.9s; animation-delay: 1.0s; }
+.chem-fizz-b4 { animation-duration: 2.4s; animation-delay: 1.5s; }
+.chem-fizz-b5 { animation-duration: 2.0s; animation-delay: 0.3s; }
+.chem-fizz-b6 { animation-duration: 2.6s; animation-delay: 0.8s; }
+.chem-fizz-b7 { animation-duration: 1.8s; animation-delay: 1.2s; }
+
+@keyframes liveChemBubbleRise {
+  0% { transform: translateY(0) scale(0.7); opacity: 0; }
+  20% { opacity: 0.88; }
+  75% { opacity: 0.95; transform: translateY(-38px) scale(1.1); }
+  90% { transform: translateY(-46px) scale(1.4); opacity: 0.9; }
+  100% { transform: translateY(-52px) scale(1.6); opacity: 0; }
+}
+
+.chem-vapor-p1 { animation: liveChemVaporPuff 2.8s ease-out infinite 0s; }
+.chem-vapor-p2 { animation: liveChemVaporPuff 3.2s ease-out infinite 0.9s; }
+.chem-vapor-p3 { animation: liveChemVaporPuff 3.5s ease-out infinite 1.8s; }
+
+@keyframes liveChemVaporPuff {
+  0% { transform: translateY(0) scale(0.6); opacity: 0.7; }
+  50% { transform: translateY(-14px) scale(1.3); opacity: 0.45; }
+  100% { transform: translateY(-28px) scale(2.0); opacity: 0; }
+}
+
+.live-chem-meniscus {
+  animation: liveChemMeniscusWave 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes liveChemMeniscusWave {
+  0% { transform: scaleX(1) scaleY(1); }
+  50% { transform: scaleX(1.05) scaleY(0.90); }
+  100% { transform: scaleX(1) scaleY(1); }
+}
+
+.live-chem-molecule {
+  animation: liveChemMoleculeHover 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes liveChemMoleculeHover {
+  0% { transform: translate(94px, 22px) rotate(0deg); }
+  50% { transform: translate(94px, 16px) rotate(5deg); }
+  100% { transform: translate(94px, 22px) rotate(0deg); }
+}
+
+/* 4. BIOLOGY LAB: Live Diagonal DNA Sequence Flow */
+.live-bio-dna-track {
+  animation: liveBioDnaFlow 2.8s linear infinite;
+}
+
+@keyframes liveBioDnaFlow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-60px); }
+}
+
+.live-bio-leaf-left {
+  animation: liveBioLeafSway 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes liveBioLeafSway {
+  0% { transform: translate(18px, 36px) rotate(-22deg) scale(1); }
+  50% { transform: translate(18px, 34px) rotate(-16deg) scale(1.05); }
+  100% { transform: translate(18px, 36px) rotate(-22deg) scale(1); }
+}
+
+.live-bio-leaf-right {
+  animation: liveBioLeafSwayRight 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes liveBioLeafSwayRight {
+  0% { transform: translate(112px, 98px) rotate(34deg) scale(1); }
+  50% { transform: translate(112px, 96px) rotate(28deg) scale(1.05); }
+  100% { transform: translate(112px, 98px) rotate(34deg) scale(1); }
+}
+
+.live-bio-cell {
+  animation: liveBioCellPulse 3.8s ease-in-out infinite alternate;
+}
+
+@keyframes liveBioCellPulse {
+  0% { transform: translate(104px, 152px) scale(1); }
+  50% { transform: translate(104px, 152px) scale(1.06); filter: drop-shadow(0 0 10px #F59E0B); }
+  100% { transform: translate(104px, 152px) scale(1); }
+}
+
+.live-bio-organelle {
+  animation: liveBioOrganelleDrift 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes liveBioOrganelleDrift {
+  0% { transform: rotate(-30deg) translate(0, 0); }
+  50% { transform: rotate(-24deg) translate(1px, -2px); }
+  100% { transform: rotate(-30deg) translate(0, 0); }
 }
 
 /* Carousel Nav Arrows: Pure floating arrows without circle background */

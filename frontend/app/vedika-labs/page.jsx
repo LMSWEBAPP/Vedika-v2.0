@@ -88,10 +88,10 @@ const LABS_DATA = [
 ];
 
 const FIXED_SLOTS = [
-  { x: -420, y: -12, z: 46,  rotX: 7, rotY: 34,  rotZ: -3.5 }, // 0: Math Lab (Far Left spherical bank)
-  { x: -230, y: 4,   z: -22, rotX: 3, rotY: 15,  rotZ: -1.2 }, // 1: Physics Lab (Inner Left)
-  { x: 230,  y: 4,   z: -22, rotX: 3, rotY: -15, rotZ: 1.2 },  // 2: Chemistry Lab (Inner Right)
-  { x: 420,  y: -12, z: 46,  rotX: 7, rotY: -34, rotZ: 3.5 }   // 3: Biology Lab (Far Right spherical bank)
+  { x: -305, y: -8, z: -16, rotX: 1.5, rotY: 20, rotZ: -1 }, // 0: Math Lab (Left curved bank)
+  { x: -103, y: 2,  z: 14,  rotX: 0,   rotY: 6,  rotZ: 0 },  // 1: Physics Lab (Center-Left)
+  { x: 103,  y: 2,  z: 14,  rotX: 0,   rotY: -6, rotZ: 0 },  // 2: Chemistry Lab (Center-Right)
+  { x: 305,  y: -8, z: -16, rotX: 1.5, rotY: -20, rotZ: 1 }  // 3: Biology Lab (Right curved bank)
 ];
 
 const METRICS_BAR = [
@@ -141,11 +141,11 @@ function vedikaLabsReducer(state, action) {
 const HologramCard = memo(function HologramCard({ lab, idx, isSelected, slot, onSelect, onLaunch }) {
   const transX = slot.x;
   const transY = slot.y;
-  const transZ = slot.z + (isSelected ? 26 : 0);
+  const transZ = slot.z + (isSelected ? 30 : 0);
   const rotX = slot.rotX;
   const rotY = slot.rotY;
   const rotZ = slot.rotZ;
-  const scaleVal = isSelected ? 1.05 : 0.95;
+  const scaleVal = isSelected ? 1.04 : 0.96;
 
   return (
     <div
@@ -157,10 +157,10 @@ const HologramCard = memo(function HologramCard({ lab, idx, isSelected, slot, on
         '--card-glow': lab.glowColor,
         transform: `translateX(${transX}px) translateY(${transY}px) translateZ(${transZ}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${scaleVal})`,
         zIndex: isSelected ? 15 : 12,
-        opacity: isSelected ? 1 : 0.82,
+        opacity: isSelected ? 1 : 0.85,
         cursor: 'pointer',
         pointerEvents: 'auto',
-        transition: 'transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.35s ease'
+        transition: 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease'
       }}
       onClick={() => {
         if (isSelected) {
