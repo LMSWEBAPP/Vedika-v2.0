@@ -10,7 +10,7 @@ import {
   Code2, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, BarChart3, Home, Zap, Brain, Award, FileText, FolderOpen, Briefcase,
-  Trash, X
+  Trash, X, History
 } from 'lucide-react';
 import {
   T, geminiCall,
@@ -220,6 +220,7 @@ export default function CodingTutor() {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [activeTab, setActiveTab] = useState('text'); // 'text' or 'voice'
   const [voiceSessionToRestore, setVoiceSessionToRestore] = useState(null);
+  const [showChatHistory, setShowChatHistory] = useState(false);
   
   const [jwtToken, setJwtToken] = useState(null);
   const [authenticating, setAuthenticating] = useState(true);
@@ -1368,6 +1369,58 @@ export default function CodingTutor() {
                   <ChevronLeft size={14} />
                   {!isMobile && <span>Vedika AI</span>}
                 </button>
+
+                {/* Chat History Drawer Toggle Button */}
+                <button
+                  onClick={() => setShowChatHistory(prev => !prev)}
+                  title={showChatHistory ? "Close Chat History" : "Open Chat History"}
+                  aria-label="Chat History"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    height: 28,
+                    borderRadius: 8,
+                    background: showChatHistory ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                    border: `1px solid ${showChatHistory ? 'rgba(6, 182, 212, 0.45)' : T.border}`,
+                    color: showChatHistory ? '#06B6D4' : '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    fontFamily: 'inherit',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={e => {
+                    if (!showChatHistory) {
+                      e.currentTarget.style.background = 'rgba(6, 182, 212, 0.1)';
+                      e.currentTarget.style.color = '#F1F5F9';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!showChatHistory) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                      e.currentTarget.style.color = '#94A3B8';
+                    }
+                  }}
+                >
+                  <History size={13} color={showChatHistory ? "#06B6D4" : "#94A3B8"} />
+                  {!isMobile && <span>Chat History</span>}
+                  {messages && messages.length > 0 && (
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: showChatHistory ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                      color: showChatHistory ? '#06B6D4' : '#CBD5E1',
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      lineHeight: 1.2
+                    }}>
+                      {messages.length}
+                    </span>
+                  )}
+                </button>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(6, 182, 212, 0.18)', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Code2 size={14} color="#06B6D4" />
                 </div>
@@ -1493,6 +1546,119 @@ export default function CodingTutor() {
                     />
                   </div>
 
+                  {/* Slide-out Chat History Drawer */}
+                  {showChatHistory && (
+                    <aside
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        width: isMobile ? '85vw' : '320px',
+                        maxWidth: '360px',
+                        background: '#0B0F19',
+                        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                        zIndex: 50,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '10px 0 35px rgba(0, 0, 0, 0.65)',
+                        animation: 'slideInLeftDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                          background: 'rgba(16, 22, 36, 0.92)',
+                          flexShrink: 0
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#F8FAFC', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                          <History size={14} color="#06B6D4" />
+                          <span>Chat History</span>
+                          {messages && messages.length > 0 && (
+                            <span style={{ fontSize: 10, background: 'rgba(6, 182, 212, 0.2)', color: '#06B6D4', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
+                              {messages.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setShowChatHistory(false)}
+                          style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                          title="Close Chat History"
+                          aria-label="Close Chat History"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+
+                      <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {messages && messages.length > 0 ? (
+                          messages.map((msg, idx) => {
+                            const isUser = msg.role === 'user';
+                            const text = msg.content || '';
+                            const hasInfographic = msg.activeFeature === 'infographic' || msg.features?.infographic;
+                            return (
+                              <div
+                                key={msg.id || idx}
+                                onClick={() => {
+                                  const el = document.getElementById(`msg-${idx}`);
+                                  if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }
+                                  if (isMobile) setShowChatHistory(false);
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 5,
+                                  padding: '9px 12px',
+                                  borderRadius: 10,
+                                  background: isUser ? 'rgba(6, 182, 212, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                                  border: `1px solid ${isUser ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.06)'}`,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.background = isUser ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.07)';
+                                  e.currentTarget.style.borderColor = isUser ? 'rgba(6, 182, 212, 0.45)' : 'rgba(255, 255, 255, 0.15)';
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.background = isUser ? 'rgba(6, 182, 212, 0.08)' : 'rgba(255, 255, 255, 0.03)';
+                                  e.currentTarget.style.borderColor = isUser ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.06)';
+                                }}
+                                title="Click to jump to message"
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontWeight: 600 }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isUser ? '#06B6D4' : '#38BDF8' }}>
+                                    <span>{isUser ? '👤 You' : '💻 Code AI'}</span>
+                                  </span>
+                                  <span style={{ color: '#64748B', fontSize: 10 }}>#{idx + 1}</span>
+                                </div>
+                                <div style={{ color: '#CBD5E1', fontSize: 11.5, lineHeight: 1.45, maxHeight: 68, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+                                  {text || 'Code Query'}
+                                </div>
+                                {hasInfographic && (
+                                  <span style={{ alignSelf: 'flex-start', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                    Active Infographic 🎯
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div style={{ padding: '36px 12px', textAlign: 'center', color: '#64748B', fontSize: 12 }}>
+                            <History size={24} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
+                            <div>No code queries yet. Ask a question or paste code to begin!</div>
+                          </div>
+                        )}
+                      </div>
+                    </aside>
+                  )}
+
                   {/* ── CHAT MESSAGES AREA (z-index: 1 sits cleanly over watermark) ── */}
                   <div ref={chatRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 10px' : '28px 28px 16px' }}>
                     {/* Welcome AI Message */}
@@ -1532,7 +1698,7 @@ export default function CodingTutor() {
                 const explanation = match ? match[2].trim() : '';
 
                 return (
-                  <div key={msg.id || mi} style={{ marginBottom: 20 }}>
+                  <div key={msg.id || mi} id={`msg-${mi}`} style={{ marginBottom: 20 }}>
                     {/* User Bubble */}
                     {msg.role === 'user' && (
                       <div style={{ display: 'flex', gap: rGap, justifyContent: 'flex-end', maxWidth: msgMaxW, marginLeft: 'auto' }}>
