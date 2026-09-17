@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Code, Copy, Check, Sparkles, AlertCircle, Maximize2, ChevronDown, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ZoomIn, ZoomOut, RotateCcw, Code, Copy, Check, Sparkles, AlertCircle, Maximize2, ChevronDown, X, ArrowLeft, Move } from 'lucide-react';
 import './MermaidDiagram.css';
 
 /**
@@ -77,6 +78,7 @@ function sanitizeMermaid(raw) {
 export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   const containerRef = useRef(null);
   const modalViewportRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
   const [svgHtml, setSvgHtml] = useState('');
   const [renderError, setRenderError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,18 +90,35 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   const [isModalOpen, setIsModalOpen] = useState(false); // Fullscreen expand modal
   const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
 
+  // Mouse drag panning state for modal viewport
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Reset modal scroll and state whenever modal is opened
   useEffect(() => {
     if (isModalOpen) {
       setIsModalKeypointsOpen(false); // Collapsed by default
       setModalZoom(1);
-      // Wait for layout paint to ensure scroll starts at the absolute top (0,0)
+      // Wait for layout paint to ensure scroll starts at the absolute top (0,0) and auto-fit tall charts
       const timer = setTimeout(() => {
         if (modalViewportRef.current) {
           modalViewportRef.current.scrollTop = 0;
           modalViewportRef.current.scrollLeft = 0;
+          const svgEl = modalViewportRef.current.querySelector('svg');
+          if (svgEl) {
+            const svgH = svgEl.clientHeight || svgEl.getBoundingClientRect().height;
+            const vpH = modalViewportRef.current.clientHeight;
+            if (svgH > vpH * 0.85 && svgH > 0) {
+              const ideal = Math.max(0.45, Math.min(0.95, (vpH - 140) / svgH));
+              setModalZoom(Number(ideal.toFixed(2)));
+            }
+          }
         }
-      }, 40);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [isModalOpen]);
@@ -212,8 +231,55 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   const handleZoomReset = () => setZoom(1);
 
   const handleModalZoomIn = () => setModalZoom(prev => Math.min(prev + 0.15, 2.5));
-  const handleModalZoomOut = () => setModalZoom(prev => Math.max(prev - 0.15, 0.4));
+  const handleModalZoomOut = () => setModalZoom(prev => Math.max(prev - 0.15, 0.35));
   const handleModalZoomReset = () => setModalZoom(1);
+
+  const handleFitToScreen = () => {
+    if (!modalViewportRef.current) {
+      setModalZoom(0.85);
+      return;
+    }
+    const svgEl = modalViewportRef.current.querySelector('svg');
+    if (!svgEl) {
+      setModalZoom(0.85);
+      return;
+    }
+    const svgRect = svgEl.getBoundingClientRect();
+    const vpRect = modalViewportRef.current.getBoundingClientRect();
+    if (svgRect.height > 0 && vpRect.height > 0) {
+      const scaleH = (vpRect.height - 120) / (svgRect.height / modalZoom);
+      const scaleW = (vpRect.width - 80) / (svgRect.width / modalZoom);
+      const idealZoom = Math.min(Math.max(Math.min(scaleH, scaleW), 0.35), 1.25);
+      setModalZoom(Number(idealZoom.toFixed(2)));
+    } else {
+      setModalZoom(0.85);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    if (!modalViewportRef.current) return;
+    setIsPanning(true);
+    panStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: modalViewportRef.current.scrollLeft,
+      scrollTop: modalViewportRef.current.scrollTop
+    };
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isPanning || !modalViewportRef.current) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    modalViewportRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
+    modalViewportRef.current.scrollTop = panStartRef.current.scrollTop - dy;
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
 
   const handleCopyCode = async () => {
     try {
@@ -566,41 +632,116 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
         </div>
       )}
 
-      {/* Expanded Modal Window */}
-      {isModalOpen && (
+      {/* Expanded Modal Window mounted directly to document.body to prevent layout clipping */}
+      {mounted && isModalOpen && typeof document !== 'undefined' && createPortal(
         <div
           className="mermaid-modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(2, 4, 10, 0.9)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            boxSizing: 'border-box'
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsModalOpen(false);
           }}
         >
-          <div className="mermaid-modal-window" role="dialog" aria-modal="true">
+          <div
+            className="mermaid-modal-window"
+            role="dialog"
+            aria-modal="true"
+            style={{
+              width: 'min(98vw, 1480px)',
+              height: 'min(96vh, 940px)',
+              maxHeight: 'calc(100vh - 32px)',
+              background: '#080B14',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              borderRadius: 16,
+              boxShadow: '0 30px 90px -10px rgba(0, 0, 0, 0.95), 0 0 50px rgba(59, 130, 246, 0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              position: 'relative'
+            }}
+          >
             {/* Modal Header */}
-            <div className="mermaid-modal-header">
-              <div className="mermaid-title-area" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  className="mermaid-badge"
+            <div
+              className="mermaid-modal-header"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 20px',
+                background: 'rgba(14, 19, 32, 0.98)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                flexShrink: 0,
+                gap: 12,
+                zIndex: 20
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Prominent Back to Chat button */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
                   style={{
-                    fontSize: 10,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'rgba(91, 140, 248, 0.18)',
+                    border: '1px solid rgba(91, 140, 248, 0.45)',
+                    color: '#93C5FD',
+                    borderRadius: 8,
+                    padding: '7px 14px',
+                    fontSize: 12.5,
                     fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    background: 'rgba(91, 140, 248, 0.15)',
-                    color: '#729DF8',
-                    border: '1px solid rgba(91, 140, 248, 0.3)'
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    transition: 'all 0.15s ease'
                   }}
+                  title="Return to Chat (Esc)"
                 >
-                  Expanded Infographic
-                </span>
-                <span className="mermaid-label" style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>
-                  Full Visual Concept Overview
-                </span>
+                  <ArrowLeft size={16} />
+                  <span>Back to Chat</span>
+                </button>
+
+                <div className="mermaid-title-area" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span
+                    className="mermaid-badge"
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: 'rgba(91, 140, 248, 0.15)',
+                      color: '#729DF8',
+                      border: '1px solid rgba(91, 140, 248, 0.3)'
+                    }}
+                  >
+                    Expanded Infographic
+                  </span>
+                  <span className="mermaid-label" style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>
+                    Full Interactive View
+                  </span>
+                </div>
               </div>
 
-              <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {/* Toggle Key Takeaways on the Right Side */}
+              <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Toggle Key Takeaways Drawer */}
                 {points && points.length > 0 && (
                   <button
                     type="button"
@@ -609,54 +750,168 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                       ...btnBaseStyle,
                       color: isModalKeypointsOpen ? '#F5A95B' : '#94A3B8',
                       borderColor: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.4)' : btnBaseStyle.borderColor,
-                      background: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.15)' : btnBaseStyle.background
+                      background: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.15)' : btnBaseStyle.background,
+                      padding: '6px 12px'
                     }}
                     onClick={() => setIsModalKeypointsOpen(!isModalKeypointsOpen)}
                     title={isModalKeypointsOpen ? "Hide Key Takeaways Drawer" : "Show Key Takeaways on Right Side"}
                   >
-                    <Sparkles size={12} color={isModalKeypointsOpen ? "#F5A95B" : "#94A3B8"} />
+                    <Sparkles size={13} color="#F5A95B" />
                     <span>Key Takeaways ({points.length})</span>
                   </button>
                 )}
 
-                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomIn} title="Zoom In"><ZoomIn size={13} /></button>
-                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomOut} title="Zoom Out"><ZoomOut size={13} /></button>
-                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomReset} title="Reset Zoom"><RotateCcw size={12} /><span>{Math.round(modalZoom * 100)}%</span></button>
+                {/* Zoom Controls & Fit button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255, 255, 255, 0.04)', padding: 3, borderRadius: 8, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomIn} title="Zoom In">
+                    <ZoomIn size={13} />
+                  </button>
+                  <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomOut} title="Zoom Out">
+                    <ZoomOut size={13} />
+                  </button>
+                  <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomReset} title="Reset Zoom">
+                    <RotateCcw size={12} />
+                    <span>{Math.round(modalZoom * 100)}%</span>
+                  </button>
+                  <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleFitToScreen} title="Fit Entire Flowchart to Screen">
+                    <Maximize2 size={12} />
+                    <span>Fit</span>
+                  </button>
+                </div>
+
+                {/* Close Button */}
                 <button
                   type="button"
                   className="mermaid-modal-close-btn"
                   style={{
-                    ...btnBaseStyle,
-                    color: '#F87171',
-                    background: 'rgba(248, 113, 113, 0.1)',
-                    borderColor: 'rgba(248, 113, 113, 0.25)'
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color: '#FCA5A5',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    borderRadius: 8,
+                    padding: '7px 14px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+                    transition: 'all 0.15s ease'
                   }}
                   onClick={() => setIsModalOpen(false)}
-                  title="Close (Esc)"
+                  title="Close Modal (Esc)"
                 >
-                  <X size={14} />
+                  <X size={15} />
                   <span>Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Main Body: Flowchart on left (full height), Key Takeaways Drawer on right */}
-            <div className="mermaid-modal-body">
-              <div className="mermaid-modal-viewport" ref={modalViewportRef}>
+            <div
+              className="mermaid-modal-body"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'row',
+                minHeight: 0,
+                overflow: 'hidden',
+                position: 'relative',
+                height: 'calc(100% - 56px)'
+              }}
+            >
+              <div
+                className={`mermaid-modal-viewport ${isPanning ? 'panning' : ''}`}
+                ref={modalViewportRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                style={{
+                  flex: 1,
+                  height: '100%',
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  overflowX: 'auto',
+                  padding: '40px 30px 100px',
+                  background: 'radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%)',
+                  position: 'relative',
+                  cursor: isPanning ? 'grabbing' : 'grab',
+                  scrollBehavior: 'smooth'
+                }}
+              >
                 {svgHtml && (
                   <div
                     className="mermaid-svg-wrapper modal-chart"
-                    style={{ transform: `scale(${modalZoom})` }}
+                    style={{
+                      margin: '0 auto',
+                      minWidth: 'fit-content',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      transform: `scale(${modalZoom})`,
+                      transformOrigin: 'top center',
+                      transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                      paddingBottom: 80
+                    }}
                     dangerouslySetInnerHTML={{ __html: svgHtml }}
                   />
                 )}
               </div>
 
+              {/* Floating Pan/Zoom Navigation Hint */}
+              <div style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 20,
+                background: 'rgba(10, 14, 26, 0.88)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 20,
+                padding: '6px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                color: '#94A3B8',
+                fontSize: 11,
+                pointerEvents: 'none',
+                backdropFilter: 'blur(8px)',
+                zIndex: 10
+              }}>
+                <Move size={12} color="#60A5FA" />
+                <span>Click &amp; drag or scroll to pan &bull; Zoom controls at top &bull; Esc to go back</span>
+              </div>
+
               {/* Right-Side Key Takeaways Drawer */}
               {points && points.length > 0 && isModalKeypointsOpen && (
-                <aside className="mermaid-modal-sidebar">
-                  <div className="mermaid-modal-sidebar-header">
-                    <div className="mermaid-modal-sidebar-title">
+                <aside
+                  className="mermaid-modal-sidebar"
+                  style={{
+                    width: 360,
+                    maxWidth: 380,
+                    flexShrink: 0,
+                    height: '100%',
+                    background: '#0B0F19',
+                    borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '-10px 0 30px rgba(0, 0, 0, 0.5)',
+                    zIndex: 15
+                  }}
+                >
+                  <div
+                    className="mermaid-modal-sidebar-header"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 18px',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'rgba(16, 22, 36, 0.8)',
+                      flexShrink: 0
+                    }}
+                  >
+                    <div className="mermaid-modal-sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#F8FAFC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       <Sparkles size={14} color="#F5A95B" />
                       <span>Key Takeaways</span>
                       <span className="mermaid-takeaways-count">({points.length})</span>
@@ -664,6 +919,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                     <button
                       type="button"
                       className="mermaid-modal-sidebar-close"
+                      style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4 }}
                       onClick={() => setIsModalKeypointsOpen(false)}
                       title="Collapse Key Takeaways"
                       aria-label="Collapse Key Takeaways"
@@ -672,11 +928,11 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                     </button>
                   </div>
 
-                  <div className="mermaid-modal-sidebar-content">
+                  <div className="mermaid-modal-sidebar-content" style={{ flex: 1, overflowY: 'auto', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {points.map((pt, idx) => (
-                      <div key={idx} className="mermaid-takeaway-item sidebar-item">
-                        <span className="mermaid-takeaway-bullet">{idx + 1}</span>
-                        <div className="mermaid-takeaway-text">{renderFormattedText(pt)}</div>
+                      <div key={idx} className="mermaid-takeaway-item sidebar-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: 8 }}>
+                        <span className="mermaid-takeaway-bullet" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: 5, background: 'rgba(245, 169, 91, 0.15)', color: '#F5A95B', fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{idx + 1}</span>
+                        <div className="mermaid-takeaway-text" style={{ color: '#E2E8F0', fontSize: 12.5, lineHeight: 1.5, flex: 1 }}>{renderFormattedText(pt)}</div>
                       </div>
                     ))}
                   </div>
@@ -684,7 +940,8 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
