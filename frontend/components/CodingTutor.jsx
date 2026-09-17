@@ -518,7 +518,7 @@ export default function CodingTutor() {
   const rPad = isMobile ? 14 : 28;
   const rGap = isMobile ? 8 : 12;
   const msgMaxW = '100%';
-  const bubbleMaxW = isMobile ? '100%' : '88%';
+  const bubbleMaxW = isMobile ? '100%' : 'min(760px, 86%)';
   const fCol = isMobile ? '1fr' : '1fr 1fr';
 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -1710,7 +1710,22 @@ export default function CodingTutor() {
                       <div style={{ display: 'flex', gap: rGap, justifyContent: 'flex-end', maxWidth: msgMaxW, marginLeft: 'auto' }}>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 4 }}>YOU</div>
-                          <div style={{ background: T.s3, border: `1px solid ${T.border}`, borderRadius: '14px 14px 4px 14px', padding: '10px 14px', color: T.text, fontSize: 14, lineHeight: 1.65, maxWidth: bubbleMaxW, whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: 'left' }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.45)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            borderRadius: '16px 16px 4px 16px',
+                            padding: '12px 18px',
+                            color: '#F8FAFC',
+                            fontSize: 14,
+                            lineHeight: 1.65,
+                            maxWidth: bubbleMaxW,
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            textAlign: 'left',
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)'
+                          }}>
                             {msg.content}
                             {msg.documents && msg.documents.length > 0 && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
@@ -1725,7 +1740,7 @@ export default function CodingTutor() {
                           </div>
                           <div style={{ fontSize: 10, color: T.dim, marginTop: 4 }}>{msg.mode} &middot; {msg.length}</div>
                         </div>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: T.s3, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, color: T.muted, fontWeight: 700 }}>S</div>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, color: '#E2E8F0', fontWeight: 700, backdropFilter: 'blur(10px)' }}>S</div>
                       </div>
                     )}
 
@@ -1741,7 +1756,20 @@ export default function CodingTutor() {
                           {/* Visual Analytics Card */}
                           {parseAnalyticsFromMessage(msg) && renderAnalyticsCard(parseAnalyticsFromMessage(msg))}
 
-                          <div style={{ color: T.text, fontSize: 14, lineHeight: 1.7 }}>
+                          {/* Glassmorphic AI Response Message Box (strictly constrained to input width) */}
+                          <div style={{
+                            maxWidth: bubbleMaxW,
+                            background: 'rgba(15, 23, 42, 0.55)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(245, 158, 11, 0.24)',
+                            borderRadius: '4px 16px 16px 16px',
+                            padding: '14px 18px',
+                            color: T.text,
+                            fontSize: 14,
+                            lineHeight: 1.7,
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)'
+                          }}>
                             <div className="md-content">
                               {renderMarkdown(chatContent, explanation)}
                             </div>
@@ -1979,9 +2007,19 @@ export default function CodingTutor() {
                     <Code2 size={isMobile ? 14 : 16} color={T.amber} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 4 }}>CODE WITH AI TUTOR</div>
-                    <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
-                    <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 6 }} />
+                    <div style={{
+                      maxWidth: bubbleMaxW,
+                      background: 'rgba(15, 23, 42, 0.55)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(245, 158, 11, 0.24)',
+                      borderRadius: '4px 16px 16px 16px',
+                      padding: '14px 18px',
+                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)'
+                    }}>
+                      <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
+                      <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -2086,7 +2124,7 @@ export default function CodingTutor() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, animation: 'fadeIn 0.25s ease' }}>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(6, 182, 212, 0.28)', borderRadius: 14, padding: '7px 14px', position: 'relative', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15, 23, 42, 0.62)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(6, 182, 212, 0.28)', borderRadius: 14, padding: '7px 14px', position: 'relative', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)' }}>
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
                     <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                       style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploading ? '#06B6D4' : '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center' }}

@@ -77,9 +77,77 @@ function sanitizeMermaid(raw) {
 }
 
 /**
+ * Harmonious, vivid theme colors for flowchart blocks and connector arrows
+ */
+const NODE_PALETTES = [
+  {
+    name: 'purple',
+    stroke: '#A855F7',
+    topHighlight: 'rgba(192, 132, 252, 0.55)',
+    fillGrad: ['#24153E', '#130C22'],
+    arrow: '#C084FC',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'emerald',
+    stroke: '#10B981',
+    topHighlight: 'rgba(52, 211, 153, 0.55)',
+    fillGrad: ['#0E2E22', '#081A14'],
+    arrow: '#34D399',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'amber',
+    stroke: '#F59E0B',
+    topHighlight: 'rgba(251, 191, 36, 0.55)',
+    fillGrad: ['#321E0B', '#1C1106'],
+    arrow: '#FBBF24',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'rose',
+    stroke: '#F43F5E',
+    topHighlight: 'rgba(251, 113, 133, 0.55)',
+    fillGrad: ['#32111A', '#1C090F'],
+    arrow: '#FB7185',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'cyan',
+    stroke: '#06B6D4',
+    topHighlight: 'rgba(56, 189, 248, 0.55)',
+    fillGrad: ['#0C2732', '#07161C'],
+    arrow: '#38BDF8',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'indigo',
+    stroke: '#6366F1',
+    topHighlight: 'rgba(129, 140, 248, 0.55)',
+    fillGrad: ['#181A40', '#0E0F25'],
+    arrow: '#818CF8',
+    text: '#F8FAFC'
+  }
+];
+
+/**
+ * Calculates a smooth curved SVG bezier path between two coordinates
+ */
+function getCurvedEdgePath(x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  if (Math.abs(dx) < 3) {
+    return `M ${x1} ${y1} L ${x2} ${y2}`;
+  }
+  const cy1 = y1 + Math.max(22, dy * 0.45);
+  const cy2 = y2 - Math.max(22, dy * 0.45);
+  return `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`;
+}
+
+/**
  * Interactive Live Drawing SVG Canvas:
- * Renders the flowchart visually in real-time as the cursor drafts each box like Paint,
- * types text from left to right, keeps each box permanently on screen, and connects flow arrows.
+ * Renders the flowchart visually in real-time as the pen drafts each box like Paint,
+ * types text from left to right, keeps each box permanently on screen, and connects curved flow arrows.
  */
 function StitchLiveOverlay({
   isBuilding,
@@ -108,130 +176,134 @@ function StitchLiveOverlay({
       }}
     >
       <defs>
-        <linearGradient id="stitchNodeGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1E263D" />
-          <stop offset="100%" stopColor="#121828" />
-        </linearGradient>
-        <linearGradient id="stitchDraftGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(22, 33, 62, 0.95)" />
-          <stop offset="100%" stopColor="rgba(14, 23, 42, 0.92)" />
-        </linearGradient>
-        <marker
-          id="stitchArrow"
-          viewBox="0 0 10 10"
-          refX="7"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#60A5FA" />
-        </marker>
-        <filter id="stitchGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#38BDF8" floodOpacity="0.85" />
-        </filter>
+        {/* Node Gradient fills per theme color */}
+        {NODE_PALETTES.map((p, idx) => (
+          <linearGradient key={`grad-${idx}`} id={`stitchNodeGrad_${idx}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={p.fillGrad[0]} />
+            <stop offset="100%" stopColor={p.fillGrad[1]} />
+          </linearGradient>
+        ))}
+
+        {/* Dynamic Arrow Markers per theme color */}
+        {NODE_PALETTES.map((p, idx) => (
+          <marker
+            key={`arrow-${idx}`}
+            id={`stitchArrow_${idx}`}
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={p.arrow} />
+          </marker>
+        ))}
+
+        {/* Soft, clean drop shadow without neon glow */}
         <filter id="stitchBoxShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.5" />
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.45" />
         </filter>
       </defs>
 
-      {/* Completed Edges sitting permanently on canvas */}
-      {drawnEdges.map((e, idx) => (
-        <g key={`edge-${idx}`}>
-          <line
-            x1={e.x1}
-            y1={e.y1}
-            x2={e.x2}
-            y2={e.y2}
-            stroke="#60A5FA"
-            strokeWidth="1.75"
-            markerEnd="url(#stitchArrow)"
-          />
-        </g>
-      ))}
+      {/* Completed Curved Edges sitting permanently on canvas */}
+      {drawnEdges.map((e, idx) => {
+        const colorIdx = e.colorIdx ?? (idx % NODE_PALETTES.length);
+        const palette = NODE_PALETTES[colorIdx];
+        return (
+          <g key={`edge-${idx}`}>
+            <path
+              d={getCurvedEdgePath(e.x1, e.y1, e.x2, e.y2)}
+              stroke={e.color || palette.arrow}
+              strokeWidth="2"
+              fill="none"
+              markerEnd={`url(#stitchArrow_${colorIdx})`}
+            />
+          </g>
+        );
+      })}
 
-      {/* Active Drawing Laser Edge */}
+      {/* Active Drawing Curved Edge (Crisp, No Glow) */}
       {activeEdge && (
-        <line
-          x1={activeEdge.x1}
-          y1={activeEdge.y1}
-          x2={activeEdge.x2}
-          y2={activeEdge.y2}
-          stroke="#38BDF8"
-          strokeWidth="2.5"
+        <path
+          d={getCurvedEdgePath(activeEdge.x1, activeEdge.y1, activeEdge.x2, activeEdge.y2)}
+          stroke={activeEdge.color || '#A855F7'}
+          strokeWidth="2.2"
           strokeDasharray="6 3"
-          filter="url(#stitchGlow)"
+          fill="none"
         />
       )}
 
-      {/* Completed Solidified Nodes sitting permanently on canvas */}
-      {drawnNodes.map((n, idx) => (
-        <g key={`node-${idx}`} filter="url(#stitchBoxShadow)">
-          <rect
-            x={n.x}
-            y={n.y}
-            width={n.w}
-            height={n.h}
-            rx={8}
-            ry={8}
-            fill="url(#stitchNodeGrad)"
-            stroke="#3B82F6"
-            strokeWidth="1.5"
-          />
-          <line
-            x1={n.x + 8}
-            y1={n.y + 1}
-            x2={n.x + n.w - 8}
-            y2={n.y + 1}
-            stroke="rgba(255, 255, 255, 0.2)"
-            strokeWidth="1"
-          />
-          <text
-            x={n.x + n.w / 2}
-            y={n.y + n.h / 2 + 4}
-            textAnchor="middle"
-            fill="#F8FAFC"
-            fontSize="12"
-            fontWeight="600"
-            fontFamily="var(--font-outfit), sans-serif"
-            letterSpacing="-0.01em"
-          >
-            {n.text}
-          </text>
-        </g>
-      ))}
+      {/* Completed Multi-Colored Nodes sitting permanently on canvas */}
+      {drawnNodes.map((n, idx) => {
+        const colorIdx = n.colorIdx ?? (idx % NODE_PALETTES.length);
+        const palette = NODE_PALETTES[colorIdx];
+        return (
+          <g key={`node-${idx}`} filter="url(#stitchBoxShadow)">
+            <rect
+              x={n.x}
+              y={n.y}
+              width={n.w}
+              height={n.h}
+              rx={8}
+              ry={8}
+              fill={`url(#stitchNodeGrad_${colorIdx})`}
+              stroke={palette.stroke}
+              strokeWidth="1.5"
+            />
+            <line
+              x1={n.x + 8}
+              y1={n.y + 1}
+              x2={n.x + n.w - 8}
+              y2={n.y + 1}
+              stroke={palette.topHighlight}
+              strokeWidth="1"
+            />
+            <text
+              x={n.x + n.w / 2}
+              y={n.y + n.h / 2 + 4}
+              textAnchor="middle"
+              fill="#F8FAFC"
+              fontSize="12"
+              fontWeight="600"
+              fontFamily="var(--font-outfit), sans-serif"
+              letterSpacing="-0.01em"
+            >
+              {n.text}
+            </text>
+          </g>
+        );
+      })}
 
-      {/* Active Box Being Drawn Like in Paint (Stretching Diagonally) */}
+      {/* Active Box Being Drawn Like in Paint (Plain Dotted Box without Glow) */}
       {activeBox && (
-        <g filter="url(#stitchGlow)">
-          <rect
-            x={activeBox.x}
-            y={activeBox.y}
-            width={Math.max(4, activeBox.w)}
-            height={Math.max(4, activeBox.h)}
-            rx={8}
-            ry={8}
-            fill="url(#stitchDraftGrad)"
-            stroke="#38BDF8"
-            strokeWidth="2"
-            strokeDasharray="8 4"
-          />
-        </g>
+        <rect
+          x={activeBox.x}
+          y={activeBox.y}
+          width={Math.max(4, activeBox.w)}
+          height={Math.max(4, activeBox.h)}
+          rx={8}
+          ry={8}
+          fill="rgba(15, 23, 42, 0.72)"
+          stroke={activeBox.stroke || '#94A3B8'}
+          strokeWidth="1.75"
+          strokeDasharray="6 4"
+        />
       )}
 
-      {/* Active Text Being Written from Left to Right */}
+      {/* Active Text Being Written from Left to Right (Crisp, No Glow on Box) */}
       {activeWritingText && (
         <text
           x={activeWritingText.x}
           y={activeWritingText.y}
-          fill="#38BDF8"
+          fill="#F8FAFC"
           fontSize="12"
           fontWeight="600"
           fontFamily="var(--font-outfit), sans-serif"
           letterSpacing="-0.01em"
         >
           {activeWritingText.text}
-          <tspan fill="#F43F5E" fontWeight="700">|</tspan>
+          <tspan fill={activeWritingText.cursorColor || '#A855F7'} fontWeight="700">|</tspan>
         </text>
       )}
     </svg>
@@ -263,6 +335,21 @@ function extractDiagramLayout(container) {
     return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
   });
 
+  // Enforce generous minimum spacing between boxes so connector arrows have clear room to curve
+  const MIN_BOX_GAP = 52;
+  for (let i = 1; i < nodes.length; i++) {
+    const prev = nodes[i - 1];
+    const curr = nodes[i];
+    const minRequiredY = prev.y + prev.h + MIN_BOX_GAP;
+    if (curr.y < minRequiredY && Math.abs(curr.x - prev.x) < 180) {
+      const shift = minRequiredY - curr.y;
+      curr.y += shift;
+      for (let j = i + 1; j < nodes.length; j++) {
+        nodes[j].y += shift;
+      }
+    }
+  }
+
   const rawEdgeEls = Array.from(wrapper.querySelectorAll('g.edgePath, .edgePath, path.flowchart-link'));
   let edges = [];
 
@@ -274,27 +361,22 @@ function extractDiagramLayout(container) {
         x1: fromN.x + fromN.w / 2,
         y1: fromN.y + fromN.h,
         x2: toN.x + toN.w / 2,
-        y2: toN.y
+        y2: toN.y,
+        colorIdx: idx % NODE_PALETTES.length,
+        color: NODE_PALETTES[idx % NODE_PALETTES.length].arrow
       };
     });
   } else if (rawEdgeEls.length > 0) {
     edges = rawEdgeEls.map((edgeEl, idx) => {
-      const r = edgeEl.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        return {
-          x1: (r.left - cRect.left) + container.scrollLeft + (r.width / 2),
-          y1: (r.top - cRect.top) + container.scrollTop,
-          x2: (r.left - cRect.left) + container.scrollLeft + (r.width / 2),
-          y2: (r.top - cRect.top) + container.scrollTop + r.height
-        };
-      }
       const fromN = nodes[Math.min(idx, nodes.length - 1)];
       const toN = nodes[Math.min(idx + 1, nodes.length - 1)];
       return {
         x1: fromN.x + fromN.w / 2,
         y1: fromN.y + fromN.h,
         x2: toN.x + toN.w / 2,
-        y2: toN.y
+        y2: toN.y,
+        colorIdx: idx % NODE_PALETTES.length,
+        color: NODE_PALETTES[idx % NODE_PALETTES.length].arrow
       };
     });
   } else {
@@ -303,7 +385,9 @@ function extractDiagramLayout(container) {
         x1: nodes[i].x + nodes[i].w / 2,
         y1: nodes[i].y + nodes[i].h,
         x2: nodes[i + 1].x + nodes[i + 1].w / 2,
-        y2: nodes[i + 1].y
+        y2: nodes[i + 1].y,
+        colorIdx: i % NODE_PALETTES.length,
+        color: NODE_PALETTES[i % NODE_PALETTES.length].arrow
       });
     }
   }
@@ -460,17 +544,22 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     // ── Phase 2: Draw Each Box like Paint & Write Text from Left to Right ──
     nodes.forEach((node, idx) => {
-      // Step 2A: Glide cursor to top-left corner of the box
+      const colorIdx = idx % NODE_PALETTES.length;
+      const palette = NODE_PALETTES[colorIdx];
+
+      // Step 2A: Glide pen to top-left corner of the box
       const tCorner = setTimeout(() => {
         setCursorState({
           x: node.x,
           y: node.y,
           visible: true,
           status: `Drafting Block (${idx + 1}/${nodes.length})`,
-          label: `📐 Starting Box...`,
-          isClicking: false
+          label: `Starting Box...`,
+          isClicking: false,
+          accentColor: palette.stroke
         });
-        setActiveBox({ x: node.x, y: node.y, w: 6, h: 6 });
+        // Plain dotted box without glow
+        setActiveBox({ x: node.x, y: node.y, w: 6, h: 6, stroke: palette.stroke });
       }, timeline);
       animTimeoutsRef.current.push(tCorner);
 
@@ -480,20 +569,21 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         const tFrame = setTimeout(() => {
           const curW = node.w * pct;
           const curH = node.h * pct;
-          setActiveBox({ x: node.x, y: node.y, w: curW, h: curH });
+          setActiveBox({ x: node.x, y: node.y, w: curW, h: curH, stroke: palette.stroke });
           setCursorState({
             x: node.x + curW,
             y: node.y + curH,
             visible: true,
             status: `Drawing Box (${idx + 1}/${nodes.length})`,
-            label: `📐 ${Math.round(curW)}×${Math.round(curH)}`,
-            isClicking: false
+            label: `${Math.round(curW)}×${Math.round(curH)}`,
+            isClicking: false,
+            accentColor: palette.stroke
           });
         }, timeline + 100 + (pIdx * 90));
         animTimeoutsRef.current.push(tFrame);
       });
 
-      // Step 2C: Cursor glides to the left side of the box to write text
+      // Step 2C: Pen glides to the left side of the box to write text
       const tLeft = setTimeout(() => {
         const textY = node.y + node.h / 2 + 4;
         setCursorState({
@@ -501,14 +591,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           y: textY,
           visible: true,
           status: `Writing Block (${idx + 1}/${nodes.length})`,
-          label: `✍️ Typing...`,
-          isClicking: false
+          label: `Writing...`,
+          isClicking: false,
+          accentColor: palette.stroke
         });
-        setActiveWritingText({ x: node.x + 14, y: textY, text: '' });
+        setActiveWritingText({ x: node.x + 14, y: textY, text: '', cursorColor: palette.arrow });
       }, timeline + 500);
       animTimeoutsRef.current.push(tLeft);
 
-      // Step 2D: Type text as cursor moves from left to right
+      // Step 2D: Type text as pen moves from left to right
       const textLen = node.text.length;
       const textSteps = [0.25, 0.5, 0.75, 1.0];
       textSteps.forEach((pct, sIdx) => {
@@ -518,65 +609,64 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           const cursorX = node.x + 14 + ((node.w - 28) * pct);
           const textY = node.y + node.h / 2 + 4;
 
-          setActiveWritingText({ x: node.x + 14, y: textY, text: partialText });
+          setActiveWritingText({ x: node.x + 14, y: textY, text: partialText, cursorColor: palette.arrow });
           setCursorState({
             x: cursorX,
             y: textY,
             visible: true,
             status: `Writing: "${partialText}"`,
-            label: `✍️ ${Math.round(pct * 100)}%`,
-            isClicking: false
+            label: `${Math.round(pct * 100)}%`,
+            isClicking: false,
+            accentColor: palette.stroke
           });
         }, timeline + 680 + (sIdx * 90));
         animTimeoutsRef.current.push(tType);
       });
 
-      // Step 2E: Solidify card with shockwave click
+      // Step 2E: Solidify card (plain, zero neon glow)
       const tSolidify = setTimeout(() => {
         // Clear active drafting elements
         setActiveBox(null);
         setActiveWritingText(null);
 
-        // Add this node permanently to drawnNodes!
-        setDrawnNodes((prev) => [...prev, node]);
+        // Add this node permanently with its color palette!
+        setDrawnNodes((prev) => [...prev, { ...node, colorIdx, palette }]);
 
         setCursorState((prev) => ({
           ...prev,
           x: node.x + node.w / 2,
           y: node.y + node.h / 2,
-          status: 'Card Solidified ✨',
-          label: `${node.text} [Ready]`,
-          isClicking: true
+          status: 'Block Done ✨',
+          label: `${node.text}`,
+          isClicking: false,
+          accentColor: palette.arrow
         }));
       }, timeline + 1100);
       animTimeoutsRef.current.push(tSolidify);
 
-      // Step 2F: Release shockwave
-      const tRelease = setTimeout(() => {
-        setCursorState((prev) => ({ ...prev, isClicking: false }));
-      }, timeline + 1280);
-      animTimeoutsRef.current.push(tRelease);
-
-      timeline += 1380; // Total time per box
+      timeline += 1320; // Total time per box
     });
 
-    // ── Phase 3: Connect the Blocks with Arrows One by One ──
-    // ONLY starts AFTER all boxes have been drafted, typed, and solidified!
+    // ── Phase 3: Connect the Blocks with Curved Arrows One by One ──
     const tPauseNotice = setTimeout(() => {
       setCursorState((prev) => ({
         ...prev,
-        status: '🔗 Linking Blocks with Arrows...',
+        status: '🔗 Linking Blocks with Curved Arrows...',
         label: `Connecting ${edges.length} flow paths`,
-        isClicking: false
+        isClicking: false,
+        accentColor: '#A855F7'
       }));
     }, timeline + 100);
     animTimeoutsRef.current.push(tPauseNotice);
 
-    timeline += 500;
-    const EDGE_DURATION = 650;
+    timeline += 450;
+    const EDGE_DURATION = 620;
 
     edges.forEach((edge, edgeIdx) => {
-      // Step 3A: Glide cursor to start of connector
+      const colorIdx = edge.colorIdx ?? (edgeIdx % NODE_PALETTES.length);
+      const edgeColor = edge.color || NODE_PALETTES[colorIdx].arrow;
+
+      // Step 3A: Glide pen to start of connector
       const tStartLink = setTimeout(() => {
         setCursorState({
           x: edge.x1,
@@ -584,66 +674,55 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           visible: true,
           status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
           label: 'Connecting ➔',
-          isClicking: false
+          isClicking: false,
+          accentColor: edgeColor
         });
-        setActiveEdge({ x1: edge.x1, y1: edge.y1, x2: edge.x1, y2: edge.y1 });
+        setActiveEdge({ ...edge, x2: edge.x1, y2: edge.y1, color: edgeColor, colorIdx });
       }, timeline);
       animTimeoutsRef.current.push(tStartLink);
 
-      // Step 3B: Laser line grows along with cursor to end
+      // Step 3B: Curved line grows along with pen to end
       const edgeSteps = [0.33, 0.66, 1.0];
       edgeSteps.forEach((pct, eIdx) => {
         const tEdgeProg = setTimeout(() => {
           const curX = edge.x1 + (edge.x2 - edge.x1) * pct;
           const curY = edge.y1 + (edge.y2 - edge.y1) * pct;
-          setActiveEdge({ x1: edge.x1, y1: edge.y1, x2: curX, y2: curY });
+          setActiveEdge({ ...edge, x2: curX, y2: curY, color: edgeColor, colorIdx });
           setCursorState({
             x: curX,
             y: curY,
             visible: true,
             status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
             label: 'Connecting ➔',
-            isClicking: false
+            isClicking: false,
+            accentColor: edgeColor
           });
         }, timeline + 80 + (eIdx * 90));
         animTimeoutsRef.current.push(tEdgeProg);
       });
 
-      // Step 3C: Stamp shockwave at arrowhead tip
+      // Step 3C: Place arrowhead
       const tFinishLink = setTimeout(() => {
         setActiveEdge(null);
-        setDrawnEdges((prev) => [...prev, edge]);
+        setDrawnEdges((prev) => [...prev, { ...edge, color: edgeColor, colorIdx }]);
 
         setCursorState({
           x: edge.x2,
           y: edge.y2,
           visible: true,
-          status: `Arrow Linked (${edgeIdx + 1}/${edges.length})`,
-          label: 'Flow Connected ✨',
-          isClicking: true
+          status: `Flow Connected (${edgeIdx + 1}/${edges.length})`,
+          label: 'Linked ✨',
+          isClicking: false,
+          accentColor: edgeColor
         });
-      }, timeline + 400);
+      }, timeline + 380);
       animTimeoutsRef.current.push(tFinishLink);
-
-      // Step 3D: Release click
-      const tEdgeRelease = setTimeout(() => {
-        setCursorState((prev) => ({ ...prev, isClicking: false }));
-      }, timeline + 580);
-      animTimeoutsRef.current.push(tEdgeRelease);
 
       timeline += EDGE_DURATION;
     });
 
-    // ── Phase 4: Settle, Return to Top & Complete ──
+    // ── Phase 4: Settle & Complete (Leave Viewport & Zoom Untouched!) ──
     const tFinish = setTimeout(() => {
-      // Smoothly return scroll position to top so top of flowchart is 100% visible!
-      container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-      if (modalViewportRef.current) {
-        modalViewportRef.current.scrollTop = 0;
-        modalViewportRef.current.scrollLeft = 0;
-        autoFitModalChart();
-      }
-
       setCursorState((prev) => ({
         ...prev,
         status: 'Flowchart Complete ✨',
@@ -663,14 +742,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           }
         });
         setIsBuilding(false);
-        if (modalViewportRef.current) {
-          modalViewportRef.current.scrollTop = 0;
-          modalViewportRef.current.scrollLeft = 0;
-          autoFitModalChart();
-        }
-      }, 850);
+      }, 700);
       animTimeoutsRef.current.push(tHide);
-    }, timeline + 150);
+    }, timeline + 100);
     animTimeoutsRef.current.push(tFinish);
   }, [isModalOpen, autoFitModalChart]);
 
@@ -752,9 +826,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           flowchart: {
             htmlLabels: true,
             curve: 'basis',
-            nodeSpacing: 18,
-            rankSpacing: 24,
-            padding: 12
+            nodeSpacing: 45,
+            rankSpacing: 60,
+            padding: 16
           }
         });
 
@@ -1217,6 +1291,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             status={cursorState.status}
             label={cursorState.label}
             isClicking={cursorState.isClicking}
+            accentColor={cursorState.accentColor || '#A855F7'}
           />
 
           {/* Dedicated Live Drawing Overlay Layer */}
@@ -1686,6 +1761,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   status={cursorState.status}
                   label={cursorState.label}
                   isClicking={cursorState.isClicking}
+                  accentColor={cursorState.accentColor || '#A855F7'}
                 />
 
                 {/* Dedicated Live Drawing Overlay Layer */}
