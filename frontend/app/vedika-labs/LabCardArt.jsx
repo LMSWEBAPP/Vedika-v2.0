@@ -744,10 +744,10 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
     // Double Helix Geometry Constants
     const centerX = 87.5;
     const centerY = 96;
-    const diagonalTilt = -25 * (Math.PI / 180); // Diagonal angle (Option 10 tilt)
-    const topY = 24;      // Elegant tall reach
-    const bottomY = 168;  // Lands just above pedestal emitter
-    const helixHeight = bottomY - topY; // 144px tall
+    const diagonalTilt = 40 * (Math.PI / 180); // Dynamic opposite diagonal (+40 deg: lower-left to upper-right)
+    const topY = 32;      // Reaches towards upper-right
+    const bottomY = 160;  // Starts from lower-left near pedestal
+    const helixHeight = bottomY - topY; // 128px tall
     const helixRadius = 21; // Slender, perfectly proportioned
     const totalTurns = 1.35; // Distinct, graceful sinusoidal figure-8 loops
     const numRungs = 16;     // Cleanly spaced nucleotide ladder rungs
@@ -1030,12 +1030,12 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
         <HoloPedestal accentColor="#F59E0B" accentRgb={accentRgb} filterId="amberPedestalGlow" />
 
         {/* 3D Glossy Botanical Leaves Framing the Diagonal DNA Helix */}
-        <g className="live-bio-leaf-left" transform="translate(18, 136) rotate(-40)" filter="url(#amberPedestalGlow)">
+        <g className="live-bio-leaf-left" transform="translate(18, 52) rotate(-24)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 14 3, 24 16, 26 28 C 14 28, 4 20, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 10 12, 18 20, 26 28" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
 
-        <g className="live-bio-leaf-right" transform="translate(128, 42) rotate(35)" filter="url(#amberPedestalGlow)">
+        <g className="live-bio-leaf-right" transform="translate(136, 118) rotate(32)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 16 4, 28 18, 30 32 C 16 32, 4 22, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 12 14, 22 22, 30 32" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>

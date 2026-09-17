@@ -631,15 +631,15 @@
 }
 
 @keyframes bioLeafSwayLeft {
-  0% { transform: translate(16px, 48px) rotate(-22deg) scale(1); }
-  50% { transform: translate(16px, 44px) rotate(-16deg) scale(1.04); }
-  100% { transform: translate(16px, 48px) rotate(-22deg) scale(1); }
+  0% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
+  50% { transform: translate(18px, 48px) rotate(-18deg) scale(1.04); }
+  100% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
 }
 
 @keyframes bioLeafSwayRight {
-  0% { transform: translate(128px, 76px) rotate(32deg) scale(1); }
-  50% { transform: translate(128px, 72px) rotate(26deg) scale(1.04); }
-  100% { transform: translate(128px, 76px) rotate(32deg) scale(1); }
+  0% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
+  50% { transform: translate(136px, 114px) rotate(26deg) scale(1.04); }
+  100% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
 }
 
 /* Carousel Nav Arrows: Pure floating arrows without circle background */
