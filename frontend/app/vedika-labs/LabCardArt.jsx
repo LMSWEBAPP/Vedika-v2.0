@@ -578,11 +578,12 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
 });
 
 /**
- * 4. BIOLOGY LAB ART - OPTION 9 LIVE 3D PARTICLE DNA DOUBLE HELIX
- * - Hovering above the golden illuminated cybernetic pedestal
- * - High-performance interactive HTML5 Canvas 3D particle double helix
- * - 3D depth-sorting (front particles scale up with corona glow, back fade)
- * - Rotating A-T, G-C base pair rungs + floating ambient bioluminescent spores
+ * 4. BIOLOGY LAB ART - ICONIC 3D DNA DOUBLE HELIX
+ * - Authentic, slender double helix with 2 continuous twisting golden ribbons
+ * - Segment-by-segment 3D depth sorting (Z-buffer) with true front/back occlusion
+ * - Distinct base-pair horizontal ladder rungs with dual nucleobase colors & central H-bond
+ * - Glowing nucleotide bead nodes and shimmering ambient bioluminescent genetic dust
+ * - Perfectly centered and standing majestically above the cybernetic illuminated pedestal
  */
 export const BiologyLabArt = memo(function BiologyLabArt() {
   const canvasRef = useRef(null);
@@ -605,166 +606,229 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
 
-    // Floating Ambient Bioluminescent Spores
-    const spores = Array.from({ length: 18 }, () => ({
+    // Floating Ambient Bioluminescent Genetic Spores
+    const spores = Array.from({ length: 16 }, () => ({
       x: Math.random() * width,
-      y: Math.random() * height * 0.8,
-      r: 0.6 + Math.random() * 1.4,
-      vy: 0.2 + Math.random() * 0.45,
-      alpha: 0.2 + Math.random() * 0.7,
-      color: Math.random() > 0.45 ? '#F59E0B' : '#10B981'
+      y: 20 + Math.random() * 150,
+      r: 0.7 + Math.random() * 1.3,
+      vy: 0.25 + Math.random() * 0.45,
+      alpha: 0.3 + Math.random() * 0.65,
+      color: Math.random() > 0.4 ? '#FDE047' : '#34D399'
     }));
 
-    const numPoints = 24; // Number of base-pair rung levels along the helix
-    const helixRadius = 26;
-    const helixHeight = 118;
-    const startY = 32; // Top of the helix
-    const centerX = 87.5; // Directly aligned with the pedestal center
+    // Double Helix Geometry Constants
+    const centerX = 87.5; // Directly aligned with the center of the pedestal
+    const topY = 22;      // Elegant tall reach
+    const bottomY = 168;  // Lands just above the pedestal emitter
+    const helixHeight = bottomY - topY; // 146px tall
+    const helixRadius = 22; // Slender, perfectly proportioned
+    const totalTurns = 1.35; // Distinct, graceful sinusoidal figure-8 loops
+    const numRungs = 16;     // Cleanly spaced nucleotide ladder rungs
+    const numSteps = 70;     // Discretized ribbon segments for continuous smooth curves
+
+    const baseColors = [
+      { left: '#F59E0B', right: '#00D4FF', name: 'A-T' }, // Amber - Cyan
+      { left: '#10B981', right: '#EC4899', name: 'G-C' }, // Emerald - Rose
+      { left: '#00D4FF', right: '#F59E0B', name: 'T-A' },
+      { left: '#EC4899', right: '#10B981', name: 'C-G' }
+    ];
 
     function render() {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Render ambient floating spores
+      // 1. Render Floating Ambient Bioluminescent Spores
       for (let s of spores) {
         s.y -= s.vy;
-        if (s.y < 10) {
-          s.y = height * 0.75;
-          s.x = Math.random() * width;
+        if (s.y < topY - 10) {
+          s.y = bottomY - 5;
+          s.x = centerX - helixRadius * 1.6 + Math.random() * (helixRadius * 3.2);
         }
         ctx.fillStyle = s.color;
-        ctx.globalAlpha = s.alpha * 0.7;
+        ctx.globalAlpha = s.alpha * 0.75;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1.0;
 
-      angle += 0.024; // Smooth continuous 3D rotation speed
+      angle += 0.016; // Smooth, majestic 3D rotation speed
 
-      // 2. Compute 3D positions for both DNA strands & base-pair rungs
-      const renderQueue = [];
-      const rungColors = [
-        { c1: '#F59E0B', c2: '#00D4FF' }, // A-T (Amber - Cyan)
-        { c1: '#10B981', c2: '#EC4899' }, // G-C (Emerald - Rose)
-        { c1: '#00D4FF', c2: '#F59E0B' }, // T-A
-        { c1: '#EC4899', c2: '#10B981' }  // C-G
-      ];
+      // 2. Build 3D Render Queue with Depth Ordering
+      const drawQueue = [];
 
-      for (let i = 0; i < numPoints; i++) {
-        const t = i / (numPoints - 1);
-        const y = startY + t * helixHeight;
-        const currentAngle = angle + t * Math.PI * 3.6;
+      // A. Compute Ribbon Segments for Strand 1 and Strand 2
+      for (let i = 0; i < numSteps; i++) {
+        const tA = i / numSteps;
+        const tB = (i + 1) / numSteps;
 
-        // 3D coordinates for Strand 1
-        const x1 = centerX + Math.cos(currentAngle) * helixRadius;
-        const z1 = Math.sin(currentAngle) * helixRadius;
+        const yA = topY + tA * helixHeight;
+        const yB = topY + tB * helixHeight;
 
-        // 3D coordinates for Strand 2 (180 deg out of phase)
-        const x2 = centerX + Math.cos(currentAngle + Math.PI) * helixRadius;
-        const z2 = Math.sin(currentAngle + Math.PI) * helixRadius;
+        const thetaA = angle + tA * Math.PI * 2 * totalTurns;
+        const thetaB = angle + tB * Math.PI * 2 * totalTurns;
 
-        // Base-Pair Rung connecting the two strands
-        if (i % 2 === 0) {
-          const pair = rungColors[(i / 2) % rungColors.length];
-          const midZ = (z1 + z2) / 2;
-          renderQueue.push({
-            type: 'rung',
-            x1, y1: y,
-            x2, y2: y,
-            z: midZ,
-            c1: pair.c1,
-            c2: pair.c2
-          });
+        // Strand 1 (Golden Backbone)
+        const x1A = centerX + Math.cos(thetaA) * helixRadius;
+        const z1A = Math.sin(thetaA) * helixRadius;
+        const x1B = centerX + Math.cos(thetaB) * helixRadius;
+        const z1B = Math.sin(thetaB) * helixRadius;
+        const midZ1 = (z1A + z1B) / 2;
 
-          // Central hydrogen bond node
-          renderQueue.push({
-            type: 'particle',
-            x: (x1 + x2) / 2,
-            y,
-            z: midZ + 1,
-            r: 1.6,
-            color: '#FFFFFF',
-            glow: null,
-            isCore: true
-          });
-        }
-
-        // Particle on Strand 1 (Golden/Amber)
-        const depthFactor1 = (z1 + helixRadius) / (helixRadius * 2);
-        renderQueue.push({
-          type: 'particle',
-          x: x1,
-          y,
-          z: z1,
-          r: 2.4 + depthFactor1 * 1.8,
-          color: '#F59E0B',
-          glow: 'rgba(245, 158, 11, 0.85)',
-          isCore: false
+        drawQueue.push({
+          type: 'ribbonSegment',
+          strand: 1,
+          x1: x1A, y1: yA,
+          x2: x1B, y2: yB,
+          z: midZ1
         });
 
-        // Particle on Strand 2 (Emerald/Cyan)
-        const depthFactor2 = (z2 + helixRadius) / (helixRadius * 2);
-        renderQueue.push({
-          type: 'particle',
-          x: x2,
-          y,
-          z: z2,
-          r: 2.4 + depthFactor2 * 1.8,
-          color: '#10B981',
-          glow: 'rgba(16, 185, 129, 0.85)',
-          isCore: false
+        // Strand 2 (Offset by 180 degrees)
+        const x2A = centerX - Math.cos(thetaA) * helixRadius;
+        const z2A = -Math.sin(thetaA) * helixRadius;
+        const x2B = centerX - Math.cos(thetaB) * helixRadius;
+        const z2B = -Math.sin(thetaB) * helixRadius;
+        const midZ2 = (z2A + z2B) / 2;
+
+        drawQueue.push({
+          type: 'ribbonSegment',
+          strand: 2,
+          x1: x2A, y1: yA,
+          x2: x2B, y2: yB,
+          z: midZ2
         });
       }
 
-      // 3. Sort by Z depth (Back to front)
-      renderQueue.sort((a, b) => a.z - b.z);
+      // B. Compute Horizontal Base-Pair Rungs & Nucleotide Junction Beads
+      for (let j = 0; j < numRungs; j++) {
+        const t = (j + 0.5) / numRungs;
+        const y = topY + t * helixHeight;
+        const theta = angle + t * Math.PI * 2 * totalTurns;
 
-      // 4. Render depth-sorted elements
-      for (let item of renderQueue) {
-        const depth = (item.z + helixRadius) / (helixRadius * 2); // 0 (far) to 1 (front)
-        const alpha = Math.max(0.25, Math.min(1.0, 0.35 + depth * 0.65));
+        // Strand 1 node
+        const x1 = centerX + Math.cos(theta) * helixRadius;
+        const z1 = Math.sin(theta) * helixRadius;
 
-        if (item.type === 'rung') {
-          // Connecting Hydrogen Bond Line
+        // Strand 2 node
+        const x2 = centerX - Math.cos(theta) * helixRadius;
+        const z2 = -Math.sin(theta) * helixRadius;
+
+        const pair = baseColors[j % baseColors.length];
+
+        // Rung is centered on the axis (z = 0)
+        drawQueue.push({
+          type: 'rung',
+          x1, y1: y,
+          x2, y2: y,
+          z: 0, // Axis line is at z=0
+          leftColor: pair.left,
+          rightColor: pair.right
+        });
+
+        // Bead Node on Strand 1
+        drawQueue.push({
+          type: 'node',
+          x: x1,
+          y,
+          z: z1,
+          strand: 1
+        });
+
+        // Bead Node on Strand 2
+        drawQueue.push({
+          type: 'node',
+          x: x2,
+          y,
+          z: z2,
+          strand: 2
+        });
+      }
+
+      // 3. Sort entire queue by Z depth: Back (-Z) to Front (+Z)
+      drawQueue.sort((a, b) => a.z - b.z);
+
+      // 4. Render 3D Depth Sorted Elements
+      for (let item of drawQueue) {
+        // depthFactor: 0 = far back, 0.5 = middle, 1.0 = closest to viewer
+        const depthFactor = (item.z + helixRadius) / (helixRadius * 2);
+        const isFront = item.z > 0;
+
+        if (item.type === 'ribbonSegment') {
           ctx.beginPath();
           ctx.moveTo(item.x1, item.y1);
           ctx.lineTo(item.x2, item.y2);
-          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.55})`;
-          ctx.lineWidth = 1.4;
+
+          if (isFront) {
+            // Front Ribbon: Bold, intense golden-neon with radiant glow
+            // Outer Glow Pass
+            ctx.strokeStyle = item.strand === 1 ? 'rgba(245, 158, 11, 0.5)' : 'rgba(251, 191, 36, 0.45)';
+            ctx.lineWidth = 5.0;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Core Solid Radiant Ribbon
+            ctx.strokeStyle = item.strand === 1 ? '#FDE047' : '#FBBF24';
+            ctx.lineWidth = 2.8;
+            ctx.stroke();
+
+            // Specular Hotspot Line
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1.0;
+            ctx.stroke();
+          } else {
+            // Back Ribbon: Atmospheric, slightly darker/faded for realistic depth
+            ctx.strokeStyle = item.strand === 1 ? 'rgba(180, 83, 9, 0.4)' : 'rgba(217, 119, 6, 0.35)';
+            ctx.lineWidth = 2.0;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+          }
+        } else if (item.type === 'rung') {
+          const midX = (item.x1 + item.x2) / 2;
+
+          // Left Base Segment
+          ctx.beginPath();
+          ctx.moveTo(item.x1, item.y1);
+          ctx.lineTo(midX, item.y1);
+          ctx.strokeStyle = item.leftColor;
+          ctx.lineWidth = 2.2;
+          ctx.lineCap = 'round';
           ctx.stroke();
 
-          // End nodes
-          ctx.fillStyle = item.c1;
+          // Right Base Segment
           ctx.beginPath();
-          ctx.arc(item.x1, item.y1, 2.2, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(midX, item.y1);
+          ctx.lineTo(item.x2, item.y2);
+          ctx.strokeStyle = item.rightColor;
+          ctx.lineWidth = 2.2;
+          ctx.lineCap = 'round';
+          ctx.stroke();
 
-          ctx.fillStyle = item.c2;
+          // Central Hydrogen Bond Sparkle Node
           ctx.beginPath();
-          ctx.arc(item.x2, item.y2, 2.2, 0, Math.PI * 2);
+          ctx.arc(midX, item.y1, 1.6, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
           ctx.fill();
-        } else if (item.type === 'particle') {
-          const r = item.r;
+        } else if (item.type === 'node') {
+          const radius = 1.8 + depthFactor * 1.6; // 1.8px (back) to 3.4px (front)
 
-          // Outer Corona Glow for foreground particles
-          if (depth > 0.4 && item.glow) {
-            ctx.fillStyle = item.glow;
+          // Outer Glow for front nodes
+          if (isFront) {
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.8)';
             ctx.beginPath();
-            ctx.arc(item.x, item.y, r * 2.2, 0, Math.PI * 2);
+            ctx.arc(item.x, item.y, radius * 1.8, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // Core Particle Sphere
-          ctx.fillStyle = item.isCore ? `rgba(255, 255, 255, ${alpha})` : item.color;
+          // Node Solid Bead
+          ctx.fillStyle = isFront ? '#FEF08A' : 'rgba(217, 119, 6, 0.55)';
           ctx.beginPath();
-          ctx.arc(item.x, item.y, r, 0, Math.PI * 2);
+          ctx.arc(item.x, item.y, radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Specular Glint on prominent front particles
-          if (depth > 0.65) {
+          // Specular White Glint on front nodes
+          if (depthFactor > 0.6) {
             ctx.fillStyle = '#FFFFFF';
             ctx.beginPath();
-            ctx.arc(item.x - r * 0.3, item.y - r * 0.3, r * 0.45, 0, Math.PI * 2);
+            ctx.arc(item.x - radius * 0.3, item.y - radius * 0.3, radius * 0.45, 0, Math.PI * 2);
             ctx.fill();
           }
         }
@@ -779,7 +843,7 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
   return (
     <div className="art-bio-detailed" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* 3D Particle Canvas for Live DNA Sequence */}
+      {/* 3D Particle Canvas for Authentic DNA Sequence */}
       <canvas
         ref={canvasRef}
         style={{
@@ -792,7 +856,7 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
         }}
       />
 
-      {/* SVG Layer for Pedestal Base and Botanical Accents */}
+      {/* SVG Layer for Cybernetic Pedestal Base and Botanical Accents */}
       <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1 }}>
         <defs>
           <pattern id="bioGrid" width="18" height="18" patternUnits="userSpaceOnUse">
@@ -833,12 +897,12 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
         <HoloPedestal accentColor="#F59E0B" accentRgb={accentRgb} filterId="amberPedestalGlow" />
 
         {/* 3D Glossy Botanical Leaves Framing the DNA Helix */}
-        <g className="live-bio-leaf-left" transform="translate(16, 48) rotate(-22)" filter="url(#amberPedestalGlow)">
+        <g className="live-bio-leaf-left" transform="translate(14, 42) rotate(-22)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 14 3, 24 16, 26 28 C 14 28, 4 20, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 10 12, 18 20, 26 28" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
 
-        <g className="live-bio-leaf-right" transform="translate(128, 76) rotate(32)" filter="url(#amberPedestalGlow)">
+        <g className="live-bio-leaf-right" transform="translate(132, 70) rotate(32)" filter="url(#amberPedestalGlow)">
           <path d="M 0 0 C 16 4, 28 18, 30 32 C 16 32, 4 22, 0 0 Z" fill="url(#bioLeafGrad)" />
           <path d="M 0 0 C 12 14, 22 22, 30 32" stroke="#ECFDF5" strokeWidth="0.8" />
         </g>
