@@ -88,7 +88,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
-  const [isModalOpen, setIsModalOpen] = useState(false); // Fullscreen expand modal
+  const [isModalOpen, setIsModalOpen] = useState(true); // Fullscreen expand modal open by default for Visual Summary!
   const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
 
   // Mouse drag panning state for modal viewport
@@ -115,8 +115,8 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
   const stopAndCleanAnimation = useCallback((containerEl) => {
     clearAnimTimeouts();
-    const root = containerEl || containerRef.current;
-    if (root) {
+    const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
+    targets.forEach((root) => {
       const wrapper = root.querySelector('.mermaid-svg-wrapper');
       if (wrapper) wrapper.classList.remove('building');
       const nodes = root.querySelectorAll('.node');
@@ -127,13 +127,14 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
       edges.forEach((e) => {
         e.classList.remove('stitch-edge-drawing', 'stitch-edge-drawn');
       });
-    }
+    });
     setIsBuilding(false);
     setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
   }, []);
 
   const runLiveDrawAnimation = useCallback((containerEl) => {
-    const container = containerEl || containerRef.current;
+    // Dynamically target the active viewport (modal if open, otherwise inline container)
+    const container = containerEl || (modalViewportRef.current || containerRef.current);
     if (!container) return;
     const wrapper = container.querySelector('.mermaid-svg-wrapper');
     if (!wrapper) return;
@@ -145,7 +146,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
     if (nodes.length === 0) return;
 
-    // Set building mode: all nodes & edges hidden initially
+    // Reset building mode: all nodes & edges hidden initially
     wrapper.classList.add('building');
     nodes.forEach((n) => {
       n.classList.remove('stitch-node-wireframe', 'stitch-node-solidified');
@@ -156,49 +157,60 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
     setIsBuilding(true);
 
-    // Initial cursor coordinates slightly offset from first node
+    // Initial cursor coordinates: center top of the diagram canvas
     const vpRect = container.getBoundingClientRect();
     const firstRect = nodes[0].getBoundingClientRect();
-    const startX = Math.max(16, firstRect.left - vpRect.left + container.scrollLeft - 30);
-    const startY = Math.max(16, firstRect.top - vpRect.top + container.scrollTop - 30);
+    const startX = Math.max(20, (firstRect.left - vpRect.left) + container.scrollLeft + (firstRect.width / 2) - 40);
+    const startY = Math.max(20, (firstRect.top - vpRect.top) + container.scrollTop - 70);
 
+    // ── Phase 1: Synthesize Knowledge (~1200ms) ──
     setCursorState({
       x: startX,
       y: startY,
       visible: true,
-      status: 'Synthesizing...',
-      label: 'Architecture',
+      status: '🧠 Synthesizing Knowledge...',
+      label: 'Analyzing structure',
       isClicking: false
     });
 
-    let cumulativeDelay = 180;
-    const STEP_DURATION = 650; // Snappy & cinematic ~0.65s per node
+    let timeline = 1200; // 1.2s synthesis scan
+    const BLOCK_STEP = 780; // ~0.78s per block
 
+    // ── Phase 2: Draw All Blocks & Names One by One (NO edges yet) ──
     nodes.forEach((nodeEl, idx) => {
-      // Step A: Cursor arrives at node & activates blueprint wireframe
-      const tGlide = setTimeout(() => {
+      // Step 2A: Glide cursor to block & sketch glowing blueprint wireframe
+      const tDraft = setTimeout(() => {
         if (!container.contains(nodeEl)) return;
         const currentVp = container.getBoundingClientRect();
         const nodeR = nodeEl.getBoundingClientRect();
-        const nx = nodeR.left - currentVp.left + container.scrollLeft + nodeR.width / 2;
-        const ny = nodeR.top - currentVp.top + container.scrollTop + nodeR.height / 2;
+        const nx = (nodeR.left - currentVp.left) + container.scrollLeft + (nodeR.width / 2);
+        const ny = (nodeR.top - currentVp.top) + container.scrollTop + (nodeR.height / 2);
 
-        const labelText = nodeEl.textContent?.trim().replace(/\s+/g, ' ').slice(0, 24) || `Node ${idx + 1}`;
+        const labelText = nodeEl.textContent?.trim().replace(/\s+/g, ' ').slice(0, 26) || `Block ${idx + 1}`;
 
         setCursorState({
           x: nx,
           y: ny,
           visible: true,
-          status: idx === 0 ? 'Blueprint...' : `Drafting (${idx + 1}/${nodes.length})`,
+          status: `Drafting Block (${idx + 1}/${nodes.length})`,
           label: labelText,
           isClicking: false
         });
 
         nodeEl.classList.add('stitch-node-wireframe');
-      }, cumulativeDelay);
-      animTimeoutsRef.current.push(tGlide);
 
-      // Step B: Solidify card with cyan bloom & trigger click shockwave
+        // Smoothly auto-scroll container so current block stays centered if tall diagram
+        const relativeY = nodeR.top - currentVp.top;
+        if (relativeY > currentVp.height * 0.72 || relativeY < 50) {
+          container.scrollTo({
+            top: container.scrollTop + relativeY - currentVp.height * 0.35,
+            behavior: 'smooth'
+          });
+        }
+      }, timeline);
+      animTimeoutsRef.current.push(tDraft);
+
+      // Step 2B: Solidify card with cyan bloom flash & click shockwave
       const tSolidify = setTimeout(() => {
         if (!container.contains(nodeEl)) return;
         nodeEl.classList.remove('stitch-node-wireframe');
@@ -206,32 +218,90 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
         setCursorState((prev) => ({
           ...prev,
-          status: 'Solidifying ✨',
+          status: 'Card Solidified ✨',
           isClicking: true
         }));
-
-        // Trace connector path to next node with laser beam
-        if (edges[idx]) {
-          edges[idx].classList.add('stitch-edge-drawing');
-          const tEdge = setTimeout(() => {
-            edges[idx].classList.remove('stitch-edge-drawing');
-            edges[idx].classList.add('stitch-edge-drawn');
-          }, 260);
-          animTimeoutsRef.current.push(tEdge);
-        }
-      }, cumulativeDelay + 360);
+      }, timeline + 420);
       animTimeoutsRef.current.push(tSolidify);
 
-      // Step C: Release click ripple
-      const tClickOff = setTimeout(() => {
+      // Step 2C: Release click shockwave
+      const tRelease = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, isClicking: false }));
-      }, cumulativeDelay + 500);
-      animTimeoutsRef.current.push(tClickOff);
+      }, timeline + 600);
+      animTimeoutsRef.current.push(tRelease);
 
-      cumulativeDelay += STEP_DURATION;
+      timeline += BLOCK_STEP;
     });
 
-    // Step D: Finish sequence & smoothly dismiss cursor
+    // ── Phase 3: Link the Blocks Correctly One by One ──
+    // ONLY starts after all blocks have been drafted and named!
+    const tPauseNotice = setTimeout(() => {
+      setCursorState((prev) => ({
+        ...prev,
+        status: '🔗 Linking Concepts & Flows...',
+        label: 'Wiring Connectors',
+        isClicking: false
+      }));
+    }, timeline + 100);
+    animTimeoutsRef.current.push(tPauseNotice);
+
+    timeline += 450;
+    const EDGE_STEP = 680; // ~0.68s per connector arrow
+
+    edges.forEach((edgeEl, edgeIdx) => {
+      // Step 3A: Move cursor to start of connector & shoot laser beam
+      const tStartLink = setTimeout(() => {
+        if (!container.contains(edgeEl)) return;
+        const currentVp = container.getBoundingClientRect();
+        const edgeR = edgeEl.getBoundingClientRect();
+        const ex = (edgeR.left - currentVp.left) + container.scrollLeft + (edgeR.width / 2);
+        const ey = (edgeR.top - currentVp.top) + container.scrollTop + 8;
+
+        setCursorState({
+          x: ex,
+          y: ey,
+          visible: true,
+          status: `Linking Flow (${edgeIdx + 1}/${edges.length})`,
+          label: 'Connecting ➔',
+          isClicking: false
+        });
+
+        edgeEl.classList.add('stitch-edge-drawing');
+      }, timeline);
+      animTimeoutsRef.current.push(tStartLink);
+
+      // Step 3B: Glide cursor down arrow path to the tip & stamp shockwave
+      const tFinishLink = setTimeout(() => {
+        if (!container.contains(edgeEl)) return;
+        const currentVp = container.getBoundingClientRect();
+        const edgeR = edgeEl.getBoundingClientRect();
+        const ex = (edgeR.left - currentVp.left) + container.scrollLeft + (edgeR.width / 2);
+        const ey = (edgeR.top - currentVp.top) + container.scrollTop + Math.max(16, edgeR.height - 6);
+
+        setCursorState({
+          x: ex,
+          y: ey,
+          visible: true,
+          status: `Connected Flow (${edgeIdx + 1}/${edges.length})`,
+          label: 'Flow Linked',
+          isClicking: true
+        });
+
+        edgeEl.classList.remove('stitch-edge-drawing');
+        edgeEl.classList.add('stitch-edge-drawn');
+      }, timeline + 360);
+      animTimeoutsRef.current.push(tFinishLink);
+
+      // Step 3C: Release click shockwave
+      const tEdgeRelease = setTimeout(() => {
+        setCursorState((prev) => ({ ...prev, isClicking: false }));
+      }, timeline + 520);
+      animTimeoutsRef.current.push(tEdgeRelease);
+
+      timeline += EDGE_STEP;
+    });
+
+    // ── Phase 4: Settle & Complete ──
     const tFinish = setTimeout(() => {
       edges.forEach((e) => {
         e.classList.remove('stitch-edge-drawing');
@@ -240,8 +310,8 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
       setCursorState((prev) => ({
         ...prev,
-        status: 'Complete ✨',
-        label: 'Ready',
+        status: 'Diagram Complete ✨',
+        label: 'Canvas Ready',
         isClicking: false
       }));
 
@@ -249,9 +319,9 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
         wrapper.classList.remove('building');
         setCursorState((prev) => ({ ...prev, visible: false }));
         setIsBuilding(false);
-      }, 650);
+      }, 900);
       animTimeoutsRef.current.push(tHide);
-    }, cumulativeDelay + 180);
+    }, timeline + 160);
     animTimeoutsRef.current.push(tFinish);
   }, []);
 
@@ -260,7 +330,8 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   };
 
   const handleReplayBuild = () => {
-    runLiveDrawAnimation(isModalOpen ? modalViewportRef.current : containerRef.current);
+    const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
+    runLiveDrawAnimation(activeTarget);
   };
 
   const handleToggleLiveDraw = () => {
@@ -326,20 +397,24 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           themeVariables: {
             darkMode: true,
             background: 'transparent',
-            primaryColor: '#1E293B',
+            primaryColor: '#161D30',
             primaryTextColor: '#F8FAFC',
             primaryBorderColor: '#3B82F6',
             lineColor: '#60A5FA',
             secondaryColor: '#1E1B4B',
             tertiaryColor: '#0F172A',
-            edgeLabelBackground: '#1E293B',
+            edgeLabelBackground: '#161D30',
             fontFamily: 'var(--font-outfit), sans-serif',
-            fontSize: '13px'
+            fontSize: '11.5px',
+            nodeBorder: '1.25px'
           },
           securityLevel: 'loose',
           flowchart: {
             htmlLabels: true,
-            curve: 'basis'
+            curve: 'basis',
+            nodeSpacing: 25,
+            rankSpacing: 32,
+            padding: 8
           }
         });
 
@@ -350,10 +425,10 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-          return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+          return `<svg ${attrs} style="${style}; max-width: min(100%, 520px); margin: 0 auto; display: block;"`;
         });
         if (!cleanSvg.includes('style=')) {
-          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 520px); margin: 0 auto; display: block;" ');
         }
         if (isMounted) {
           setSvgHtml(cleanSvg);
@@ -369,10 +444,10 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-              return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+              return `<svg ${attrs} style="${style}; max-width: min(100%, 520px); margin: 0 auto; display: block;"`;
             });
             if (!cleanSvg.includes('style=')) {
-              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 520px); margin: 0 auto; display: block;" ');
             }
             if (isMounted) {
               setSvgHtml(cleanSvg);
@@ -397,15 +472,40 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
     };
   }, [activeChartCode, points]);
 
-  // Trigger Stitch AI live draw when diagram renders if enabled
+  // Trigger Stitch AI live draw once the active viewport & its SVG nodes are mounted
   useEffect(() => {
-    if (svgHtml && isLiveDrawEnabled) {
-      const timer = setTimeout(() => {
-        runLiveDrawAnimation(containerRef.current);
-      }, 120);
-      return () => clearTimeout(timer);
-    }
-  }, [svgHtml, isLiveDrawEnabled, runLiveDrawAnimation]);
+    if (!svgHtml || !isLiveDrawEnabled) return;
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const timer = setInterval(() => {
+      attempts++;
+      const target = (isModalOpen && modalViewportRef.current)
+        ? modalViewportRef.current
+        : containerRef.current;
+
+      if (target) {
+        const nodes = target.querySelectorAll('.node');
+        if (nodes.length > 0) {
+          clearInterval(timer);
+          if (!cancelled) {
+            runLiveDrawAnimation(target);
+          }
+          return;
+        }
+      }
+
+      if (attempts > 40) {
+        clearInterval(timer);
+      }
+    }, 45);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [svgHtml, isLiveDrawEnabled, isModalOpen, runLiveDrawAnimation]);
 
   // Handle ESC key to dismiss modal
   useEffect(() => {
@@ -417,13 +517,22 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.2));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.15, 0.5));
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.5));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.15, 0.4));
   const handleZoomReset = () => setZoom(1);
 
-  const handleModalZoomIn = () => setModalZoom(prev => Math.min(prev + 0.15, 2.5));
-  const handleModalZoomOut = () => setModalZoom(prev => Math.max(prev - 0.15, 0.35));
+  const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 3.5));
+  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.15));
   const handleModalZoomReset = () => setModalZoom(1);
+
+  const handleModalWheel = (e) => {
+    // Zoom in/out on Ctrl/Cmd + Wheel or Trackpad pinch
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.1 : -0.1;
+      setModalZoom(prev => Math.max(0.15, Math.min(3.5, Number((prev + delta).toFixed(2)))));
+    }
+  };
 
   const handleFitToScreen = () => {
     if (!modalViewportRef.current) {
@@ -1104,6 +1213,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onWheel={handleModalWheel}
                 style={{
                   flex: 1,
                   height: '100%',
@@ -1145,28 +1255,6 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                     dangerouslySetInnerHTML={{ __html: svgHtml }}
                   />
                 )}
-              </div>
-
-              {/* Floating Pan/Zoom Navigation Hint */}
-              <div style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 20,
-                background: 'rgba(10, 14, 26, 0.88)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 20,
-                padding: '6px 14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#94A3B8',
-                fontSize: 11,
-                pointerEvents: 'none',
-                backdropFilter: 'blur(8px)',
-                zIndex: 10
-              }}>
-                <Move size={12} color="#60A5FA" />
-                <span>Click &amp; drag or scroll to pan &bull; Zoom controls at top &bull; Esc to go back</span>
               </div>
 
               {/* Right-Side Key Takeaways Drawer */}
@@ -1225,6 +1313,32 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                   </div>
                 </aside>
               )}
+            </div>
+
+            {/* Modal Bottom Status Bar */}
+            <div
+              className="mermaid-modal-statusbar"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '7px 20px',
+                background: 'rgba(10, 14, 26, 0.96)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#94A3B8',
+                fontSize: 11.5,
+                flexShrink: 0,
+                zIndex: 20
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Move size={13} color="#60A5FA" />
+                <span>Click &amp; drag or scroll to pan canvas &bull; Ctrl + Scroll to zoom freely &bull; Esc to go back</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#64748B' }}>Canvas Zoom:</span>
+                <span style={{ color: '#38BDF8', fontWeight: 700 }}>{Math.round(modalZoom * 100)}%</span>
+              </div>
             </div>
           </div>
         </div>,

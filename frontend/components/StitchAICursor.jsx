@@ -86,14 +86,15 @@ export default function StitchAICursor({
       {/* SVG Cursor Pointer (Google Stitch / Figma AI Style) */}
       <svg
         className="stitch-cursor-pointer"
-        width="26"
-        height="26"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{
-          filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.65)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
-          transform: 'rotate(-4deg)',
+          filter: 'drop-shadow(0 4px 14px rgba(56, 189, 248, 0.85)) drop-shadow(0 2px 5px rgba(0,0,0,0.9))',
+          transform: isClicking ? 'scale(0.88) rotate(-8deg)' : 'rotate(-4deg)',
+          transition: 'transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)',
           display: 'block'
         }}
       >
