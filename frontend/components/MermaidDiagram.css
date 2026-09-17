@@ -557,3 +557,268 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   border-color: rgba(239, 68, 68, 0.4);
   color: #FCA5A5;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Google Stitch & Figma AI Live Generative Construction Engine
+   ───────────────────────────────────────────────────────────── */
+
+/* Live Draw Toolbar Controls */
+.stitch-toggle-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 20px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #94A3B8 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.stitch-toggle-btn:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #F8FAFC !important;
+}
+
+.stitch-toggle-btn.active {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: #38BDF8 !important;
+  color: #38BDF8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25) !important;
+}
+
+.stitch-toggle-track {
+  width: 26px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.stitch-toggle-btn.active .stitch-toggle-track {
+  background: #38BDF8;
+}
+
+.stitch-toggle-thumb {
+  width: 10px;
+  height: 10px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.stitch-toggle-btn.active .stitch-toggle-thumb {
+  transform: translateX(12px);
+}
+
+.stitch-skip-btn {
+  background: rgba(244, 63, 94, 0.15) !important;
+  border: 1px solid rgba(244, 63, 94, 0.35) !important;
+  color: #FDA4AF !important;
+  padding: 4px 9px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.stitch-skip-btn:hover {
+  background: rgba(244, 63, 94, 0.25) !important;
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  color: #FFF !important;
+}
+
+.stitch-replay-btn {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: #D8B4FE !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.stitch-replay-btn:hover {
+  background: rgba(168, 85, 247, 0.25) !important;
+  border-color: rgba(168, 85, 247, 0.6) !important;
+  color: #FFF !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* AI Cursor Shockwave Ripple */
+.stitch-cursor-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  margin-left: -22px;
+  border-radius: 50%;
+  border: 2px solid #38BDF8;
+  animation: stitchRipple 0.55s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes stitchRipple {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Sparkle Particles */
+.stitch-particle {
+  pointer-events: none;
+  animation: stitchParticleFade 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes stitchParticleFade {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) translateY(-14px);
+    opacity: 0;
+  }
+}
+
+/* Live Draw Building State on Mermaid SVG */
+.mermaid-svg-wrapper.building .node {
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mermaid-svg-wrapper.building .edgePath {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* Blueprint Wireframe Node (When Cursor Is Drafting) */
+.mermaid-svg-wrapper .stitch-node-wireframe {
+  opacity: 0.95 !important;
+  transform-origin: center center;
+  animation: stitchWireframePulse 0.9s infinite alternate cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.mermaid-svg-wrapper .stitch-node-wireframe rect,
+.mermaid-svg-wrapper .stitch-node-wireframe circle,
+.mermaid-svg-wrapper .stitch-node-wireframe polygon,
+.mermaid-svg-wrapper .stitch-node-wireframe ellipse {
+  fill: rgba(14, 23, 42, 0.65) !important;
+  stroke: #38BDF8 !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 6 3 !important;
+  animation: stitchDashScroll 1.2s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.75)) !important;
+}
+
+.mermaid-svg-wrapper .stitch-node-wireframe .label,
+.mermaid-svg-wrapper .stitch-node-wireframe text {
+  opacity: 0.8 !important;
+}
+
+@keyframes stitchWireframePulse {
+  0% {
+    transform: scale(0.98);
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.4));
+  }
+  100% {
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.9));
+  }
+}
+
+@keyframes stitchDashScroll {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+/* Solidified Card (After AI Stamping) */
+.mermaid-svg-wrapper .stitch-node-solidified {
+  opacity: 1 !important;
+  animation: stitchSolidifyBloom 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mermaid-svg-wrapper .stitch-node-solidified rect,
+.mermaid-svg-wrapper .stitch-node-solidified circle,
+.mermaid-svg-wrapper .stitch-node-solidified polygon,
+.mermaid-svg-wrapper .stitch-node-solidified ellipse {
+  fill: #161D30 !important;
+  stroke: #4F83F6 !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: none !important;
+  transition: all 0.35s ease;
+}
+
+@keyframes stitchSolidifyBloom {
+  0% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 24px rgba(56, 189, 248, 1)) drop-shadow(0 0 12px rgba(129, 140, 248, 0.8));
+  }
+  50% {
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.6));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+  }
+}
+
+/* Connector Laser Draw Effect */
+.mermaid-svg-wrapper .stitch-edge-drawing {
+  opacity: 1 !important;
+}
+
+.mermaid-svg-wrapper .stitch-edge-drawing path {
+  stroke: #38BDF8 !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: stitchLaserPath 0.5s ease-out forwards;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
+}
+
+.mermaid-svg-wrapper .stitch-edge-drawn {
+  opacity: 1 !important;
+  transition: opacity 0.3s ease;
+}
+
+.mermaid-svg-wrapper .stitch-edge-drawn path {
+  stroke: #60A5FA !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: none !important;
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.35));
+}
+
+@keyframes stitchLaserPath {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+

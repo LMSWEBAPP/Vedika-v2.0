@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ZoomIn, ZoomOut, RotateCcw, Code, Copy, Check, Sparkles, AlertCircle, Maximize2, ChevronDown, X, ArrowLeft, Move } from 'lucide-react';
+import StitchAICursor from './StitchAICursor';
 import './MermaidDiagram.css';
 
 /**
@@ -93,6 +94,186 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
   // Mouse drag panning state for modal viewport
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+
+  // ── Stitch AI Live Construction State ──
+  const [isLiveDrawEnabled, setIsLiveDrawEnabled] = useState(true);
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [cursorState, setCursorState] = useState({
+    x: 0,
+    y: 0,
+    visible: false,
+    status: 'Drafting...',
+    label: '',
+    isClicking: false
+  });
+  const animTimeoutsRef = useRef([]);
+
+  const clearAnimTimeouts = () => {
+    animTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    animTimeoutsRef.current = [];
+  };
+
+  const stopAndCleanAnimation = useCallback((containerEl) => {
+    clearAnimTimeouts();
+    const root = containerEl || containerRef.current;
+    if (root) {
+      const wrapper = root.querySelector('.mermaid-svg-wrapper');
+      if (wrapper) wrapper.classList.remove('building');
+      const nodes = root.querySelectorAll('.node');
+      nodes.forEach((n) => {
+        n.classList.remove('stitch-node-wireframe', 'stitch-node-solidified');
+      });
+      const edges = root.querySelectorAll('.edgePath');
+      edges.forEach((e) => {
+        e.classList.remove('stitch-edge-drawing', 'stitch-edge-drawn');
+      });
+    }
+    setIsBuilding(false);
+    setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
+  }, []);
+
+  const runLiveDrawAnimation = useCallback((containerEl) => {
+    const container = containerEl || containerRef.current;
+    if (!container) return;
+    const wrapper = container.querySelector('.mermaid-svg-wrapper');
+    if (!wrapper) return;
+
+    clearAnimTimeouts();
+
+    const nodes = Array.from(wrapper.querySelectorAll('.node'));
+    const edges = Array.from(wrapper.querySelectorAll('.edgePath'));
+
+    if (nodes.length === 0) return;
+
+    // Set building mode: all nodes & edges hidden initially
+    wrapper.classList.add('building');
+    nodes.forEach((n) => {
+      n.classList.remove('stitch-node-wireframe', 'stitch-node-solidified');
+    });
+    edges.forEach((e) => {
+      e.classList.remove('stitch-edge-drawing', 'stitch-edge-drawn');
+    });
+
+    setIsBuilding(true);
+
+    // Initial cursor coordinates slightly offset from first node
+    const vpRect = container.getBoundingClientRect();
+    const firstRect = nodes[0].getBoundingClientRect();
+    const startX = Math.max(16, firstRect.left - vpRect.left + container.scrollLeft - 30);
+    const startY = Math.max(16, firstRect.top - vpRect.top + container.scrollTop - 30);
+
+    setCursorState({
+      x: startX,
+      y: startY,
+      visible: true,
+      status: 'Synthesizing...',
+      label: 'Architecture',
+      isClicking: false
+    });
+
+    let cumulativeDelay = 180;
+    const STEP_DURATION = 650; // Snappy & cinematic ~0.65s per node
+
+    nodes.forEach((nodeEl, idx) => {
+      // Step A: Cursor arrives at node & activates blueprint wireframe
+      const tGlide = setTimeout(() => {
+        if (!container.contains(nodeEl)) return;
+        const currentVp = container.getBoundingClientRect();
+        const nodeR = nodeEl.getBoundingClientRect();
+        const nx = nodeR.left - currentVp.left + container.scrollLeft + nodeR.width / 2;
+        const ny = nodeR.top - currentVp.top + container.scrollTop + nodeR.height / 2;
+
+        const labelText = nodeEl.textContent?.trim().replace(/\s+/g, ' ').slice(0, 24) || `Node ${idx + 1}`;
+
+        setCursorState({
+          x: nx,
+          y: ny,
+          visible: true,
+          status: idx === 0 ? 'Blueprint...' : `Drafting (${idx + 1}/${nodes.length})`,
+          label: labelText,
+          isClicking: false
+        });
+
+        nodeEl.classList.add('stitch-node-wireframe');
+      }, cumulativeDelay);
+      animTimeoutsRef.current.push(tGlide);
+
+      // Step B: Solidify card with cyan bloom & trigger click shockwave
+      const tSolidify = setTimeout(() => {
+        if (!container.contains(nodeEl)) return;
+        nodeEl.classList.remove('stitch-node-wireframe');
+        nodeEl.classList.add('stitch-node-solidified');
+
+        setCursorState((prev) => ({
+          ...prev,
+          status: 'Solidifying ✨',
+          isClicking: true
+        }));
+
+        // Trace connector path to next node with laser beam
+        if (edges[idx]) {
+          edges[idx].classList.add('stitch-edge-drawing');
+          const tEdge = setTimeout(() => {
+            edges[idx].classList.remove('stitch-edge-drawing');
+            edges[idx].classList.add('stitch-edge-drawn');
+          }, 260);
+          animTimeoutsRef.current.push(tEdge);
+        }
+      }, cumulativeDelay + 360);
+      animTimeoutsRef.current.push(tSolidify);
+
+      // Step C: Release click ripple
+      const tClickOff = setTimeout(() => {
+        setCursorState((prev) => ({ ...prev, isClicking: false }));
+      }, cumulativeDelay + 500);
+      animTimeoutsRef.current.push(tClickOff);
+
+      cumulativeDelay += STEP_DURATION;
+    });
+
+    // Step D: Finish sequence & smoothly dismiss cursor
+    const tFinish = setTimeout(() => {
+      edges.forEach((e) => {
+        e.classList.remove('stitch-edge-drawing');
+        e.classList.add('stitch-edge-drawn');
+      });
+
+      setCursorState((prev) => ({
+        ...prev,
+        status: 'Complete ✨',
+        label: 'Ready',
+        isClicking: false
+      }));
+
+      const tHide = setTimeout(() => {
+        wrapper.classList.remove('building');
+        setCursorState((prev) => ({ ...prev, visible: false }));
+        setIsBuilding(false);
+      }, 650);
+      animTimeoutsRef.current.push(tHide);
+    }, cumulativeDelay + 180);
+    animTimeoutsRef.current.push(tFinish);
+  }, []);
+
+  const handleSkipBuild = (targetEl) => {
+    stopAndCleanAnimation(targetEl || (isModalOpen ? modalViewportRef.current : containerRef.current));
+  };
+
+  const handleReplayBuild = () => {
+    runLiveDrawAnimation(isModalOpen ? modalViewportRef.current : containerRef.current);
+  };
+
+  const handleToggleLiveDraw = () => {
+    if (isBuilding) {
+      handleSkipBuild();
+    }
+    setIsLiveDrawEnabled((prev) => !prev);
+  };
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => clearAnimTimeouts();
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -215,6 +396,16 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
       isMounted = false;
     };
   }, [activeChartCode, points]);
+
+  // Trigger Stitch AI live draw when diagram renders if enabled
+  useEffect(() => {
+    if (svgHtml && isLiveDrawEnabled) {
+      const timer = setTimeout(() => {
+        runLiveDrawAnimation(containerRef.current);
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [svgHtml, isLiveDrawEnabled, runLiveDrawAnimation]);
 
   // Handle ESC key to dismiss modal
   useEffect(() => {
@@ -369,6 +560,44 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
         </div>
 
         <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* Google Stitch AI Live Draw 1-Click Toggle */}
+          <button
+            type="button"
+            className={`stitch-toggle-btn ${isLiveDrawEnabled ? 'active' : ''}`}
+            onClick={handleToggleLiveDraw}
+            title={isLiveDrawEnabled ? "Live AI Drawing Enabled (Click to disable)" : "Live AI Drawing Disabled (Click to enable)"}
+          >
+            <div className="stitch-toggle-track">
+              <div className="stitch-toggle-thumb" />
+            </div>
+            <span>Live Draw</span>
+          </button>
+
+          {/* Skip button during building */}
+          {isBuilding && (
+            <button
+              type="button"
+              className="stitch-skip-btn"
+              onClick={() => handleSkipBuild()}
+              title="Skip live drawing animation"
+            >
+              <span>Skip ⏭</span>
+            </button>
+          )}
+
+          {/* Replay Build button when diagram is ready and not currently building */}
+          {!isBuilding && !loading && !renderError && svgHtml && (
+            <button
+              type="button"
+              className="stitch-replay-btn"
+              onClick={handleReplayBuild}
+              title="Replay Google Stitch-inspired AI live drawing"
+            >
+              <Sparkles size={12} color="#D8B4FE" />
+              <span>Replay ✨</span>
+            </button>
+          )}
+
           {/* Zoom controls */}
           <button
             type="button"
@@ -490,6 +719,16 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             userSelect: 'none'
           }}
         >
+          {/* Google Stitch AI Floating Cursor */}
+          <StitchAICursor
+            x={cursorState.x}
+            y={cursorState.y}
+            visible={isBuilding && cursorState.visible && !isModalOpen}
+            status={cursorState.status}
+            label={cursorState.label}
+            isClicking={cursorState.isClicking}
+          />
+
           {loading && (
             <div className="mermaid-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#94A3B8', fontSize: 12, padding: '40px 0' }}>
               <Sparkles size={20} className="animate-spin" color="#3B82F6" />
@@ -514,7 +753,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
           {!loading && !renderError && svgHtml && (
             <div
-              className="mermaid-svg-wrapper"
+              className={`mermaid-svg-wrapper ${isBuilding ? 'building' : ''}`}
               style={{
                 margin: '0 auto',
                 display: 'flex',
@@ -741,6 +980,44 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
               </div>
 
               <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Google Stitch AI Live Draw 1-Click Toggle */}
+                <button
+                  type="button"
+                  className={`stitch-toggle-btn ${isLiveDrawEnabled ? 'active' : ''}`}
+                  onClick={handleToggleLiveDraw}
+                  title={isLiveDrawEnabled ? "Live AI Drawing Enabled (Click to disable)" : "Live AI Drawing Disabled (Click to enable)"}
+                >
+                  <div className="stitch-toggle-track">
+                    <div className="stitch-toggle-thumb" />
+                  </div>
+                  <span>Live Draw</span>
+                </button>
+
+                {/* Skip button during building */}
+                {isBuilding && (
+                  <button
+                    type="button"
+                    className="stitch-skip-btn"
+                    onClick={() => handleSkipBuild(modalViewportRef.current)}
+                    title="Skip live drawing animation"
+                  >
+                    <span>Skip ⏭</span>
+                  </button>
+                )}
+
+                {/* Replay Build button */}
+                {!isBuilding && svgHtml && (
+                  <button
+                    type="button"
+                    className="stitch-replay-btn"
+                    onClick={() => runLiveDrawAnimation(modalViewportRef.current)}
+                    title="Replay Google Stitch-inspired AI live drawing in full screen"
+                  >
+                    <Sparkles size={12} color="#D8B4FE" />
+                    <span>Replay ✨</span>
+                  </button>
+                )}
+
                 {/* Toggle Key Takeaways Drawer */}
                 {points && points.length > 0 && (
                   <button
@@ -840,9 +1117,19 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                   scrollBehavior: 'smooth'
                 }}
               >
+                {/* Stitch AI Cursor for Fullscreen Modal */}
+                <StitchAICursor
+                  x={cursorState.x}
+                  y={cursorState.y}
+                  visible={isBuilding && cursorState.visible && isModalOpen}
+                  status={cursorState.status}
+                  label={cursorState.label}
+                  isClicking={cursorState.isClicking}
+                />
+
                 {svgHtml && (
                   <div
-                    className="mermaid-svg-wrapper modal-chart"
+                    className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
                     style={{
                       margin: '0 auto',
                       minWidth: 'fit-content',
