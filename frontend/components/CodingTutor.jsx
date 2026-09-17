@@ -23,6 +23,7 @@ import {
   MAX_TOKENS, getTheme, setTheme
 } from '@/lib/lms-data';
 import VoiceAgentView from '@/components/voice-tutor/VoiceAgentView';
+import MermaidDiagram from '@/components/MermaidDiagram';
 import { getJwtToken } from '@/lib/jwtCache';
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
@@ -928,8 +929,9 @@ export default function CodingTutor() {
           features.flashcards = { cards: parsed, currentIdx: 0, flipped: false };
         } else if (intent.feature === 'infographic') {
           const parsed = parseInfographicOutput(text);
-          if (parsed.length === 0) throw new Error('I can only generate infographics on programming-related topics.');
-          features.infographic = { points: parsed };
+          const pts = parsed.points || parsed;
+          if (pts.length === 0 && !parsed.mermaid) throw new Error('I can only generate infographics on programming-related topics.');
+          features.infographic = { points: pts, mermaid: parsed.mermaid || '' };
         } else if (intent.feature === 'simpler') {
           features.simpler = { text };
         } else if (intent.feature === 'examples') {
@@ -1092,7 +1094,10 @@ export default function CodingTutor() {
         const f = { ...m.features };
         if (type === 'quiz') f.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
         else if (type === 'flashcards') f.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
-        else if (type === 'infographic') f.infographic = { points: parseInfographicOutput(text) };
+        else if (type === 'infographic') {
+          const parsed = parseInfographicOutput(text);
+          f.infographic = { points: parsed.points || parsed, mermaid: parsed.mermaid || '' };
+        }
         else if (type === 'simpler') f.simpler = { text };
         else if (type === 'examples') f.examples = { text };
         return { ...m, features: f, activeFeature: type };
@@ -1682,35 +1687,18 @@ export default function CodingTutor() {
                               )}
 
                               {msg.activeFeature === 'infographic' && (
-                                msg.features?.infographic?.points?.length > 0 ? (
-                                  <>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                                      <span style={{ fontSize: 12, color: T.muted }}>Concept Breakdown</span>
-                                      <button onClick={() => handleGenerateFeature(mi, 'infographic')}
-                                        style={{ background: 'none', border: `1px solid ${T.border}`, color: T.muted, borderRadius: 6, padding: '3px 10px', fontSize: 11, cursor: 'pointer' }}>
-                                        Regenerate
-                                      </button>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: fCol, gap: 10 }}>
-                                      {msg.features.infographic.points.map((pt, i) => {
-                                        const colors = [T.accent, T.green, T.purple, T.amber, T.red];
-                                        const icons = ['🎯', '📌', '⚡', '🔑', '🌟', '💎', '🧩', '🚀'];
-                                        const c = colors[i % colors.length];
-                                        return (
-                                          <div key={i} style={{ background: T.s3, border: `1px solid ${c}25`, borderRadius: 10, padding: '14px', position: 'relative', overflow: 'hidden' }}>
-                                            <div style={{ position: 'absolute', top: -10, right: -10, width: 50, height: 50, borderRadius: '50%', background: `${c}08` }} />
-                                            <div style={{ fontSize: 20, marginBottom: 6 }}>{icons[i % icons.length]}</div>
-                                            <div style={{ color: T.text, fontSize: 13, lineHeight: 1.5, fontWeight: 500 }}>{pt}</div>
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: '100%', background: `linear-gradient(90deg,${c},transparent)` }} />
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </>
+                                (msg.features?.infographic?.points?.length > 0 || msg.features?.infographic?.mermaid) ? (
+                                  <div style={{ marginTop: 8 }}>
+                                    <MermaidDiagram
+                                      chart={msg.features.infographic.mermaid}
+                                      points={msg.features.infographic.points}
+                                      onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
+                                    />
+                                  </div>
                                 ) : (
-                                  <div style={{ textAlign: 'center', padding: '20px 0', color: T.muted }}>
+                                  <div style={{ textAlign: 'center', padding: '24px 0', color: T.muted }}>
                                     <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 10px' }} />
-                                    Generating Visual Summary...
+                                    Generating Visual Infographic...
                                   </div>
                                 )
                               )}
