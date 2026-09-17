@@ -180,6 +180,14 @@ export const MathLabArt = memo(function MathLabArt() {
             <stop offset="100%" stopColor="#E9D5FF" stopOpacity="0.8" />
           </linearGradient>
 
+          {/* 3D Metallic Pi Gradient */}
+          <linearGradient id="piMetal3D" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="30%" stopColor="#E9D5FF" />
+            <stop offset="70%" stopColor="#A855F7" />
+            <stop offset="100%" stopColor="#581C87" />
+          </linearGradient>
+
           {/* Glowing Filters */}
           <filter id="purplePedestalGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#A855F7" floodOpacity="0.9" />
@@ -196,7 +204,45 @@ export const MathLabArt = memo(function MathLabArt() {
         {/* Cybernetic Pedestal Base */}
         <HoloPedestal accentColor="#A855F7" accentRgb={accentRgb} filterId="purplePedestalGlow" />
 
-        {/* GRAND 3D HOLOGRAPHIC OCTAHEDRON (Option 9 Focal Subject) */}
+        {/* 1. 3D SCULPTED METALLIC PI (Top-Left Flank, Zero Overlap) */}
+        <g className="live-math-pi-3d" transform="translate(16, 44)" filter="url(#purplePedestalGlow)">
+          <path
+            d="M 3 6 Q 13 5 24 6 C 24 8 22 9 19 9 L 8 9 L 8 22 C 8 25 5 26 5 22 L 6 9 L 3 9 Z M 15 9 L 15 22 C 15 25 19 25 21 21 L 21 19 C 19 21 17 21 17 19 L 17 9 Z"
+            fill="#3B0764"
+            transform="translate(1, 1)"
+          />
+          <path
+            d="M 3 6 Q 13 5 24 6 C 24 8 22 9 19 9 L 8 9 L 8 22 C 8 25 5 26 5 22 L 6 9 L 3 9 Z M 15 9 L 15 22 C 15 25 19 25 21 21 L 21 19 C 19 21 17 21 17 19 L 17 9 Z"
+            fill="url(#piMetal3D)"
+            stroke="#FAF5FF"
+            strokeWidth="0.7"
+          />
+          <circle cx="19" cy="9" r="1.2" fill="#FFFFFF" />
+        </g>
+
+        {/* 2. 3D TRANSLUCENT ISOMETRIC CUBE (Top-Right Flank, Zero Overlap) */}
+        <g className="live-math-cube-3d" transform="translate(136, 44)">
+          <polygon points="11,0 22,6 11,12 0,6" fill="rgba(233, 213, 255, 0.45)" stroke="#FFFFFF" strokeWidth="0.9" />
+          <polygon points="0,6 11,12 11,23 0,17" fill="rgba(168, 85, 247, 0.5)" stroke="#C084FC" strokeWidth="0.9" />
+          <polygon points="11,12 22,6 22,17 11,23" fill="rgba(126, 34, 206, 0.4)" stroke="#C084FC" strokeWidth="0.9" />
+          <circle cx="11" cy="0" r="1.5" fill="#FFFFFF" />
+          <circle cx="22" cy="6" r="1.3" fill="#E9D5FF" />
+          <circle cx="0" cy="6" r="1.3" fill="#E9D5FF" />
+          <circle cx="11" cy="12" r="1.6" fill="#FFFFFF" />
+          <circle cx="11" cy="23" r="1.4" fill="#C084FC" />
+        </g>
+
+        {/* 3. 3D WIREFRAME TETRAHEDRON PYRAMID (Bottom-Left Flank, Zero Overlap) */}
+        <g className="live-math-tetra-3d" transform="translate(18, 134)">
+          <polygon points="10,0 20,16 0,16" fill="rgba(168, 85, 247, 0.25)" stroke="#C084FC" strokeWidth="0.9" />
+          <polygon points="10,0 10,16 0,16" fill="rgba(233, 213, 255, 0.35)" stroke="#FFFFFF" strokeWidth="0.8" />
+          <line x1="10" y1="0" x2="10" y2="16" stroke="#FFFFFF" strokeWidth="0.9" />
+          <circle cx="10" cy="0" r="1.6" fill="#FFFFFF" />
+          <circle cx="20" cy="16" r="1.3" fill="#C084FC" />
+          <circle cx="0" cy="16" r="1.3" fill="#C084FC" />
+        </g>
+
+        {/* GRAND 3D HOLOGRAPHIC OCTAHEDRON (Option 9 Central Focal Subject) */}
         <g className="live-holo-crystal" filter="url(#crystalGlow)">
           {/* Internal Back Facets (Translucent 3D Depth) */}
           <polygon points="87.5,42 42,98 87.5,88" fill="rgba(88, 28, 135, 0.45)" stroke="rgba(233, 213, 255, 0.3)" strokeWidth="0.8" />
@@ -387,6 +433,30 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           <circle cx="-10" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
         </g>
 
+        {/* 1. 3D QUANTUM GYROSCOPE RINGS (Top-Left Flank, Zero Overlap) */}
+        <g className="live-phys-gyro-3d" transform="translate(24, 46)" filter="url(#cyanPedestalGlow)">
+          <ellipse cx="0" cy="0" rx="13" ry="4.5" transform="rotate(-30)" fill="none" stroke="#38BDF8" strokeWidth="1.1" strokeDasharray="3 2" />
+          <ellipse cx="0" cy="0" rx="13" ry="4.5" transform="rotate(45)" fill="none" stroke="#BAE6FD" strokeWidth="1.1" />
+          <circle cx="0" cy="0" r="3.2" fill="#FFFFFF" />
+          <circle cx="8" cy="-4" r="1.6" fill="#00D4FF" />
+          <circle cx="-7" cy="5" r="1.3" fill="#FFFFFF" />
+        </g>
+
+        {/* 2. 3D MAGNETIC DIPOLE NODE (Top-Right Flank, Zero Overlap) */}
+        <g className="live-phys-dipole-3d" transform="translate(144, 48)">
+          <ellipse cx="0" cy="0" rx="11" ry="4" transform="rotate(20)" fill="none" stroke="rgba(0, 212, 255, 0.6)" strokeWidth="0.9" />
+          <circle cx="0" cy="0" r="4.2" fill="url(#satelliteGrad)" />
+          <circle cx="-1.2" cy="-1.2" r="1.2" fill="#FFFFFF" />
+          <circle cx="9" cy="3" r="1.5" fill="#FFFFFF" />
+        </g>
+
+        {/* 3. 3D ORBITAL SENSOR PROBE (Bottom-Left Flank, Zero Overlap) */}
+        <g className="live-phys-probe-3d" transform="translate(22, 142)">
+          <circle cx="0" cy="0" r="8" fill="none" stroke="rgba(56, 189, 248, 0.4)" strokeWidth="0.8" strokeDasharray="2 2" />
+          <circle cx="0" cy="0" r="4" fill="url(#physSphereGrad)" stroke="#FFFFFF" strokeWidth="0.6" />
+          <circle cx="-1" cy="-1" r="1" fill="#FFFFFF" />
+        </g>
+
         {/* Front-Arc of Orbit Rings & Foreground Orbiting Satellites */}
         <g className="live-orbit-foreground" transform="translate(87.5, 96)">
           {/* Ring 1 Front Segment Highlight */}
@@ -574,7 +644,20 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
     }
 
     animId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animId);
+
+    const handleVis = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+      } else {
+        animId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
   }, []);
 
   return (
@@ -652,6 +735,30 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
         {/* Cybernetic Pedestal Base */}
         <HoloPedestal accentColor="#10B981" accentRgb={accentRgb} filterId="emeraldPedestalGlow" />
 
+        {/* 1. 3D HEXAGONAL BENZENE LATTICE (Top-Left Flank, Zero Overlap) */}
+        <g className="live-chem-benzene-3d" transform="translate(20, 64)" filter="url(#emeraldPedestalGlow)">
+          <polygon
+            points="11,0 22,6 22,19 11,25 0,19 0,6"
+            fill="rgba(16, 185, 129, 0.15)"
+            stroke="#34D399"
+            strokeWidth="1.2"
+          />
+          <circle cx="11" cy="12.5" r="6" fill="none" stroke="rgba(167, 243, 208, 0.7)" strokeWidth="0.9" strokeDasharray="3 2" />
+          <circle cx="11" cy="0" r="1.8" fill="#FFFFFF" />
+          <circle cx="22" cy="6" r="1.6" fill="#6EE7B7" />
+          <circle cx="22" cy="19" r="1.6" fill="#10B981" />
+          <circle cx="11" cy="25" r="1.8" fill="#FFFFFF" />
+          <circle cx="0" cy="19" r="1.6" fill="#10B981" />
+          <circle cx="0" cy="6" r="1.6" fill="#6EE7B7" />
+        </g>
+
+        {/* 2. 3D MINIATURE REACTION BULB (Bottom-Left Flank, Zero Overlap) */}
+        <g className="live-chem-bulb-3d" transform="translate(20, 142)">
+          <circle cx="0" cy="0" r="8" fill="url(#molSphereGrad)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.9" />
+          <ellipse cx="0" cy="2" rx="5.5" ry="2" fill="#34D399" opacity="0.8" />
+          <circle cx="-2.5" cy="-2.5" r="2" fill="#FFFFFF" opacity="0.85" />
+        </g>
+
         {/* GRAND 3D VOLUMETRIC GLASS FLASK (Option 9 Hero) */}
         <g className="live-holo-flask" filter="url(#flaskGlow)">
           {/* Outer Glass Flask Contour */}
@@ -690,13 +797,13 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
           />
         </g>
 
-        {/* Floating Molecular Satellite Cluster (Option 9 Style) */}
-        <g className="live-chem-molecules" transform="translate(126, 68)">
-          <line x1="0" y1="0" x2="16" y2="12" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="1.6" />
-          <line x1="0" y1="0" x2="-8" y2="14" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="1.4" />
-          <circle cx="0" cy="0" r="5.5" fill="url(#molSphereGrad)" filter="url(#emeraldPedestalGlow)" />
-          <circle cx="16" cy="12" r="4.2" fill="url(#molSphereGrad)" />
-          <circle cx="-8" cy="14" r="3.4" fill="url(#molSphereGrad)" />
+        {/* 3. Floating Molecular Satellite Cluster (Option 9 Style, Mid-Right) */}
+        <g className="live-chem-molecules" transform="translate(144, 68)">
+          <line x1="0" y1="0" x2="14" y2="10" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="1.5" />
+          <line x1="0" y1="0" x2="-6" y2="12" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="1.3" />
+          <circle cx="0" cy="0" r="5" fill="url(#molSphereGrad)" filter="url(#emeraldPedestalGlow)" />
+          <circle cx="14" cy="10" r="3.8" fill="url(#molSphereGrad)" />
+          <circle cx="-6" cy="12" r="3" fill="url(#molSphereGrad)" />
         </g>
       </svg>
     </div>
@@ -971,7 +1078,20 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
     }
 
     animId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animId);
+
+    const handleVis = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+      } else {
+        animId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
   }, []);
 
   return (
@@ -1018,6 +1138,14 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
             <stop offset="100%" stopColor="#064E3B" />
           </linearGradient>
 
+          {/* Volumetric Cell Vesicle Radial Gradient */}
+          <radialGradient id="cellGrad3D" cx="35%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="rgba(254, 243, 199, 0.95)" />
+            <stop offset="35%" stopColor="rgba(245, 158, 11, 0.65)" />
+            <stop offset="70%" stopColor="rgba(16, 185, 129, 0.7)" />
+            <stop offset="100%" stopColor="rgba(5, 150, 105, 0.95)" />
+          </radialGradient>
+
           <filter id="amberPedestalGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#F59E0B" floodOpacity="0.9" />
           </filter>
@@ -1028,6 +1156,23 @@ export const BiologyLabArt = memo(function BiologyLabArt() {
 
         {/* Cybernetic Pedestal Base */}
         <HoloPedestal accentColor="#F59E0B" accentRgb={accentRgb} filterId="amberPedestalGlow" />
+
+        {/* 1. 3D VOLUMETRIC LIVING CELL VESICLE (Bottom-Right, Clear of Diagonal DNA) */}
+        <g className="live-bio-cell-3d" transform="translate(136, 150)" filter="url(#amberPedestalGlow)">
+          <circle cx="0" cy="0" r="16" fill="url(#cellGrad3D)" stroke="#F59E0B" strokeWidth="1.4" />
+          <circle cx="0" cy="0" r="6.5" fill="#10B981" stroke="#34D399" strokeWidth="1" />
+          <circle cx="-2" cy="-2" r="2" fill="#ECFDF5" />
+          <ellipse cx="-6" cy="4" rx="3" ry="1.5" fill="#F59E0B" transform="rotate(-20 -6 4)" />
+          <ellipse cx="6" cy="-4" rx="2.5" ry="1.3" fill="#F59E0B" transform="rotate(30 6 -4)" />
+          <circle cx="-5" cy="-5" r="2.5" fill="#FFFFFF" opacity="0.8" />
+        </g>
+
+        {/* 2. 3D MICROSCOPIC CHLOROPLAST POD (Top-Left, Clear of Diagonal DNA) */}
+        <g className="live-bio-chloroplast-3d" transform="translate(28, 44)" filter="url(#amberPedestalGlow)">
+          <ellipse cx="0" cy="0" rx="9" ry="5.5" transform="rotate(-30)" fill="url(#bioLeafGrad)" stroke="#ECFDF5" strokeWidth="0.8" />
+          <line x1="-5" y1="0" x2="5" y2="0" transform="rotate(-30)" stroke="#FFFFFF" strokeWidth="0.8" />
+          <circle cx="-2" cy="-1.5" r="1.2" fill="#FFFFFF" />
+        </g>
 
         {/* 3D Glossy Botanical Leaves Framing the Diagonal DNA Helix */}
         <g className="live-bio-leaf-left" transform="translate(18, 52) rotate(-24)" filter="url(#amberPedestalGlow)">

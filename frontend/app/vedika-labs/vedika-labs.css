@@ -403,11 +403,14 @@
   shape-rendering: geometricPrecision;
 }
 
-/* =========================================================================
-   LIVE ACTIONS & DYNAMIC MECHANICAL ANIMATIONS
-   ========================================================================= */
+/* Hardware-accelerated smooth compositing */
+.card-thematic-art svg,
+.card-thematic-art canvas {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
 
-/* 1. MATH LAB: Real Oscillating Sine Wave Flow & 3D Geometry */
 /* =========================================================================
    OPTION 9 HOLOGRAPHIC 3D LIVE ANIMATIONS & CYBERNETIC DEPTH
    ========================================================================= */
@@ -444,7 +447,7 @@
   100% { transform: translateY(-32px); opacity: 0; }
 }
 
-/* 1. MATH LAB: 3D Holographic Crystalline Octahedron Levitation */
+/* 1. MATH LAB: 3D Holographic Crystalline Octahedron & Mathematical Elements */
 .live-holo-crystal {
   transform-origin: 87.5px 98px;
   animation: holoCrystalFloat 5.2s ease-in-out infinite alternate;
@@ -465,26 +468,37 @@
   }
 }
 
-.live-satellite-poly-1 {
-  animation: satellitePolyFloat1 4.2s ease-in-out infinite alternate;
-}
-.live-satellite-poly-2 {
-  animation: satellitePolyFloat2 4.8s ease-in-out infinite alternate-reverse;
+.live-math-pi-3d {
+  animation: mathPiLevitate 4.2s ease-in-out infinite alternate;
 }
 
-@keyframes satellitePolyFloat1 {
-  0% { transform: translate(24px, 62px) rotate(0deg); }
-  50% { transform: translate(26px, 56px) rotate(8deg); }
-  100% { transform: translate(24px, 62px) rotate(0deg); }
+@keyframes mathPiLevitate {
+  0% { transform: translate(16px, 44px) rotate(0deg); }
+  50% { transform: translate(16px, 39px) rotate(3deg); }
+  100% { transform: translate(16px, 44px) rotate(0deg); }
 }
 
-@keyframes satellitePolyFloat2 {
-  0% { transform: translate(136px, 126px) rotate(0deg); }
-  50% { transform: translate(134px, 120px) rotate(-10deg); }
-  100% { transform: translate(136px, 126px) rotate(0deg); }
+.live-math-cube-3d {
+  animation: mathCubeFloat 4.6s ease-in-out infinite alternate;
 }
 
-/* 2. PHYSICS LAB: Option 9 Planetary Core & Revolving 3D Satellites */
+@keyframes mathCubeFloat {
+  0% { transform: translate(136px, 44px) rotate(0deg); }
+  50% { transform: translate(134px, 40px) rotate(-4deg); }
+  100% { transform: translate(136px, 44px) rotate(0deg); }
+}
+
+.live-math-tetra-3d {
+  animation: mathTetraFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes mathTetraFloat {
+  0% { transform: translate(18px, 134px) scale(1); }
+  50% { transform: translate(19px, 130px) scale(1.04); }
+  100% { transform: translate(18px, 134px) scale(1); }
+}
+
+/* 2. PHYSICS LAB: Planetary Core, Quantum Gyro & Satellite Orbits */
 .live-phys-core {
   animation: physCorePulse 4s ease-in-out infinite alternate;
 }
@@ -502,6 +516,36 @@
     transform: translate(87.5px, 96px) scale(1);
     filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.75));
   }
+}
+
+.live-phys-gyro-3d {
+  animation: physGyroFloat 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes physGyroFloat {
+  0% { transform: translate(24px, 46px) rotate(0deg); }
+  50% { transform: translate(25px, 41px) rotate(8deg); }
+  100% { transform: translate(24px, 46px) rotate(0deg); }
+}
+
+.live-phys-dipole-3d {
+  animation: physDipoleFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes physDipoleFloat {
+  0% { transform: translate(144px, 48px) scale(1); }
+  50% { transform: translate(143px, 43px) scale(1.05); }
+  100% { transform: translate(144px, 48px) scale(1); }
+}
+
+.live-phys-probe-3d {
+  animation: physProbeFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes physProbeFloat {
+  0% { transform: translate(22px, 142px) scale(1); }
+  50% { transform: translate(23px, 137px) scale(1.06); }
+  100% { transform: translate(22px, 142px) scale(1); }
 }
 
 .live-orbit-group {
@@ -551,7 +595,7 @@
   100% { transform: translate(0, 0) scale(1); }
 }
 
-/* 3. CHEMISTRY LAB: Option 9 Volumetric Flask & Active Rising Bubbles */
+/* 3. CHEMISTRY LAB: Volumetric Flask, Benzene Lattice & Evaporation */
 .live-holo-flask {
   animation: holoFlaskFloat 4.8s ease-in-out infinite alternate;
 }
@@ -571,45 +615,24 @@
   }
 }
 
-.bubble-float-1 {
-  animation: bubbleRise1 2.2s cubic-bezier(0.3, 0.27, 0.07, 1) infinite;
-}
-.bubble-float-2 {
-  animation: bubbleRise2 2.8s cubic-bezier(0.3, 0.27, 0.07, 1) infinite 0.6s;
-}
-.bubble-float-3 {
-  animation: bubbleRise3 2.5s cubic-bezier(0.3, 0.27, 0.07, 1) infinite 1.1s;
+.live-chem-benzene-3d {
+  animation: chemBenzeneFloat 4.4s ease-in-out infinite alternate;
 }
 
-@keyframes bubbleRise1 {
-  0% { transform: translateY(0) scale(0.8); opacity: 0; }
-  25% { opacity: 0.95; }
-  85% { opacity: 0.9; }
-  100% { transform: translateY(-34px) scale(1.2); opacity: 0; }
+@keyframes chemBenzeneFloat {
+  0% { transform: translate(20px, 64px) rotate(0deg); }
+  50% { transform: translate(20px, 59px) rotate(4deg); }
+  100% { transform: translate(20px, 64px) rotate(0deg); }
 }
 
-@keyframes bubbleRise2 {
-  0% { transform: translateY(0) scale(0.8); opacity: 0; }
-  30% { opacity: 0.95; }
-  85% { opacity: 0.85; }
-  100% { transform: translateY(-28px) scale(1.15); opacity: 0; }
+.live-chem-bulb-3d {
+  animation: chemBulbFloat 4.8s ease-in-out infinite alternate;
 }
 
-@keyframes bubbleRise3 {
-  0% { transform: translateY(0) scale(0.75); opacity: 0; }
-  20% { opacity: 0.9; }
-  80% { opacity: 0.8; }
-  100% { transform: translateY(-38px) scale(1.25); opacity: 0; }
-}
-
-.live-flask-vapor {
-  animation: flaskVaporPuff 3.2s ease-out infinite;
-}
-
-@keyframes flaskVaporPuff {
-  0% { transform: translateY(0) scale(0.85); opacity: 0.3; }
-  50% { transform: translateY(-8px) scale(1.15); opacity: 0.8; }
-  100% { transform: translateY(-16px) scale(1.4); opacity: 0; }
+@keyframes chemBulbFloat {
+  0% { transform: translate(20px, 142px) scale(1); }
+  50% { transform: translate(21px, 137px) scale(1.06); }
+  100% { transform: translate(20px, 142px) scale(1); }
 }
 
 .live-chem-molecules {
@@ -617,12 +640,32 @@
 }
 
 @keyframes chemMoleculeFloat {
-  0% { transform: translate(126px, 68px) rotate(0deg); }
-  50% { transform: translate(124px, 62px) rotate(6deg); }
-  100% { transform: translate(126px, 68px) rotate(0deg); }
+  0% { transform: translate(144px, 68px) rotate(0deg); }
+  50% { transform: translate(142px, 62px) rotate(6deg); }
+  100% { transform: translate(144px, 68px) rotate(0deg); }
 }
 
-/* 4. BIOLOGY LAB: Botanical Leaves Gentle Sway */
+/* 4. BIOLOGY LAB: Botanical Leaves, Living Cell Vesicle & Chloroplast */
+.live-bio-cell-3d {
+  animation: bioCellVesiclePulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes bioCellVesiclePulse {
+  0% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
+  50% { transform: translate(136px, 146px) scale(1.06); filter: drop-shadow(0 0 16px #F59E0B); }
+  100% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
+}
+
+.live-bio-chloroplast-3d {
+  animation: bioChloroplastFloat 4.6s ease-in-out infinite alternate;
+}
+
+@keyframes bioChloroplastFloat {
+  0% { transform: translate(28px, 44px) rotate(0deg); }
+  50% { transform: translate(27px, 39px) rotate(6deg); }
+  100% { transform: translate(28px, 44px) rotate(0deg); }
+}
+
 .live-bio-leaf-left {
   animation: bioLeafSwayLeft 4.5s ease-in-out infinite alternate;
 }
