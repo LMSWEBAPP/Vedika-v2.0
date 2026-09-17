@@ -148,8 +148,15 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
         // Render SVG dynamically
         const { svg } = await mermaid.render(renderId, sanitized);
+        let cleanSvg = svg;
+        cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
+          return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+        });
+        if (!cleanSvg.includes('style=')) {
+          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+        }
         if (isMounted) {
-          setSvgHtml(svg);
+          setSvgHtml(cleanSvg);
           setLoading(false);
         }
       } catch (err) {
@@ -160,8 +167,15 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             const mermaid = (await import('mermaid')).default;
             const simpleChart = `flowchart TD\n  Root["🎯 Concept Summary"]\n${points.slice(0, 5).map((p, idx) => `  P${idx + 1}["${p.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().slice(0, 36)}"]\n  Root --> P${idx + 1}`).join('\n')}`;
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
+            let cleanSvg = svg;
+            cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
+              return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+            });
+            if (!cleanSvg.includes('style=')) {
+              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+            }
             if (isMounted) {
-              setSvgHtml(svg);
+              setSvgHtml(cleanSvg);
               setLoading(false);
               return;
             }
@@ -209,20 +223,91 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
     } catch {}
   };
 
+  const btnBaseStyle = {
+    background: 'rgba(255, 255, 255, 0.06)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    color: '#94A3B8',
+    borderRadius: 6,
+    padding: '5px 9px',
+    fontSize: 11,
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    outline: 'none',
+    lineHeight: 1,
+    boxShadow: 'none',
+    transition: 'all 0.15s ease'
+  };
+
   return (
-    <div className="mermaid-container">
+    <div
+      className="mermaid-container"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'rgba(12, 15, 28, 0.95)',
+        border: '1px solid rgba(91, 140, 248, 0.2)',
+        borderRadius: 14,
+        overflow: 'hidden',
+        position: 'relative',
+        boxShadow: '0 10px 30px -8px rgba(0, 0, 0, 0.5)',
+        marginTop: 10,
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
       {/* Header Toolbar */}
-      <div className="mermaid-toolbar">
-        <div className="mermaid-title-area">
-          <span className="mermaid-badge">Mermaid Infographic</span>
-          <span className="mermaid-label">Dynamic Flowchart & Concepts</span>
+      <div
+        className="mermaid-toolbar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '9px 14px',
+          background: 'rgba(18, 23, 38, 0.92)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          flexWrap: 'wrap',
+          gap: 8
+        }}
+      >
+        <div className="mermaid-title-area" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            className="mermaid-badge"
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              padding: '3px 8px',
+              borderRadius: 6,
+              background: 'rgba(91, 140, 248, 0.15)',
+              color: '#729DF8',
+              border: '1px solid rgba(91, 140, 248, 0.3)',
+              display: 'inline-block'
+            }}
+          >
+            Mermaid Infographic
+          </span>
+          <span
+            className="mermaid-label"
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#E2E8F0'
+            }}
+          >
+            Dynamic Flowchart & Concepts
+          </span>
         </div>
 
-        <div className="mermaid-actions">
+        <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Zoom controls */}
           <button
             type="button"
             className="mermaid-btn"
+            style={btnBaseStyle}
             onClick={handleZoomIn}
             title="Zoom In"
             aria-label="Zoom in diagram"
@@ -232,6 +317,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <button
             type="button"
             className="mermaid-btn"
+            style={btnBaseStyle}
             onClick={handleZoomOut}
             title="Zoom Out"
             aria-label="Zoom out diagram"
@@ -241,6 +327,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <button
             type="button"
             className="mermaid-btn"
+            style={btnBaseStyle}
             onClick={handleZoomReset}
             title="Reset Zoom"
             aria-label="Reset zoom"
@@ -253,6 +340,12 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <button
             type="button"
             className={`mermaid-btn ${showCode ? 'active' : ''}`}
+            style={{
+              ...btnBaseStyle,
+              background: showCode ? 'rgba(91, 140, 248, 0.2)' : btnBaseStyle.background,
+              color: showCode ? '#729DF8' : btnBaseStyle.color,
+              borderColor: showCode ? 'rgba(91, 140, 248, 0.4)' : btnBaseStyle.borderColor
+            }}
             onClick={() => setShowCode(!showCode)}
             title="Toggle Mermaid Code"
           >
@@ -264,6 +357,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <button
             type="button"
             className="mermaid-btn"
+            style={btnBaseStyle}
             onClick={handleCopyCode}
             title="Copy Diagram Syntax"
           >
@@ -274,6 +368,12 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <button
             type="button"
             className="mermaid-btn mermaid-expand-btn"
+            style={{
+              ...btnBaseStyle,
+              color: '#60A5FA',
+              background: 'rgba(96, 165, 250, 0.1)',
+              borderColor: 'rgba(96, 165, 250, 0.3)'
+            }}
             onClick={() => setIsModalOpen(true)}
             title="Open in Focused Modal Window"
           >
@@ -286,6 +386,12 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
             <button
               type="button"
               className="mermaid-btn"
+              style={{
+                ...btnBaseStyle,
+                color: '#F59E0B',
+                background: 'rgba(245, 158, 11, 0.1)',
+                borderColor: 'rgba(245, 158, 11, 0.25)'
+              }}
               onClick={onRegenerate}
               title="Regenerate Infographic"
             >
@@ -298,24 +404,41 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
       {/* Main Viewport */}
       {showCode ? (
-        <pre className="mermaid-raw-code">{activeChartCode}</pre>
+        <pre className="mermaid-raw-code" style={{ padding: 16, background: '#070913', color: '#7DD3FC', fontFamily: 'monospace', fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 320, overflowY: 'auto', margin: 0 }}>
+          {activeChartCode}
+        </pre>
       ) : (
-        <div className="mermaid-viewport" ref={containerRef}>
+        <div
+          className="mermaid-viewport"
+          ref={containerRef}
+          style={{
+            position: 'relative',
+            minHeight: 220,
+            maxHeight: 520,
+            overflow: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '24px 20px',
+            background: 'radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.85) 0%, rgba(8, 10, 18, 0.98) 100%)',
+            userSelect: 'none'
+          }}
+        >
           {loading && (
-            <div className="mermaid-loading">
+            <div className="mermaid-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#94A3B8', fontSize: 12, padding: '40px 0' }}>
               <Sparkles size={20} className="animate-spin" color="#3B82F6" />
               <span>Rendering Mermaid diagram...</span>
             </div>
           )}
 
           {!loading && renderError && (
-            <div className="mermaid-error">
+            <div className="mermaid-error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#F87171', fontSize: 12, padding: 24, textAlign: 'center' }}>
               <AlertCircle size={20} />
               <span>Could not render diagram visually: {renderError}</span>
               <button
                 type="button"
                 className="mermaid-btn"
-                style={{ marginTop: 8 }}
+                style={{ ...btnBaseStyle, marginTop: 8 }}
                 onClick={() => setShowCode(true)}
               >
                 Inspect Mermaid Code
@@ -326,7 +449,18 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           {!loading && !renderError && svgHtml && (
             <div
               className="mermaid-svg-wrapper"
-              style={{ transform: `scale(${zoom})` }}
+              style={{
+                margin: '0 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                textAlign: 'center',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
               dangerouslySetInnerHTML={{ __html: svgHtml }}
             />
           )}
@@ -335,30 +469,96 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
 
       {/* Key Takeaways Section (Collapsible Accordion with Formatted Typography) */}
       {points && points.length > 0 && (
-        <div className="mermaid-takeaways">
+        <div
+          className="mermaid-takeaways"
+          style={{
+            padding: '10px 14px',
+            background: 'rgba(14, 18, 30, 0.75)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10
+          }}
+        >
           <button
             type="button"
             className="mermaid-takeaways-toggle"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              padding: '8px 12px',
+              color: '#94A3B8',
+              outline: 'none',
+              boxShadow: 'none',
+              transition: 'all 0.15s ease'
+            }}
             onClick={() => setIsKeypointsOpen(!isKeypointsOpen)}
             title={isKeypointsOpen ? "Click to collapse takeaways" : "Click to view key takeaways"}
           >
-            <div className="mermaid-takeaways-toggle-left">
+            <div className="mermaid-takeaways-toggle-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Sparkles size={13} color="#F5A95B" />
-              <span className="mermaid-takeaways-title">Key Takeaways & Concepts</span>
-              <span className="mermaid-takeaways-count">({points.length} points)</span>
+              <span className="mermaid-takeaways-title" style={{ fontSize: 11, fontWeight: 700, color: '#E2E8F0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Key Takeaways & Concepts
+              </span>
+              <span className="mermaid-takeaways-count" style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+                ({points.length} points)
+              </span>
             </div>
             <ChevronDown
               size={15}
               className={`mermaid-takeaways-chevron ${isKeypointsOpen ? 'open' : ''}`}
+              style={{
+                color: isKeypointsOpen ? '#F5A95B' : '#64748B',
+                transform: isKeypointsOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
             />
           </button>
 
           {isKeypointsOpen && (
-            <div className="mermaid-takeaways-list">
+            <div className="mermaid-takeaways-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 8, marginTop: 4 }}>
               {points.map((pt, idx) => (
-                <div key={idx} className="mermaid-takeaway-item">
-                  <span className="mermaid-takeaway-bullet">{idx + 1}</span>
-                  <div className="mermaid-takeaway-text">{renderFormattedText(pt)}</div>
+                <div
+                  key={idx}
+                  className="mermaid-takeaway-item"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    padding: '10px 12px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: 8
+                  }}
+                >
+                  <span
+                    className="mermaid-takeaway-bullet"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 18,
+                      height: 18,
+                      borderRadius: 5,
+                      background: 'rgba(245, 169, 91, 0.15)',
+                      color: '#F5A95B',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      marginTop: 2
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
+                  <div className="mermaid-takeaway-text" style={{ color: '#E2E8F0', fontSize: 12.5, lineHeight: 1.5, flex: 1 }}>
+                    {renderFormattedText(pt)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -377,17 +577,40 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
           <div className="mermaid-modal-window" role="dialog" aria-modal="true">
             {/* Modal Header */}
             <div className="mermaid-modal-header">
-              <div className="mermaid-title-area">
-                <span className="mermaid-badge">Expanded Infographic</span>
-                <span className="mermaid-label">Full Visual Concept Overview</span>
+              <div className="mermaid-title-area" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  className="mermaid-badge"
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    background: 'rgba(91, 140, 248, 0.15)',
+                    color: '#729DF8',
+                    border: '1px solid rgba(91, 140, 248, 0.3)'
+                  }}
+                >
+                  Expanded Infographic
+                </span>
+                <span className="mermaid-label" style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>
+                  Full Visual Concept Overview
+                </span>
               </div>
 
-              <div className="mermaid-actions">
+              <div className="mermaid-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 {/* Toggle Key Takeaways on the Right Side */}
                 {points && points.length > 0 && (
                   <button
                     type="button"
                     className={`mermaid-btn mermaid-modal-keypoints-btn ${isModalKeypointsOpen ? 'active' : ''}`}
+                    style={{
+                      ...btnBaseStyle,
+                      color: isModalKeypointsOpen ? '#F5A95B' : '#94A3B8',
+                      borderColor: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.4)' : btnBaseStyle.borderColor,
+                      background: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.15)' : btnBaseStyle.background
+                    }}
                     onClick={() => setIsModalKeypointsOpen(!isModalKeypointsOpen)}
                     title={isModalKeypointsOpen ? "Hide Key Takeaways Drawer" : "Show Key Takeaways on Right Side"}
                   >
@@ -396,12 +619,18 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                   </button>
                 )}
 
-                <button type="button" className="mermaid-btn" onClick={handleModalZoomIn} title="Zoom In"><ZoomIn size={13} /></button>
-                <button type="button" className="mermaid-btn" onClick={handleModalZoomOut} title="Zoom Out"><ZoomOut size={13} /></button>
-                <button type="button" className="mermaid-btn" onClick={handleModalZoomReset} title="Reset Zoom"><RotateCcw size={12} /><span>{Math.round(modalZoom * 100)}%</span></button>
+                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomIn} title="Zoom In"><ZoomIn size={13} /></button>
+                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomOut} title="Zoom Out"><ZoomOut size={13} /></button>
+                <button type="button" className="mermaid-btn" style={btnBaseStyle} onClick={handleModalZoomReset} title="Reset Zoom"><RotateCcw size={12} /><span>{Math.round(modalZoom * 100)}%</span></button>
                 <button
                   type="button"
                   className="mermaid-modal-close-btn"
+                  style={{
+                    ...btnBaseStyle,
+                    color: '#F87171',
+                    background: 'rgba(248, 113, 113, 0.1)',
+                    borderColor: 'rgba(248, 113, 113, 0.25)'
+                  }}
                   onClick={() => setIsModalOpen(false)}
                   title="Close (Esc)"
                 >
@@ -423,7 +652,7 @@ export default function MermaidDiagram({ chart, points = [], onRegenerate }) {
                 )}
               </div>
 
-              {/* Right-Side Key Takeaways Drawer (Opens horizontally so vertical flowchart height is never lost) */}
+              {/* Right-Side Key Takeaways Drawer */}
               {points && points.length > 0 && isModalKeypointsOpen && (
                 <aside className="mermaid-modal-sidebar">
                   <div className="mermaid-modal-sidebar-header">

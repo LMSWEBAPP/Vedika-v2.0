@@ -55,66 +55,75 @@
   gap: 6px;
 }
 
+button.mermaid-btn,
 .mermaid-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #94A3B8;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.15s ease;
-  outline: none;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94A3B8 !important;
+  border-radius: 6px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
 }
 
+button.mermaid-btn:hover,
 .mermaid-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #F8FAFC;
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
 }
 
+button.mermaid-btn.active,
 .mermaid-btn.active {
-  background: rgba(91, 140, 248, 0.2);
-  color: #729DF8;
-  border-color: rgba(91, 140, 248, 0.4);
+  background: rgba(91, 140, 248, 0.2) !important;
+  color: #729DF8 !important;
+  border-color: rgba(91, 140, 248, 0.4) !important;
 }
 
+button.mermaid-expand-btn,
 .mermaid-expand-btn {
-  color: #60A5FA;
-  border-color: rgba(96, 165, 250, 0.25);
-  background: rgba(96, 165, 250, 0.08);
+  color: #60A5FA !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
+  background: rgba(96, 165, 250, 0.1) !important;
 }
 
+button.mermaid-expand-btn:hover,
 .mermaid-expand-btn:hover {
-  color: #93C5FD;
-  background: rgba(96, 165, 250, 0.16);
-  border-color: rgba(96, 165, 250, 0.4);
+  color: #93C5FD !important;
+  background: rgba(96, 165, 250, 0.2) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
 }
 
 /* Diagram Viewport */
 .mermaid-viewport {
   position: relative;
   min-height: 220px;
-  max-height: 480px;
+  max-height: 520px;
   overflow: auto;
   display: flex;
-  padding: 24px 16px;
-  background: radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.8) 0%, rgba(8, 10, 18, 0.98) 100%);
+  justify-content: center;
+  align-items: center;
+  padding: 24px 20px;
+  background: radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.85) 0%, rgba(8, 10, 18, 0.98) 100%);
   user-select: none;
 }
 
 .mermaid-svg-wrapper {
   margin: 0 auto;
-  align-self: flex-start;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: 100%;
+  text-align: center;
   transform-origin: top center;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -122,7 +131,9 @@
 .mermaid-svg-wrapper svg {
   max-width: 100%;
   height: auto;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  margin: 0 auto;
+  display: block;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
 }
 
 /* Custom Node & Edge Styling injected into SVG */
@@ -208,21 +219,32 @@
   gap: 10px;
 }
 
+button.mermaid-takeaways-toggle,
 .mermaid-takeaways-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px 0;
-  color: #94A3B8;
-  outline: none;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  padding: 8px 12px !important;
+  color: #94A3B8 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
 }
 
+button.mermaid-takeaways-toggle:hover,
+.mermaid-takeaways-toggle:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(91, 140, 248, 0.3) !important;
+}
+
+button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 .mermaid-takeaways-toggle:hover .mermaid-takeaways-title {
-  color: #F8FAFC;
+  color: #F8FAFC !important;
 }
 
 .mermaid-takeaways-toggle-left {
