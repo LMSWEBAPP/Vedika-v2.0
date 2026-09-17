@@ -124,11 +124,17 @@ export default function VedikaParticleBot({
   onSettled = null,
   className = '',
   inline = false,
-  themeRgb = null
+  themeRgb = null,
+  intensity = 1.0
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const intensityRef = useRef(intensity);
+  useEffect(() => {
+    intensityRef.current = intensity;
+  }, [intensity]);
 
   const onSettledRef = useRef(onSettled);
   onSettledRef.current = onSettled;
@@ -685,26 +691,33 @@ export default function VedikaParticleBot({
             t = touchData[(ty * 64 + tx) * 4] / 255;
           }
 
+          const currentIntensity = intensityRef.current || 1.0;
+          const isHighIntensity = currentIntensity > 1.1;
+
           // Simplex/harmonic oscillation from Bruno Imbrizi shader:
           // rndz = (random(pindex) + snoise(vec2(pindex * 0.1, uTime * 0.1)))
-          const noise = Math.sin(time * 1.5 + p.pindex * 0.12) * Math.cos(time * 0.9 + p.seed * 0.1);
-          const rndz = p.rnd + noise * 0.55;
+          const noiseSpeed = isHighIntensity ? 2.2 : 1.5;
+          const noise = Math.sin(time * noiseSpeed + p.pindex * 0.12) * Math.cos(time * (noiseSpeed * 0.6) + p.seed * 0.1);
+          const rndz = p.rnd + noise * (isHighIntensity ? 0.85 : 0.55);
 
           let dispX = 0;
           let dispY = 0;
           let dispZ = 0;
 
           if (t > 0.005) {
-            const floatAmount = t * p.floatPower * rndz;
+            const floatMultiplier = isHighIntensity ? 1.45 : 1.0;
+            const floatAmount = t * (p.floatPower * floatMultiplier) * rndz;
             dispX = Math.cos(p.angle) * floatAmount;
             dispY = Math.sin(p.angle) * floatAmount;
-            dispZ = -t * 36.0 * Math.abs(rndz);
+            dispZ = -t * (isHighIntensity ? 48.0 : 36.0) * Math.abs(rndz);
           }
 
-          // Subtle ambient shimmer when idle
-          const ambientZ = rndz * 1.8;
-          const ambientX = Math.sin(time * 0.9 + p.seed) * 0.22;
-          const ambientY = Math.cos(time * 0.7 + p.seed * 1.2) * 0.22;
+          // Ambient shimmer when idle - heightened amplitude & vibration for physics & chemistry
+          const shimmerAmp = isHighIntensity ? 0.65 : 0.22;
+          const shimmerFreq = isHighIntensity ? 1.6 : 1.0;
+          const ambientZ = rndz * (isHighIntensity ? 3.2 : 1.8);
+          const ambientX = Math.sin(time * 0.9 * shimmerFreq + p.seed) * shimmerAmp;
+          const ambientY = Math.cos(time * 0.7 * shimmerFreq + p.seed * 1.2) * shimmerAmp;
 
           const homeX = targetX + dispX + ambientX;
           const homeY = targetY + dispY + ambientY;
@@ -743,7 +756,9 @@ export default function VedikaParticleBot({
         const scale = Math.min(1.8, Math.max(0.2, rawScale));
         const renderX = centerX + (p.x - centerX) * scale;
         const renderY = centerY + (p.y - centerY) * scale;
-        const renderSize = Math.max(inline ? 1.1 : 0.8, Math.min(3.4, p.size * scale));
+        const baseSize = inline ? (isHighIntensity ? 1.22 : 1.1) : 0.8;
+        const maxSize = isHighIntensity ? 3.8 : 3.4;
+        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 1.0)));
 
         // Clip out of screen
         if (renderX < -30 || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
@@ -754,8 +769,16 @@ export default function VedikaParticleBot({
         const finalAlpha = Math.max(0, p.baseAlpha * globalFade);
         if (finalAlpha <= 0.01) continue;
 
-        // Highlight particle when lifted forward in Z
-        if (p.z < -4) {
+        // Highlight particle when lifted forward in Z or excited in Physics & Chemistry
+        if (isHighIntensity) {
+          const sparkPhase = Math.sin(time * 3.6 + p.seed * 2.4);
+          const sparkBoost = sparkPhase > 0.72 ? 0.35 : 0;
+          const accentExtra = p.accentRatio > 0 ? 36 : 14;
+          const rGlow = Math.min(255, Math.round(p.baseR * (1 + sparkBoost) + accentExtra));
+          const gGlow = Math.min(255, Math.round(p.baseG * (1 + sparkBoost) + accentExtra));
+          const bGlow = Math.min(255, Math.round(p.baseB * (1 + sparkBoost) + accentExtra + (sparkBoost > 0 ? 25 : 0)));
+          ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${Math.min(1, finalAlpha * 1.18).toFixed(2)})`;
+        } else if (p.z < -4) {
           const liftRatio = Math.min(1, Math.abs(p.z) / 45);
           const rGlow = Math.round(p.baseR + (255 - p.baseR) * liftRatio * 0.7);
           const gGlow = Math.round(p.baseG + (255 - p.baseG) * liftRatio * 0.7);

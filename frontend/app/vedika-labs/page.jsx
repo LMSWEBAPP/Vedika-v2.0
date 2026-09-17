@@ -348,7 +348,7 @@ export default function VedikaLabsHub() {
             </div>
           </div>
 
-          {/* FOREGROUND BOT CHARACTER */}
+          {/* FOREGROUND BOT CHARACTER: Brought to front, enlarged, with physics & chemistry particle intensity */}
           <div className="vedika-labs-pedestal-stage" style={{ pointerEvents: 'none' }}>
             <div className="vedika-labs-bot-foreground" style={{ pointerEvents: 'none' }}>
               <div className="bot-pedestal-shadow" style={{ pointerEvents: 'none' }} />
@@ -359,6 +359,7 @@ export default function VedikaLabsHub() {
                   height={345}
                   inline={true}
                   colorMode="vibrant"
+                  intensity={activeLab.id === 'physics' || activeLab.id === 'chemistry' ? 1.65 : 1.0}
                 />
               </div>
             </div>
