@@ -76,6 +76,241 @@ function sanitizeMermaid(raw) {
   return code;
 }
 
+/**
+ * Interactive Live Drawing SVG Canvas:
+ * Renders the flowchart visually in real-time as the cursor drafts each box like Paint,
+ * types text from left to right, keeps each box permanently on screen, and connects flow arrows.
+ */
+function StitchLiveOverlay({
+  isBuilding,
+  drawnNodes = [],
+  activeBox = null,
+  activeWritingText = null,
+  drawnEdges = [],
+  activeEdge = null
+}) {
+  if (!isBuilding) return null;
+
+  return (
+    <svg
+      className="stitch-live-canvas-overlay"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        minHeight: '1400px',
+        minWidth: '100%',
+        pointerEvents: 'none',
+        zIndex: 15,
+        overflow: 'visible'
+      }}
+    >
+      <defs>
+        <linearGradient id="stitchNodeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1E263D" />
+          <stop offset="100%" stopColor="#121828" />
+        </linearGradient>
+        <linearGradient id="stitchDraftGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(22, 33, 62, 0.95)" />
+          <stop offset="100%" stopColor="rgba(14, 23, 42, 0.92)" />
+        </linearGradient>
+        <marker
+          id="stitchArrow"
+          viewBox="0 0 10 10"
+          refX="7"
+          refY="5"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#60A5FA" />
+        </marker>
+        <filter id="stitchGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#38BDF8" floodOpacity="0.85" />
+        </filter>
+        <filter id="stitchBoxShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.5" />
+        </filter>
+      </defs>
+
+      {/* Completed Edges sitting permanently on canvas */}
+      {drawnEdges.map((e, idx) => (
+        <g key={`edge-${idx}`}>
+          <line
+            x1={e.x1}
+            y1={e.y1}
+            x2={e.x2}
+            y2={e.y2}
+            stroke="#60A5FA"
+            strokeWidth="1.75"
+            markerEnd="url(#stitchArrow)"
+          />
+        </g>
+      ))}
+
+      {/* Active Drawing Laser Edge */}
+      {activeEdge && (
+        <line
+          x1={activeEdge.x1}
+          y1={activeEdge.y1}
+          x2={activeEdge.x2}
+          y2={activeEdge.y2}
+          stroke="#38BDF8"
+          strokeWidth="2.5"
+          strokeDasharray="6 3"
+          filter="url(#stitchGlow)"
+        />
+      )}
+
+      {/* Completed Solidified Nodes sitting permanently on canvas */}
+      {drawnNodes.map((n, idx) => (
+        <g key={`node-${idx}`} filter="url(#stitchBoxShadow)">
+          <rect
+            x={n.x}
+            y={n.y}
+            width={n.w}
+            height={n.h}
+            rx={8}
+            ry={8}
+            fill="url(#stitchNodeGrad)"
+            stroke="#3B82F6"
+            strokeWidth="1.5"
+          />
+          <line
+            x1={n.x + 8}
+            y1={n.y + 1}
+            x2={n.x + n.w - 8}
+            y2={n.y + 1}
+            stroke="rgba(255, 255, 255, 0.2)"
+            strokeWidth="1"
+          />
+          <text
+            x={n.x + n.w / 2}
+            y={n.y + n.h / 2 + 4}
+            textAnchor="middle"
+            fill="#F8FAFC"
+            fontSize="12"
+            fontWeight="600"
+            fontFamily="var(--font-outfit), sans-serif"
+            letterSpacing="-0.01em"
+          >
+            {n.text}
+          </text>
+        </g>
+      ))}
+
+      {/* Active Box Being Drawn Like in Paint (Stretching Diagonally) */}
+      {activeBox && (
+        <g filter="url(#stitchGlow)">
+          <rect
+            x={activeBox.x}
+            y={activeBox.y}
+            width={Math.max(4, activeBox.w)}
+            height={Math.max(4, activeBox.h)}
+            rx={8}
+            ry={8}
+            fill="url(#stitchDraftGrad)"
+            stroke="#38BDF8"
+            strokeWidth="2"
+            strokeDasharray="8 4"
+          />
+        </g>
+      )}
+
+      {/* Active Text Being Written from Left to Right */}
+      {activeWritingText && (
+        <text
+          x={activeWritingText.x}
+          y={activeWritingText.y}
+          fill="#38BDF8"
+          fontSize="12"
+          fontWeight="600"
+          fontFamily="var(--font-outfit), sans-serif"
+          letterSpacing="-0.01em"
+        >
+          {activeWritingText.text}
+          <tspan fill="#F43F5E" fontWeight="700">|</tspan>
+        </text>
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Accurately extracts node coordinates and edge paths from the rendered Mermaid SVG.
+ */
+function extractDiagramLayout(container) {
+  if (!container) return { nodes: [], edges: [] };
+  const wrapper = container.querySelector('.mermaid-svg-wrapper');
+  if (!wrapper) return { nodes: [], edges: [] };
+
+  const cRect = container.getBoundingClientRect();
+  const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
+
+  const nodes = rawNodeEls.map((el, idx) => {
+    const r = el.getBoundingClientRect();
+    const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Block ${idx + 1}`;
+    const x = (r.width > 0)
+      ? (r.left - cRect.left) + container.scrollLeft
+      : (cRect.width / 2 - 100);
+    const y = (r.height > 0)
+      ? (r.top - cRect.top) + container.scrollTop
+      : (idx * 110 + 60);
+    const w = (r.width > 0) ? Math.max(120, r.width) : 190;
+    const h = (r.height > 0) ? Math.max(42, r.height) : 52;
+    return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
+  });
+
+  const rawEdgeEls = Array.from(wrapper.querySelectorAll('g.edgePath, .edgePath, path.flowchart-link'));
+  let edges = [];
+
+  if (rawEdgeEls.length > 0 && rawEdgeEls.length <= nodes.length - 1) {
+    edges = rawEdgeEls.map((edgeEl, idx) => {
+      const fromN = nodes[idx];
+      const toN = nodes[idx + 1] || nodes[idx];
+      return {
+        x1: fromN.x + fromN.w / 2,
+        y1: fromN.y + fromN.h,
+        x2: toN.x + toN.w / 2,
+        y2: toN.y
+      };
+    });
+  } else if (rawEdgeEls.length > 0) {
+    edges = rawEdgeEls.map((edgeEl, idx) => {
+      const r = edgeEl.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        return {
+          x1: (r.left - cRect.left) + container.scrollLeft + (r.width / 2),
+          y1: (r.top - cRect.top) + container.scrollTop,
+          x2: (r.left - cRect.left) + container.scrollLeft + (r.width / 2),
+          y2: (r.top - cRect.top) + container.scrollTop + r.height
+        };
+      }
+      const fromN = nodes[Math.min(idx, nodes.length - 1)];
+      const toN = nodes[Math.min(idx + 1, nodes.length - 1)];
+      return {
+        x1: fromN.x + fromN.w / 2,
+        y1: fromN.y + fromN.h,
+        x2: toN.x + toN.w / 2,
+        y2: toN.y
+      };
+    });
+  } else {
+    for (let i = 0; i < nodes.length - 1; i++) {
+      edges.push({
+        x1: nodes[i].x + nodes[i].w / 2,
+        y1: nodes[i].y + nodes[i].h,
+        x2: nodes[i + 1].x + nodes[i + 1].w / 2,
+        y2: nodes[i + 1].y
+      });
+    }
+  }
+
+  return { nodes, edges };
+}
+
 export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
   const containerRef = useRef(null);
   const modalViewportRef = useRef(null);
@@ -109,6 +344,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     label: '',
     isClicking: false
   });
+  const [drawnNodes, setDrawnNodes] = useState([]);
+  const [activeBox, setActiveBox] = useState(null);
+  const [activeWritingText, setActiveWritingText] = useState(null);
+  const [drawnEdges, setDrawnEdges] = useState([]);
+  const [activeEdge, setActiveEdge] = useState(null);
+
   const animTimeoutsRef = useRef([]);
 
   const clearAnimTimeouts = () => {
@@ -116,39 +357,23 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     animTimeoutsRef.current = [];
   };
 
-  const stopAndCleanAnimation = useCallback((containerEl) => {
+  const stopAndCleanAnimation = useCallback(() => {
     clearAnimTimeouts();
+    setDrawnNodes([]);
+    setActiveBox(null);
+    setActiveWritingText(null);
+    setDrawnEdges([]);
+    setActiveEdge(null);
+    setIsBuilding(false);
+    setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
     const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
     targets.forEach((root) => {
       const wrapper = root.querySelector('.mermaid-svg-wrapper');
-      if (wrapper) wrapper.classList.remove('building');
-
-      const edgeContainer = root.querySelector('g.edgePaths');
-      if (edgeContainer) {
-        edgeContainer.style.removeProperty('visibility');
-        edgeContainer.style.removeProperty('opacity');
+      if (wrapper) {
+        wrapper.classList.remove('building');
+        wrapper.style.opacity = '1';
       }
-      const edgeLabelContainer = root.querySelector('g.edgeLabels');
-      if (edgeLabelContainer) {
-        edgeLabelContainer.style.removeProperty('visibility');
-        edgeLabelContainer.style.removeProperty('opacity');
-      }
-
-      const nodes = root.querySelectorAll('.node, g.node');
-      nodes.forEach((n) => {
-        n.style.removeProperty('visibility');
-        n.style.removeProperty('opacity');
-        n.classList.remove('stitch-node-wireframe', 'stitch-node-solidified');
-      });
-      const edges = root.querySelectorAll('.edgePath, g.edgePath, path.flowchart-link, g.edgePaths path');
-      edges.forEach((e) => {
-        e.style.removeProperty('visibility');
-        e.style.removeProperty('opacity');
-        e.classList.remove('stitch-edge-drawing', 'stitch-edge-drawn');
-      });
     });
-    setIsBuilding(false);
-    setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
   }, []);
 
   // Stable autoFit to make flowchart comfortably fit within the modal viewport without cutting off top
@@ -187,8 +412,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const runLiveDrawAnimation = useCallback((containerEl) => {
     const container = containerEl || (isModalOpen && modalViewportRef.current ? modalViewportRef.current : containerRef.current);
     if (!container) return;
-    const wrapper = container.querySelector('.mermaid-svg-wrapper');
-    if (!wrapper) return;
 
     clearAnimTimeouts();
 
@@ -200,62 +423,30 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       autoFitModalChart();
     }
 
-    const nodes = Array.from(wrapper.querySelectorAll('.node, g.node'));
-    let edges = [];
-    const edgeContainer = wrapper.querySelector('g.edgePaths');
-    const edgeLabelContainer = wrapper.querySelector('g.edgeLabels');
+    // Reset overlay elements
+    setDrawnNodes([]);
+    setActiveBox(null);
+    setActiveWritingText(null);
+    setDrawnEdges([]);
+    setActiveEdge(null);
 
-    if (edgeContainer) {
-      edges = Array.from(edgeContainer.querySelectorAll('g.edgePath, path.flowchart-link, path'));
-    }
-    if (edges.length === 0) {
-      edges = Array.from(wrapper.querySelectorAll('.edgePath, g.edgePath, path.flowchart-link'));
-    }
-
+    // Measure layout from rendered DOM
+    const { nodes, edges } = extractDiagramLayout(container);
     if (nodes.length === 0) return;
 
-    // 1. Immediately hide all nodes and edges via direct inline styles & class
-    wrapper.classList.add('building');
-    wrapper.classList.remove('show-edges');
-
-    if (edgeContainer) {
-      edgeContainer.style.setProperty('visibility', 'hidden', 'important');
-      edgeContainer.style.setProperty('opacity', '0', 'important');
+    // Hide raw Mermaid SVG while building
+    const wrapper = container.querySelector('.mermaid-svg-wrapper');
+    if (wrapper) {
+      wrapper.classList.add('building');
     }
-    if (edgeLabelContainer) {
-      edgeLabelContainer.style.setProperty('visibility', 'hidden', 'important');
-      edgeLabelContainer.style.setProperty('opacity', '0', 'important');
-    }
-
-    nodes.forEach((n) => {
-      n.style.setProperty('visibility', 'hidden', 'important');
-      n.style.setProperty('opacity', '0', 'important');
-      n.classList.remove('stitch-node-wireframe', 'stitch-node-solidified');
-      n.querySelectorAll('*').forEach((child) => {
-        child.style.setProperty('visibility', 'hidden', 'important');
-        child.style.setProperty('opacity', '0', 'important');
-      });
-    });
-
-    edges.forEach((e) => {
-      e.style.setProperty('visibility', 'hidden', 'important');
-      e.style.setProperty('opacity', '0', 'important');
-      e.classList.remove('stitch-edge-drawing', 'stitch-edge-drawn');
-    });
 
     setIsBuilding(true);
 
-    // Initial cursor coordinates: positioned above the first block
-    const vpRect = container.getBoundingClientRect();
-    const firstRect = nodes[0].getBoundingClientRect();
-    const startX = (firstRect.width > 0)
-      ? Math.max(20, (firstRect.left - vpRect.left) + container.scrollLeft + (firstRect.width / 2))
-      : (vpRect.width / 2);
-    const startY = (firstRect.height > 0)
-      ? Math.max(20, (firstRect.top - vpRect.top) + container.scrollTop - 40)
-      : 40;
+    // Initial cursor coordinates: hover slightly above first node
+    const firstNode = nodes[0];
+    const startX = firstNode.x + firstNode.w / 2;
+    const startY = Math.max(30, firstNode.y - 45);
 
-    // ── Phase 1: Synthesizing Architecture (~700ms) ──
     setCursorState({
       x: startX,
       y: startY,
@@ -265,125 +456,113 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       isClicking: false
     });
 
-    let timeline = 750;
-    const BLOCK_STEP = 950; // ample time to glide, sketch boundary, write name, and solidify
+    let timeline = 700;
 
-    // ── Phase 2: Draw All Blocks & Names One by One (NO arrows yet) ──
-    nodes.forEach((nodeEl, idx) => {
-      // Step 2A: Glide cursor to block center & sketch glowing wireframe
-      const tDraft = setTimeout(() => {
-        const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-        const curNodes = curWrapper ? Array.from(curWrapper.querySelectorAll('.node, g.node')) : [];
-        const targetNode = curNodes[idx] || nodeEl;
-        if (!targetNode) return;
-
-        const currentVp = container.getBoundingClientRect();
-        const nodeR = targetNode.getBoundingClientRect();
-        const nx = (nodeR.width > 0)
-          ? (nodeR.left - currentVp.left) + container.scrollLeft + (nodeR.width / 2)
-          : (currentVp.width / 2);
-        const ny = (nodeR.height > 0)
-          ? (nodeR.top - currentVp.top) + container.scrollTop + (nodeR.height / 2)
-          : (idx * 90 + 70);
-
+    // ── Phase 2: Draw Each Box like Paint & Write Text from Left to Right ──
+    nodes.forEach((node, idx) => {
+      // Step 2A: Glide cursor to top-left corner of the box
+      const tCorner = setTimeout(() => {
         setCursorState({
-          x: nx,
-          y: ny,
+          x: node.x,
+          y: node.y,
           visible: true,
-          status: `Drawing Block (${idx + 1}/${nodes.length})`,
-          label: `Outlining block...`,
+          status: `Drafting Block (${idx + 1}/${nodes.length})`,
+          label: `📐 Starting Box...`,
           isClicking: false
         });
-
-        // Unhide this specific node and its boundary shapes for wireframe blueprint
-        targetNode.style.setProperty('visibility', 'visible', 'important');
-        targetNode.style.setProperty('opacity', '1', 'important');
-        targetNode.classList.remove('stitch-node-solidified');
-        targetNode.classList.add('stitch-node-wireframe');
-
-        targetNode.querySelectorAll('rect, polygon, circle, ellipse, path').forEach((shape) => {
-          shape.style.setProperty('visibility', 'visible', 'important');
-          shape.style.setProperty('opacity', '1', 'important');
-        });
+        setActiveBox({ x: node.x, y: node.y, w: 6, h: 6 });
       }, timeline);
-      animTimeoutsRef.current.push(tDraft);
+      animTimeoutsRef.current.push(tCorner);
 
-      // Step 2B: Cursor writes the block name inside the box
-      const tWrite = setTimeout(() => {
-        const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-        const curNodes = curWrapper ? Array.from(curWrapper.querySelectorAll('.node, g.node')) : [];
-        const targetNode = curNodes[idx] || nodeEl;
-        if (!targetNode) return;
-
-        const labelText = targetNode.textContent?.trim().replace(/\s+/g, ' ').slice(0, 24) || `Block ${idx + 1}`;
-
-        setCursorState((prev) => ({
-          ...prev,
-          status: `Writing Block (${idx + 1}/${nodes.length})`,
-          label: `✍️ "${labelText}"`,
-          isClicking: false
-        }));
-
-        // Reveal text and foreignObject content
-        targetNode.querySelectorAll('text, foreignObject, div, span, p').forEach((txt) => {
-          txt.style.setProperty('visibility', 'visible', 'important');
-          txt.style.setProperty('opacity', '1', 'important');
-        });
-      }, timeline + 360);
-      animTimeoutsRef.current.push(tWrite);
-
-      // Step 2C: Solidify card with cyan bloom flash & click shockwave
-      const tSolidify = setTimeout(() => {
-        const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-        const curNodes = curWrapper ? Array.from(curWrapper.querySelectorAll('.node, g.node')) : [];
-        const targetNode = curNodes[idx] || nodeEl;
-        if (targetNode) {
-          targetNode.classList.remove('stitch-node-wireframe');
-          targetNode.classList.add('stitch-node-solidified');
-          targetNode.querySelectorAll('*').forEach((child) => {
-            child.style.setProperty('visibility', 'visible', 'important');
-            child.style.setProperty('opacity', '1', 'important');
+      // Step 2B: Drag out rectangle like Paint (top-left -> bottom-right)
+      const paintFrames = [0.25, 0.5, 0.75, 1.0];
+      paintFrames.forEach((pct, pIdx) => {
+        const tFrame = setTimeout(() => {
+          const curW = node.w * pct;
+          const curH = node.h * pct;
+          setActiveBox({ x: node.x, y: node.y, w: curW, h: curH });
+          setCursorState({
+            x: node.x + curW,
+            y: node.y + curH,
+            visible: true,
+            status: `Drawing Box (${idx + 1}/${nodes.length})`,
+            label: `📐 ${Math.round(curW)}×${Math.round(curH)}`,
+            isClicking: false
           });
-        }
+        }, timeline + 100 + (pIdx * 90));
+        animTimeoutsRef.current.push(tFrame);
+      });
 
-        const labelText = targetNode?.textContent?.trim().replace(/\s+/g, ' ').slice(0, 24) || `Block ${idx + 1}`;
+      // Step 2C: Cursor glides to the left side of the box to write text
+      const tLeft = setTimeout(() => {
+        const textY = node.y + node.h / 2 + 4;
+        setCursorState({
+          x: node.x + 14,
+          y: textY,
+          visible: true,
+          status: `Writing Block (${idx + 1}/${nodes.length})`,
+          label: `✍️ Typing...`,
+          isClicking: false
+        });
+        setActiveWritingText({ x: node.x + 14, y: textY, text: '' });
+      }, timeline + 500);
+      animTimeoutsRef.current.push(tLeft);
+
+      // Step 2D: Type text as cursor moves from left to right
+      const textLen = node.text.length;
+      const textSteps = [0.25, 0.5, 0.75, 1.0];
+      textSteps.forEach((pct, sIdx) => {
+        const tType = setTimeout(() => {
+          const charCount = Math.max(1, Math.ceil(textLen * pct));
+          const partialText = node.text.slice(0, charCount);
+          const cursorX = node.x + 14 + ((node.w - 28) * pct);
+          const textY = node.y + node.h / 2 + 4;
+
+          setActiveWritingText({ x: node.x + 14, y: textY, text: partialText });
+          setCursorState({
+            x: cursorX,
+            y: textY,
+            visible: true,
+            status: `Writing: "${partialText}"`,
+            label: `✍️ ${Math.round(pct * 100)}%`,
+            isClicking: false
+          });
+        }, timeline + 680 + (sIdx * 90));
+        animTimeoutsRef.current.push(tType);
+      });
+
+      // Step 2E: Solidify card with shockwave click
+      const tSolidify = setTimeout(() => {
+        // Clear active drafting elements
+        setActiveBox(null);
+        setActiveWritingText(null);
+
+        // Add this node permanently to drawnNodes!
+        setDrawnNodes((prev) => [...prev, node]);
 
         setCursorState((prev) => ({
           ...prev,
+          x: node.x + node.w / 2,
+          y: node.y + node.h / 2,
           status: 'Card Solidified ✨',
-          label: `${labelText} [Ready]`,
+          label: `${node.text} [Ready]`,
           isClicking: true
         }));
-      }, timeline + 650);
+      }, timeline + 1100);
       animTimeoutsRef.current.push(tSolidify);
 
-      // Step 2D: Release click shockwave
+      // Step 2F: Release shockwave
       const tRelease = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, isClicking: false }));
-      }, timeline + 820);
+      }, timeline + 1280);
       animTimeoutsRef.current.push(tRelease);
 
-      timeline += BLOCK_STEP;
+      timeline += 1380; // Total time per box
     });
 
     // ── Phase 3: Connect the Blocks with Arrows One by One ──
-    // ONLY starts after all blocks have been drafted, named, and solidified!
+    // ONLY starts AFTER all boxes have been drafted, typed, and solidified!
     const tPauseNotice = setTimeout(() => {
-      const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-      if (curWrapper) {
-        curWrapper.classList.add('show-edges');
-        const curEdgeContainer = curWrapper.querySelector('g.edgePaths');
-        if (curEdgeContainer) {
-          curEdgeContainer.style.setProperty('visibility', 'visible', 'important');
-          curEdgeContainer.style.setProperty('opacity', '1', 'important');
-        }
-        const curEdgeLabelContainer = curWrapper.querySelector('g.edgeLabels');
-        if (curEdgeLabelContainer) {
-          curEdgeLabelContainer.style.setProperty('visibility', 'visible', 'important');
-          curEdgeLabelContainer.style.setProperty('opacity', '1', 'important');
-        }
-      }
-
       setCursorState((prev) => ({
         ...prev,
         status: '🔗 Linking Blocks with Arrows...',
@@ -394,129 +573,69 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     animTimeoutsRef.current.push(tPauseNotice);
 
     timeline += 500;
-    const EDGE_STEP = 800; // ~0.8s per connector arrow
+    const EDGE_DURATION = 650;
 
-    edges.forEach((edgeEl, edgeIdx) => {
-      // Step 3A: Move cursor to start of connector & shoot laser beam
+    edges.forEach((edge, edgeIdx) => {
+      // Step 3A: Glide cursor to start of connector
       const tStartLink = setTimeout(() => {
-        const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-        let curEdges = [];
-        if (curWrapper) {
-          const edgeGroup = curWrapper.querySelector('g.edgePaths');
-          if (edgeGroup) {
-            curEdges = Array.from(edgeGroup.querySelectorAll('g.edgePath, path.flowchart-link, path'));
-          }
-          if (curEdges.length === 0) {
-            curEdges = Array.from(curWrapper.querySelectorAll('.edgePath, g.edgePath, path.flowchart-link'));
-          }
-        }
-        const targetEdge = curEdges[edgeIdx] || edgeEl;
-        if (!targetEdge) return;
-
-        const currentVp = container.getBoundingClientRect();
-        const edgeR = targetEdge.getBoundingClientRect();
-        const ex = (edgeR.width > 0)
-          ? (edgeR.left - currentVp.left) + container.scrollLeft + (edgeR.width / 2)
-          : (currentVp.width / 2);
-        const eyStart = (edgeR.height > 0)
-          ? (edgeR.top - currentVp.top) + container.scrollTop + 6
-          : (edgeIdx * 90 + 90);
-
         setCursorState({
-          x: ex,
-          y: eyStart,
+          x: edge.x1,
+          y: edge.y1,
           visible: true,
           status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
           label: 'Connecting ➔',
           isClicking: false
         });
-
-        // Unhide this edge and start drawing
-        targetEdge.style.setProperty('visibility', 'visible', 'important');
-        targetEdge.style.setProperty('opacity', '1', 'important');
-        targetEdge.querySelectorAll('*').forEach((c) => {
-          c.style.setProperty('visibility', 'visible', 'important');
-          c.style.setProperty('opacity', '1', 'important');
-        });
-        targetEdge.classList.add('stitch-edge-drawing');
+        setActiveEdge({ x1: edge.x1, y1: edge.y1, x2: edge.x1, y2: edge.y1 });
       }, timeline);
       animTimeoutsRef.current.push(tStartLink);
 
-      // Step 3B: Glide cursor down arrow path to the tip & stamp shockwave
-      const tFinishLink = setTimeout(() => {
-        const curWrapper = container.querySelector('.mermaid-svg-wrapper');
-        let curEdges = [];
-        if (curWrapper) {
-          const edgeGroup = curWrapper.querySelector('g.edgePaths');
-          if (edgeGroup) {
-            curEdges = Array.from(edgeGroup.querySelectorAll('g.edgePath, path.flowchart-link, path'));
-          }
-          if (curEdges.length === 0) {
-            curEdges = Array.from(curWrapper.querySelectorAll('.edgePath, g.edgePath, path.flowchart-link'));
-          }
-        }
-        const targetEdge = curEdges[edgeIdx] || edgeEl;
-        if (targetEdge) {
-          targetEdge.classList.remove('stitch-edge-drawing');
-          targetEdge.classList.add('stitch-edge-drawn');
-        }
+      // Step 3B: Laser line grows along with cursor to end
+      const edgeSteps = [0.33, 0.66, 1.0];
+      edgeSteps.forEach((pct, eIdx) => {
+        const tEdgeProg = setTimeout(() => {
+          const curX = edge.x1 + (edge.x2 - edge.x1) * pct;
+          const curY = edge.y1 + (edge.y2 - edge.y1) * pct;
+          setActiveEdge({ x1: edge.x1, y1: edge.y1, x2: curX, y2: curY });
+          setCursorState({
+            x: curX,
+            y: curY,
+            visible: true,
+            status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
+            label: 'Connecting ➔',
+            isClicking: false
+          });
+        }, timeline + 80 + (eIdx * 90));
+        animTimeoutsRef.current.push(tEdgeProg);
+      });
 
-        const currentVp = container.getBoundingClientRect();
-        const edgeR = targetEdge ? targetEdge.getBoundingClientRect() : { width: 0, height: 0, left: 0, top: 0 };
-        const ex = (edgeR.width > 0)
-          ? (edgeR.left - currentVp.left) + container.scrollLeft + (edgeR.width / 2)
-          : (currentVp.width / 2);
-        const eyEnd = (edgeR.height > 0)
-          ? (edgeR.top - currentVp.top) + container.scrollTop + Math.max(16, edgeR.height - 4)
-          : (edgeIdx * 90 + 130);
+      // Step 3C: Stamp shockwave at arrowhead tip
+      const tFinishLink = setTimeout(() => {
+        setActiveEdge(null);
+        setDrawnEdges((prev) => [...prev, edge]);
 
         setCursorState({
-          x: ex,
-          y: eyEnd,
+          x: edge.x2,
+          y: edge.y2,
           visible: true,
           status: `Arrow Linked (${edgeIdx + 1}/${edges.length})`,
           label: 'Flow Connected ✨',
           isClicking: true
         });
-      }, timeline + 440);
+      }, timeline + 400);
       animTimeoutsRef.current.push(tFinishLink);
 
-      // Step 3C: Release click shockwave
+      // Step 3D: Release click
       const tEdgeRelease = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, isClicking: false }));
-      }, timeline + 640);
+      }, timeline + 580);
       animTimeoutsRef.current.push(tEdgeRelease);
 
-      timeline += EDGE_STEP;
+      timeline += EDGE_DURATION;
     });
 
     // ── Phase 4: Settle, Return to Top & Complete ──
     const tFinish = setTimeout(() => {
-      const allTargets = [modalViewportRef.current, containerRef.current].filter(Boolean);
-      allTargets.forEach((root) => {
-        const curWrapper = root.querySelector('.mermaid-svg-wrapper');
-        if (curWrapper) {
-          curWrapper.classList.remove('building');
-          curWrapper.classList.add('show-edges');
-          const curNodes = curWrapper.querySelectorAll('.node, g.node');
-          curNodes.forEach((n) => {
-            n.style.removeProperty('visibility');
-            n.style.removeProperty('opacity');
-            n.querySelectorAll('*').forEach((c) => {
-              c.style.removeProperty('visibility');
-              c.style.removeProperty('opacity');
-            });
-          });
-          const curEdges = curWrapper.querySelectorAll('.edgePath, g.edgePath, path.flowchart-link, g.edgePaths path');
-          curEdges.forEach((e) => {
-            e.style.removeProperty('visibility');
-            e.style.removeProperty('opacity');
-            e.classList.remove('stitch-edge-drawing');
-            e.classList.add('stitch-edge-drawn');
-          });
-        }
-      });
-
       // Smoothly return scroll position to top so top of flowchart is 100% visible!
       container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
       if (modalViewportRef.current) {
@@ -534,15 +653,24 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
       const tHide = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, visible: false }));
+        // Reveal raw Mermaid SVG seamlessly
+        const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
+        targets.forEach((root) => {
+          const w = root.querySelector('.mermaid-svg-wrapper');
+          if (w) {
+            w.classList.remove('building');
+            w.style.opacity = '1';
+          }
+        });
         setIsBuilding(false);
         if (modalViewportRef.current) {
           modalViewportRef.current.scrollTop = 0;
           modalViewportRef.current.scrollLeft = 0;
           autoFitModalChart();
         }
-      }, 950);
+      }, 850);
       animTimeoutsRef.current.push(tHide);
-    }, timeline + 200);
+    }, timeline + 150);
     animTimeoutsRef.current.push(tFinish);
   }, [isModalOpen, autoFitModalChart]);
 
@@ -1091,6 +1219,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             isClicking={cursorState.isClicking}
           />
 
+          {/* Dedicated Live Drawing Overlay Layer */}
+          <StitchLiveOverlay
+            isBuilding={isBuilding && !isModalOpen}
+            drawnNodes={drawnNodes}
+            activeBox={activeBox}
+            activeWritingText={activeWritingText}
+            drawnEdges={drawnEdges}
+            activeEdge={activeEdge}
+          />
+
           {loading && (
             <div className="mermaid-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#94A3B8', fontSize: 12, padding: '40px 0' }}>
               <Sparkles size={20} className="animate-spin" color="#3B82F6" />
@@ -1548,6 +1686,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   status={cursorState.status}
                   label={cursorState.label}
                   isClicking={cursorState.isClicking}
+                />
+
+                {/* Dedicated Live Drawing Overlay Layer */}
+                <StitchLiveOverlay
+                  isBuilding={isBuilding && isModalOpen}
+                  drawnNodes={drawnNodes}
+                  activeBox={activeBox}
+                  activeWritingText={activeWritingText}
+                  drawnEdges={drawnEdges}
+                  activeEdge={activeEdge}
                 />
 
                 {svgHtml && (
