@@ -618,6 +618,9 @@ export default function VedikaParticleBot({
       const targetThemeG = currentTheme ? currentTheme[1] : null;
       const targetThemeB = currentTheme ? currentTheme[2] : null;
 
+      const currentIntensity = intensityRef.current || 1.0;
+      const isHighIntensity = currentIntensity > 1.1;
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
@@ -690,9 +693,6 @@ export default function VedikaParticleBot({
             const ty = Math.max(0, Math.min(63, (v * 63) | 0));
             t = touchData[(ty * 64 + tx) * 4] / 255;
           }
-
-          const currentIntensity = intensityRef.current || 1.0;
-          const isHighIntensity = currentIntensity > 1.1;
 
           // Simplex/harmonic oscillation from Bruno Imbrizi shader:
           // rndz = (random(pindex) + snoise(vec2(pindex * 0.1, uTime * 0.1)))
