@@ -138,8 +138,9 @@ button.mermaid-expand-btn:hover,
 }
 
 .mermaid-svg-wrapper.modal-chart svg {
-  max-width: min(100%, 360px) !important;
+  max-width: min(94vw, 920px) !important;
   width: auto !important;
+  height: auto !important;
 }
 
 /* Custom Node & Edge Styling injected into SVG */
@@ -743,41 +744,46 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   visibility: hidden !important;
 }
 
-/* Wireframe Node (When Cursor Is Drafting) */
+/* Wireframe Node (When Cursor Is Drafting - glowing blueprint) */
 .mermaid-svg-wrapper.building g.node.stitch-node-wireframe,
 .mermaid-svg-wrapper.building .node.stitch-node-wireframe,
 .mermaid-svg-wrapper .stitch-node-wireframe {
   opacity: 1 !important;
   visibility: visible !important;
-  transform-origin: center center;
-  animation: stitchWireframePulse 0.9s infinite alternate cubic-bezier(0.4, 0, 0.6, 1);
 }
 
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe rect,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe polygon,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe circle,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe ellipse,
 .mermaid-svg-wrapper .stitch-node-wireframe rect,
 .mermaid-svg-wrapper .stitch-node-wireframe circle,
 .mermaid-svg-wrapper .stitch-node-wireframe polygon,
 .mermaid-svg-wrapper .stitch-node-wireframe ellipse {
-  fill: rgba(14, 23, 42, 0.75) !important;
+  fill: rgba(14, 23, 42, 0.9) !important;
   stroke: #38BDF8 !important;
-  stroke-width: 2px !important;
+  stroke-width: 2.25px !important;
   stroke-dasharray: 6 3 !important;
-  animation: stitchDashScroll 1.2s linear infinite;
-  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.85)) !important;
+  animation: stitchDashScroll 1.2s linear infinite, stitchWireframeGlow 0.8s ease-in-out infinite alternate !important;
 }
 
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe .label,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe text,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe foreignObject,
+.mermaid-svg-wrapper.building g.node.stitch-node-wireframe span,
 .mermaid-svg-wrapper .stitch-node-wireframe .label,
 .mermaid-svg-wrapper .stitch-node-wireframe text {
-  opacity: 0.9 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #38BDF8 !important;
 }
 
-@keyframes stitchWireframePulse {
-  0% {
-    transform: scale(0.98);
-    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.4));
+@keyframes stitchWireframeGlow {
+  from {
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.45));
   }
-  100% {
-    transform: scale(1.02);
-    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.9));
+  to {
+    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.95));
   }
 }
 
@@ -787,15 +793,18 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   }
 }
 
-/* Solidified Card (After AI Stamping) */
+/* Solidified Card (After AI Stamping & Solidifying) */
 .mermaid-svg-wrapper.building g.node.stitch-node-solidified,
 .mermaid-svg-wrapper.building .node.stitch-node-solidified,
 .mermaid-svg-wrapper .stitch-node-solidified {
   opacity: 1 !important;
   visibility: visible !important;
-  animation: stitchSolidifyBloom 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified rect,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified polygon,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified circle,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified ellipse,
 .mermaid-svg-wrapper .stitch-node-solidified rect,
 .mermaid-svg-wrapper .stitch-node-solidified circle,
 .mermaid-svg-wrapper .stitch-node-solidified polygon,
@@ -804,25 +813,36 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   stroke: #4F83F6 !important;
   stroke-width: 1.5px !important;
   stroke-dasharray: none !important;
-  transition: all 0.35s ease;
+  animation: stitchBloomFlash 0.5s ease-out forwards !important;
 }
 
-@keyframes stitchSolidifyBloom {
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified .label,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified text,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified foreignObject,
+.mermaid-svg-wrapper.building g.node.stitch-node-solidified span,
+.mermaid-svg-wrapper .stitch-node-solidified .label,
+.mermaid-svg-wrapper .stitch-node-solidified text {
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #F8FAFC !important;
+}
+
+@keyframes stitchBloomFlash {
   0% {
-    transform: scale(1.08);
-    filter: drop-shadow(0 0 24px rgba(56, 189, 248, 1)) drop-shadow(0 0 12px rgba(129, 140, 248, 0.8));
-  }
-  50% {
-    transform: scale(1.02);
-    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.6));
+    filter: drop-shadow(0 0 22px rgba(56, 189, 248, 1)) drop-shadow(0 0 10px rgba(96, 165, 250, 0.8));
   }
   100% {
-    transform: scale(1);
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
   }
 }
 
 /* Connector Laser Draw Effect */
+.mermaid-svg-wrapper.building.show-edges g.edgePaths,
+.mermaid-svg-wrapper.building.show-edges g.edgeLabels {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 .mermaid-svg-wrapper.building .stitch-edge-drawing,
 .mermaid-svg-wrapper.building g.edgePath.stitch-edge-drawing,
 .mermaid-svg-wrapper.building path.flowchart-link.stitch-edge-drawing,
@@ -832,13 +852,15 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   visibility: visible !important;
 }
 
+.mermaid-svg-wrapper.building .stitch-edge-drawing path,
+.mermaid-svg-wrapper.building path.stitch-edge-drawing,
 .mermaid-svg-wrapper .stitch-edge-drawing path,
 .mermaid-svg-wrapper path.stitch-edge-drawing {
   stroke: #38BDF8 !important;
   stroke-width: 2.5px !important;
-  stroke-dasharray: 400;
-  stroke-dashoffset: 400;
-  animation: stitchLaserPath 0.5s ease-out forwards;
+  stroke-dasharray: 400 !important;
+  stroke-dashoffset: 400 !important;
+  animation: stitchLaserPath 0.5s ease-out forwards !important;
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
 }
 
@@ -852,12 +874,14 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   transition: opacity 0.3s ease;
 }
 
+.mermaid-svg-wrapper.building .stitch-edge-drawn path,
+.mermaid-svg-wrapper.building path.stitch-edge-drawn,
 .mermaid-svg-wrapper .stitch-edge-drawn path,
 .mermaid-svg-wrapper path.stitch-edge-drawn {
   stroke: #60A5FA !important;
   stroke-width: 1.5px !important;
   stroke-dasharray: none !important;
-  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.35));
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.35)) !important;
 }
 
 @keyframes stitchLaserPath {
