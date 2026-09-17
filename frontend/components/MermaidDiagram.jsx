@@ -76,7 +76,7 @@ function sanitizeMermaid(raw) {
   return code;
 }
 
-export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate }) {
+export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
   const containerRef = useRef(null);
   const modalViewportRef = useRef(null);
   const [mounted, setMounted] = useState(false);
@@ -665,14 +665,47 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.15));
   const handleModalZoomReset = () => setModalZoom(1);
 
-  const handleModalWheel = (e) => {
-    // Zoom in/out on Ctrl/Cmd + Wheel or Trackpad pinch
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.1 : -0.1;
-      setModalZoom(prev => Math.max(0.15, Math.min(3.5, Number((prev + delta).toFixed(2)))));
-    }
-  };
+  // Attach non-passive wheel event listener to modal viewport to zoom ONLY the canvas and prevent whole webpage zoom
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const vp = modalViewportRef.current;
+    if (!vp) return;
+
+    const handleWheelNonPassive = (e) => {
+      // If Ctrl/Meta key or trackpad pinch gesture is used:
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // STRICTLY PREVENTS BROWSER WEBPAGE ZOOM!
+        e.stopPropagation();
+        const factor = e.deltaY < 0 ? 1.08 : 0.92;
+        setModalZoom((prev) => Math.max(0.15, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+      }
+    };
+
+    vp.addEventListener('wheel', handleWheelNonPassive, { passive: false });
+    return () => {
+      vp.removeEventListener('wheel', handleWheelNonPassive);
+    };
+  }, [isModalOpen]);
+
+  // Attach non-passive wheel event listener to inline viewport as well
+  useEffect(() => {
+    const vp = containerRef.current;
+    if (!vp) return;
+
+    const handleInlineWheelNonPassive = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // PREVENTS BROWSER WEBPAGE ZOOM!
+        e.stopPropagation();
+        const factor = e.deltaY < 0 ? 1.08 : 0.92;
+        setZoom((prev) => Math.max(0.3, Math.min(2.5, Number((prev * factor).toFixed(2)))));
+      }
+    };
+
+    vp.addEventListener('wheel', handleInlineWheelNonPassive, { passive: false });
+    return () => {
+      vp.removeEventListener('wheel', handleInlineWheelNonPassive);
+    };
+  }, []);
 
   const handleFitToScreen = () => {
     if (!modalViewportRef.current) {
@@ -697,6 +730,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   };
 
   const handleMouseDown = (e) => {
+    e.stopPropagation(); // Stop mousedown bubbling to document outside-click handler!
     if (e.button !== 0) return;
     if (e.target.closest('button') || e.target.closest('a')) return;
     if (!modalViewportRef.current) return;
@@ -717,7 +751,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     modalViewportRef.current.scrollTop = panStartRef.current.scrollTop - dy;
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
+    if (e) e.stopPropagation();
     setIsPanning(false);
   };
 
@@ -750,6 +785,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   return (
     <div
       className="mermaid-container"
+      data-feature-container="true"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -943,6 +981,28 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               <span>Regen</span>
             </button>
           )}
+
+          {/* Optional Close button */}
+          {onClose && (
+            <button
+              type="button"
+              className="mermaid-btn"
+              style={{
+                ...btnBaseStyle,
+                color: '#F87171',
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderColor: 'rgba(239, 68, 68, 0.25)'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              title="Close Visual Summary"
+            >
+              <X size={12} color="#F87171" />
+              <span>Close</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1124,6 +1184,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       {mounted && isModalOpen && typeof document !== 'undefined' && createPortal(
         <div
           className="mermaid-modal-backdrop"
+          data-feature-container="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           style={{
             position: 'fixed',
             top: 0,
@@ -1145,8 +1208,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         >
           <div
             className="mermaid-modal-window"
+            data-feature-container="true"
             role="dialog"
             aria-modal="true"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             style={{
               width: 'min(98vw, 1480px)',
@@ -1355,7 +1420,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   </button>
                 </div>
 
-                {/* Close Button: STRICTLY the only button that closes the modal along with Back to Chat */}
+                {/* Close Button: STRICTLY closes the modal and the feature */}
                 <button
                   type="button"
                   className="mermaid-modal-close-btn"
@@ -1377,6 +1442,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsModalOpen(false);
+                    if (onClose) onClose();
                   }}
                   title="Close Modal"
                 >
@@ -1402,11 +1468,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               <div
                 className={`mermaid-modal-viewport ${isPanning ? 'panning' : ''}`}
                 ref={modalViewportRef}
+                data-feature-container="true"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onWheel={handleModalWheel}
+                onClick={(e) => e.stopPropagation()}
                 style={{
                   flex: 1,
                   height: '100%',

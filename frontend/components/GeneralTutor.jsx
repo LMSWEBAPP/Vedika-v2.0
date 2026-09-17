@@ -344,13 +344,22 @@ export default function GeneralTutor() {
     setErr(''); setTopic(''); setUploadErr('');
   }, []);
 
-  // Handle click outside to close open feature cards
+  // Handle click outside to close open feature cards (excluding Visual Summary which only closes on explicit close)
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (e.target.closest('[data-feature-container="true"]') || e.target.closest('[data-feature-button="true"]')) {
+      if (
+        e.target.closest('[data-feature-container="true"]') ||
+        e.target.closest('[data-feature-button="true"]') ||
+        e.target.closest('.mermaid-modal-backdrop') ||
+        e.target.closest('.mermaid-modal-window') ||
+        e.target.closest('.mermaid-container')
+      ) {
         return;
       }
-      setMessages(prev => prev.map(m => m.activeFeature ? { ...m, activeFeature: null } : m));
+      setMessages(prev => {
+        if (!prev.some(m => m.activeFeature && m.activeFeature !== 'infographic')) return prev;
+        return prev.map(m => (m.activeFeature && m.activeFeature !== 'infographic') ? { ...m, activeFeature: null } : m);
+      });
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
@@ -1437,6 +1446,9 @@ export default function GeneralTutor() {
                                   points={msg.features.infographic.points}
                                   chatHistory={messages}
                                   onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
+                                  onClose={() => {
+                                    setMessages(prev => prev.map((m, i) => i === mi ? { ...m, activeFeature: null } : m));
+                                  }}
                                 />
                               </div>
                             ) : (
