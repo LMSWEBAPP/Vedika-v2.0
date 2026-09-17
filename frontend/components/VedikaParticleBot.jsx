@@ -417,14 +417,28 @@ export default function VedikaParticleBot({
           spawnZ = -40 - Math.random() * 40;
           spawnX = robotX + t.relX + (Math.random() - 0.5) * 16;
           spawnY = robotY + t.relY + (Math.random() - 0.5) * 16;
-        } else if (isFrontEntrance) {
-          spawnZ = -280 - Math.random() * 200;
-          spawnX = robotX + t.relX + (Math.random() - 0.5) * 50;
-          spawnY = robotY + t.relY + (Math.random() - 0.5) * 50;
         } else {
-          spawnX = canvasWidth + 40 + Math.random() * 280;
-          spawnY = robotY + t.relY + (Math.random() - 0.5) * (canvasHeight * 0.55);
-          spawnZ = (Math.random() - 0.5) * 60;
+          // Non-inline (e.g. Vedika AI page): particles coming from out of viewport
+          // MUST strictly originate from the right-side area outlined by the red box
+          const minSpawnX = rect.left > 100 ? (rect.left - 10) : (canvasWidth * 0.48);
+          const maxSpawnX = canvasWidth;
+          const spawnDir = Math.random();
+
+          spawnZ = (Math.random() - 0.5) * 20;
+
+          if (spawnDir < 0.65) {
+            // 65%: from beyond the RIGHT viewport edge
+            spawnX = maxSpawnX + 25 + Math.random() * 260;
+            spawnY = Math.max(0, rect.top - 60) + Math.random() * (rect.height + 140);
+          } else if (spawnDir < 0.82) {
+            // 17%: from above the TOP viewport edge (within the red box horizontal span)
+            spawnX = minSpawnX + 15 + Math.random() * (maxSpawnX - minSpawnX - 25);
+            spawnY = -40 - Math.random() * 180;
+          } else {
+            // 18%: from below the BOTTOM viewport edge (within the red box horizontal span)
+            spawnX = minSpawnX + 15 + Math.random() * (maxSpawnX - minSpawnX - 25);
+            spawnY = canvasHeight + 40 + Math.random() * 180;
+          }
         }
 
         const angle = Math.random() * Math.PI * 2;
@@ -760,8 +774,9 @@ export default function VedikaParticleBot({
         const maxSize = isHighIntensity ? 3.8 : 3.4;
         const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 1.0)));
 
-        // Clip out of screen
-        if (renderX < -30 || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
+        // Clip out of screen or crossing into the left column (outside red box)
+        const leftLimit = inline ? -30 : (rect.left > 100 ? (rect.left - 15) : 0);
+        if (renderX < leftLimit || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
           continue;
         }
 
