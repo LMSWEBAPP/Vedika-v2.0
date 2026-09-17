@@ -103,6 +103,9 @@ class TouchTexture {
   }
 }
 
+// Global particle target cache: enables instant (0ms) initialization on revisit
+const TARGET_CACHE = new Map();
+
 /**
  * VedikaParticleBot
  * Implements Bruno Imbrizi's interactive-particles architecture:
@@ -119,7 +122,9 @@ export default function VedikaParticleBot({
   colorMode = 'monochrome',
   isEntering = false,
   onSettled = null,
-  className = ''
+  className = '',
+  inline = false,
+  themeRgb = null
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -130,6 +135,21 @@ export default function VedikaParticleBot({
 
   const isEnteringRef = useRef(isEntering);
   isEnteringRef.current = isEntering;
+
+  const parseThemeRgb = (val) => {
+    if (!val) return null;
+    if (Array.isArray(val) && val.length >= 3) return val;
+    if (typeof val === 'string') {
+      const parts = val.split(',').map(n => parseInt(n.trim(), 10));
+      if (parts.length >= 3 && !isNaN(parts[0])) return parts;
+    }
+    return null;
+  };
+
+  const themeRgbRef = useRef(parseThemeRgb(themeRgb));
+  useEffect(() => {
+    themeRgbRef.current = parseThemeRgb(themeRgb);
+  }, [themeRgb]);
 
   const morphToImageRef = useRef(null);
   const prevSrcRef = useRef(src);
@@ -171,14 +191,19 @@ export default function VedikaParticleBot({
       isHovered: false
     };
 
-    let canvasWidth = window.innerWidth || 1920;
-    let canvasHeight = window.innerHeight || 1080;
+    let canvasWidth = inline ? (width || 220) : (window.innerWidth || 1920);
+    let canvasHeight = inline ? (height || 250) : (window.innerHeight || 1080);
     let dpr = 1;
 
     const updateCanvasSize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvasWidth = window.innerWidth || 1920;
-      canvasHeight = window.innerHeight || 1080;
+      if (inline) {
+        canvasWidth = width || 220;
+        canvasHeight = height || 250;
+      } else {
+        canvasWidth = window.innerWidth || 1920;
+        canvasHeight = window.innerHeight || 1080;
+      }
 
       canvas.width = Math.floor(canvasWidth * dpr);
       canvas.height = Math.floor(canvasHeight * dpr);
@@ -193,42 +218,65 @@ export default function VedikaParticleBot({
     img.crossOrigin = 'anonymous';
 
     function sampleFromImage(sourceImg) {
-      const naturalW = sourceImg.naturalWidth || sourceImg.width;
-      const naturalH = sourceImg.naturalHeight || sourceImg.height;
-      if (!naturalW || !naturalH) return null;
-
       updateCanvasSize();
-      const rect = container.getBoundingClientRect();
       const isMobile = window.innerWidth < 768;
 
-      const topOffset = Math.max(rect.top > 0 ? rect.top : 70, 64);
-      const viewportAvailableHeight = window.innerHeight - topOffset - 24;
-      const safeContainerHeight = isMobile
-        ? 380
-        : Math.min(viewportAvailableHeight > 320 ? viewportAvailableHeight : 560, 560);
-
-      const aspect = naturalW / naturalH;
-      const maxAvailableW = isMobile ? window.innerWidth - 32 : (rect.width > 200 ? rect.width - 24 : 560);
-      targetHeight = Math.max(10, Math.floor(safeContainerHeight));
-      targetWidth = Math.max(10, Math.floor(targetHeight * aspect));
-
-      if (targetWidth > maxAvailableW) {
-        targetWidth = Math.max(10, Math.floor(maxAvailableW));
-        targetHeight = Math.max(10, Math.floor(targetWidth / aspect));
+      const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v3`;
+      if (TARGET_CACHE.has(cacheKey)) {
+        const cached = TARGET_CACHE.get(cacheKey);
+        targetWidth = cached.targetWidth;
+        targetHeight = cached.targetHeight;
+        return cached.targets;
       }
 
+      const naturalW = sourceImg?.naturalWidth || sourceImg?.width || 400;
+      const naturalH = sourceImg?.naturalHeight || sourceImg?.height || 400;
+      if (!naturalW || !naturalH) return null;
+
+      const rect = container.getBoundingClientRect();
+      const aspect = naturalW / naturalH;
+
+      if (inline) {
+        targetHeight = Math.max(10, Math.floor((height || 250) * 0.90));
+        targetWidth = Math.max(10, Math.floor(targetHeight * aspect));
+        if (targetWidth > (width || 220) * 0.95) {
+          targetWidth = Math.max(10, Math.floor((width || 220) * 0.95));
+          targetHeight = Math.max(10, Math.floor(targetWidth / aspect));
+        }
+      } else {
+        const topOffset = Math.max(rect.top > 0 ? rect.top : 70, 64);
+        const viewportAvailableHeight = window.innerHeight - topOffset - 24;
+        const safeContainerHeight = isMobile
+          ? 380
+          : Math.min(viewportAvailableHeight > 320 ? viewportAvailableHeight : 560, 560);
+
+        const maxAvailableW = isMobile ? window.innerWidth - 32 : (rect.width > 200 ? rect.width - 24 : 560);
+        targetHeight = Math.max(10, Math.floor(safeContainerHeight));
+        targetWidth = Math.max(10, Math.floor(targetHeight * aspect));
+
+        if (targetWidth > maxAvailableW) {
+          targetWidth = Math.max(10, Math.floor(maxAvailableW));
+          targetHeight = Math.max(10, Math.floor(targetWidth / aspect));
+        }
+      }
+
+      // Performance optimization: sample at targeted resolution instead of giant unscaled image
+      const sampleW = inline ? targetWidth : naturalW;
+      const sampleH = inline ? targetHeight : naturalH;
+
       const offscreen = document.createElement('canvas');
-      offscreen.width = naturalW;
-      offscreen.height = naturalH;
+      offscreen.width = sampleW;
+      offscreen.height = sampleH;
 
       const offCtx = offscreen.getContext('2d');
       if (!offCtx) return null;
 
-      offCtx.drawImage(sourceImg, 0, 0, naturalW, naturalH);
+      offCtx.drawImage(sourceImg, 0, 0, sampleW, sampleH);
 
       let imgData;
       try {
-        imgData = offCtx.getImageData(0, 0, naturalW, naturalH);
+        imgData = offCtx.getImageData(0, 0, sampleW, sampleH);
       } catch (err) {
         console.warn('VedikaParticleBot: getImageData skipped', err);
         return null;
@@ -237,27 +285,28 @@ export default function VedikaParticleBot({
       if (!imgData || !imgData.data) return null;
       const data = imgData.data;
 
-      const scaleX = targetWidth / naturalW;
-      const scaleY = targetHeight / naturalH;
-      const step = isMobile ? 4 : 3;
+      const scaleX = targetWidth / sampleW;
+      const scaleY = targetHeight / sampleH;
+      const step = inline ? 2 : (isMobile ? 4 : 3);
       const targets = [];
+      const sizeFactor = inline ? 0.96 : 1.0;
 
-      for (let y = 0; y < naturalH; y += step) {
-        for (let x = 0; x < naturalW; x += step) {
-          const idx = (y * naturalW + x) * 4;
+      for (let y = 0; y < sampleH; y += step) {
+        for (let x = 0; x < sampleW; x += step) {
+          const idx = (y * sampleW + x) * 4;
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
           const a = data[idx + 3];
 
-          if (a < 36) continue;
+          if (a < 30) continue;
 
           const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
           const maxC = Math.max(r, g, b);
           const minC = Math.min(r, g, b);
           const alphaNorm = a / 255;
 
-          if (luminance < 14 && maxC < 20) continue;
+          if (luminance < 10 && maxC < 16) continue;
           if (maxC - minC <= 10 && maxC >= 195 && a < 220) continue;
 
           let pSize;
@@ -266,53 +315,58 @@ export default function VedikaParticleBot({
           if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-            if (saturation > 0.18 && maxC > 45) {
-              const boost = 1.25;
+            if (saturation > 0.16 && maxC > 40) {
+              const boost = 1.35;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.78, alphaNorm) * 1.05);
-              pSize = 1.60 + Math.random() * 0.35;
-            } else if (luminance > 165) {
+              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 1.2));
+              pSize = (1.68 + Math.random() * 0.35) * sizeFactor;
+            } else if (luminance > 160) {
               baseR = 255;
               baseG = 255;
               baseB = 255;
-              baseAlpha = (0.92 + ((luminance - 165) / 90) * 0.08) * alphaNorm;
-              pSize = 1.65 + Math.random() * 0.30;
-            } else if (luminance > 80) {
-              baseR = Math.min(255, Math.round(r * 1.06));
-              baseG = Math.min(255, Math.round(g * 1.06));
-              baseB = Math.min(255, Math.round(b * 1.12));
-              baseAlpha = 0.85 * alphaNorm;
-              pSize = 1.40 + Math.random() * 0.25;
+              baseAlpha = Math.min(1, Math.max(0.96, (0.92 + ((luminance - 160) / 95) * 0.08) * alphaNorm * 1.15));
+              pSize = (1.75 + Math.random() * 0.30) * sizeFactor;
+            } else if (luminance > 75) {
+              baseR = Math.min(255, Math.round(r * 1.10));
+              baseG = Math.min(255, Math.round(g * 1.10));
+              baseB = Math.min(255, Math.round(b * 1.16));
+              baseAlpha = Math.min(1, Math.max(0.90, alphaNorm * 1.1));
+              pSize = (1.45 + Math.random() * 0.25) * sizeFactor;
             } else {
-              baseR = Math.round(r * 1.0);
-              baseG = Math.round(g * 1.0);
-              baseB = Math.round(b * 1.05);
-              baseAlpha = 0.70 * alphaNorm;
-              pSize = 1.10 + Math.random() * 0.25;
+              baseR = Math.round(r * 1.05);
+              baseG = Math.round(g * 1.05);
+              baseB = Math.round(b * 1.10);
+              baseAlpha = Math.min(1, Math.max(0.82, alphaNorm * 1.05));
+              pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
             }
           } else {
             if (luminance > 165) {
-              pSize = 1.60 + Math.random() * 0.30;
+              pSize = (1.70 + Math.random() * 0.30) * sizeFactor;
               baseR = 255;
               baseG = 255;
               baseB = 255;
-              baseAlpha = (0.90 + ((luminance - 165) / 90) * 0.10) * alphaNorm;
+              baseAlpha = Math.min(1, (0.92 + ((luminance - 165) / 90) * 0.08) * alphaNorm * 1.1);
             } else if (luminance > 85) {
-              pSize = 1.40 + Math.random() * 0.25;
+              pSize = (1.45 + Math.random() * 0.25) * sizeFactor;
               baseR = 224;
               baseG = 234;
               baseB = 250;
-              baseAlpha = 0.82 * alphaNorm;
+              baseAlpha = Math.min(1, 0.88 * alphaNorm * 1.1);
             } else {
-              pSize = 1.05 + Math.random() * 0.25;
+              pSize = (1.18 + Math.random() * 0.25) * sizeFactor;
               baseR = 130;
               baseG = 145;
               baseB = 172;
-              baseAlpha = 0.68 * alphaNorm;
+              baseAlpha = Math.min(1, 0.78 * alphaNorm * 1.05);
             }
           }
+
+          const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+          // In vedika-bot.png, eyes, chest core, and ear circles have cyan/blue saturation
+          const isAccent = (saturation > 0.16 && maxC > 40) || (b > 115 && b > r + 15);
+          const accentRatio = isAccent ? Math.min(1, Math.max(0.45, saturation * 1.4)) : 0;
 
           const relX = (x + (Math.random() - 0.5) * 0.35) * scaleX;
           const relY = (y + (Math.random() - 0.5) * 0.35) * scaleY;
@@ -326,10 +380,16 @@ export default function VedikaParticleBot({
             baseR,
             baseG,
             baseB,
+            origR: baseR,
+            origG: baseG,
+            origB: baseB,
+            accentRatio,
             baseAlpha
           });
         }
       }
+
+      TARGET_CACHE.set(cacheKey, { targetWidth, targetHeight, targets });
       return targets;
     }
 
@@ -338,8 +398,8 @@ export default function VedikaParticleBot({
       if (!targets || targets.length === 0) return;
 
       const rect = container.getBoundingClientRect();
-      const robotX = rect.left + (rect.width - targetWidth) / 2;
-      const robotY = rect.top + (rect.height - targetHeight) / 2;
+      const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
+      const robotY = inline ? (canvasHeight - targetHeight) / 2 : (rect.top + (rect.height - targetHeight) / 2);
 
       const newParticles = [];
       for (let i = 0; i < targets.length; i++) {
@@ -347,7 +407,11 @@ export default function VedikaParticleBot({
         let spawnX, spawnY, spawnZ;
         const isFrontEntrance = Math.random() < 0.24;
 
-        if (isFrontEntrance) {
+        if (inline) {
+          spawnZ = -40 - Math.random() * 40;
+          spawnX = robotX + t.relX + (Math.random() - 0.5) * 16;
+          spawnY = robotY + t.relY + (Math.random() - 0.5) * 16;
+        } else if (isFrontEntrance) {
           spawnZ = -280 - Math.random() * 200;
           spawnX = robotX + t.relX + (Math.random() - 0.5) * 50;
           spawnY = robotY + t.relY + (Math.random() - 0.5) * 50;
@@ -377,13 +441,17 @@ export default function VedikaParticleBot({
           baseR: t.baseR,
           baseG: t.baseG,
           baseB: t.baseB,
+          origR: t.origR,
+          origG: t.origG,
+          origB: t.origB,
+          accentRatio: t.accentRatio,
           baseAlpha: t.baseAlpha,
-          entryDelay: Math.floor(Math.random() * 3),
+          entryDelay: inline ? 0 : Math.floor(Math.random() * 3),
           hasEntered: false,
-          introSpeed: 0.18 + Math.random() * 0.05,
-          spring: 0.085 + Math.random() * 0.02,
-          friction: 0.80 + Math.random() * 0.03,
-          floatPower: 15.0 + Math.random() * 7.0,
+          introSpeed: inline ? (0.34 + Math.random() * 0.08) : (0.18 + Math.random() * 0.05),
+          spring: inline ? 0.095 : (0.085 + Math.random() * 0.02),
+          friction: inline ? 0.74 : (0.80 + Math.random() * 0.03),
+          floatPower: inline ? 12.0 : (15.0 + Math.random() * 7.0),
           seed: Math.random() * 1000
         });
       }
@@ -393,8 +461,14 @@ export default function VedikaParticleBot({
     }
 
     const handlePointerMove = (e) => {
-      const newX = e.clientX;
-      const newY = e.clientY;
+      let newX = e.clientX;
+      let newY = e.clientY;
+
+      if (inline) {
+        const rect = container.getBoundingClientRect();
+        newX = e.clientX - rect.left;
+        newY = e.clientY - rect.top;
+      }
 
       if (mouse.prevX > -9000) {
         mouse.vx = (newX - mouse.prevX) * 0.7;
@@ -409,8 +483,8 @@ export default function VedikaParticleBot({
 
       // Pass normalized coordinates to Bruno Imbrizi TouchTexture
       const rect = container.getBoundingClientRect();
-      const robotX = rect.left + (rect.width - targetWidth) / 2;
-      const robotY = rect.top + (rect.height - targetHeight) / 2;
+      const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
+      const robotY = inline ? (canvasHeight - targetHeight) / 2 : (rect.top + (rect.height - targetHeight) / 2);
       const uvX = (newX - robotX) / targetWidth;
       const uvY = (newY - robotY) / targetHeight;
 
@@ -431,11 +505,12 @@ export default function VedikaParticleBot({
     };
 
     const handleClick = (e) => {
-      const cx = e.clientX;
-      const cy = e.clientY;
+      const rect = container.getBoundingClientRect();
+      const cx = inline ? (e.clientX - rect.left) : e.clientX;
+      const cy = inline ? (e.clientY - rect.top) : e.clientY;
 
       // Click shockwave ripple: lifts and scatters particles outward along their intrinsic angles
-      const shockwaveRadius = 110;
+      const shockwaveRadius = inline ? 65 : 110;
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         if (!p.hasEntered) continue;
@@ -454,9 +529,8 @@ export default function VedikaParticleBot({
       }
 
       // Also trigger a strong touch point in the trail
-      const rect = container.getBoundingClientRect();
-      const robotX = rect.left + (rect.width - targetWidth) / 2;
-      const robotY = rect.top + (rect.height - targetHeight) / 2;
+      const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
+      const robotY = inline ? (canvasHeight - targetHeight) / 2 : (rect.top + (rect.height - targetHeight) / 2);
       const uvX = (cx - robotX) / targetWidth;
       const uvY = (cy - robotY) / targetHeight;
       if (uvX >= 0 && uvX <= 1 && uvY >= 0 && uvY <= 1) {
@@ -489,8 +563,8 @@ export default function VedikaParticleBot({
 
       const rect = container.getBoundingClientRect();
 
-      // Pause rendering if scrolled completely off screen
-      if (rect.bottom < -120 || rect.top > window.innerHeight + 120) {
+      // Pause rendering if scrolled completely off screen (only in fixed full-screen mode)
+      if (!inline && (rect.bottom < -120 || rect.top > window.innerHeight + 120)) {
         animId = requestAnimationFrame(animate);
         return;
       }
@@ -512,9 +586,9 @@ export default function VedikaParticleBot({
 
       const globalFade = Math.max(0, 1 - warpProgress);
 
-      // Current anchor position of robot on screen
-      const robotX = rect.left + (rect.width - targetWidth) / 2;
-      const robotY = rect.top + (rect.height - targetHeight) / 2;
+      // Current anchor position of robot on screen (local if inline, screen if fixed)
+      const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
+      const robotY = inline ? (canvasHeight - targetHeight) / 2 : (rect.top + (rect.height - targetHeight) / 2);
       const centerX = robotX + targetWidth / 2;
       const centerY = robotY + targetHeight / 2;
 
@@ -523,18 +597,35 @@ export default function VedikaParticleBot({
       const touchData = touchTexture.getImageData();
 
       // If mouse is hovered and stationary, continue adding steady touch point
-      if (mouse.isHovered && mouse.x > 0) {
+      if (mouse.isHovered && mouse.x > -1000) {
         const uvX = (mouse.x - robotX) / targetWidth;
         const uvY = (mouse.y - robotY) / targetHeight;
-        if (uvX >= -0.05 && uvX <= 1.05 && uvY >= -0.05 && uvY <= 1.05) {
+        if (uvX >= -0.15 && uvX <= 1.15 && uvY >= -0.15 && uvY <= 1.15) {
           touchTexture.addTouch({ x: uvX, y: uvY });
         }
       }
 
       let activeUnsettled = 0;
 
+      const currentTheme = themeRgbRef.current;
+      const targetThemeR = currentTheme ? currentTheme[0] : null;
+      const targetThemeG = currentTheme ? currentTheme[1] : null;
+      const targetThemeB = currentTheme ? currentTheme[2] : null;
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
+
+        // Dynamic smooth color transition when active lab changes
+        if (targetThemeR !== null && p.accentRatio > 0) {
+          const ratio = p.accentRatio;
+          const destR = targetThemeR * ratio + p.origR * (1 - ratio);
+          const destG = targetThemeG * ratio + p.origG * (1 - ratio);
+          const destB = targetThemeB * ratio + p.origB * (1 - ratio);
+
+          p.baseR += (destR - p.baseR) * 0.12;
+          p.baseG += (destG - p.baseG) * 0.12;
+          p.baseB += (destB - p.baseB) * 0.12;
+        }
 
         // Target equilibrium coordinates
         const targetX = robotX + p.relX;
@@ -652,7 +743,7 @@ export default function VedikaParticleBot({
         const scale = Math.min(1.8, Math.max(0.2, rawScale));
         const renderX = centerX + (p.x - centerX) * scale;
         const renderY = centerY + (p.y - centerY) * scale;
-        const renderSize = Math.max(0.4, Math.min(3.2, p.size * scale));
+        const renderSize = Math.max(inline ? 1.1 : 0.8, Math.min(3.4, p.size * scale));
 
         // Clip out of screen
         if (renderX < -30 || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
@@ -703,25 +794,31 @@ export default function VedikaParticleBot({
       }
     };
 
-    img.src = src;
-    if (img.complete && (img.naturalWidth || img.width)) {
+    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}`;
+    if (TARGET_CACHE.has(cacheKey)) {
       onImageReady();
     } else {
-      img.onload = onImageReady;
+      img.src = src;
+      if (img.complete && (img.naturalWidth || img.width)) {
+        onImageReady();
+      } else {
+        img.onload = onImageReady;
+      }
     }
 
     // In-place particle morphing when src updates without unmounting canvas
     morphToImageRef.current = (newSrc) => {
       const morphImg = new Image();
       morphImg.crossOrigin = 'anonymous';
-      morphImg.onload = () => {
+
+      const runMorph = () => {
         if (!isMounted) return;
         const targets = sampleFromImage(morphImg);
         if (!targets || targets.length === 0) return;
 
         const rect = container.getBoundingClientRect();
-        const robotX = rect.left + (rect.width - targetWidth) / 2;
-        const robotY = rect.top + (rect.height - targetHeight) / 2;
+        const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
+        const robotY = inline ? (canvasHeight - targetHeight) / 2 : (rect.top + (rect.height - targetHeight) / 2);
 
         const existingCount = particles.length;
         const targetCount = targets.length;
@@ -737,12 +834,17 @@ export default function VedikaParticleBot({
             p.baseR = t.baseR;
             p.baseG = t.baseG;
             p.baseB = t.baseB;
+            p.origR = t.origR;
+            p.origG = t.origG;
+            p.origB = t.origB;
+            p.accentRatio = t.accentRatio;
             p.baseAlpha = t.baseAlpha;
             p.hasEntered = true;
-            // Soft morphing impulse
-            p.vx += (Math.random() - 0.5) * 3.5;
-            p.vy += (Math.random() - 0.5) * 3.5;
-            p.vz += (Math.random() - 0.5) * 20;
+            // Soft subtle morphing impulse
+            const morphPower = inline ? 1.4 : 3.0;
+            p.vx += (Math.random() - 0.5) * morphPower;
+            p.vy += (Math.random() - 0.5) * morphPower;
+            p.vz += (Math.random() - 0.5) * (inline ? 8 : 18);
           } else {
             const donor = particles[Math.floor(Math.random() * existingCount)] || { x: robotX + t.relX, y: robotY + t.relY, z: 0 };
             particles.push({
@@ -751,24 +853,28 @@ export default function VedikaParticleBot({
               relY: t.relY,
               angle: Math.random() * Math.PI * 2,
               rnd: 0.6 + Math.random() * 1.4,
-              x: donor.x + (Math.random() - 0.5) * 15,
-              y: donor.y + (Math.random() - 0.5) * 15,
+              x: donor.x + (Math.random() - 0.5) * 12,
+              y: donor.y + (Math.random() - 0.5) * 12,
               z: donor.z || 0,
-              vx: (Math.random() - 0.5) * 2,
-              vy: (Math.random() - 0.5) * 2,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: (Math.random() - 0.5) * 1.5,
               vz: 0,
               size: t.size,
               color: t.color,
               baseR: t.baseR,
               baseG: t.baseG,
               baseB: t.baseB,
+              origR: t.origR,
+              origG: t.origG,
+              origB: t.origB,
+              accentRatio: t.accentRatio,
               baseAlpha: t.baseAlpha,
               entryDelay: 0,
               hasEntered: true,
-              introSpeed: 0.18 + Math.random() * 0.05,
-              spring: 0.085 + Math.random() * 0.02,
-              friction: 0.80 + Math.random() * 0.03,
-              floatPower: 15.0 + Math.random() * 7.0,
+              introSpeed: inline ? 0.32 : (0.18 + Math.random() * 0.05),
+              spring: inline ? 0.095 : (0.085 + Math.random() * 0.02),
+              friction: inline ? 0.74 : (0.80 + Math.random() * 0.03),
+              floatPower: inline ? 12.0 : (15.0 + Math.random() * 7.0),
               seed: Math.random() * 1000
             });
           }
@@ -781,11 +887,30 @@ export default function VedikaParticleBot({
             particles[i].relY = fallbackTarget.relY;
             particles[i].color = fallbackTarget.color;
             particles[i].size = fallbackTarget.size * 0.8;
+            particles[i].baseR = fallbackTarget.baseR;
+            particles[i].baseG = fallbackTarget.baseG;
+            particles[i].baseB = fallbackTarget.baseB;
+            particles[i].origR = fallbackTarget.origR;
+            particles[i].origG = fallbackTarget.origG;
+            particles[i].origB = fallbackTarget.origB;
+            particles[i].accentRatio = fallbackTarget.accentRatio;
+            particles[i].baseAlpha = fallbackTarget.baseAlpha;
           }
         }
         hasNotifiedSettled = false;
       };
-      morphImg.src = newSrc;
+
+      const cacheKey = `${newSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v3`;
+      if (TARGET_CACHE.has(cacheKey)) {
+        runMorph();
+      } else {
+        morphImg.src = newSrc;
+        if (morphImg.complete && (morphImg.naturalWidth || morphImg.width)) {
+          runMorph();
+        } else {
+          morphImg.onload = runMorph;
+        }
+      }
     };
 
     return () => {
@@ -805,7 +930,7 @@ export default function VedikaParticleBot({
       className={`vedika-particle-bot-container ${className}`}
       style={{
         position: 'relative',
-        width: '100%',
+        width: inline ? width : '100%',
         height: height,
         minHeight: height,
         display: 'flex',
@@ -816,7 +941,16 @@ export default function VedikaParticleBot({
     >
       <canvas
         ref={canvasRef}
-        style={{
+        style={inline ? {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 3,
+          opacity: 1
+        } : {
           position: 'fixed',
           top: 0,
           left: 0,
@@ -830,7 +964,7 @@ export default function VedikaParticleBot({
         title="Vedika Particle Bot"
       />
 
-      {!isLoaded && (
+      {!isLoaded && !inline && (
         <div style={{
           position: 'absolute',
           display: 'flex',
@@ -850,6 +984,18 @@ export default function VedikaParticleBot({
           }} />
           <span>Generating Vedika Particles...</span>
         </div>
+      )}
+
+      {!isLoaded && inline && (
+        <div style={{
+          position: 'absolute',
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          border: '2px solid rgba(56, 189, 248, 0.3)',
+          borderTopColor: '#38BDF8',
+          animation: 'spin 0.8s linear infinite'
+        }} />
       )}
     </div>
   );

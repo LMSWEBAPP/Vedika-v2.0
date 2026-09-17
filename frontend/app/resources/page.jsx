@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import './resources.css';
 import ResourcesHub from '@/components/ResourcesHub';
 import ResourcesLibrary from '@/components/ResourcesLibrary';
@@ -10,13 +11,31 @@ import ResourcesDSA from '@/components/ResourcesDSA';
 import ResourcesDSACompanyWise from '@/components/ResourcesDSACompanyWise';
 import ResourcesDSAResources from '@/components/ResourcesDSAResources';
 
-export default function ResourcesPage() {
-  const [view, setView] = useState('home'); // 'home', 'library', 'cheatsheets', 'cheatsheet', 'dsa', 'dsa/company', 'dsa/resources'
-  const [params, setParams] = useState({});
+function ResourcesContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const paramView = searchParams.get('view') || 'home';
+  const paramId = searchParams.get('id') || '';
+
+  const [view, setView] = useState(paramView);
+  const [params, setParams] = useState({ id: paramId });
+
+  useEffect(() => {
+    const v = searchParams.get('view') || 'home';
+    setView(v);
+    if (searchParams.get('id')) {
+      setParams({ id: searchParams.get('id') });
+    }
+  }, [searchParams]);
 
   const navigateTo = (newView, viewParams = {}) => {
     setView(newView);
     setParams(viewParams);
+    const query = new URLSearchParams();
+    if (newView !== 'home') query.set('view', newView);
+    if (viewParams.id) query.set('id', viewParams.id);
+    const qStr = query.toString();
+    router.push(`/resources${qStr ? `?${qStr}` : ''}`, { scroll: false });
   };
 
   const renderView = () => {
@@ -49,5 +68,17 @@ export default function ResourcesPage() {
     }}>
       {renderView()}
     </div>
+  );
+}
+
+export default function ResourcesPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--muted)', fontSize: 14 }}>Loading resources...</div>
+      </div>
+    }>
+      <ResourcesContent />
+    </Suspense>
   );
 }

@@ -4,16 +4,28 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, BookOpen, Brain, FlaskConical, Briefcase, BarChart3,
-  LogOut, Sun, Moon, Menu, X, ChevronDown, Sparkles, Award, FileText, FolderOpen
+  LogOut, Sun, Moon, Menu, X, ChevronDown, ChevronRight, Sparkles, Award, FileText, FolderOpen
 } from 'lucide-react';
 import { T, getTheme, setTheme } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 
-const COURSE_SUBMENU = [
+const CURRICULUM_ITEMS = [
   { id: '/courses',     Icon: BookOpen,   label: 'Explore Courses', desc: 'Browse catalog, syllabus & modules' },
   { id: '/quizzes',     Icon: Award,      label: 'Quizzes',         desc: 'Test knowledge with domain quizzes' },
   { id: '/assignments', Icon: FileText,   label: 'Assignments',     desc: 'Hands-on projects & evaluations'   },
-  { id: '/resources',   Icon: FolderOpen, label: 'Resource Hub',    desc: 'Cheat sheets, DSA guides & PDFs'   },
+];
+
+const RESOURCE_HUB_ITEMS = [
+  { id: '/resources',                  Icon: FolderOpen, label: 'All Resources Overview', desc: 'Central digital library & study hubs' },
+  { id: '/resources?view=library',     Icon: BookOpen,   label: 'PDF Library & Books',    desc: 'Textbooks, guides & handouts'         },
+  { id: '/resources?view=cheatsheets', Icon: FileText,   label: 'Cheat Sheets Collection',desc: 'Quick syntax & language references'    },
+  { id: '/resources?view=dsa',         Icon: Brain,      label: 'DSA Practice Sheet',     desc: 'Blind 75 & topic-wise problems'       },
+  { id: '/resources?view=dsa/company', Icon: Briefcase,  label: 'Company-wise Questions', desc: 'FAANG & top tech interview banks'     },
+];
+
+const COURSE_SUBMENU = [
+  ...CURRICULUM_ITEMS,
+  ...RESOURCE_HUB_ITEMS
 ];
 
 const NAV_ITEMS = [
@@ -33,12 +45,14 @@ export default function TopNavbar() {
   const [user, setUser] = useState(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [coursesDropdownOpen, setCoursesDropdownOpen] = useState(false);
+  const [resourcesFlyoutOpen, setResourcesFlyoutOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState('dark');
 
   const dropdownRef = useRef(null);
   const coursesDropdownRef = useRef(null);
+  const resourcesHoverTimer = useRef(null);
   const coursesHoverTimer = useRef(null);
 
   useEffect(() => {
@@ -141,9 +155,8 @@ export default function TopNavbar() {
       fontFamily: 'var(--font-outfit), sans-serif',
       boxSizing: 'border-box'
     }}>
-      {/* Left: Brand Logo & Navigation Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 32 }}>
-        {/* Brand Link */}
+      {/* Left: Brand Logo */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -190,199 +203,377 @@ export default function TopNavbar() {
             </span>
           </div>
         </button>
+      </div>
 
-        {/* Desktop Navigation Links */}
-        {!isMobile && (
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}>
-            {NAV_ITEMS.map(({ id, Icon, label, hasDropdown }) => {
-              const active = isActive(id);
+      {/* Center: Desktop Navigation Links (Centered horizontally in the navbar) */}
+      {!isMobile && (
+        <nav style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4
+        }}>
+          {NAV_ITEMS.map(({ id, Icon, label, hasDropdown }) => {
+            const active = isActive(id);
 
-              if (hasDropdown && id === '/courses') {
-                return (
-                  <div
-                    key={id}
-                    ref={coursesDropdownRef}
-                    style={{ position: 'relative' }}
-                    onMouseEnter={handleCoursesMouseEnter}
-                    onMouseLeave={handleCoursesMouseLeave}
+            if (hasDropdown && id === '/courses') {
+              return (
+                <div
+                  key={id}
+                  ref={coursesDropdownRef}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={handleCoursesMouseEnter}
+                  onMouseLeave={handleCoursesMouseLeave}
+                >
+                  <button
+                    onClick={() => setCoursesDropdownOpen(!coursesDropdownOpen)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 14px',
+                      borderRadius: 10,
+                      fontSize: 13.5,
+                      fontWeight: active ? 700 : 500,
+                      color: active ? '#FFFFFF' : T.muted,
+                      background: active ? `${T.accent}1F` : (coursesDropdownOpen ? 'rgba(255, 255, 255, 0.06)' : 'transparent'),
+                      border: active ? `1px solid ${T.accent}45` : '1px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.color = T.text;
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active && !coursesDropdownOpen) {
+                        e.currentTarget.style.color = T.muted;
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
                   >
-                    <button
-                      onClick={() => setCoursesDropdownOpen(!coursesDropdownOpen)}
+                    <Icon size={16} color={active ? T.accent : 'currentColor'} />
+                    <span>{label}</span>
+                    <ChevronDown
+                      size={14}
                       style={{
+                        transform: coursesDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        opacity: 0.7
+                      }}
+                    />
+                  </button>
+
+                  {/* Courses Dropdown Menu with all Resource Hub pages */}
+                  {coursesDropdownOpen && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 300,
+                        background: 'rgba(12, 16, 30, 0.98)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: `1px solid ${T.border}`,
+                        borderRadius: 16,
+                        boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                        padding: '10px 8px',
+                        zIndex: 1100,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '8px 14px',
-                        borderRadius: 10,
-                        fontSize: 13.5,
-                        fontWeight: active ? 700 : 500,
-                        color: active ? '#FFFFFF' : T.muted,
-                        background: active ? `${T.accent}1F` : (coursesDropdownOpen ? 'rgba(255, 255, 255, 0.06)' : 'transparent'),
-                        border: active ? `1px solid ${T.accent}45` : '1px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.color = T.text;
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active && !coursesDropdownOpen) {
-                          e.currentTarget.style.color = T.muted;
-                          e.currentTarget.style.background = 'transparent';
-                        }
+                        flexDirection: 'column',
+                        gap: 4
                       }}
                     >
-                      <Icon size={16} color={active ? T.accent : 'currentColor'} />
-                      <span>{label}</span>
-                      <ChevronDown
-                        size={14}
-                        style={{
-                          transform: coursesDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          opacity: 0.7
-                        }}
-                      />
-                    </button>
+                      {/* Section 1: Curriculum & Testing */}
+                      <div style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        color: T.muted,
+                        letterSpacing: '0.08em',
+                        padding: '4px 10px 2px',
+                        textTransform: 'uppercase'
+                      }}>
+                        Curriculum & Testing
+                      </div>
 
-                    {/* Courses Dropdown Menu */}
-                    {coursesDropdownOpen && (
+                      {CURRICULUM_ITEMS.map((item) => {
+                        const isSubActive = pathname === item.id || (item.id === '/courses' && pathname.startsWith('/courses'));
+                        const ItemIcon = item.Icon;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setCoursesDropdownOpen(false);
+                              router.push(item.id);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '8px 10px',
+                              borderRadius: 10,
+                              background: isSubActive ? `${T.accent}18` : 'transparent',
+                              border: isSubActive ? `1px solid ${T.accent}35` : '1px solid transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSubActive) {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSubActive) {
+                                e.currentTarget.style.background = 'transparent';
+                              }
+                            }}
+                          >
+                            <div style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 8,
+                              background: isSubActive ? `${T.accent}25` : 'rgba(255, 255, 255, 0.05)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: isSubActive ? T.accent : T.muted,
+                              flexShrink: 0
+                            }}>
+                              <ItemIcon size={15} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{
+                                fontSize: 13,
+                                fontWeight: isSubActive ? 700 : 600,
+                                color: isSubActive ? '#FFFFFF' : T.text
+                              }}>
+                                {item.label}
+                              </span>
+                              <span style={{ fontSize: 10.5, color: T.muted }}>
+                                {item.desc}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+
+                      {/* Section Divider */}
+                      <div style={{ height: 1, background: T.border, margin: '4px 6px' }} />
+
+                      {/* Section 2: Resource Hub with > Arrow & Submenu Flyout */}
                       <div
-                        style={{
-                          position: 'absolute',
-                          top: 'calc(100% + 6px)',
-                          left: 0,
-                          width: 290,
-                          background: 'rgba(15, 19, 34, 0.96)',
-                          backdropFilter: 'blur(20px)',
-                          WebkitBackdropFilter: 'blur(20px)',
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 16,
-                          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.55)',
-                          padding: '8px',
-                          zIndex: 1100,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 3
+                        style={{ position: 'relative' }}
+                        onMouseEnter={() => {
+                          if (resourcesHoverTimer.current) clearTimeout(resourcesHoverTimer.current);
+                          setResourcesFlyoutOpen(true);
+                        }}
+                        onMouseLeave={() => {
+                          resourcesHoverTimer.current = setTimeout(() => {
+                            setResourcesFlyoutOpen(false);
+                          }, 200);
                         }}
                       >
-                        {COURSE_SUBMENU.map((item) => {
-                          const isSubActive = pathname === item.id || (item.id === '/courses' && pathname.startsWith('/courses'));
-                          const ItemIcon = item.Icon;
-                          return (
-                            <button
-                              key={item.id}
-                              onClick={() => {
-                                setCoursesDropdownOpen(false);
-                                router.push(item.id);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                padding: '10px 12px',
-                                borderRadius: 10,
-                                background: isSubActive ? `${T.accent}18` : 'transparent',
-                                border: isSubActive ? `1px solid ${T.accent}35` : '1px solid transparent',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isSubActive) {
-                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isSubActive) {
-                                  e.currentTarget.style.background = 'transparent';
-                                  e.currentTarget.style.borderColor = 'transparent';
-                                }
-                              }}
-                            >
-                              <div style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 8,
-                                background: isSubActive ? `${T.accent}25` : 'rgba(255, 255, 255, 0.05)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: isSubActive ? T.accent : T.muted,
-                                flexShrink: 0
-                              }}>
-                                <ItemIcon size={16} />
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                  color: isSubActive ? '#FFFFFF' : T.text,
-                                  lineHeight: 1.2
-                                }}>
-                                  {item.label}
-                                </span>
-                                <span style={{
-                                  fontSize: 11,
-                                  color: T.muted,
-                                  marginTop: 2
-                                }}>
-                                  {item.desc}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
+                        <button
+                          onClick={() => setResourcesFlyoutOpen(!resourcesFlyoutOpen)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            borderRadius: 10,
+                            background: resourcesFlyoutOpen ? `${T.accent}14` : 'transparent',
+                            border: resourcesFlyoutOpen ? `1px solid ${T.accent}35` : '1px solid transparent',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 8,
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: T.accent,
+                              flexShrink: 0
+                            }}>
+                              <FolderOpen size={15} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                                Resource Hub
+                              </span>
+                              <span style={{ fontSize: 10.5, color: T.muted }}>
+                                Libraries, cheatsheets & DSA
+                              </span>
+                            </div>
+                          </div>
 
-              return (
-                <button
-                  key={id}
-                  onClick={() => router.push(id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    padding: '8px 14px',
-                    borderRadius: 10,
-                    fontSize: 13.5,
-                    fontWeight: active ? 700 : 500,
-                    color: active ? '#FFFFFF' : T.muted,
-                    background: active ? `${T.accent}1F` : 'transparent',
-                    border: active ? `1px solid ${T.accent}45` : '1px solid transparent',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.color = T.text;
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.color = T.muted;
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon size={16} color={active ? T.accent : 'currentColor'} />
-                  <span>{label}</span>
-                </button>
+                          <ChevronRight
+                            size={16}
+                            color={T.accent}
+                            style={{
+                              transform: resourcesFlyoutOpen ? 'translateX(2px)' : 'none',
+                              transition: 'transform 0.15s ease'
+                            }}
+                          />
+                        </button>
+
+                        {/* Resource Hub Nested Flyout Submenu */}
+                        {resourcesFlyoutOpen && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: -4,
+                              left: 'calc(100% + 8px)',
+                              width: 280,
+                              background: 'rgba(12, 16, 30, 0.98)',
+                              backdropFilter: 'blur(20px)',
+                              WebkitBackdropFilter: 'blur(20px)',
+                              border: `1px solid ${T.border}`,
+                              borderRadius: 14,
+                              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.7)',
+                              padding: '8px',
+                              zIndex: 1200,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 3
+                            }}
+                            onMouseEnter={() => {
+                              if (resourcesHoverTimer.current) clearTimeout(resourcesHoverTimer.current);
+                              setResourcesFlyoutOpen(true);
+                            }}
+                            onMouseLeave={() => {
+                              resourcesHoverTimer.current = setTimeout(() => {
+                                setResourcesFlyoutOpen(false);
+                              }, 200);
+                            }}
+                          >
+                            <div style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              color: T.muted,
+                              letterSpacing: '0.08em',
+                              padding: '2px 8px 4px',
+                              textTransform: 'uppercase'
+                            }}>
+                              Resource Sub-Hubs
+                            </div>
+
+                            {RESOURCE_HUB_ITEMS.map((rItem) => {
+                              const isRActive = pathname === rItem.id;
+                              const RIcon = rItem.Icon;
+                              return (
+                                <button
+                                  key={rItem.id}
+                                  onClick={() => {
+                                    setCoursesDropdownOpen(false);
+                                    setResourcesFlyoutOpen(false);
+                                    router.push(rItem.id);
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '7px 8px',
+                                    borderRadius: 8,
+                                    background: isRActive ? `${T.accent}18` : 'transparent',
+                                    border: isRActive ? `1px solid ${T.accent}35` : '1px solid transparent',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!isRActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isRActive) e.currentTarget.style.background = 'transparent';
+                                  }}
+                                >
+                                  <div style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 6,
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: T.muted,
+                                    flexShrink: 0
+                                  }}>
+                                    <RIcon size={13} />
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>
+                                      {rItem.label}
+                                    </span>
+                                    <span style={{ fontSize: 10, color: T.muted }}>
+                                      {rItem.desc}
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
-            })}
-          </nav>
-        )}
-      </div>
+            }
+
+            return (
+              <button
+                key={id}
+                onClick={() => router.push(id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  fontSize: 13.5,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? '#FFFFFF' : T.muted,
+                  background: active ? `${T.accent}1F` : 'transparent',
+                  border: active ? `1px solid ${T.accent}45` : '1px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.color = T.text;
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.color = T.muted;
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <Icon size={16} color={active ? T.accent : 'currentColor'} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Right: Theme Toggle, User Profile & Mobile Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

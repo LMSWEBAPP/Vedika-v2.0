@@ -235,6 +235,17 @@ export default function GeneralTutor() {
   const [isInputHovered, setIsInputHovered] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isInputPinned, setIsInputPinned] = useState(false);
+  const configDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (configDropdownRef.current && !configDropdownRef.current.contains(e.target)) {
+        setIsConfigOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   function getDateLabel(dateStr) {
     if (!dateStr) return 'Older';
@@ -1437,7 +1448,7 @@ export default function GeneralTutor() {
         </div>
       </div>
 
-        {/* ── BOTTOM: Collapsible Mode/Depth + Collapsible Chat Input ── */}
+        {/* ── BOTTOM: Chat Input (Collapsible to Send button when idle) ── */}
         <div
           onMouseEnter={() => setIsInputHovered(true)}
           onMouseLeave={() => setIsInputHovered(false)}
@@ -1452,96 +1463,35 @@ export default function GeneralTutor() {
             zIndex: 10
           }}
         >
-          {/* Collapsible Learning Mode & Depth Selects (Default Collapsed) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isConfigOpen ? 8 : 4, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setIsConfigOpen(prev => !prev)}
-              type="button"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '3px 10px',
-                borderRadius: 9999,
-                background: 'rgba(15, 23, 42, 0.7)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#94A3B8',
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
-              <span>{mode.toUpperCase()} &middot; {length.toUpperCase()}</span>
-              <ChevronRight size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-
-            {isConfigOpen && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'fadeIn 0.2s ease', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>MODE:</label>
-                  <div style={{ position: 'relative' }}>
-                    <select value={mode} onChange={e => setMode(e.target.value)}
-                      style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${modeColors[mode] ? modeColors[mode] + '60' : 'rgba(255, 255, 255, 0.12)'}`, borderRadius: 8, padding: '4px 26px 4px 10px', color: modeColors[mode] || T.text, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }}>
-                      {MODES.map(m => <option key={m} value={m} style={{ background: T.s1, color: T.text }}>{m}</option>)}
-                    </select>
-                    <ChevronRight size={11} color={modeColors[mode] || T.muted} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>DEPTH:</label>
-                  <div style={{ position: 'relative' }}>
-                    <select value={length} onChange={e => setLength(e.target.value)}
-                      style={{ appearance: 'none', background: 'rgba(15, 23, 42, 0.8)', border: `1px solid ${length === 'Short' ? T.amber + '60' : length === 'Medium' ? T.accent + '60' : T.purple + '60'}`, borderRadius: 8, padding: '4px 26px 4px 10px', color: length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }}>
-                      {LENGTHS.map(l => <option key={l} value={l} style={{ background: T.s1, color: T.text }}>{l}</option>)}
-                    </select>
-                    <ChevronRight size={11} color={length === 'Short' ? T.amber : length === 'Medium' ? T.accent : T.purple} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Full Input Bar or Collapsed Floating Pill to the Right */}
-          {messages.length > 0 && !isInputHovered && !isInputFocused && !topic && !isInputPinned ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '2px 0' }}>
+          {/* If chat has started and user is not near/hovering or typing, collapse down to just the Send button */}
+          {messages.length > 0 && !isInputHovered && !isInputFocused && !topic.trim() && !loading && !streamingText ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '2px 0' }}>
               <button
                 type="button"
                 onClick={() => {
-                  setIsInputPinned(true);
+                  setIsInputHovered(true);
                   setIsInputFocused(true);
                   setTimeout(() => inputRef.current?.focus(), 50);
                 }}
+                title="Ask next question to Vedika..."
                 style={{
-                  display: 'inline-flex',
+                  width: 42,
+                  height: 42,
+                  borderRadius: 14,
+                  background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
+                  border: '1px solid rgba(168, 85, 247, 0.45)',
+                  boxShadow: '0 4px 20px rgba(168, 85, 247, 0.45)',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '7px 16px',
-                  borderRadius: 9999,
-                  background: 'rgba(15, 23, 42, 0.90)',
-                  border: '1px solid rgba(168, 85, 247, 0.38)',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
-                  color: '#CBD5E1',
+                  justifyContent: 'center',
                   cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  transform: 'scale(1)'
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.8)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.38)';
-                  e.currentTarget.style.transform = 'none';
-                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                <Paperclip size={13} color="#94A3B8" />
-                <span>Type next question to Vedika...</span>
-                <Send size={13} color="#A855F7" />
+                <Send size={18} color="#FFFFFF" />
               </button>
             </div>
           ) : (
@@ -1624,6 +1574,120 @@ export default function GeneralTutor() {
                   placeholder="Type your message to Vedika..." rows={1}
                   onKeyDown={handleKeyDown}
                   style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F8FAFC', fontSize: 13.5, lineHeight: 1.5, resize: 'none', fontFamily: 'inherit', padding: 0, minHeight: 22, maxHeight: 110 }} />
+
+                {/* Collapsible Mode & Depth Pill Button inside input */}
+                <div style={{ position: 'relative', flexShrink: 0 }} ref={configDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfigOpen(prev => !prev)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '4px 9px',
+                      borderRadius: 9999,
+                      background: 'rgba(255, 255, 255, 0.07)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#CBD5E1',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Change learning mode & explanation depth"
+                  >
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.green, flexShrink: 0 }} />
+                    <span>{mode} &middot; {length}</span>
+                    <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+
+                  {/* Popover */}
+                  {isConfigOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 10px)',
+                      right: 0,
+                      background: 'rgba(15, 19, 34, 0.98)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(168, 85, 247, 0.35)',
+                      borderRadius: 14,
+                      padding: '12px 14px',
+                      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      zIndex: 250,
+                      minWidth: 230
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Learning Mode
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                          {MODES.map(m => {
+                            const isSel = mode === m;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setMode(m)}
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  fontWeight: isSel ? 700 : 500,
+                                  background: isSel ? `${modeColors[m] || T.purple}25` : 'rgba(255, 255, 255, 0.04)',
+                                  border: isSel ? `1px solid ${modeColors[m] || T.purple}` : '1px solid transparent',
+                                  color: isSel ? (modeColors[m] || '#FFFFFF') : T.muted,
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.12s'
+                                }}
+                              >
+                                {m}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Explanation Depth
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {LENGTHS.map(l => {
+                            const isSel = length === l;
+                            return (
+                              <button
+                                key={l}
+                                type="button"
+                                onClick={() => setLength(l)}
+                                style={{
+                                  flex: 1,
+                                  padding: '5px 8px',
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  fontWeight: isSel ? 700 : 500,
+                                  background: isSel ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                                  border: isSel ? '1px solid #A855F7' : '1px solid transparent',
+                                  color: isSel ? '#FFFFFF' : T.muted,
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.12s'
+                                }}
+                              >
+                                {l}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               <button onClick={handleSend} disabled={loading}
                 style={{

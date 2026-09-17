@@ -10,6 +10,7 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import dynamic from 'next/dynamic';
 import PDFViewerModal from './PDFViewerModal';
 import ZimCarousel3D from './ZimCarousel3D';
+import CourseEmotionsSlider from './CourseEmotionsSlider';
 import PacmanPagination from './PacmanPagination';
 import PracticePlaygroundModal from './PracticePlaygroundModal';
 import { getSubjectArtwork } from '@/lib/artwork';
@@ -258,14 +259,14 @@ function CourseDeckWidget({
         background: 'transparent',
         border: 'none',
         borderRadius: 0,
-        padding: isMobile ? '4px 0' : '8px 0',
-        marginBottom: 8,
+        padding: '0 0',
+        marginBottom: 2,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
-        gap: isMobile ? 10 : 14
+        gap: 6
       }}>
         {/* Category Carousel Title Pill */}
         <div style={{
@@ -280,90 +281,21 @@ function CourseDeckWidget({
           fontSize: 11.5,
           fontWeight: 700,
           letterSpacing: '0.04em',
-          textTransform: 'uppercase'
+          textTransform: 'uppercase',
+          marginBottom: 0
         }}>
           <span>📂 Course Categories</span>
           <span style={{ opacity: 0.5 }}>•</span>
           <span>{items.length} {items.length === 1 ? 'Category' : 'Categories'} Available</span>
         </div>
 
-        {/* Centered ZIM 3D Cylindrical Carousel for Categories */}
-        <div style={{
-          width: '100%',
-          maxWidth: 880,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: isMobile ? 270 : 330,
-          margin: '0 auto'
-        }}>
-          <ZimCarousel3D
-            courses={items}
-            activeIdx={activeIdx}
-            onActiveIdxChange={setActiveIdx}
-            onSelectCourse={(catItem) => onSelectCategory && onSelectCategory(catItem.title)}
-            isMobile={isMobile}
+        {/* 3D Geometric Looping Emotions Carousel for Categories */}
+        <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
+          <CourseEmotionsSlider
+            items={items}
+            mode="categories"
+            onSelectCategory={onSelectCategory}
           />
-        </div>
-
-        {/* Active Category Details Centered Below the Carousel */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          gap: 12,
-          maxWidth: 720,
-          width: '100%',
-          margin: '0 auto'
-        }}>
-          <h2 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 900, color: T.text, margin: 0, lineHeight: 1.2, letterSpacing: '-0.03em' }}>
-            {currentItem.title}
-          </h2>
-
-          <p style={{ fontSize: isMobile ? 13.5 : 15, color: T.muted, margin: 0, lineHeight: 1.6, maxWidth: 640 }}>
-            {currentItem.tagline || `Explore all specialized courses under ${currentItem.title}. Select this category to browse the complete curriculum.`}
-          </p>
-
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 11.5, color: T.purple, background: `${T.purple}15`, padding: '3px 10px', borderRadius: 6, fontWeight: 700 }}>
-              {currentItem.badge}
-            </span>
-            <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
-              📚 {currentItem.totalLessons || 0} lessons total
-            </span>
-            {currentItem.instructorsCount > 0 && (
-              <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
-                👤 {currentItem.instructorsCount} {currentItem.instructorsCount === 1 ? 'Instructor' : 'Instructors'}
-              </span>
-            )}
-          </div>
-
-          {/* Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 6 }}>
-            <button
-              onClick={() => onSelectCategory && onSelectCategory(currentItem.title)}
-              style={{
-                background: T.accent,
-                color: '#FFFFFF',
-                border: 'none',
-                padding: '11px 28px',
-                borderRadius: 12,
-                fontSize: 13.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              Explore {currentItem.title} Courses <ChevronRight size={16} />
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -442,222 +374,15 @@ function CourseDeckWidget({
         </div>
       )}
 
-      {/* Exactly 3 courses shown at a time */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-        gap: 18,
-        width: '100%',
-        maxWidth: 1120,
-        margin: '0 auto',
-        alignItems: 'stretch'
-      }}>
-        {currentCourses.map((c) => {
-          const totalLessons = c.lessonsCount || (c.lessons ? c.lessons.length : 0);
-          const isEnrolled = enrolledCourseIds.includes(c.id);
-          const totalMins = totalLessons * 10;
-          const hours = Math.floor(totalMins / 60);
-          const mins = totalMins % 60;
-          const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-          const level = c.title?.toLowerCase().includes('advanced') || c.title?.toLowerCase().includes('expert')
-            ? 'Advanced'
-            : (c.title?.toLowerCase().includes('intermediate') ? 'Intermediate' : 'Beginner');
-          const thumb = c.thumbnail || c.image || getSubjectArtwork(c.category) || DEFAULT_THUMBNAILS[0];
-
-          return (
-            <div
-              key={c.id}
-              style={{
-                background: T.s1,
-                border: `1px solid ${T.border}`,
-                borderRadius: 16,
-                padding: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = `${T.accent}60`;
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.35)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = T.border;
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
-              }}
-              onClick={() => handleSelectCourse(c)}
-            >
-              <div>
-                {/* Course Thumbnail */}
-                <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: 135,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  marginBottom: 12
-                }}>
-                  <img
-                    src={thumb}
-                    alt={c.title}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    background: 'rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(6px)',
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#FFF'
-                  }}>
-                    {level}
-                  </div>
-                </div>
-
-                {/* Category & Instructor */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-                  <span style={{
-                    fontSize: 11,
-                    color: T.purple,
-                    background: `${T.purple}16`,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    fontWeight: 700
-                  }}>
-                    {c.category || 'General'}
-                  </span>
-                  <span style={{ fontSize: 11.5, color: T.muted }}>
-                    By {c.instructor || 'Vedika'}
-                  </span>
-                </div>
-
-                {/* Course Title */}
-                <h3 style={{
-                  fontSize: 15.5,
-                  fontWeight: 800,
-                  color: T.text,
-                  margin: '0 0 6px 0',
-                  lineHeight: 1.3,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {c.title}
-                </h3>
-
-                {/* Course Tagline */}
-                <p style={{
-                  fontSize: 12.5,
-                  color: T.muted,
-                  margin: '0 0 12px 0',
-                  lineHeight: 1.45,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {c.tagline || 'Master core subject concepts with interactive modules, coding labs, and AI mentorship.'}
-                </p>
-              </div>
-
-              {/* Card Footer: Metadata & Action Button */}
-              <div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingTop: 10,
-                  borderTop: `1px solid ${T.border}`,
-                  marginBottom: 12,
-                  fontSize: 11.5,
-                  color: T.muted
-                }}>
-                  <span>📚 {totalLessons} lessons</span>
-                  <span>⏱️ {durationStr}</span>
-                </div>
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectCourse(c);
-                    }}
-                    style={{
-                      flex: 1,
-                      background: isEnrolled ? `${T.accent}20` : T.accent,
-                      color: isEnrolled ? T.accent : '#FFFFFF',
-                      border: isEnrolled ? `1px solid ${T.accent}50` : 'none',
-                      padding: '9px 12px',
-                      borderRadius: 10,
-                      fontSize: 12.5,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      boxShadow: isEnrolled ? 'none' : '0 4px 14px rgba(59, 130, 246, 0.3)',
-                      transition: 'transform 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    {isEnrolled ? 'Open Course' : 'View Syllabus'} <ChevronRight size={14} />
-                  </button>
-
-                  {!isEnrolled && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEnrollFromCard(c.id, e);
-                      }}
-                      style={{
-                        background: T.s2,
-                        color: T.text,
-                        border: `1px solid ${T.border}`,
-                        padding: '9px 14px',
-                        borderRadius: 10,
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = T.accent}
-                      onMouseLeave={(e) => e.currentTarget.style.borderColor = T.border}
-                    >
-                      Enroll
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Course Emotions 3D Geometric Interactive Slider */}
+      <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
+        <CourseEmotionsSlider
+          items={items}
+          onSelectCourse={handleSelectCourse}
+          onEnrollFromCard={handleEnrollFromCard}
+          enrolledCourseIds={enrolledCourseIds}
+        />
       </div>
-
-      {/* Pacman Pagination: rendered only when items > 3 */}
-      {totalPages > 1 && (
-        <div style={{ marginTop: 14 }}>
-          <PacmanPagination
-            currentPage={coursePage}
-            totalPages={totalPages}
-            onPageChange={setCoursePage}
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -1280,7 +1005,7 @@ export default function CoursePage() {
       width: '100%',
       height: 'calc(100vh - 64px)',
       maxHeight: 'calc(100vh - 64px)',
-      overflowY: 'auto',
+      overflowY: 'hidden',
       overflowX: 'hidden',
       background: T.bg,
       boxSizing: 'border-box'
@@ -1289,10 +1014,12 @@ export default function CoursePage() {
         width: '100%',
         maxWidth: 1440,
         margin: '0 auto',
-        padding: isMobile ? '12px 14px' : '14px 28px 10px',
+        padding: isMobile ? '8px 12px' : '10px 24px 6px',
         display: 'flex',
         flexDirection: 'column',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        height: '100%',
+        justifyContent: 'flex-start'
       }} className="no-scrollbar">
         {/* Compact Top Action Toolbar: Search & Practice Playground */}
         <div style={{
