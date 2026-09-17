@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import {
-  Code2, Loader2, ChevronRight, Lock, FlipHorizontal,
+  Code2, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, BarChart3, Home, Zap, Brain, Award, FileText, FolderOpen, Briefcase,
   Trash, X

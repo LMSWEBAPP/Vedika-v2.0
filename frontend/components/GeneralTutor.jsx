@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  Brain, Loader2, ChevronRight, Lock, FlipHorizontal,
+  Brain, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, Code2, BarChart3, Home, Zap, Award, FileText, FolderOpen, Briefcase,
   Trash
