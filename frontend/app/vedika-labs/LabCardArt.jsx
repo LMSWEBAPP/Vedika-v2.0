@@ -320,12 +320,150 @@ export const MathLabArt = memo(function MathLabArt() {
  * - Illuminated cybernetic cyan pedestal with upward light projection
  */
 export const PhysicsLabArt = memo(function PhysicsLabArt() {
+  const canvasRef = useRef(null);
   const accentRgb = '0, 212, 255';
   const gradKey = '0_212_255';
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId;
+    const width = 175;
+    const height = 235;
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    // 1. High-Intensity Quantum Photons Orbiting in 3D-angled planes
+    const quantumParticles = Array.from({ length: 48 }, (_, i) => {
+      const ring = i % 3;
+      const tilt = ring === 0 ? -28 * (Math.PI / 180) : ring === 1 ? 38 * (Math.PI / 180) : 75 * (Math.PI / 180);
+      return {
+        a: 38 + (i % 6) * 4,
+        b: 14 + (i % 4) * 2.4,
+        tilt,
+        angle: Math.random() * Math.PI * 2,
+        speed: (0.018 + Math.random() * 0.024) * (i % 2 === 0 ? 1 : -1),
+        size: 0.9 + Math.random() * 1.8,
+        alpha: 0.55 + Math.random() * 0.45,
+        pulseSpeed: 3.5 + Math.random() * 4.5,
+        pulsePhase: Math.random() * Math.PI * 2
+      };
+    });
+
+    // 2. High-Energy Vertical Quantum Flux Emitter Sparks (Surging from pedestal to core)
+    const emitterSparks = Array.from({ length: 22 }, () => ({
+      x: 87.5 + (Math.random() - 0.5) * 28,
+      y: 175 + Math.random() * 15,
+      vy: 1.3 + Math.random() * 1.9,
+      vx: (Math.random() - 0.5) * 0.45,
+      size: 0.8 + Math.random() * 1.5,
+      alpha: 0.5 + Math.random() * 0.5
+    }));
+
+    let t = 0;
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+      t += 0.03;
+
+      // Draw Pedestal Emitter Vertical Quantum Sparks
+      for (let s of emitterSparks) {
+        s.y -= s.vy;
+        s.x += s.vx;
+        if (s.y < 86) {
+          s.y = 175 + Math.random() * 8;
+          s.x = 87.5 + (Math.random() - 0.5) * 26;
+          s.vy = 1.3 + Math.random() * 1.9;
+          s.alpha = 0.5 + Math.random() * 0.5;
+        }
+
+        const sparkAlpha = Math.min(1.0, s.alpha * ((s.y - 86) / 80));
+        ctx.fillStyle = `rgba(0, 212, 255, ${sparkAlpha * 0.65})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw Orbiting Quantum Photons with High-Intensity Cyan Corona & Specular Centers
+      const cx = 87.5;
+      const cy = 96;
+
+      for (let p of quantumParticles) {
+        p.angle += p.speed;
+        const rawX = Math.cos(p.angle) * p.a;
+        const rawY = Math.sin(p.angle) * p.b;
+
+        const cosT = Math.cos(p.tilt);
+        const sinT = Math.sin(p.tilt);
+        const px = cx + rawX * cosT - rawY * sinT;
+        const py = cy + rawX * sinT + rawY * cosT;
+
+        const pulse = 0.7 + Math.sin(t * p.pulseSpeed + p.pulsePhase) * 0.3;
+        const currentAlpha = p.alpha * pulse;
+
+        // Luminous Cyan Aura
+        ctx.fillStyle = `rgba(0, 212, 255, ${currentAlpha * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(px, py, p.size * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hot Electric Blue Inner Ring
+        ctx.fillStyle = `rgba(186, 230, 253, ${currentAlpha * 0.95})`;
+        ctx.beginPath();
+        ctx.arc(px, py, p.size * 1.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White Specular Photon Center
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(px, py, p.size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(render);
+    }
+
+    animId = requestAnimationFrame(render);
+
+    const handleVis = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+      } else {
+        animId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, []);
+
   return (
     <div className="art-physics-detailed" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* High-Intensity Live Quantum Photon Particle Canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 3
+        }}
+      />
+      <svg className="art-svg-scene" viewBox="0 0 175 235" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1 }}>
         <defs>
           <pattern id="physicsGrid" width="18" height="18" patternUnits="userSpaceOnUse">
             <circle cx="9" cy="9" r="0.6" fill="rgba(0, 212, 255, 0.22)" />
@@ -519,32 +657,40 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
 
-    // 1. Live Rapid Effervescent Fizz Bubbles
-    const bubbles = Array.from({ length: 32 }, () => ({
+    // 1. High-Intensity Rapid Effervescent Fizz Bubbles (increased density & vigor)
+    const bubbles = Array.from({ length: 60 }, () => ({
       x: 70 + Math.random() * 35,
       y: 105 + Math.random() * 42,
-      r: 0.8 + Math.random() * 1.8,
-      vy: 1.4 + Math.random() * 1.8, // Rapid upward speed
-      wobbleSpeed: 4 + Math.random() * 6,
+      r: 0.7 + Math.random() * 2.0,
+      vy: 1.5 + Math.random() * 2.2, // Rapid upward effervescence
+      wobbleSpeed: 4.5 + Math.random() * 7,
       phase: Math.random() * Math.PI * 2,
       popped: false
     }));
 
-    // 2. Rising Evaporating Vapor Plumes (billowing out of the neck)
-    const vapors = Array.from({ length: 22 }, () => ({
+    // 2. High-Density Rising Evaporating Vapor Plumes (billowing out of the neck)
+    const vapors = Array.from({ length: 40 }, () => ({
       x: 85 + (Math.random() - 0.5) * 8,
-      y: 35 + Math.random() * 65,
-      r: 2.5 + Math.random() * 4.5,
-      vy: 0.7 + Math.random() * 1.1, // Rising upward
-      vx: (Math.random() - 0.5) * 0.6,
-      alpha: 0.1 + Math.random() * 0.7,
-      maxR: 9 + Math.random() * 7
+      y: 30 + Math.random() * 70,
+      r: 2.2 + Math.random() * 4.8,
+      vy: 0.75 + Math.random() * 1.25, // Rising upward
+      vx: (Math.random() - 0.5) * 0.7,
+      alpha: 0.15 + Math.random() * 0.75,
+      maxR: 9.5 + Math.random() * 7.5
+    }));
+
+    // 3. High-Intensity Reaction Sparkles (Twinkling within the liquid)
+    const chemSparkles = Array.from({ length: 28 }, () => ({
+      x: 72 + Math.random() * 31,
+      y: 108 + Math.random() * 38,
+      size: 0.7 + Math.random() * 1.3,
+      speed: 4 + Math.random() * 6,
+      phase: Math.random() * Math.PI * 2
     }));
 
     // Conical boundary check for flask body
     function getFlaskWidth(y) {
       if (y >= 100 && y <= 152) {
-        // Conical base: expands from width ~40 at y=100 to ~72 at y=152
         const t = (y - 100) / 52;
         return 20 + t * 18;
       }
@@ -556,35 +702,31 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
       ctx.clearRect(0, 0, width, height);
       t += 0.03;
 
-      // A. RENDER EVAPORATING VAPOR (Floating Upward & Expanding into Air)
+      // A. RENDER EVAPORATING VAPOR (Floating Upward & Expanding into Air with Emerald Glow)
       for (let v of vapors) {
         v.y -= v.vy;
         v.x += v.vx;
 
-        // If above neck (y < 46), expand outward and evaporate
         if (v.y < 46) {
-          v.r = Math.min(v.maxR, v.r + 0.12);
-          v.alpha -= 0.012; // Evaporate
-          v.vx += (Math.random() - 0.5) * 0.1;
+          v.r = Math.min(v.maxR, v.r + 0.14);
+          v.alpha -= 0.012;
+          v.vx += (Math.random() - 0.5) * 0.12;
         } else {
-          // Inside neck: stay channeled
-          v.x += (87.5 - v.x) * 0.05;
+          v.x += (87.5 - v.x) * 0.06;
         }
 
-        // Reset vapor at meniscus
         if (v.y < 8 || v.alpha <= 0) {
-          v.y = 96 + Math.random() * 6; // Starts at liquid surface
+          v.y = 96 + Math.random() * 6;
           v.x = 87.5 + (Math.random() - 0.5) * 10;
           v.r = 2.0 + Math.random() * 2.5;
-          v.alpha = 0.55 + Math.random() * 0.35;
-          v.vx = (Math.random() - 0.5) * 0.4;
+          v.alpha = 0.65 + Math.random() * 0.35;
+          v.vx = (Math.random() - 0.5) * 0.45;
         }
 
-        // Draw soft volumetric evaporating mist puff
         const grad = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, v.r);
-        grad.addColorStop(0, `rgba(255, 255, 255, ${v.alpha * 0.9})`);
-        grad.addColorStop(0.4, `rgba(167, 243, 208, ${v.alpha * 0.7})`);
-        grad.addColorStop(0.8, `rgba(52, 211, 153, ${v.alpha * 0.3})`);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${v.alpha * 0.95})`);
+        grad.addColorStop(0.35, `rgba(167, 243, 208, ${v.alpha * 0.85})`);
+        grad.addColorStop(0.75, `rgba(52, 211, 153, ${v.alpha * 0.45})`);
         grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
         ctx.fillStyle = grad;
@@ -593,37 +735,53 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
         ctx.fill();
       }
 
-      // B. RENDER LIVE RISING EFFERVESCENT FIZZ BUBBLES
+      // B. RENDER HIGH-INTENSITY REACTION SPARKLES (Glistening in Fluid)
+      for (let s of chemSparkles) {
+        const pulse = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+        ctx.fillStyle = `rgba(52, 211, 153, ${pulse * 0.85})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // C. RENDER LIVE RISING EFFERVESCENT FIZZ BUBBLES
       for (let b of bubbles) {
         b.y -= b.vy;
-        b.x += Math.sin(t * b.wobbleSpeed + b.phase) * 0.45;
+        b.x += Math.sin(t * b.wobbleSpeed + b.phase) * 0.5;
 
-        // Keep inside conical liquid boundaries
         const halfW = getFlaskWidth(b.y);
         if (b.x < 87.5 - halfW) b.x = 87.5 - halfW + 1;
         if (b.x > 87.5 + halfW) b.x = 87.5 + halfW - 1;
 
-        // When bubble hits the liquid surface (meniscus at y = 100), it bursts!
+        // When bubble hits the liquid surface (meniscus at y = 100), burst!
         if (b.y <= 100) {
-          // Burst flash on meniscus
           ctx.fillStyle = '#FFFFFF';
           ctx.beginPath();
-          ctx.arc(b.x, 100, b.r * 1.5, 0, Math.PI * 2);
+          ctx.arc(b.x, 100, b.r * 1.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(167, 243, 208, 0.9)';
+          ctx.beginPath();
+          ctx.arc(b.x, 100, b.r * 2.6, 0, Math.PI * 2);
           ctx.fill();
 
           // Respawn bubble at bottom of flask
           b.y = 142 + Math.random() * 8;
           b.x = 87.5 + (Math.random() - 0.5) * (getFlaskWidth(b.y) * 1.6);
-          b.r = 0.8 + Math.random() * 1.8;
-          b.vy = 1.4 + Math.random() * 1.8;
+          b.r = 0.7 + Math.random() * 2.0;
+          b.vy = 1.5 + Math.random() * 2.2;
         } else {
-          // Draw Rising Fizz Bubble (with specular gleam)
-          const bubbleAlpha = Math.min(1.0, 0.4 + (150 - b.y) / 50);
+          const bubbleAlpha = Math.min(1.0, 0.45 + (150 - b.y) / 45);
 
           // Outer Glow
-          ctx.fillStyle = `rgba(167, 243, 208, ${bubbleAlpha * 0.75})`;
+          ctx.fillStyle = `rgba(167, 243, 208, ${bubbleAlpha * 0.85})`;
           ctx.beginPath();
-          ctx.arc(b.x, b.y, b.r * 1.4, 0, Math.PI * 2);
+          ctx.arc(b.x, b.y, b.r * 1.5, 0, Math.PI * 2);
           ctx.fill();
 
           // Core Solid Pearl
@@ -635,7 +793,7 @@ export const ChemistryLabArt = memo(function ChemistryLabArt() {
           // Specular Dot
           ctx.fillStyle = '#FFFFFF';
           ctx.beginPath();
-          ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.4, 0, Math.PI * 2);
+          ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.45, 0, Math.PI * 2);
           ctx.fill();
         }
       }

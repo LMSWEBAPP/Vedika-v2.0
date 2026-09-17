@@ -352,11 +352,11 @@ export default function VedikaLabsHub() {
           <div className="vedika-labs-pedestal-stage" style={{ pointerEvents: 'none' }}>
             <div className="vedika-labs-bot-foreground" style={{ pointerEvents: 'none' }}>
               <div className="bot-pedestal-shadow" style={{ pointerEvents: 'none' }} />
-              <div style={{ width: 300, height: 300, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ width: 345, height: 345, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                 <VedikaParticleBot
                   src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
-                  width={300}
-                  height={300}
+                  width={345}
+                  height={345}
                   inline={true}
                   colorMode="vibrant"
                 />
