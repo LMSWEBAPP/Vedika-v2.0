@@ -66,10 +66,19 @@ function sanitizeMermaid(raw) {
     code = `flowchart TD\n${code}`;
   }
 
-  // Replace unquoted parentheses inside square bracket node labels: A[Text (detail)] -> A["Text (detail)"]
-  code = code.replace(/(\[[^"\]\n]*\([^"\]\n]*\)[^"\]\n]*\])/g, (match) => {
-    const inner = match.slice(1, -1).trim();
-    if (inner.startsWith('"') && inner.endsWith('"')) return match;
+  // Sanitize node labels in square brackets: A[Text] or A["Text"]
+  // Strips rogue markdown (**bold**, `code`, *italic*) and escapes unquoted parentheses or inner quotes
+  code = code.replace(/(\[[^\]\n]+\])/g, (match) => {
+    let inner = match.slice(1, -1).trim();
+    // Strip markdown formatting characters that break Mermaid parser
+    inner = inner.replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '');
+    
+    // Check if already enclosed in quotes
+    if (inner.startsWith('"') && inner.endsWith('"')) {
+      const content = inner.slice(1, -1).replace(/"/g, "'");
+      return `["${content}"]`;
+    }
+    // Clean inner double quotes and wrap in quotes safely
     return `["${inner.replace(/"/g, "'")}"]`;
   });
 
@@ -311,32 +320,33 @@ function StitchLiveOverlay({
 }
 
 /**
- * Accurately extracts node coordinates and edge paths from the rendered Mermaid SVG.
+ * Accurately extracts node coordinates and edge paths from the rendered Mermaid SVG
+ * relative to the SVG root, unscaled by current stage zoom.
  */
-function extractDiagramLayout(container) {
+function extractDiagramLayout(container, activeZoom = 1) {
   if (!container) return { nodes: [], edges: [] };
   const wrapper = container.querySelector('.mermaid-svg-wrapper');
   if (!wrapper) return { nodes: [], edges: [] };
+  const svgEl = wrapper.querySelector('svg');
+  if (!svgEl) return { nodes: [], edges: [] };
 
-  const cRect = container.getBoundingClientRect();
+  const svgRect = svgEl.getBoundingClientRect();
   const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
+  const zoomFactor = activeZoom > 0 ? activeZoom : 1;
 
   const nodes = rawNodeEls.map((el, idx) => {
     const r = el.getBoundingClientRect();
-    const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Block ${idx + 1}`;
-    const x = (r.width > 0)
-      ? (r.left - cRect.left) + container.scrollLeft
-      : (cRect.width / 2 - 100);
-    const y = (r.height > 0)
-      ? (r.top - cRect.top) + container.scrollTop
-      : (idx * 110 + 60);
-    const w = (r.width > 0) ? Math.max(120, r.width) : 190;
-    const h = (r.height > 0) ? Math.max(42, r.height) : 52;
+    const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
+    // Unscaled native coordinates relative to SVG root
+    const x = (r.left - svgRect.left) / zoomFactor;
+    const y = (r.top - svgRect.top) / zoomFactor;
+    const w = Math.max(110, r.width / zoomFactor);
+    const h = Math.max(40, r.height / zoomFactor);
     return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
   });
 
-  // Enforce generous minimum spacing between boxes so connector arrows have clear room to curve
-  const MIN_BOX_GAP = 52;
+  // Enforce clean minimum vertical spacing between boxes
+  const MIN_BOX_GAP = 45;
   for (let i = 1; i < nodes.length; i++) {
     const prev = nodes[i - 1];
     const curr = nodes[i];
@@ -350,46 +360,16 @@ function extractDiagramLayout(container) {
     }
   }
 
-  const rawEdgeEls = Array.from(wrapper.querySelectorAll('g.edgePath, .edgePath, path.flowchart-link'));
   let edges = [];
-
-  if (rawEdgeEls.length > 0 && rawEdgeEls.length <= nodes.length - 1) {
-    edges = rawEdgeEls.map((edgeEl, idx) => {
-      const fromN = nodes[idx];
-      const toN = nodes[idx + 1] || nodes[idx];
-      return {
-        x1: fromN.x + fromN.w / 2,
-        y1: fromN.y + fromN.h,
-        x2: toN.x + toN.w / 2,
-        y2: toN.y,
-        colorIdx: idx % NODE_PALETTES.length,
-        color: NODE_PALETTES[idx % NODE_PALETTES.length].arrow
-      };
+  for (let i = 0; i < nodes.length - 1; i++) {
+    edges.push({
+      x1: nodes[i].x + nodes[i].w / 2,
+      y1: nodes[i].y + nodes[i].h,
+      x2: nodes[i + 1].x + nodes[i + 1].w / 2,
+      y2: nodes[i + 1].y,
+      colorIdx: i % NODE_PALETTES.length,
+      color: NODE_PALETTES[i % NODE_PALETTES.length].arrow
     });
-  } else if (rawEdgeEls.length > 0) {
-    edges = rawEdgeEls.map((edgeEl, idx) => {
-      const fromN = nodes[Math.min(idx, nodes.length - 1)];
-      const toN = nodes[Math.min(idx + 1, nodes.length - 1)];
-      return {
-        x1: fromN.x + fromN.w / 2,
-        y1: fromN.y + fromN.h,
-        x2: toN.x + toN.w / 2,
-        y2: toN.y,
-        colorIdx: idx % NODE_PALETTES.length,
-        color: NODE_PALETTES[idx % NODE_PALETTES.length].arrow
-      };
-    });
-  } else {
-    for (let i = 0; i < nodes.length - 1; i++) {
-      edges.push({
-        x1: nodes[i].x + nodes[i].w / 2,
-        y1: nodes[i].y + nodes[i].h,
-        x2: nodes[i + 1].x + nodes[i + 1].w / 2,
-        y2: nodes[i + 1].y,
-        colorIdx: i % NODE_PALETTES.length,
-        color: NODE_PALETTES[i % NODE_PALETTES.length].arrow
-      });
-    }
   }
 
   return { nodes, edges };
@@ -402,9 +382,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [svgHtml, setSvgHtml] = useState('');
   const [renderError, setRenderError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [zoom, setZoom] = useState(1);
-  const [modalZoom, setModalZoom] = useState(0.65); // Initial compact zoom to fit all boxes in view!
-  const modalZoomRef = useRef(0.65);
+  const [zoom, setZoom] = useState(0.85);
+  const [modalZoom, setModalZoom] = useState(0.75);
+  const modalZoomRef = useRef(0.75);
   modalZoomRef.current = modalZoom;
 
   const [showCode, setShowCode] = useState(false);
@@ -460,52 +440,76 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     });
   }, []);
 
-  // Stable autoFit to make flowchart comfortably fit within the modal viewport without cutting off top
-  const autoFitModalChart = useCallback(() => {
-    if (!modalViewportRef.current) return;
-    const svgEl = modalViewportRef.current.querySelector('svg');
-    if (!svgEl) return;
+  // Compute stable intrinsic fit zoom so diagram fills viewport comfortably with zero sudden jumps
+  const computeFitZoom = useCallback((viewportEl, isModal) => {
+    if (!viewportEl) return isModal ? 0.75 : 0.85;
+    const svgEl = viewportEl.querySelector('svg');
+    if (!svgEl) return isModal ? 0.75 : 0.85;
 
-    const svgRect = svgEl.getBoundingClientRect();
-    const vpH = modalViewportRef.current.clientHeight || 650;
-    const vpW = modalViewportRef.current.clientWidth || 800;
+    let intrinsicW = 600;
+    let intrinsicH = 450;
 
-    if (svgRect.height > 0 && svgRect.width > 0) {
-      const currentZ = modalZoomRef.current || 0.65;
-      const rawH = svgRect.height / currentZ;
-      const rawW = svgRect.width / currentZ;
-
-      const targetH = vpH - 110;
-      const targetW = vpW - 80;
-
-      const scaleH = targetH / rawH;
-      const scaleW = targetW / rawW;
-
-      // Cap ideal between 0.18 and 0.85 so all initial boxes fit comfortably in the viewport!
-      const ideal = Math.max(0.18, Math.min(0.85, Math.min(scaleH, scaleW)));
-      const finalZ = Number(ideal.toFixed(2));
-      setModalZoom(finalZ);
-      modalZoomRef.current = finalZ;
+    if (svgEl.viewBox?.baseVal?.width > 0 && svgEl.viewBox?.baseVal?.height > 0) {
+      intrinsicW = svgEl.viewBox.baseVal.width;
+      intrinsicH = svgEl.viewBox.baseVal.height;
+    } else {
+      const bbox = typeof svgEl.getBBox === 'function' ? svgEl.getBBox() : null;
+      if (bbox && bbox.width > 0 && bbox.height > 0) {
+        intrinsicW = bbox.width;
+        intrinsicH = bbox.height;
+      } else {
+        intrinsicW = svgEl.scrollWidth || 600;
+        intrinsicH = svgEl.scrollHeight || 450;
+      }
     }
-    if (modalViewportRef.current) {
-      modalViewportRef.current.scrollTop = 0;
-      modalViewportRef.current.scrollLeft = 0;
-    }
+
+    const vpH = viewportEl.clientHeight || (isModal ? 650 : 380);
+    const vpW = viewportEl.clientWidth || (isModal ? 900 : 650);
+
+    const paddingX = isModal ? 70 : 30;
+    const paddingY = isModal ? 90 : 35;
+
+    const availW = Math.max(120, vpW - paddingX);
+    const availH = Math.max(120, vpH - paddingY);
+
+    const scaleW = availW / intrinsicW;
+    const scaleH = availH / intrinsicH;
+
+    const ideal = Math.min(scaleW, scaleH);
+    const minZ = isModal ? 0.35 : 0.45;
+    const maxZ = isModal ? 1.15 : 1.0;
+
+    return Number(Math.max(minZ, Math.min(maxZ, ideal)).toFixed(2));
   }, []);
 
+  const autoFitModalChart = useCallback(() => {
+    if (!modalViewportRef.current) return;
+    const fit = computeFitZoom(modalViewportRef.current, true);
+    setModalZoom(fit);
+    modalZoomRef.current = fit;
+    modalViewportRef.current.scrollTop = 0;
+    modalViewportRef.current.scrollLeft = 0;
+  }, [computeFitZoom]);
+
+  const autoFitInlineChart = useCallback(() => {
+    if (!containerRef.current) return;
+    const fit = computeFitZoom(containerRef.current, false);
+    setZoom(fit);
+    containerRef.current.scrollTop = 0;
+    containerRef.current.scrollLeft = 0;
+  }, [computeFitZoom]);
+
   const runLiveDrawAnimation = useCallback((containerEl) => {
-    const container = containerEl || (isModalOpen && modalViewportRef.current ? modalViewportRef.current : containerRef.current);
+    const isModal = isModalOpen && modalViewportRef.current;
+    const container = containerEl || (isModal ? modalViewportRef.current : containerRef.current);
     if (!container) return;
 
     clearAnimTimeouts();
 
-    // Ensure container scroll starts at the top
     container.scrollTop = 0;
     container.scrollLeft = 0;
 
-    if (isModalOpen) {
-      autoFitModalChart();
-    }
+    const currentZoom = isModal ? (modalZoomRef.current || 0.75) : zoom;
 
     // Reset overlay elements
     setDrawnNodes([]);
@@ -514,8 +518,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     setDrawnEdges([]);
     setActiveEdge(null);
 
-    // Measure layout from rendered DOM
-    const { nodes, edges } = extractDiagramLayout(container);
+    // Measure layout from rendered DOM using current active scale
+    const { nodes, edges } = extractDiagramLayout(container, currentZoom);
     if (nodes.length === 0) return;
 
     // Hide raw Mermaid SVG while building
@@ -839,17 +843,18 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-          return `<svg ${attrs} style="${style}; max-width: min(100%, 360px); margin: 0 auto; display: block;"`;
+          return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
         });
         if (!cleanSvg.includes('style=')) {
-          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 360px); margin: 0 auto; display: block;" ');
+          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
         }
 
         if (isMounted) {
           setSvgHtml(cleanSvg);
           setLoading(false);
           setTimeout(() => {
-            autoFitModalChart();
+            if (modalViewportRef.current) autoFitModalChart();
+            if (containerRef.current) autoFitInlineChart();
           }, 60);
         }
       } catch (err) {
@@ -862,16 +867,17 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-              return `<svg ${attrs} style="${style}; max-width: min(100%, 360px); margin: 0 auto; display: block;"`;
+              return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
             });
             if (!cleanSvg.includes('style=')) {
-              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: min(100%, 360px); margin: 0 auto; display: block;" ');
+              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
             }
             if (isMounted) {
               setSvgHtml(cleanSvg);
               setLoading(false);
               setTimeout(() => {
-                autoFitModalChart();
+                if (modalViewportRef.current) autoFitModalChart();
+                if (containerRef.current) autoFitInlineChart();
               }, 60);
               return;
             }
@@ -930,55 +936,45 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     };
   }, [svgHtml, isLiveDrawEnabled, isModalOpen, mounted, runLiveDrawAnimation]);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.5));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.15, 0.4));
+  const handleZoomIn = () => setZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 2.5));
+  const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.3));
   const handleZoomReset = () => setZoom(1);
 
   const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 3.5));
-  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.15));
+  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.2));
   const handleModalZoomReset = () => setModalZoom(1);
 
-  // Attach non-passive wheel event listener to modal viewport to zoom ONLY the canvas and prevent whole webpage zoom
+  // Attach non-passive wheel event listeners to viewports to zoom ONLY the canvas stage and strictly block webpage browser zoom
   useEffect(() => {
-    if (!isModalOpen) return;
-    const vp = modalViewportRef.current;
-    if (!vp) return;
+    const modalVp = modalViewportRef.current;
+    const inlineVp = containerRef.current;
 
-    const handleWheelNonPassive = (e) => {
-      // If Ctrl/Meta key or trackpad pinch gesture is used:
+    const handleModalWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault(); // STRICTLY PREVENTS BROWSER WEBPAGE ZOOM!
+        e.preventDefault();
         e.stopPropagation();
         const factor = e.deltaY < 0 ? 1.08 : 0.92;
-        setModalZoom((prev) => Math.max(0.15, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+        setModalZoom(prev => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
       }
     };
 
-    vp.addEventListener('wheel', handleWheelNonPassive, { passive: false });
+    const handleInlineWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const factor = e.deltaY < 0 ? 1.08 : 0.92;
+        setZoom(prev => Math.max(0.25, Math.min(2.5, Number((prev * factor).toFixed(2)))));
+      }
+    };
+
+    if (modalVp) modalVp.addEventListener('wheel', handleModalWheel, { passive: false });
+    if (inlineVp) inlineVp.addEventListener('wheel', handleInlineWheel, { passive: false });
+
     return () => {
-      vp.removeEventListener('wheel', handleWheelNonPassive);
+      if (modalVp) modalVp.removeEventListener('wheel', handleModalWheel);
+      if (inlineVp) inlineVp.removeEventListener('wheel', handleInlineWheel);
     };
   }, [isModalOpen]);
-
-  // Attach non-passive wheel event listener to inline viewport as well
-  useEffect(() => {
-    const vp = containerRef.current;
-    if (!vp) return;
-
-    const handleInlineWheelNonPassive = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault(); // PREVENTS BROWSER WEBPAGE ZOOM!
-        e.stopPropagation();
-        const factor = e.deltaY < 0 ? 1.08 : 0.92;
-        setZoom((prev) => Math.max(0.3, Math.min(2.5, Number((prev * factor).toFixed(2)))));
-      }
-    };
-
-    vp.addEventListener('wheel', handleInlineWheelNonPassive, { passive: false });
-    return () => {
-      vp.removeEventListener('wheel', handleInlineWheelNonPassive);
-    };
-  }, []);
 
   const handleFitToScreen = () => {
     autoFitModalChart();
@@ -1172,6 +1168,17 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             <RotateCcw size={12} />
             <span>{Math.round(zoom * 100)}%</span>
           </button>
+          <button
+            type="button"
+            className="mermaid-btn"
+            style={btnBaseStyle}
+            onClick={autoFitInlineChart}
+            title="Fit to Container"
+            aria-label="Fit diagram to container"
+          >
+            <Maximize2 size={12} />
+            <span>Fit</span>
+          </button>
 
           {/* Code viewer toggle */}
           <button
@@ -1277,33 +1284,13 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             overflow: 'auto',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             padding: '24px 20px',
             background: 'radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.85) 0%, rgba(8, 10, 18, 0.98) 100%)',
-            userSelect: 'none'
+            userSelect: 'none',
+            overscrollBehavior: 'contain'
           }}
         >
-          {/* Google Stitch AI Floating Cursor */}
-          <StitchAICursor
-            x={cursorState.x}
-            y={cursorState.y}
-            visible={isBuilding && cursorState.visible && !isModalOpen}
-            status={cursorState.status}
-            label={cursorState.label}
-            isClicking={cursorState.isClicking}
-            accentColor={cursorState.accentColor || '#A855F7'}
-          />
-
-          {/* Dedicated Live Drawing Overlay Layer */}
-          <StitchLiveOverlay
-            isBuilding={isBuilding && !isModalOpen}
-            drawnNodes={drawnNodes}
-            activeBox={activeBox}
-            activeWritingText={activeWritingText}
-            drawnEdges={drawnEdges}
-            activeEdge={activeEdge}
-          />
-
           {loading && (
             <div className="mermaid-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#94A3B8', fontSize: 12, padding: '40px 0' }}>
               <Sparkles size={20} className="animate-spin" color="#3B82F6" />
@@ -1328,21 +1315,55 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
           {!loading && !renderError && svgHtml && (
             <div
-              className={`mermaid-svg-wrapper ${isBuilding ? 'building' : ''}`}
+              className="mermaid-canvas-stage inline-stage"
               style={{
-                margin: '0 auto',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                textAlign: 'center',
                 transform: `scale(${zoom})`,
                 transformOrigin: 'top center',
-                transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                transition: 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                position: 'relative',
+                display: 'inline-flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                margin: '0 auto',
+                minWidth: 'fit-content'
               }}
-              dangerouslySetInnerHTML={{ __html: svgHtml }}
-            />
+            >
+              {/* Google Stitch AI Floating Cursor */}
+              <StitchAICursor
+                x={cursorState.x}
+                y={cursorState.y}
+                visible={isBuilding && cursorState.visible && !isModalOpen}
+                status={cursorState.status}
+                label={cursorState.label}
+                isClicking={cursorState.isClicking}
+                accentColor={cursorState.accentColor || '#A855F7'}
+              />
+
+              {/* Dedicated Live Drawing Overlay Layer */}
+              <StitchLiveOverlay
+                isBuilding={isBuilding && !isModalOpen}
+                drawnNodes={drawnNodes}
+                activeBox={activeBox}
+                activeWritingText={activeWritingText}
+                drawnEdges={drawnEdges}
+                activeEdge={activeEdge}
+              />
+
+              <div
+                className={`mermaid-svg-wrapper ${isBuilding ? 'building' : ''}`}
+                style={{
+                  margin: '0 auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                dangerouslySetInnerHTML={{ __html: svgHtml }}
+              />
+            </div>
           )}
         </div>
       )}
@@ -1753,44 +1774,58 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   scrollBehavior: 'smooth'
                 }}
               >
-                {/* Stitch AI Cursor for Fullscreen Modal */}
-                <StitchAICursor
-                  x={cursorState.x}
-                  y={cursorState.y}
-                  visible={isBuilding && cursorState.visible && isModalOpen}
-                  status={cursorState.status}
-                  label={cursorState.label}
-                  isClicking={cursorState.isClicking}
-                  accentColor={cursorState.accentColor || '#A855F7'}
-                />
-
-                {/* Dedicated Live Drawing Overlay Layer */}
-                <StitchLiveOverlay
-                  isBuilding={isBuilding && isModalOpen}
-                  drawnNodes={drawnNodes}
-                  activeBox={activeBox}
-                  activeWritingText={activeWritingText}
-                  drawnEdges={drawnEdges}
-                  activeEdge={activeEdge}
-                />
-
                 {svgHtml && (
                   <div
-                    className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
+                    className="mermaid-canvas-stage modal-stage"
                     style={{
-                      margin: '0 auto',
-                      minWidth: 'fit-content',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
                       transform: `scale(${modalZoom})`,
                       transformOrigin: 'top center',
                       transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                      position: 'relative',
+                      display: 'inline-flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      margin: '0 auto',
+                      minWidth: 'fit-content',
                       paddingBottom: 80
                     }}
-                    dangerouslySetInnerHTML={{ __html: svgHtml }}
-                  />
+                  >
+                    {/* Stitch AI Cursor for Fullscreen Modal */}
+                    <StitchAICursor
+                      x={cursorState.x}
+                      y={cursorState.y}
+                      visible={isBuilding && cursorState.visible && isModalOpen}
+                      status={cursorState.status}
+                      label={cursorState.label}
+                      isClicking={cursorState.isClicking}
+                      accentColor={cursorState.accentColor || '#A855F7'}
+                    />
+
+                    {/* Dedicated Live Drawing Overlay Layer */}
+                    <StitchLiveOverlay
+                      isBuilding={isBuilding && isModalOpen}
+                      drawnNodes={drawnNodes}
+                      activeBox={activeBox}
+                      activeWritingText={activeWritingText}
+                      drawnEdges={drawnEdges}
+                      activeEdge={activeEdge}
+                    />
+
+                    <div
+                      className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
+                      style={{
+                        margin: '0 auto',
+                        minWidth: 'fit-content',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        textAlign: 'center'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: svgHtml }}
+                    />
+                  </div>
                 )}
               </div>
 

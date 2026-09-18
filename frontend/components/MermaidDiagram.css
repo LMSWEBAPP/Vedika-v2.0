@@ -116,6 +116,18 @@ button.mermaid-expand-btn:hover,
   user-select: none;
 }
 
+.mermaid-canvas-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 auto;
+  min-width: fit-content;
+  transform-origin: top center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .mermaid-svg-wrapper {
   margin: 0 auto;
   display: flex;
@@ -124,12 +136,11 @@ button.mermaid-expand-btn:hover,
   justify-content: center;
   width: 100%;
   text-align: center;
-  transform-origin: top center;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .mermaid-svg-wrapper svg {
-  max-width: min(100%, 360px) !important;
+  max-width: 100% !important;
   width: auto !important;
   height: auto !important;
   margin: 0 auto;
@@ -138,7 +149,7 @@ button.mermaid-expand-btn:hover,
 }
 
 .mermaid-svg-wrapper.modal-chart svg {
-  max-width: min(94vw, 920px) !important;
+  max-width: 100% !important;
   width: auto !important;
   height: auto !important;
 }

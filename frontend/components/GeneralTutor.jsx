@@ -8,7 +8,7 @@ import {
   Brain, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, Code2, BarChart3, Home, Zap, Award, FileText, FolderOpen, Briefcase,
-  Trash, History, X
+  Trash, History, X, Plus, Pin, Search
 } from 'lucide-react';
 import {
   T, geminiCall,
@@ -73,6 +73,8 @@ export default function GeneralTutor() {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [voiceSessionToRestore, setVoiceSessionToRestore] = useState(null);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const [jwtToken, setJwtToken] = useState(null);
   const [authenticating, setAuthenticating] = useState(true);
@@ -221,6 +223,14 @@ export default function GeneralTutor() {
 
   const [userId] = useState(() => {
     if (typeof window === 'undefined') return '';
+    try {
+      const stored = localStorage.getItem('frappe_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const u = parsed.email || parsed.name;
+        if (u) return u;
+      }
+    } catch {}
     let id = localStorage.getItem('lms-user-id');
     if (!id) { id = 'user-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); localStorage.setItem('lms-user-id', id); }
     return id;
@@ -264,21 +274,88 @@ export default function GeneralTutor() {
     return 'Older';
   }
 
+  // Load sessions from DB and LocalStorage, and restore active session if present
   useEffect(() => {
-    try {
-      const raw1 = localStorage.getItem(textSessKey);
-      if (raw1) setTextSessions(JSON.parse(raw1));
-      const raw2 = localStorage.getItem(voiceSessKey);
-      if (raw2) setVoiceSessions(JSON.parse(raw2));
+    let isMounted = true;
+    const loadSessions = async () => {
+      let localText = [];
+      try {
+        const raw1 = localStorage.getItem(textSessKey);
+        if (raw1) {
+          localText = JSON.parse(raw1);
+          setTextSessions(localText);
+        }
+        const raw2 = localStorage.getItem(voiceSessKey);
+        if (raw2) setVoiceSessions(JSON.parse(raw2));
 
-      // Prefill query if coming from the dashboard quick-ask box
-      const prefill = localStorage.getItem('tutor_prefill_query');
-      if (prefill) {
-        setTopic(prefill);
-        localStorage.removeItem('tutor_prefill_query');
+        // Prefill query if coming from the dashboard quick-ask box
+        const prefill = localStorage.getItem('tutor_prefill_query');
+        if (prefill) {
+          setTopic(prefill);
+          localStorage.removeItem('tutor_prefill_query');
+        }
+      } catch (e) {
+        console.error("Failed to parse local sessions:", e);
       }
-    } catch {}
-  }, []);
+
+      // Immediately restore active session from localStorage on refresh
+      const activeSid = localStorage.getItem('current-general-tutor-session-id');
+      if (activeSid && localText.length > 0) {
+        const active = localText.find(s => s.id === activeSid);
+        if (active && active.messages && active.messages.length > 0) {
+          const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {} }));
+          setMessages(msgs);
+          setMode(active.mode || 'Beginner');
+          setLength(active.length || 'Short');
+          setCurrentSessionId(active.id);
+          setSessionDocs(active.documents || []);
+        }
+      }
+
+      // Authoritative database sync
+      if (userId) {
+        setIsLoadingHistory(true);
+        try {
+          const res = await fetch(`/api/tutor/history?userId=${encodeURIComponent(userId)}&type=general`);
+          if (res.ok) {
+            const data = await res.json();
+            if (isMounted && data.sessions) {
+              const dbSessions = data.sessions;
+              const combined = [...dbSessions];
+              for (const ls of localText) {
+                if (!combined.some(ds => ds.id === ls.id)) {
+                  combined.push(ls);
+                }
+              }
+              combined.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+              setTextSessions(combined);
+              try { localStorage.setItem(textSessKey, JSON.stringify(combined)); } catch {}
+
+              const targetSid = activeSid || (combined.length > 0 ? combined[0].id : null);
+              if (targetSid) {
+                const target = combined.find(s => s.id === targetSid);
+                if (target && target.messages && target.messages.length > 0) {
+                  const msgs = (target.messages || []).map(m => ({ ...m, features: m.features || {} }));
+                  setMessages(msgs);
+                  setMode(target.mode || 'Beginner');
+                  setLength(target.length || 'Short');
+                  setCurrentSessionId(target.id);
+                  setSessionDocs(target.documents || []);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load sessions from DB:", err);
+        } finally {
+          if (isMounted) setIsLoadingHistory(false);
+        }
+      }
+    };
+
+    loadSessions();
+    return () => { isMounted = false; };
+  }, [userId, textSessKey, voiceSessKey]);
 
   // Auto-resize the input textarea height
   useEffect(() => {
@@ -322,6 +399,26 @@ export default function GeneralTutor() {
     return all;
   }, [textSessions, voiceSessions]);
 
+  const filteredSessions = useMemo(() => {
+    if (!historySearch.trim()) return mergedSessions;
+    const q = historySearch.toLowerCase();
+    return mergedSessions.filter(s =>
+      (s.label && s.label.toLowerCase().includes(q)) ||
+      (s.topic && s.topic.toLowerCase().includes(q)) ||
+      (s.messages && s.messages.some(m => m.content && m.content.toLowerCase().includes(q)))
+    );
+  }, [mergedSessions, historySearch]);
+
+  const sessionGroups = useMemo(() => {
+    const groups = { 'Today': [], 'Yesterday': [], 'This Week': [], 'Older': [] };
+    for (const s of filteredSessions) {
+      const label = getDateLabel(s.timestamp || s.startedAt);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(s);
+    }
+    return groups;
+  }, [filteredSessions]);
+
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, streamingText]);
@@ -342,7 +439,21 @@ export default function GeneralTutor() {
     setCurrentSessionId(session.id);
     setSessionDocs(session.documents || []);
     setErr(''); setTopic(''); setUploadErr('');
-  }, []);
+    if (isMobile) setShowChatHistory(false);
+  }, [isMobile]);
+
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setSessionDocs([]);
+    setTopic('');
+    setErr('');
+    setUploadErr('');
+    setShowVoiceAgent(false);
+    setVoiceSessionToRestore(null);
+    try { localStorage.removeItem('current-general-tutor-session-id'); } catch {}
+    if (isMobile) setShowChatHistory(false);
+  }, [isMobile]);
 
   // Handle click outside to close open feature cards (excluding Visual Summary which only closes on explicit close)
   useEffect(() => {
@@ -373,14 +484,7 @@ export default function GeneralTutor() {
     };
 
     const handleNew = () => {
-      setMessages([]);
-      setCurrentSessionId(null);
-      setSessionDocs([]);
-      setTopic('');
-      setErr('');
-      setUploadErr('');
-      setShowVoiceAgent(false);
-      setVoiceSessionToRestore(null);
+      handleNewChat();
     };
 
     window.addEventListener('select-general-tutor-session', handleSelect);
@@ -390,24 +494,71 @@ export default function GeneralTutor() {
       window.removeEventListener('select-general-tutor-session', handleSelect);
       window.removeEventListener('new-general-tutor-session', handleNew);
     };
-  }, [handleSelectSession]);
+  }, [handleSelectSession, handleNewChat]);
 
-  const saveSession = useCallback((msgs, overrideSid) => {
-    if (!msgs.some(m => m.role === 'ai')) return;
+  const saveSession = useCallback(async (msgs, overrideSid) => {
+    if (!msgs || !msgs.some(m => m.role === 'ai')) return;
     const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user');
-    const label = lastUserMsg ? lastUserMsg.content.slice(0, 40) : 'Untitled';
+    const label = lastUserMsg ? lastUserMsg.content.slice(0, 45) : 'Untitled';
     const sid = overrideSid || currentSessionId || Date.now().toString(36);
     const session = {
-      id: sid, label, topic: label, mode, length,
+      id: sid,
+      label,
+      topic: label,
+      mode,
+      length,
       messages: msgs,
       documents: sessionDocsRef.current || [],
       timestamp: new Date().toISOString(),
+      type: 'general'
     };
     const updated = [session, ...textSessions.filter(s => s.id !== sid)];
     setTextSessions(updated);
     setCurrentSessionId(sid);
+    try {
+      localStorage.setItem(textSessKey, JSON.stringify(updated));
+      localStorage.setItem('current-general-tutor-session-id', sid);
+    } catch {}
+
+    if (userId) {
+      try {
+        await fetch('/api/tutor/history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, session })
+        });
+      } catch (err) {
+        console.error("Failed to sync session to DB:", err);
+      }
+    }
+  }, [mode, length, textSessions, currentSessionId, textSessKey, userId]);
+
+  const handleDeleteSession = useCallback(async (sid, e) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this chat session?')) return;
+
+    const updated = textSessions.filter(s => s.id !== sid);
+    setTextSessions(updated);
     try { localStorage.setItem(textSessKey, JSON.stringify(updated)); } catch {}
-  }, [mode, length, textSessions, currentSessionId, textSessKey]);
+
+    if (currentSessionId === sid) {
+      setMessages([]);
+      setCurrentSessionId(null);
+      setSessionDocs([]);
+      setTopic('');
+      try { localStorage.removeItem('current-general-tutor-session-id'); } catch {}
+    }
+
+    if (userId) {
+      try {
+        await fetch(`/api/tutor/history?id=${encodeURIComponent(sid)}&userId=${encodeURIComponent(userId)}`, {
+          method: 'DELETE'
+        });
+      } catch (err) {
+        console.error("Failed to delete session from DB:", err);
+      }
+    }
+  }, [textSessions, currentSessionId, textSessKey, userId]);
 
   const FEATURE_SYSTEMS = {
     quiz: QUIZ_SYSTEM, flashcards: FLASHCARD_SYSTEM, infographic: INFOGRAPHIC_SYSTEM,
@@ -721,19 +872,23 @@ export default function GeneralTutor() {
       const text = await geminiCall(system, prompt, tokens, { sessionId: currentSessionId, userId });
       if (!text.trim()) throw new Error(`Gemini returned an empty response for ${type}. Try again.`);
 
-      setMessages(prev => prev.map((m, i) => {
-        if (i !== msgIdx) return m;
-        const f = { ...m.features };
-        if (type === 'quiz') f.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
-        else if (type === 'flashcards') f.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
-        else if (type === 'infographic') {
-          const parsed = parseInfographicOutput(text);
-          f.infographic = { points: parsed.points || parsed, mermaid: parsed.mermaid || '' };
-        }
-        else if (type === 'simpler') f.simpler = { text };
-        else if (type === 'examples') f.examples = { text };
-        return { ...m, features: f, activeFeature: type };
-      }));
+      setMessages(prev => {
+        const next = prev.map((m, i) => {
+          if (i !== msgIdx) return m;
+          const f = { ...m.features };
+          if (type === 'quiz') f.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
+          else if (type === 'flashcards') f.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
+          else if (type === 'infographic') {
+            const parsed = parseInfographicOutput(text);
+            f.infographic = { points: parsed.points || parsed, mermaid: parsed.mermaid || '' };
+          }
+          else if (type === 'simpler') f.simpler = { text };
+          else if (type === 'examples') f.examples = { text };
+          return { ...m, features: f, activeFeature: type };
+        });
+        setTimeout(() => saveSession(next, currentSessionId), 50);
+        return next;
+      });
     } catch (e) {
       setErr(`Failed to generate ${type}: ${e.message}`);
     } finally {
@@ -1030,8 +1185,8 @@ export default function GeneralTutor() {
               }}
             >
               <History size={13} color={showChatHistory ? "#38BDF8" : "#94A3B8"} />
-              {!isMobile && <span>Chat History</span>}
-              {messages && messages.length > 0 && (
+              {!isMobile && <span>History</span>}
+              {mergedSessions && mergedSessions.length > 0 && (
                 <span style={{
                   fontSize: 10,
                   fontWeight: 700,
@@ -1041,9 +1196,46 @@ export default function GeneralTutor() {
                   borderRadius: 10,
                   lineHeight: 1.2
                 }}>
-                  {messages.length}
+                  {mergedSessions.length}
                 </span>
               )}
+            </button>
+
+            {/* Quick New Chat Button */}
+            <button
+              onClick={handleNewChat}
+              title="Start New Chat"
+              aria-label="Start New Chat"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 9px',
+                height: 28,
+                borderRadius: 8,
+                background: 'rgba(168, 85, 247, 0.12)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                color: '#E9D5FF',
+                cursor: 'pointer',
+                fontSize: 11.5,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
+                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.55)';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                e.currentTarget.style.color = '#E9D5FF';
+              }}
+            >
+              <Plus size={13} color="#C084FC" />
+              {!isMobile && <span>New</span>}
             </button>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${T.purple}18`, border: `1px solid ${T.purple}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Brain size={14} color={T.purple} />
@@ -1119,17 +1311,18 @@ export default function GeneralTutor() {
                     top: 0,
                     bottom: 0,
                     left: 0,
-                    width: isMobile ? '85vw' : '320px',
-                    maxWidth: '360px',
+                    width: isMobile ? '88vw' : '330px',
+                    maxWidth: '380px',
                     background: '#0B0F19',
                     borderRight: '1px solid rgba(255, 255, 255, 0.1)',
                     zIndex: 50,
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '10px 0 35px rgba(0, 0, 0, 0.65)',
+                    boxShadow: '12px 0 40px rgba(0, 0, 0, 0.75)',
                     animation: 'slideInLeftDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                 >
+                  {/* Top Bar */}
                   <div
                     style={{
                       display: 'flex',
@@ -1137,87 +1330,225 @@ export default function GeneralTutor() {
                       justifyContent: 'space-between',
                       padding: '12px 16px',
                       borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(16, 22, 36, 0.92)',
+                      background: 'rgba(16, 22, 36, 0.95)',
                       flexShrink: 0
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#F8FAFC', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                      <History size={14} color="#38BDF8" />
-                      <span>Chat History</span>
-                      {messages && messages.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#F8FAFC', fontSize: 12.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+                      <History size={15} color="#38BDF8" />
+                      <span>Chat Sessions</span>
+                      {mergedSessions && mergedSessions.length > 0 && (
                         <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
-                          {messages.length}
+                          {mergedSessions.length}
                         </span>
                       )}
                     </div>
-                    <button
-                      onClick={() => setShowChatHistory(false)}
-                      style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                      title="Close Chat History"
-                      aria-label="Close Chat History"
-                    >
-                      <X size={15} />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        onClick={handleNewChat}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          background: 'rgba(168, 85, 247, 0.18)',
+                          border: '1px solid rgba(168, 85, 247, 0.38)',
+                          borderRadius: 6,
+                          padding: '3px 8px',
+                          color: '#E9D5FF',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                        title="Start New Chat"
+                      >
+                        <Plus size={12} color="#C084FC" />
+                        <span>New</span>
+                      </button>
+                      <button
+                        onClick={() => setShowChatHistory(false)}
+                        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                        title="Close Drawer"
+                        aria-label="Close Drawer"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {messages && messages.length > 0 ? (
-                      messages.map((msg, idx) => {
-                        const isUser = msg.role === 'user';
-                        const text = msg.content || '';
-                        const hasInfographic = msg.activeFeature === 'infographic' || msg.features?.infographic;
-                        return (
-                          <div
-                            key={msg.id || idx}
-                            onClick={() => {
-                              const el = document.getElementById(`msg-${idx}`);
-                              if (el) {
-                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              }
-                              if (isMobile) setShowChatHistory(false);
-                            }}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 5,
-                              padding: '9px 12px',
-                              borderRadius: 10,
-                              background: isUser ? 'rgba(56, 189, 248, 0.07)' : 'rgba(255, 255, 255, 0.03)',
-                              border: `1px solid ${isUser ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.06)'}`,
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = isUser ? 'rgba(56, 189, 248, 0.14)' : 'rgba(255, 255, 255, 0.07)';
-                              e.currentTarget.style.borderColor = isUser ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.15)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = isUser ? 'rgba(56, 189, 248, 0.07)' : 'rgba(255, 255, 255, 0.03)';
-                              e.currentTarget.style.borderColor = isUser ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.06)';
-                            }}
-                            title="Click to jump to message"
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontWeight: 600 }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isUser ? '#38BDF8' : '#C084FC' }}>
-                                <span>{isUser ? '👤 You' : '✨ Vedika AI'}</span>
-                              </span>
-                              <span style={{ color: '#64748B', fontSize: 10 }}>#{idx + 1}</span>
-                            </div>
-                            <div style={{ color: '#CBD5E1', fontSize: 11.5, lineHeight: 1.45, maxHeight: 68, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                              {text || 'Message'}
-                            </div>
-                            {hasInfographic && (
-                              <span style={{ alignSelf: 'flex-start', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                                Active Infographic 🎯
-                              </span>
-                            )}
+                  {/* Search Bar */}
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(11, 15, 25, 0.7)' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 7,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 8,
+                      padding: '5px 9px'
+                    }}>
+                      <Search size={13} color="#64748B" style={{ flexShrink: 0 }} />
+                      <input
+                        type="text"
+                        value={historySearch}
+                        onChange={e => setHistorySearch(e.target.value)}
+                        placeholder="Search conversations..."
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          outline: 'none',
+                          color: '#F1F5F9',
+                          fontSize: 12,
+                          width: '100%',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                      {historySearch && (
+                        <button
+                          onClick={() => setHistorySearch('')}
+                          style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Session List */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {isLoadingHistory && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', color: '#94A3B8', fontSize: 11.5 }}>
+                        <Loader2 size={13} className="custom-spin" color="#38BDF8" />
+                        <span>Syncing history...</span>
+                      </div>
+                    )}
+
+                    {['Today', 'Yesterday', 'This Week', 'Older'].map(groupKey => {
+                      const list = sessionGroups[groupKey] || [];
+                      if (list.length === 0) return null;
+                      return (
+                        <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#64748B', textTransform: 'uppercase', paddingLeft: 4 }}>
+                            {groupKey}
                           </div>
-                        );
-                      })
-                    ) : (
+                          {list.map(session => {
+                            const isActive = session.id === currentSessionId;
+                            const isVoice = session.type === 'voice';
+                            const title = session.label || session.topic || (isVoice ? 'Voice Session' : 'Untitled Conversation');
+                            const msgCount = session.messages?.length || 0;
+                            const timeStr = session.timestamp ? new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                            return (
+                              <div
+                                key={session.id}
+                                onClick={() => handleSelectSession(session)}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 6,
+                                  padding: '10px 12px',
+                                  borderRadius: 10,
+                                  background: isActive ? 'rgba(168, 85, 247, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                                  border: `1px solid ${isActive ? 'rgba(168, 85, 247, 0.45)' : 'rgba(255, 255, 255, 0.06)'}`,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                  position: 'relative'
+                                }}
+                                onMouseEnter={e => {
+                                  if (!isActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                  }
+                                }}
+                                onMouseLeave={e => {
+                                  if (!isActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                                  }
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                  <span style={{
+                                    color: isActive ? '#FFFFFF' : '#E2E8F0',
+                                    fontSize: 12.5,
+                                    fontWeight: isActive ? 700 : 500,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    flex: 1
+                                  }}>
+                                    {isVoice ? '🎙️ ' : ''}{title}
+                                  </span>
+                                  <button
+                                    onClick={(e) => handleDeleteSession(session.id, e)}
+                                    title="Delete session"
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#64748B',
+                                      cursor: 'pointer',
+                                      padding: 3,
+                                      borderRadius: 4,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      opacity: 0.6,
+                                      transition: 'opacity 0.15s, color 0.15s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#F87171'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = '#64748B'; }}
+                                  >
+                                    <Trash size={12} />
+                                  </button>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5, color: '#94A3B8' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                    {session.mode && (
+                                      <span style={{
+                                        background: `${modeColors[session.mode] || T.purple}20`,
+                                        color: modeColors[session.mode] || '#C084FC',
+                                        padding: '1px 5px',
+                                        borderRadius: 4,
+                                        fontWeight: 600
+                                      }}>
+                                        {session.mode}
+                                      </span>
+                                    )}
+                                    {msgCount > 0 && <span>{msgCount} msgs</span>}
+                                  </div>
+                                  {timeStr && <span style={{ fontSize: 10, color: '#64748B' }}>{timeStr}</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+
+                    {filteredSessions.length === 0 && !isLoadingHistory && (
                       <div style={{ padding: '36px 12px', textAlign: 'center', color: '#64748B', fontSize: 12 }}>
-                        <History size={24} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-                        <div>No messages yet in this session. Ask a question to start chatting!</div>
+                        <History size={26} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
+                        {historySearch ? (
+                          <div>No conversations match "{historySearch}"</div>
+                        ) : (
+                          <div>
+                            <div>No conversations found.</div>
+                            <button
+                              onClick={handleNewChat}
+                              style={{
+                                marginTop: 12,
+                                background: 'rgba(168, 85, 247, 0.2)',
+                                border: '1px solid rgba(168, 85, 247, 0.4)',
+                                borderRadius: 8,
+                                color: '#E9D5FF',
+                                padding: '6px 12px',
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              + Start a New Chat
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1258,7 +1589,7 @@ export default function GeneralTutor() {
               </div>
 
               {/* ── CHAT AREA (z-index: 1 sits cleanly over watermark) ── */}
-              <div ref={chatRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 10px' : '28px 28px 16px' }}>
+              <div ref={chatRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 120px' : '28px 28px 135px' }}>
 
                 {/* Welcome AI message */}
                 <div style={{ display: 'flex', gap: rGap, marginBottom: 24, maxWidth: msgMaxW }}>
@@ -1655,137 +1986,305 @@ export default function GeneralTutor() {
             </div>
           )}
         </div>
-      </div>
 
-        {/* ── BOTTOM: Chat Input (Collapsible to Send button when idle) ── */}
-        <div
-          onMouseEnter={() => setIsInputHovered(true)}
-          onMouseLeave={() => setIsInputHovered(false)}
-          style={{
-            flexShrink: 0,
-            borderTop: `1px solid ${T.border}`,
-            background: 'rgba(11, 15, 25, 0.96)',
-            padding: isMobile ? '8px 12px 10px' : '8px 24px 12px',
-            backdropFilter: 'blur(16px)',
-            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            position: 'relative',
-            zIndex: 10
-          }}
-        >
-          {/* If chat has started and user is not near/hovering or typing, collapse down to just the Send button */}
-          {messages.length > 0 && !isInputHovered && !isInputFocused && !topic.trim() && !loading && !streamingText ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '2px 0' }}>
+        {/* ── CREATIVE FLOATING DYNAMIC OMNIBAR ── */}
+        {!isInputHovered && !isInputFocused && !isInputPinned && !topic.trim() && !isConfigOpen && !showAtMenu && !uploading && (!sessionDocs || sessionDocs.length === 0) && messages.length > 0 && !loading && !streamingText ? (
+          /* Sleek Resting Pill Capsule */
+          <div
+            onMouseEnter={() => setIsInputHovered(true)}
+            onClick={() => {
+              setIsInputHovered(true);
+              setIsInputFocused(true);
+              setTimeout(() => inputRef.current?.focus(), 60);
+            }}
+            style={{
+              position: 'absolute',
+              bottom: isMobile ? 12 : 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: isMobile ? 'calc(100% - 24px)' : 'min(580px, calc(100% - 48px))',
+              height: 48,
+              borderRadius: 24,
+              background: 'rgba(15, 20, 35, 0.85)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(168, 85, 247, 0.35)',
+              boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 10px 0 16px',
+              cursor: 'pointer',
+              zIndex: 30,
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              animation: 'fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(124, 58, 237, 0.3))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Sparkles size={13} color="#C084FC" />
+              </div>
+              <span style={{
+                color: '#94A3B8',
+                fontSize: isMobile ? 12.5 : 13.5,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontWeight: 500
+              }}>
+                Ask Vedika anything, try an infographic, or type @...
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'rgba(255, 255, 255, 0.06)',
+                borderRadius: 999,
+                padding: '3px 8px',
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: modeColors[mode] || '#CBD5E1'
+              }}>
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: modeColors[mode] || T.green }} />
+                <span>{mode}</span>
+              </div>
+
               <button
                 type="button"
-                onClick={() => {
-                  setIsInputHovered(true);
-                  setIsInputFocused(true);
-                  setTimeout(() => inputRef.current?.focus(), 50);
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab('voice');
                 }}
-                title="Ask next question to Vedika..."
+                title="Switch to Voice AI"
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-                  border: '1px solid rgba(168, 85, 247, 0.45)',
-                  boxShadow: '0 4px 20px rgba(168, 85, 247, 0.45)',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#94A3B8',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                  transform: 'scale(1)'
+                  transition: 'all 0.15s'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
               >
-                <Send size={18} color="#FFFFFF" />
+                <Mic size={14} />
               </button>
+
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(168, 85, 247, 0.4)',
+                  color: '#FFFFFF'
+                }}
+              >
+                <Send size={14} />
+              </div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, animation: 'fadeIn 0.25s ease' }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15, 23, 42, 0.62)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(168, 85, 247, 0.28)', borderRadius: 14, padding: '7px 14px', position: 'relative', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)' }}>
-                {showAtMenu && filteredDocs.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 'calc(100% + 8px)',
-                    left: 0,
-                    right: 0,
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    background: T.s2,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: 10,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 100,
-                    padding: '6px 0',
-                    textAlign: 'left'
-                  }}>
-                    <div style={{ padding: '4px 12px', fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '0.05em', borderBottom: `1px solid ${T.border}`, marginBottom: 4 }}>
-                      CHOOSE PDF TO ATTACH
-                    </div>
-                    {filteredDocs.map((doc, idx) => (
-                      <div
-                        key={doc.id}
-                        onMouseEnter={() => setAtMenuIndex(idx)}
-                        style={{
-                          padding: '8px 12px',
-                          fontSize: 13,
-                          color: T.text,
-                          cursor: 'pointer',
-                          background: idx === atMenuIndex ? `${T.purple}15` : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          transition: 'background 0.1s'
-                        }}
-                      >
-                        <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                          <span>📄</span>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                          <span style={{ fontSize: 10, color: T.muted }}>({new Date(doc.creation).toLocaleDateString()})</span>
-                        </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (confirm(`Are you sure you want to permanently delete "${doc.name}" from your library?`)) {
-                              await handleLibraryDelete(doc.id);
-                            }
-                          }}
-                          style={{
-                            background: 'none', border: 'none', color: T.red, cursor: 'pointer', padding: '4px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
-                          }}
-                          title="Delete from library"
-                        >
-                          <Trash size={12} />
-                        </button>
-                      </div>
-                    ))}
+          </div>
+        ) : (
+          /* Full Creative Omnibar */
+          <div
+            onMouseEnter={() => setIsInputHovered(true)}
+            onMouseLeave={() => setIsInputHovered(false)}
+            style={{
+              position: 'absolute',
+              bottom: isMobile ? 12 : 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: isMobile ? 'calc(100% - 24px)' : 'min(780px, calc(100% - 48px))',
+              background: 'rgba(12, 16, 28, 0.92)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(168, 85, 247, 0.38)',
+              borderRadius: 18,
+              padding: isMobile ? '10px 12px' : '12px 16px',
+              boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.75), 0 0 35px rgba(168, 85, 247, 0.22)',
+              zIndex: 30,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              animation: 'fadeSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            {/* Attached PDF documents pills (if any) */}
+            {sessionDocs && sessionDocs.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingBottom: 6, borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
+                {sessionDocs.map(doc => (
+                  <div key={doc.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: 8, padding: '3px 8px', fontSize: 11, color: '#E9D5FF' }}>
+                    <span>📄</span>
+                    <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                    {doc.status && doc.status !== 'completed' && <span style={{ fontSize: 9, opacity: 0.8 }}>({doc.status})</span>}
+                    <button type="button" onClick={() => handleDeleteDoc(doc.id)} style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                      <X size={12} />
+                    </button>
                   </div>
-                )}
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
-                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                  style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploading ? T.purple : '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
-                  title="Upload PDF Context">
-                  {uploading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Paperclip size={16} />}
+                ))}
+              </div>
+            )}
+
+            {/* Main Input Row: Tool buttons + Textarea + Controls + Send */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, position: 'relative' }}>
+              {/* Autocomplete @ menu for PDFs */}
+              {showAtMenu && filteredDocs.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 10px)',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  background: 'rgba(15, 19, 34, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                  borderRadius: 12,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+                  zIndex: 150,
+                  padding: '6px 0'
+                }}>
+                  <div style={{ padding: '6px 14px', fontSize: 10, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.06em', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 4 }}>
+                    CHOOSE PDF TO ATTACH (@)
+                  </div>
+                  {filteredDocs.map((doc, idx) => (
+                    <div
+                      key={doc.id}
+                      onMouseEnter={() => setAtMenuIndex(idx)}
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: 12.5,
+                        color: '#F1F5F9',
+                        cursor: 'pointer',
+                        background: idx === atMenuIndex ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                      }}
+                    >
+                      <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                        <span>📄</span>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                        <span style={{ fontSize: 10, color: '#64748B' }}>({new Date(doc.creation).toLocaleDateString()})</span>
+                      </div>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${doc.name}" from your library?`)) {
+                            await handleLibraryDelete(doc.id);
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.7 }}
+                        title="Delete from library"
+                      >
+                        <Trash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
+
+              {/* Left quick actions: PDF & Voice */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 3 }}>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    color: uploading ? '#C084FC' : '#94A3B8',
+                    padding: 6,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = uploading ? '#C084FC' : '#94A3B8'; e.currentTarget.style.background = 'none'; }}
+                  title="Upload PDF Document Context"
+                >
+                  {uploading ? <Loader2 size={16} className="custom-spin" /> : <Paperclip size={16} />}
                 </button>
-                <button onClick={() => setActiveTab('voice')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
-                  title="Switch to Voice AI">
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('voice')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94A3B8',
+                    padding: 6,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'none'; }}
+                  title="Switch to Voice AI"
+                >
                   <Mic size={16} />
                 </button>
-                <textarea ref={inputRef} value={topic}
+              </div>
+
+              {/* Center: Textarea (Never squished or overlapping send button) */}
+              <div style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <textarea
+                  ref={inputRef}
+                  value={topic}
                   onChange={handleTextareaChange}
                   onFocus={() => setIsInputFocused(true)}
                   onBlur={() => setIsInputFocused(false)}
-                  placeholder="Type your message to Vedika..." rows={1}
+                  placeholder="Type a topic, ask for an infographic, or type @ to attach PDF..."
+                  rows={1}
                   onKeyDown={handleKeyDown}
-                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F8FAFC', fontSize: 13.5, lineHeight: 1.5, resize: 'none', fontFamily: 'inherit', padding: 0, minHeight: 22, maxHeight: 110 }} />
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#F8FAFC',
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                    padding: '4px 0',
+                    minHeight: 24,
+                    maxHeight: 120
+                  }}
+                />
+              </div>
 
-                {/* Collapsible Mode & Depth Pill Button inside input */}
-                <div style={{ position: 'relative', flexShrink: 0 }} ref={configDropdownRef}>
+              {/* Right tools cluster: Config Popover, Pin button, Send Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 2, flexShrink: 0 }}>
+                {/* Mode & Depth Pill Popover */}
+                <div style={{ position: 'relative' }} ref={configDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setIsConfigOpen(prev => !prev)}
@@ -1793,29 +2292,28 @@ export default function GeneralTutor() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 5,
-                      padding: '4px 9px',
+                      padding: '5px 9px',
                       borderRadius: 9999,
-                      background: 'rgba(255, 255, 255, 0.07)',
+                      background: 'rgba(255, 255, 255, 0.06)',
                       border: '1px solid rgba(255, 255, 255, 0.12)',
                       color: '#CBD5E1',
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: 700,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                       transition: 'all 0.15s ease'
                     }}
-                    title="Change learning mode & explanation depth"
+                    title="Learning Mode & Depth"
                   >
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.green, flexShrink: 0 }} />
                     <span>{mode} &middot; {length}</span>
                     <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                   </button>
 
-                  {/* Popover */}
                   {isConfigOpen && (
                     <div style={{
                       position: 'absolute',
-                      bottom: 'calc(100% + 10px)',
+                      bottom: 'calc(100% + 12px)',
                       right: 0,
                       background: 'rgba(15, 19, 34, 0.98)',
                       backdropFilter: 'blur(20px)',
@@ -1897,32 +2395,70 @@ export default function GeneralTutor() {
                     </div>
                   )}
                 </div>
+
+                {/* Pin Omnibar Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsInputPinned(prev => !prev)}
+                  style={{
+                    background: isInputPinned ? 'rgba(168, 85, 247, 0.22)' : 'none',
+                    border: isInputPinned ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid transparent',
+                    borderRadius: 8,
+                    padding: 6,
+                    color: isInputPinned ? '#C084FC' : '#64748B',
+                    cursor: 'pointer',
+                    display: isMobile ? 'none' : 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s'
+                  }}
+                  title={isInputPinned ? "Unpin omnibar" : "Pin omnibar expanded"}
+                >
+                  <Pin size={14} style={{ transform: isInputPinned ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+
+                {/* Glowing Send Button */}
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={loading}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: loading ? T.dim : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
+                    border: 'none',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: loading ? 'none' : '0 4px 16px rgba(168, 85, 247, 0.45)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}
+                </button>
               </div>
-              <button onClick={handleSend} disabled={loading}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: loading ? T.dim : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-                  border: 'none',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: loading ? 'none' : '0 4px 16px rgba(168, 85, 247, 0.35)',
-                  transition: 'all 0.2s ease'
-                }}>
-                {loading ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} color="#fff" />}
-              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
       </>
     )}
     </div>
 
       <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translate(-50%, 12px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes slideInLeftDrawer {
+          from { opacity: 0; transform: translateX(-100%); }
+          to { opacity: 1; transform: translateX(0); }
+        }
         .md-content p { margin: 0 0 0.6em 0; text-align: justify; line-height: 1.65; }
         .md-content p:last-child { margin: 0; }
         .md-content ul, .md-content ol { margin: 0.4em 0; padding-left: 1.5em; text-align: justify; line-height: 1.65; }

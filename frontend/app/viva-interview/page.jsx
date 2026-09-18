@@ -8,7 +8,8 @@ import {
   BookOpen, Code, Brain, Settings, Loader2, FlaskConical, 
   Upload, Mic, MicOff, Check, RefreshCw, Printer, AlertTriangle, FileCheck,
   Edit3, ListFilter, Gauge, Zap, Search, Activity, BarChart2, Trash2,
-  Radio, PhoneOff, Wifi, Lightbulb, Flag, Clock, Target, CheckCircle2, XCircle
+  Radio, PhoneOff, Wifi, Lightbulb, Flag, Clock, Target, CheckCircle2, XCircle,
+  Sparkles, Code2, Lock
 } from 'lucide-react';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import { getJwtToken } from '@/lib/jwtCache';
@@ -100,12 +101,32 @@ export default function VivaInterviewPage() {
 
   // Configuration States
   const [sessionMode, setSessionMode] = useState('viva'); // 'viva' | 'interview' | 'aptitude'
-  const [setupStep, setSetupStep] = useState(1); // 1: Topic, 2: Settings, 3: Start
+  const [setupStep, setSetupStep] = useState(1); // 1: Topic, 2: Level & Scope, 3: Oral Engine, 4: Start
+  const [interviewStep, setInterviewStep] = useState(1); // 1: Target Role, 2: Seniority & Stack, 3: Rigor & Mode, 4: Start
+  const [maxUnlockedVivaStep, setMaxUnlockedVivaStep] = useState(1);
+  const [maxUnlockedInterviewStep, setMaxUnlockedInterviewStep] = useState(1);
+  const [enteringHeroViva, setEnteringHeroViva] = useState(1); // 1 on load: triggers Iron Man slow-mo flight entrance
+  const [enteringHeroInterview, setEnteringHeroInterview] = useState(1);
+  const [isRightOpen, setIsRightOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [level, setLevel] = useState('College'); // Viva: 'School' | 'College' | 'PG', Interview: 'Junior' | 'Mid-Level' | 'Senior'
+  const [vivaFocus, setVivaFocus] = useState('Comprehensive Oral Voce');
   const [difficulty, setDifficulty] = useState('Medium'); // 'Easy' | 'Medium' | 'Hard'
+  const [interviewFormat, setInterviewFormat] = useState('Interactive Live Screen');
   const [topic, setTopic] = useState('');
   const [activeSessionTopic, setActiveSessionTopic] = useState('');
+
+  // Support direct mode selection via URL query param (?mode=interview)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      if (mode === 'interview' || mode === 'technical') {
+        setIsRightOpen(true);
+        setSessionMode('interview');
+      }
+    }
+  }, []);
 
   // Aptitude Mode States
   const [aptCategory, setAptCategory] = useState("Quantitative Aptitude");
@@ -195,6 +216,37 @@ export default function VivaInterviewPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [inputMode, setInputMode] = useState('voice'); // 'voice' | 'text'
   const [savedSessionFound, setSavedSessionFound] = useState(null);
+  
+  // Superhero Entrance Animation & Step Unlock Timers (1.0s synchronized sequence)
+  useEffect(() => {
+    if (enteringHeroViva) {
+      const timer = setTimeout(() => {
+        setEnteringHeroViva(null);
+      }, 1050);
+      return () => clearTimeout(timer);
+    }
+  }, [enteringHeroViva]);
+
+  useEffect(() => {
+    if (enteringHeroInterview) {
+      const timer = setTimeout(() => {
+        setEnteringHeroInterview(null);
+      }, 1050);
+      return () => clearTimeout(timer);
+    }
+  }, [enteringHeroInterview]);
+
+  const advanceVivaStep = (nextStep) => {
+    setSetupStep(nextStep);
+    setMaxUnlockedVivaStep((prev) => Math.max(prev, nextStep));
+    setEnteringHeroViva(nextStep);
+  };
+
+  const advanceInterviewStep = (nextStep) => {
+    setInterviewStep(nextStep);
+    setMaxUnlockedInterviewStep((prev) => Math.max(prev, nextStep));
+    setEnteringHeroInterview(nextStep);
+  };
   
   // History & Scorecard
   const [history, setHistory] = useState([]);
@@ -1885,379 +1937,619 @@ export default function VivaInterviewPage() {
         height: '100%',
         maxHeight: '100%',
         overflow: 'hidden',
-        background: '#090D16',
+        background: '#070A12',
         color: '#F8FAFC',
         fontFamily: 'var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
         display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'stretch',
+        justifyContent: 'stretch',
+        padding: 0,
         position: 'relative',
         boxSizing: 'border-box'
       }}>
-        {/* ============================================================== */}
-        {/* LEFT STEPPER SIDEBAR */}
-        {/* ============================================================== */}
-        <div style={{
-          width: isMobile ? '100%' : '270px',
-          minWidth: isMobile ? '100%' : '260px',
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: isMobile ? '14px 16px 8px 16px' : '28px 20px 24px 32px',
-          position: 'relative',
-          boxSizing: 'border-box',
-          zIndex: 2,
-          overflow: 'hidden'
-        }}>
-          {/* Top: Back Button + Vertical Stepper */}
-          <div>
-            {/* Back Button */}
-            <button
-              type="button"
-              onClick={handleGoBack}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'transparent',
-                border: 'none',
-                color: '#94A3B8',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: '4px 0',
-                marginBottom: isMobile ? 14 : 32,
-                transition: 'color 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#94A3B8'}
-            >
-              <ArrowLeft size={16} />
-              <span>Back</span>
-            </button>
+        {/* User Defined Box Container Sliding Layout */}
+        <style>{`
+          .box-container {
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            max-height: 100%;
+            display: flex;
+            align-items: stretch;
+            border-radius: 0;
+            border: none;
+            background: #090D18;
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+            transition: box-shadow 0.45s ease;
+          }
 
-            {/* Stepper Steps List */}
-            <div style={{
-              display: 'flex',
-              flexDirection: isMobile ? 'row' : 'column',
-              gap: isMobile ? 10 : 0,
-              justifyContent: isMobile ? 'space-between' : 'flex-start',
-              alignItems: isMobile ? 'center' : 'stretch'
-            }}>
-              {/* Step 1: Topic */}
-              <div 
-                onClick={() => setSetupStep(1)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                  cursor: 'pointer',
-                  position: 'relative'
-                }}
-              >
-                <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: setupStep >= 1 ? '#7C3AED' : 'rgba(255, 255, 255, 0.06)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  boxShadow: setupStep === 1 ? '0 0 16px rgba(124, 58, 237, 0.7)' : 'none',
-                  flexShrink: 0,
-                  transition: 'all 0.25s ease'
-                }}>
-                  1
-                </div>
-                {!isMobile && (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{
-                      fontSize: '0.92rem',
-                      fontWeight: 700,
-                      color: setupStep >= 1 ? '#FFFFFF' : '#64748B'
-                    }}>Topic</span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      color: '#64748B',
-                      marginTop: 1
-                    }}>Choose what to be examined on</span>
-                  </div>
-                )}
-              </div>
+          .box-container.right-open {
+            box-shadow: none;
+          }
 
-              {/* Vertical connector line */}
-              {!isMobile && (
-                <div style={{
-                  width: 2,
-                  height: 28,
-                  background: setupStep >= 2 ? '#7C3AED' : 'rgba(255, 255, 255, 0.1)',
-                  marginLeft: 16,
-                  margin: '3px 0',
-                  transition: 'background 0.25s ease'
-                }} />
-              )}
+          .box1-content,
+          .box1-side,
+          .box2-content,
+          .box2-side {
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+          }
 
-              {/* Step 2: Settings */}
-              <div 
-                onClick={() => {
-                  if (isTopicReady) setSetupStep(2);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                  cursor: isTopicReady ? 'pointer' : 'not-allowed',
-                  position: 'relative',
-                  opacity: isTopicReady ? 1 : 0.6
-                }}
-              >
-                <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: setupStep >= 2 ? '#7C3AED' : 'rgba(255, 255, 255, 0.06)',
-                  color: setupStep >= 2 ? '#FFFFFF' : '#94A3B8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  boxShadow: setupStep === 2 ? '0 0 16px rgba(124, 58, 237, 0.7)' : 'none',
-                  flexShrink: 0,
-                  transition: 'all 0.25s ease'
-                }}>
-                  2
-                </div>
-                {!isMobile && (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{
-                      fontSize: '0.92rem',
-                      fontWeight: 700,
-                      color: setupStep >= 2 ? '#FFFFFF' : '#64748B'
-                    }}>Settings</span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      color: '#64748B',
-                      marginTop: 1
-                    }}>Set your preferences</span>
-                  </div>
-                )}
-              </div>
+          .box1-side,
+          .box2-side {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+          }
 
-              {/* Vertical connector line */}
-              {!isMobile && (
-                <div style={{
-                  width: 2,
-                  height: 28,
-                  background: setupStep >= 3 ? '#7C3AED' : 'rgba(255, 255, 255, 0.1)',
-                  marginLeft: 16,
-                  margin: '3px 0',
-                  transition: 'background 0.25s ease'
-                }} />
-              )}
+          /* ACADEMIC VIVA VIEW (DEFAULT) */
+          .box1-content {
+            background: #090D18;
+            flex: 7 !important;
+            max-width: 74% !important;
+            display: flex;
+            flex-direction: column;
+            opacity: 1 !important;
+            min-width: 0;
+            overflow-y: auto;
+            padding: ${isMobile ? '16px 12px' : '26px 44px 26px 44px'};
+            box-sizing: border-box;
+            pointer-events: auto !important;
+          }
 
-              {/* Step 3: Start */}
-              <div 
-                onClick={() => {
-                  if (isTopicReady) setSetupStep(3);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                  cursor: isTopicReady ? 'pointer' : 'not-allowed',
-                  position: 'relative',
-                  opacity: isTopicReady ? 1 : 0.6
-                }}
-              >
-                <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: setupStep >= 3 ? '#7C3AED' : 'rgba(255, 255, 255, 0.06)',
-                  color: setupStep >= 3 ? '#FFFFFF' : '#94A3B8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  boxShadow: setupStep === 3 ? '0 0 16px rgba(124, 58, 237, 0.7)' : 'none',
-                  flexShrink: 0,
-                  transition: 'all 0.25s ease'
-                }}>
-                  3
-                </div>
-                {!isMobile && (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{
-                      fontSize: '0.92rem',
-                      fontWeight: 700,
-                      color: setupStep >= 3 ? '#FFFFFF' : '#64748B'
-                    }}>Start</span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      color: '#64748B',
-                      marginTop: 1
-                    }}>Begin your {sessionMode === 'viva' ? 'viva' : 'interview'}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          .box1-side {
+            background: linear-gradient(180deg, rgba(20, 16, 44, 0.94) 0%, rgba(9, 13, 26, 0.98) 100%);
+            border-left: 1px solid rgba(124, 58, 237, 0.2);
+            flex: 3 !important;
+            max-width: 26% !important;
+            opacity: 1 !important;
+            min-width: 0;
+            padding: 24px 22px;
+            pointer-events: auto !important;
+          }
 
-          {/* Bottom Left Radial Glow & Branding */}
-          {!isMobile && (
-            <div style={{
-              position: 'relative',
-              paddingTop: 24,
-              userSelect: 'none'
-            }}>
-              {/* Radial purple glow sphere */}
-              <div style={{
-                position: 'absolute',
-                bottom: -30,
-                left: -32,
-                width: 210,
-                height: 210,
-                borderRadius: '50%',
-                background: 'radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.42) 0%, rgba(124, 58, 237, 0.12) 50%, transparent 75%)',
-                pointerEvents: 'none',
-                zIndex: 0
-              }} />
+          /* TECHNICAL INTERVIEW VIEW (COLLAPSED IN DEFAULT) */
+          .box2-side {
+            background: linear-gradient(180deg, rgba(10, 24, 44, 0.94) 0%, rgba(7, 13, 24, 0.98) 100%);
+            border-right: none !important;
+            flex: 0 0 0% !important;
+            max-width: 0px !important;
+            width: 0px !important;
+            opacity: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            pointer-events: none !important;
+          }
 
-              {/* Stacked Vertical Typography */}
-              <div style={{
-                position: 'relative',
-                zIndex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                color: '#C4B5FD',
-                letterSpacing: '0.02em'
-              }}>
-                <span>Learn</span>
-                <span>Ask</span>
-                <span>Improve</span>
-                <span>Repeat</span>
-                <span style={{ fontSize: '1.2rem', lineHeight: '0.9rem', opacity: 0.7 }}>—</span>
-              </div>
-            </div>
-          )}
-        </div>
+          .box2-content {
+            background: #070B14;
+            flex: 0 0 0% !important;
+            max-width: 0px !important;
+            width: 0px !important;
+            opacity: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            pointer-events: none !important;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+          }
 
-        {/* ============================================================== */}
-        {/* RIGHT MAIN CARD CONTAINER */}
-        {/* ============================================================== */}
-        <div style={{
-          flex: 1,
-          height: '100%',
-          padding: isMobile ? '8px 12px 16px 12px' : '18px 28px 18px 8px',
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          boxSizing: 'border-box'
-        }}>
-          <div style={{
-            flex: 1,
-            height: '100%',
-            maxHeight: '100%',
-            background: '#0E1322',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 20,
-            padding: isMobile ? '16px 14px' : '22px 30px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.45)',
+          /* RIGHT-OPEN STATE (TECHNICAL INTERVIEW ACTIVE) */
+          .box-container.right-open .box1-content {
+            flex: 0 0 0% !important;
+            max-width: 0px !important;
+            width: 0px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+
+          .box-container.right-open .box1-side {
+            flex: 0 0 0% !important;
+            max-width: 0px !important;
+            width: 0px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+
+          .box-container.right-open .box2-side {
+            flex: 3 !important;
+            max-width: 26% !important;
+            opacity: 1 !important;
+            padding: 24px 22px !important;
+            border-right: 1px solid rgba(14, 165, 233, 0.2) !important;
+            pointer-events: auto !important;
+          }
+
+          .box-container.right-open .box2-content {
+            flex: 7 !important;
+            max-width: 74% !important;
+            opacity: 1 !important;
+            padding: ${isMobile ? '16px 12px' : '26px 44px 26px 44px'} !important;
+            pointer-events: auto !important;
+          }
+
+          @keyframes heroFloat {
+            0%, 100% {
+              transform: translateY(0px) scale(1.18);
+            }
+            50% {
+              transform: translateY(-4px) scale(1.22);
+            }
+          }
+
+          @keyframes botFloatBounce {
+            0%, 100% {
+              transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+              transform: translateY(-8px) rotate(0.8deg);
+            }
+          }
+
+          @keyframes pulseGlowRing {
+            0%, 100% {
+              transform: scale(0.95);
+              opacity: 0.3;
+            }
+            50% {
+              transform: scale(1.08);
+              opacity: 0.7;
+            }
+          }
+
+          @media (max-width: 960px) {
+            .box-container {
+              border-radius: 0;
+              border: none;
+              height: 100%;
+              max-height: 100%;
+            }
+            .box1-side, .box2-side {
+              display: none !important;
+            }
+            .box1-content {
+              flex: 1 !important;
+              opacity: 1 !important;
+              pointer-events: auto !important;
+            }
+            .box-container.right-open .box2-content {
+              flex: 1 !important;
+              opacity: 1 !important;
+              padding: 16px 12px !important;
+              pointer-events: auto !important;
+            }
+          }
+
+          /* ============================================================== */
+          /* HORIZONTAL 4-STEP PROGRESS BAR (SUPERHERO VEDIKA BOTS)        */
+          /* ============================================================== */
+          .step-progress-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 50px 0 46px 0;
+            position: relative;
+            flex-shrink: 0;
+          }
+
+          .step-progress-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            padding: 0 14px;
+            box-sizing: border-box;
+          }
+
+          .step-progress-container::before {
+            content: "";
+            background-color: rgba(255, 255, 255, 0.14);
+            position: absolute;
+            top: 50%;
+            left: 21px;
+            right: 21px;
+            transform: translateY(-50%);
+            height: 4px;
+            z-index: 0;
+            border-radius: 2px;
+          }
+
+          .step-progress-bar {
+            position: absolute;
+            top: 50%;
+            left: 21px;
+            transform: translateY(-50%);
+            height: 4px;
+            z-index: 0;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+          }
+
+          .step-progress-bar.viva-bar {
+            background: linear-gradient(90deg, #7C3AED, #C084FC);
+            box-shadow: 0 0 14px rgba(168, 85, 247, 0.65);
+          }
+
+          .step-progress-bar.interview-bar {
+            background: linear-gradient(90deg, #0EA5E9, #38BDF8);
+            box-shadow: 0 0 14px rgba(14, 165, 233, 0.65);
+          }
+
+          .step-circle {
+            background: #1E293B;
+            border-radius: 50%;
+            height: 14px;
+            width: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
+          }
+
+          .step-circle.active.viva-circle {
+            border-color: #A855F7;
+            background-color: #FFFFFF;
+            box-shadow: 0 0 16px rgba(168, 85, 247, 0.85);
+            transform: scale(1.18);
+          }
+
+          .step-circle.active.interview-circle {
+            border-color: #38BDF8;
+            background-color: #FFFFFF;
+            box-shadow: 0 0 16px rgba(14, 165, 233, 0.85);
+            transform: scale(1.18);
+          }
+
+          /* ======================================================= */
+          /* SUPERHERO REALISTIC SPRITE SHEET SEQUENTIAL SYSTEM      */
+          /* ======================================================= */
+          .hero-actor-container {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            margin-left: -25px;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            z-index: 2;
+            will-change: transform, opacity;
+            transform-origin: bottom center;
+          }
+
+          .hero-sprite-frame {
+            width: 50px;
+            height: 50px;
+            background-size: 300px 50px;
+            background-repeat: no-repeat;
+            display: block;
+            image-rendering: -webkit-optimize-contrast;
+            pointer-events: none;
+            user-select: none;
+          }
+
+          .hero-sprite-frame.ironman {
+            background-image: url('/spritesheet-ironman.png');
+          }
+          .hero-sprite-frame.batman {
+            background-image: url('/spritesheet-batman.png');
+          }
+          .hero-sprite-frame.doctorstrange {
+            background-image: url('/spritesheet-doctorstrange.png');
+          }
+          .hero-sprite-frame.superman {
+            background-image: url('/spritesheet-superman.png');
+          }
+
+          /* 6-Frame Sequential Playback: Dive -> Flare -> Touchdown -> Impact Shockwave -> Rise -> Hero Stance */
+          .hero-sprite-frame.playing {
+            animation: playHeroLandingSprite 1.0s steps(5) forwards;
+          }
+
+          .hero-sprite-frame.settled {
+            background-position: -250px 0px;
+          }
+
+          @keyframes playHeroLandingSprite {
+            0% { background-position: 0px 0px; }
+            100% { background-position: -250px 0px; }
+          }
+
+          /* --- 1. IRON MAN: DIVE & REPULSOR SLAM LANDING TRAJECTORY --- */
+          .hero-actor-container.ironman.entering {
+            animation: ironmanRealisticFlight 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          }
+
+          @keyframes ironmanRealisticFlight {
+            0% {
+              transform: translate3d(-48px, -36px, 0) scale(0.85);
+              opacity: 0;
+            }
+            30% {
+              opacity: 1;
+              transform: translate3d(-18px, -14px, 0) scale(0.96);
+            }
+            58% {
+              /* Touchdown impact aligns with Frame 3 repulsor shockwave */
+              transform: translate3d(0px, 0px, 0) scale(1.02);
+            }
+            75% {
+              transform: translate3d(0px, 0px, 0) scale(0.99);
+            }
+            100% {
+              transform: translate3d(0px, 0px, 0) scale(1);
+              opacity: 1;
+            }
+          }
+
+          /* --- 2. BATMAN: SHADOW DROP & BAT WINGS GLIDE LANDING TRAJECTORY --- */
+          .hero-actor-container.batman.entering {
+            animation: batmanRealisticGlide 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          }
+
+          @keyframes batmanRealisticGlide {
+            0% {
+              transform: translate3d(0px, -48px, 0) scale(0.88);
+              opacity: 0;
+            }
+            35% {
+              opacity: 1;
+              transform: translate3d(0px, -18px, 0) scale(0.96);
+            }
+            60% {
+              /* Touchdown aligns with Frame 3 cape wrap crouch */
+              transform: translate3d(0px, 0px, 0) scale(1.02);
+            }
+            78% {
+              transform: translate3d(0px, 0px, 0) scale(0.99);
+            }
+            100% {
+              transform: translate3d(0px, 0px, 0) scale(1);
+              opacity: 1;
+            }
+          }
+
+          /* --- 3. DOCTOR STRANGE: FIERY PORTAL EMERGENCE TRAJECTORY --- */
+          .hero-actor-container.doctorstrange.entering {
+            animation: doctorStrangeRealisticEmergence 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          }
+
+          @keyframes doctorStrangeRealisticEmergence {
+            0% {
+              transform: translate3d(0px, -12px, 0) scale(0.85);
+              opacity: 0;
+            }
+            25% {
+              opacity: 1;
+              transform: translate3d(0px, -6px, 0) scale(0.96);
+            }
+            58% {
+              /* Steps through threshold into rune splash touchdown */
+              transform: translate3d(0px, 0px, 0) scale(1.02);
+            }
+            80% {
+              transform: translate3d(0px, -2px, 0) scale(1);
+            }
+            100% {
+              transform: translate3d(0px, 0px, 0) scale(1);
+              opacity: 1;
+            }
+          }
+
+          /* --- 4. SUPERMAN: SUPERSONIC SLAM TRAJECTORY --- */
+          .hero-actor-container.superman.entering {
+            animation: supermanRealisticSonicLanding 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          }
+
+          @keyframes supermanRealisticSonicLanding {
+            0% {
+              transform: translate3d(45px, -36px, 0) scale(0.85);
+              opacity: 0;
+            }
+            30% {
+              opacity: 1;
+              transform: translate3d(18px, -14px, 0) scale(0.96);
+            }
+            55% {
+              /* Ground slam impact synchronized with Frame 2/3 crater shockwave */
+              transform: translate3d(0px, 0px, 0) scale(1.04);
+            }
+            75% {
+              transform: translate3d(0px, 0px, 0) scale(0.99);
+            }
+            100% {
+              transform: translate3d(0px, 0px, 0) scale(1);
+              opacity: 1;
+            }
+          }
+
+          /* --- AMBIENT IDLE DOCKING STATES --- */
+          .hero-actor-container.idle.ironman,
+          .hero-actor-container.idle.doctorstrange {
+            animation: heroSmoothHover 2.8s ease-in-out infinite;
+          }
+
+          .hero-actor-container.idle.batman,
+          .hero-actor-container.idle.superman {
+            animation: heroSmoothStance 3.2s ease-in-out infinite;
+          }
+
+          @keyframes heroSmoothHover {
+            0%, 100% { transform: translate3d(0, 0px, 0); }
+            50% { transform: translate3d(0, -4px, 0); }
+          }
+          @keyframes heroSmoothStance {
+            0%, 100% { transform: translate3d(0, 0px, 0) scale(1); }
+            50% { transform: translate3d(0, -1.5px, 0) scale(1.02); }
+          }
+
+          /* Locked Stepper Circle Styling */
+          .step-circle.locked-circle {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+            opacity: 0.5;
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+          }
+          .step-circle.locked-circle:hover {
+            border-color: rgba(255, 255, 255, 0.35) !important;
+            opacity: 0.65;
+          }
+          .step-caption.locked-caption {
+            color: #475569 !important;
+            opacity: 0.65;
+          }
+
+          .step-circle .step-caption {
+            position: absolute;
+            font-size: 13px;
+            font-weight: 700;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            letter-spacing: 0.01em;
+          }
+
+          .step-btn {
+            border: 0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.92rem;
+            font-weight: 700;
+            padding: 10px 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+          }
+
+          .step-btn.viva-btn {
+            background: #7C3AED;
+            color: #FFFFFF;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+          }
+          .step-btn.viva-btn:hover:not(:disabled) {
+            background: #8B5CF6;
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6);
+            transform: translateY(-1px);
+          }
+
+          .step-btn.interview-btn {
+            background: #0EA5E9;
+            color: #FFFFFF;
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
+          }
+          .step-btn.interview-btn:hover:not(:disabled) {
+            background: #38BDF8;
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+            transform: translateY(-1px);
+          }
+
+          .step-btn.prev-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #CBD5E1;
+          }
+          .step-btn.prev-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+          }
+
+          .step-btn:active:not(:disabled) {
+            transform: scale(0.95);
+          }
+
+          .step-btn:disabled {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 255, 255, 0.06) !important;
+            color: #475569 !important;
+            cursor: not-allowed;
+            box-shadow: none !important;
+            transform: none !important;
+          }
+        `}</style>
+
+        <div className={`box-container ${isRightOpen ? 'right-open' : ''}`}>
+          {/* ============================================================== */}
+          {/* BOX 1 CONTENT: LARGER PANEL (FLEX: 4) - ACADEMIC VIVA          */}
+          {/* ============================================================== */}
+          <div className="box1-content" style={{
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
-            position: 'relative',
-            overflow: 'hidden',
-            boxSizing: 'border-box'
+            overflowY: 'auto',
+            minWidth: 0,
+            boxSizing: 'border-box',
+            position: 'relative'
           }}>
-            {/* Top Bar: Mode Switcher Capsule */}
+            {/* Top Bar: Back Button */}
             <div style={{
               display: 'flex',
-              justifyContent: 'flex-end',
-              marginBottom: 14,
+              justifyContent: 'flex-start',
               alignItems: 'center',
+              marginBottom: 6,
               flexShrink: 0
             }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.09)',
-                borderRadius: 9999,
-                padding: 3,
-                gap: 3
-              }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSessionMode('viva');
-                    if (!customVivaTopic) setCustomVivaTopic('Database Management Systems (DBMS)');
-                  }}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: 9999,
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    background: sessionMode === 'viva' ? '#7C3AED' : 'transparent',
-                    color: sessionMode === 'viva' ? '#FFFFFF' : '#94A3B8',
-                    boxShadow: sessionMode === 'viva' ? '0 0 16px rgba(124, 58, 237, 0.55)' : 'none'
-                  }}
-                >
-                  Academic Viva
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSessionMode('interview');
-                    if (!topic) setTopic('React & Next.js');
-                  }}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: 9999,
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    background: sessionMode === 'interview' ? '#7C3AED' : 'transparent',
-                    color: sessionMode === 'interview' ? '#FFFFFF' : '#94A3B8',
-                    boxShadow: sessionMode === 'interview' ? '0 0 16px rgba(124, 58, 237, 0.55)' : 'none'
-                  }}
-                >
-                  Technical Interview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSessionMode('aptitude')}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 9999,
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    background: sessionMode === 'aptitude' ? '#7C3AED' : 'transparent',
-                    color: sessionMode === 'aptitude' ? '#FFFFFF' : '#94A3B8',
-                    boxShadow: sessionMode === 'aptitude' ? '0 0 16px rgba(124, 58, 237, 0.55)' : 'none'
-                  }}
-                >
-                  Aptitude Test
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleGoBack}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 9999,
+                  padding: '5px 14px',
+                  color: '#94A3B8',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#FFFFFF';
+                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#94A3B8';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                <ArrowLeft size={15} />
+                <span>Back</span>
+              </button>
             </div>
 
             {/* Saved Session Restore Alert (if exists) */}
@@ -2320,6 +2612,81 @@ export default function VivaInterviewPage() {
               </div>
             )}
 
+            {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
+            <div className="step-progress-wrapper">
+              <div className="step-progress-container">
+                <div
+                  className="step-progress-bar viva-bar"
+                  style={{ width: `calc((100% - 42px) * ${((setupStep - 1) / 3)})` }}
+                />
+                {[
+                  { step: 1, caption: 'Topic', hero: 'Iron Man', heroKey: 'ironman', icon: '/vedika-bot-ironman-icon.png' },
+                  { step: 2, caption: 'Level', hero: 'Batman', heroKey: 'batman', icon: '/vedika-bot-batman-icon.png' },
+                  { step: 3, caption: 'Oral Engine', hero: 'Doctor Strange', heroKey: 'doctorstrange', icon: '/vedika-bot-doctorstrange-icon.png' },
+                  { step: 4, caption: 'Start', hero: 'Superman', heroKey: 'superman', icon: '/vedika-bot-superman-icon.png' }
+                ].map((item) => {
+                  const isRevealed = item.step <= maxUnlockedVivaStep;
+                  const isPassed = setupStep >= item.step;
+                  const isCurrent = setupStep === item.step;
+                  const isEntering = enteringHeroViva === item.step;
+
+                  if (!isRevealed) {
+                    return (
+                      <div
+                        key={item.step}
+                        className="step-circle locked-circle"
+                        title={`Step ${item.step}: ${item.caption} (Locked - click Next to reveal)`}
+                      >
+                        <Lock size={8} color="#64748B" />
+                        <div className="step-caption locked-caption">
+                          {item.caption}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={item.step}
+                      className={`step-circle viva-circle ${isPassed ? 'active' : ''}`}
+                      onClick={() => {
+                        if (item.step <= maxUnlockedVivaStep) {
+                          if (item.step > 1 && !isTopicReady) {
+                            setCustomVivaTopic('Database Management Systems (DBMS)');
+                            setVivaSource('custom');
+                          }
+                          setSetupStep(item.step);
+                        }
+                      }}
+                      title={`Step ${item.step}: ${item.caption} (${item.hero})`}
+                    >
+                      {/* Superhero Realistic Sprite Sheet Sequence Actor (clean shadow, no colored glow) */}
+                      <div
+                        className={`hero-actor-container ${item.heroKey} ${isEntering ? 'entering' : 'idle'}`}
+                        style={{
+                          filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.55))'
+                        }}
+                      >
+                        <div
+                          className={`hero-sprite-frame ${item.heroKey} ${isEntering ? 'playing' : 'settled'}`}
+                        />
+                      </div>
+
+                      <div
+                        className="step-caption"
+                        style={{
+                          color: isCurrent ? '#FFFFFF' : isPassed ? '#C4B5FD' : '#64748B',
+                          textShadow: isCurrent ? '0 0 10px rgba(168, 85, 247, 0.5)' : 'none'
+                        }}
+                      >
+                        {item.caption}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* STEP 1: CHOOSE TOPIC */}
             {setupStep === 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
@@ -2338,7 +2705,7 @@ export default function VivaInterviewPage() {
                     color: '#94A3B8',
                     margin: '0 0 16px 0'
                   }}>
-                    Enter a subject or pick from suggestions.
+                    Enter an academic subject or engineering topic for your oral defense.
                   </p>
 
                   {/* Search Input */}
@@ -2356,33 +2723,19 @@ export default function VivaInterviewPage() {
                     />
                     <input
                       type="text"
-                      value={sessionMode === 'viva' ? customVivaTopic : (sessionMode === 'aptitude' ? aptTopic : topic)}
+                      value={customVivaTopic}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        if (sessionMode === 'viva') {
-                          setCustomVivaTopic(val);
-                          setVivaSource('custom');
-                        } else if (sessionMode === 'aptitude') {
-                          setAptTopic(val);
-                        } else {
-                          setTopic(val);
-                          setProgrammingLanguage(val);
-                        }
+                        setCustomVivaTopic(e.target.value);
+                        setVivaSource('custom');
                       }}
-                      placeholder={
-                        sessionMode === 'viva'
-                          ? 'e.g., DBMS, Control Systems, Organic Chemistry'
-                          : sessionMode === 'interview'
-                          ? 'e.g., React & Next.js, System Design, Python Backend'
-                          : 'e.g., Quantitative Aptitude, Time and Work, Syllogisms'
-                      }
+                      placeholder="e.g., DBMS, Operating Systems, Organic Chemistry, Fluid Mechanics..."
                       style={{
                         width: '100%',
-                        height: 46,
+                        height: 48,
                         padding: '0 16px 0 44px',
-                        borderRadius: 12,
+                        borderRadius: 14,
                         background: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        border: '1.5px solid rgba(124, 58, 237, 0.35)',
                         color: '#FFFFFF',
                         fontSize: '0.92rem',
                         outline: 'none',
@@ -2394,126 +2747,87 @@ export default function VivaInterviewPage() {
                         e.target.style.boxShadow = '0 0 0 3px rgba(124, 58, 237, 0.25)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                        e.target.style.borderColor = 'rgba(124, 58, 237, 0.35)';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
                   </div>
 
-                  {/* Suggestions Section */}
-                  <div>
+                  {/* Adaptive Oral Defense Guidance Card */}
+                  <div style={{
+                    marginTop: 18,
+                    padding: '16px 20px',
+                    borderRadius: 14,
+                    background: 'rgba(124, 58, 237, 0.06)',
+                    border: '1px solid rgba(124, 58, 237, 0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10
+                  }}>
                     <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
                       fontSize: '0.86rem',
-                      fontWeight: 600,
-                      color: '#F1F5F9',
-                      marginBottom: 10
+                      fontWeight: 700,
+                      color: '#C4B5FD'
                     }}>
-                      Suggested for you
+                      <Sparkles size={16} color="#A855F7" />
+                      <span>Adaptive Oral Defense Engine</span>
                     </div>
-
+                    <p style={{
+                      fontSize: '0.82rem',
+                      color: '#94A3B8',
+                      lineHeight: 1.5,
+                      margin: 0
+                    }}>
+                      Vedika dynamically formulates oral viva questions targeting textbook theorems, fundamental principles, practical edge cases, and oral proofs based on your topic.
+                    </p>
                     <div style={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '8px 10px'
+                      gap: 16,
+                      paddingTop: 4,
+                      borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                      fontSize: '0.78rem',
+                      color: '#CBD5E1'
                     }}>
-                      {(sessionMode === 'viva' ? [
-                        'DBMS',
-                        'OS',
-                        'CN',
-                        'Compiler Design',
-                        'Machine Learning',
-                        'Digital Electronics',
-                        'Data Structures & Algorithms',
-                        'Computer Architecture'
-                      ] : sessionMode === 'interview' ? [
-                        'React & Next.js',
-                        'Python Backend',
-                        'System Design',
-                        'Node.js & Express',
-                        'Java Spring Boot',
-                        'DevOps & Docker',
-                        'Full Stack Web',
-                        'Cloud Computing (AWS)'
-                      ] : [
-                        'Time and Work',
-                        'Percentages',
-                        'Profit and Loss',
-                        'Probability',
-                        'Syllogisms',
-                        'Coding-Decoding',
-                        'Data Interpretation'
-                      ]).map((sug) => {
-                        const currentVal = sessionMode === 'viva' ? customVivaTopic : (sessionMode === 'aptitude' ? aptTopic : topic);
-                        const isSelected = currentVal === sug;
-                        return (
-                          <button
-                            key={sug}
-                            type="button"
-                            onClick={() => {
-                              if (sessionMode === 'viva') {
-                                setCustomVivaTopic(sug);
-                                setVivaSource('custom');
-                              } else if (sessionMode === 'aptitude') {
-                                setAptTopic(sug);
-                              } else {
-                                setTopic(sug);
-                                setProgrammingLanguage(sug);
-                              }
-                            }}
-                            style={{
-                              padding: '7px 16px',
-                              borderRadius: 9999,
-                              background: isSelected ? 'rgba(124, 58, 237, 0.3)' : 'rgba(255, 255, 255, 0.05)',
-                              border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
-                              color: isSelected ? '#FFFFFF' : '#CBD5E1',
-                              fontSize: '0.82rem',
-                              fontWeight: isSelected ? 700 : 500,
-                              cursor: 'pointer',
-                              boxShadow: isSelected ? '0 0 12px rgba(124, 58, 237, 0.35)' : 'none',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            {sug}
-                          </button>
-                        );
-                      })}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#A855F7" /> Rigorous Viva Questions
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#A855F7" /> Real-time Speech Evaluation
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#A855F7" /> Scoring & Conceptual Feedback
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Next Button */}
-                <div style={{ marginTop: 18 }}>
+                {/* Bottom Nav Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
                   <button
                     type="button"
+                    className="step-btn prev-btn"
+                    disabled={true}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    className="step-btn viva-btn"
                     disabled={!isTopicReady}
-                    onClick={() => setSetupStep(2)}
-                    style={{
-                      width: '100%',
-                      height: 48,
-                      padding: '0 24px',
-                      borderRadius: 14,
-                      background: isTopicReady ? '#7C3AED' : 'rgba(124, 58, 237, 0.35)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontSize: '0.98rem',
-                      fontWeight: 700,
-                      cursor: isTopicReady ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      boxShadow: isTopicReady ? '0 0 20px rgba(124, 58, 237, 0.45)' : 'none',
-                      transition: 'all 0.2s ease'
-                    }}
+                    onClick={() => advanceVivaStep(2)}
                   >
                     <span>Next</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 2: SETTINGS */}
+            {/* STEP 2: ACADEMIC LEVEL & SYLLABUS DEPTH */}
             {setupStep === 2 && (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
                 <div>
@@ -2524,51 +2838,47 @@ export default function VivaInterviewPage() {
                     margin: '0 0 4px 0',
                     letterSpacing: '-0.01em'
                   }}>
-                    Configure Settings
+                    Academic Level & Syllabus Depth
                   </h1>
                   <p style={{
                     fontSize: '0.84rem',
                     color: '#94A3B8',
-                    margin: '0 0 14px 0'
+                    margin: '0 0 16px 0'
                   }}>
-                    Customize examination level, difficulty, and oral viva engine.
+                    Customize your examination tier and syllabus defense focus.
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {/* Setting 1: Academic / Seniority Level */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {/* Setting 1: Academic Level */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
-                        {sessionMode === 'viva' ? 'Academic Level' : 'Seniority / Experience Level'}
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                        Academic Tier
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 8 }}>
-                        {(sessionMode === 'viva' ? [
-                          { id: 'School', title: 'School Level', desc: 'Grades 9-12 fundamentals' },
-                          { id: 'College', title: 'Undergraduate', desc: 'College / B.Tech engineering' },
-                          { id: 'PG', title: 'Postgraduate', desc: "Master's & Ph.D research" }
-                        ] : [
-                          { id: 'Junior', title: 'Junior / Fresher', desc: '0 - 2 Years experience' },
-                          { id: 'Mid-Level', title: 'Mid-Level Engineer', desc: '2 - 5 Years hands-on' },
-                          { id: 'Senior', title: 'Senior / Staff', desc: '5+ Years architecture & lead' }
-                        ]).map((item) => {
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                        {[
+                          { id: 'School', title: 'School Level', desc: 'Grades 9-12 fundamentals & core definitions' },
+                          { id: 'College', title: 'Undergraduate', desc: 'College / B.Tech engineering coursework' },
+                          { id: 'PG', title: 'Postgraduate', desc: "Master's & Ph.D research level depth" }
+                        ].map((item) => {
                           const isSelected = level === item.id;
                           return (
                             <div
                               key={item.id}
                               onClick={() => setLevel(item.id)}
                               style={{
-                                padding: '8px 12px',
-                                borderRadius: 10,
-                                background: isSelected ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                                padding: '12px 14px',
+                                borderRadius: 12,
+                                background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                                 border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
-                                boxShadow: isSelected ? '0 0 12px rgba(124, 58, 237, 0.25)' : 'none'
+                                boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
                               }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: '0.84rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
                                 {item.title}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: 2 }}>
+                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
                                 {item.desc}
                               </div>
                             </div>
@@ -2577,144 +2887,68 @@ export default function VivaInterviewPage() {
                       </div>
                     </div>
 
-                    {/* Setting 2: Difficulty */}
+                    {/* Setting 2: Examination Focus / Depth */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
-                        Examination Difficulty
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                        Syllabus Defense Focus
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 8 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
                         {[
-                          { id: 'Easy', title: 'Easy', desc: 'Core definitions & basics' },
-                          { id: 'Medium', title: 'Medium', desc: 'Analytical & standard viva probes' },
-                          { id: 'Hard', title: 'Hard', desc: 'Edge cases & deep architecture' }
-                        ].map((tier) => {
-                          const isSelected = difficulty === tier.id;
+                          { id: 'Core Theory & Proofs', title: 'Core Theory & Proofs', desc: 'Textbook theorems, derivations & definitions' },
+                          { id: 'Applied Lab Experiments', title: 'Applied Lab Experiments', desc: 'Apparatus, readings, error sources & observations' },
+                          { id: 'Comprehensive Oral Voce', title: 'Comprehensive Viva Voce', desc: 'Balanced combination of theory and application' }
+                        ].map((item) => {
+                          const isSelected = vivaFocus === item.id;
                           return (
                             <div
-                              key={tier.id}
-                              onClick={() => setDifficulty(tier.id)}
+                              key={item.id}
+                              onClick={() => setVivaFocus(item.id)}
                               style={{
-                                padding: '8px 12px',
-                                borderRadius: 10,
-                                background: isSelected ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                                padding: '12px 14px',
+                                borderRadius: 12,
+                                background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                                 border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
-                                boxShadow: isSelected ? '0 0 12px rgba(124, 58, 237, 0.25)' : 'none'
+                                boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
                               }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: '0.84rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
-                                {tier.title}
+                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                                {item.title}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: 2 }}>
-                                {tier.desc}
+                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
+                                {item.desc}
                               </div>
                             </div>
                           );
                         })}
                       </div>
                     </div>
-
-                    {/* Setting 3: Oral Engine Mode */}
-                    {sessionMode !== 'aptitude' && (
-                      <div>
-                        <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
-                          Oral Viva Engine
-                        </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 8 }}>
-                          <div
-                            onClick={() => setExecutionMode('live')}
-                            style={{
-                              padding: '8px 12px',
-                              borderRadius: 10,
-                              background: executionMode === 'live' ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                              border: executionMode === 'live' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
-                              cursor: 'pointer',
-                              boxShadow: executionMode === 'live' ? '0 0 12px rgba(124, 58, 237, 0.25)' : 'none'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.84rem' }}>
-                              <Zap size={15} color="#A78BFA" />
-                              <span>Realtime Voice (Gemini Live)</span>
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
-                              Natural voice streaming with real conversational interruptions.
-                            </div>
-                          </div>
-
-                          <div
-                            onClick={() => setExecutionMode('turn')}
-                            style={{
-                              padding: '8px 12px',
-                              borderRadius: 10,
-                              background: executionMode === 'turn' ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                              border: executionMode === 'turn' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
-                              cursor: 'pointer',
-                              boxShadow: executionMode === 'turn' ? '0 0 12px rgba(124, 58, 237, 0.25)' : 'none'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.84rem' }}>
-                              <Clock size={15} color="#A78BFA" />
-                              <span>Turn-by-Turn Guided Viva</span>
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
-                              Structured rounds with 90s timer and instant audio playback.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
-                {/* Bottom Navigation Buttons */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                {/* Bottom Nav Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
                   <button
                     type="button"
+                    className="step-btn prev-btn"
                     onClick={() => setSetupStep(1)}
-                    style={{
-                      height: 44,
-                      padding: '0 20px',
-                      borderRadius: 12,
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#94A3B8',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
                   >
-                    ← Back
+                    ← Prev
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSetupStep(3)}
-                    style={{
-                      flex: 1,
-                      height: 44,
-                      padding: '0 20px',
-                      borderRadius: 12,
-                      background: '#7C3AED',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontSize: '0.94rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      boxShadow: '0 0 20px rgba(124, 58, 237, 0.45)'
-                    }}
+                    className="step-btn viva-btn"
+                    onClick={() => advanceVivaStep(3)}
                   >
-                    <span>Review & Start</span>
+                    <span>Next</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 3: REVIEW & START */}
+            {/* STEP 3: ORAL VIVA ENGINE & DIFFICULTY */}
             {setupStep === 3 && (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
                 <div>
@@ -2725,145 +2959,256 @@ export default function VivaInterviewPage() {
                     margin: '0 0 4px 0',
                     letterSpacing: '-0.01em'
                   }}>
-                    Ready for Examination
+                    Oral Engine & Rigor
                   </h1>
                   <p style={{
                     fontSize: '0.84rem',
                     color: '#94A3B8',
-                    margin: '0 0 14px 0'
+                    margin: '0 0 16px 0'
+                  }}>
+                    Select conversational speech engine and examination difficulty level.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {/* Setting 1: Oral Engine Mode */}
+                    <div>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                        Conversational Voice Engine
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+                        <div
+                          onClick={() => setExecutionMode('live')}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            background: executionMode === 'live' ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
+                            border: executionMode === 'live' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
+                            cursor: 'pointer',
+                            boxShadow: executionMode === 'live' ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
+                            <Zap size={16} color="#A78BFA" />
+                            <span>Realtime Voice (Gemini Live)</span>
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
+                            Natural voice streaming with instant speech interruptions and fluid banter.
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => setExecutionMode('turn')}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            background: executionMode === 'turn' ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
+                            border: executionMode === 'turn' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
+                            cursor: 'pointer',
+                            boxShadow: executionMode === 'turn' ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
+                            <Clock size={16} color="#A78BFA" />
+                            <span>Turn-by-Turn Guided Viva</span>
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
+                            Structured questions with 90s response countdown and instant evaluation.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Setting 2: Difficulty */}
+                    <div>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                        Examination Rigor Tier
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                        {[
+                          { id: 'Easy', title: 'Easy Tier', desc: 'Core definitions & standard principles' },
+                          { id: 'Medium', title: 'Medium Tier', desc: 'Analytical viva probes & derivations' },
+                          { id: 'Hard', title: 'Hard / Bar Raiser', desc: 'Deep architectural edge cases & proofs' }
+                        ].map((tier) => {
+                          const isSelected = difficulty === tier.id;
+                          return (
+                            <div
+                              key={tier.id}
+                              onClick={() => setDifficulty(tier.id)}
+                              style={{
+                                padding: '12px 14px',
+                                borderRadius: 12,
+                                background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
+                                border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                                {tier.title}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
+                                {tier.desc}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Nav Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+                  <button
+                    type="button"
+                    className="step-btn prev-btn"
+                    onClick={() => setSetupStep(2)}
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    type="button"
+                    className="step-btn viva-btn"
+                    onClick={() => advanceVivaStep(4)}
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: REVIEW & START */}
+            {setupStep === 4 && (
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+                <div>
+                  <h1 style={{
+                    fontSize: isMobile ? '1.3rem' : '1.45rem',
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    margin: '0 0 2px 0',
+                    letterSpacing: '-0.01em'
+                  }}>
+                    Ready for Examination
+                  </h1>
+                  <p style={{
+                    fontSize: '0.82rem',
+                    color: '#94A3B8',
+                    margin: '0 0 10px 0'
                   }}>
                     Review your configuration and launch your AI viva session.
                   </p>
 
                   {/* Summary Card */}
                   <div style={{
-                    padding: '14px 18px',
-                    borderRadius: 14,
+                    padding: '11px 16px',
+                    borderRadius: 12,
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(124, 58, 237, 0.3)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
-                    marginBottom: 12
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                    marginBottom: 10
                   }}>
-                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A78BFA', fontWeight: 700, marginBottom: 10 }}>
+                    <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A78BFA', fontWeight: 700, marginBottom: 8 }}>
                       Session Summary
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '8px 14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '6px 14px' }}>
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Track</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
-                          {sessionMode === 'viva' ? 'Academic Lab Viva' : sessionMode === 'interview' ? 'Technical Job Interview' : 'Quantitative Aptitude'}
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Track</span>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
+                          Academic Lab Viva
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Topic</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#A78BFA' }}>
-                          {sessionMode === 'viva' ? customVivaTopic : (sessionMode === 'aptitude' ? aptTopic : topic)}
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Topic</span>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#A78BFA' }}>
+                          {customVivaTopic || 'DBMS'}
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Level / Stage</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
-                          {level}
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Academic Tier</span>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
+                          {level} Level
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Difficulty</span>
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Difficulty</span>
                         <span style={{
-                          fontSize: '0.8rem',
+                          fontSize: '0.76rem',
                           fontWeight: 700,
-                          padding: '2px 8px',
+                          padding: '1px 8px',
                           borderRadius: 6,
                           background: difficulty === 'Easy' ? 'rgba(16, 185, 129, 0.2)' : difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                           color: difficulty === 'Easy' ? '#10B981' : difficulty === 'Medium' ? '#F59E0B' : '#EF4444',
                           display: 'inline-block',
-                          marginTop: 2
+                          marginTop: 1
                         }}>
                           {difficulty}
                         </span>
                       </div>
 
-                      {sessionMode !== 'aptitude' && (
-                        <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
-                          <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Oral Engine</span>
-                          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#E2E8F0' }}>
-                            {executionMode === 'live' ? '⚡ Realtime Voice Examiner (Gemini Live)' : '⏱ Turn-by-Turn Guided Viva (90s Rounds)'}
-                          </span>
-                        </div>
-                      )}
+                      <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Focus Depth</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
+                          {vivaFocus}
+                        </span>
+                      </div>
+
+                      <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Oral Engine</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
+                          {executionMode === 'live' ? '⚡ Realtime Voice Examiner (Gemini Live)' : '⏱ Turn-by-Turn Guided Viva (90s Rounds)'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Readiness Checklist */}
                   <div style={{
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     borderRadius: 10,
                     background: 'rgba(255, 255, 255, 0.02)',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6
+                    gap: 5
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={14} color="#10B981" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={13} color="#10B981" />
                       <span>Microphone will activate when examination starts</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={14} color="#10B981" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={13} color="#10B981" />
                       <span>5 core examination questions with adaptive follow-up probes</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={14} color="#10B981" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={13} color="#10B981" />
                       <span>Detailed scorecard with rubric evaluation upon completion</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Launch Action Buttons */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                {/* Bottom Nav Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
                   <button
                     type="button"
-                    onClick={() => setSetupStep(2)}
-                    style={{
-                      height: 46,
-                      padding: '0 20px',
-                      borderRadius: 12,
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#94A3B8',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
+                    className="step-btn prev-btn"
+                    onClick={() => setSetupStep(3)}
                   >
-                    ← Edit Settings
+                    ← Prev
                   </button>
-
                   <button
                     type="button"
-                    disabled={loading}
-                    onClick={sessionMode === 'aptitude' ? () => start20QuestionAptitudeSession() : handleStartSession}
-                    style={{
-                      flex: 1,
-                      height: 46,
-                      padding: '0 24px',
-                      borderRadius: 12,
-                      background: loading ? 'rgba(124, 58, 237, 0.4)' : '#7C3AED',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontSize: '0.96rem',
-                      fontWeight: 800,
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      boxShadow: '0 0 24px rgba(124, 58, 237, 0.6)',
-                      transition: 'all 0.2s ease'
-                    }}
+                    disabled={loading || !isTopicReady}
+                    onClick={() => startVoiceSession()}
+                    className="step-btn viva-btn"
+                    style={{ flex: 1, maxWidth: 340 }}
                   >
                     {loading ? (
                       <>
@@ -2873,7 +3218,7 @@ export default function VivaInterviewPage() {
                     ) : (
                       <>
                         <Mic size={18} />
-                        <span>Start Voice {sessionMode === 'viva' ? 'Viva Examination' : sessionMode === 'interview' ? 'Technical Interview' : 'Aptitude Challenge'}</span>
+                        <span>Start Voice Viva Examination</span>
                       </>
                     )}
                   </button>
@@ -2881,10 +3226,870 @@ export default function VivaInterviewPage() {
               </div>
             )}
           </div>
+
+      {/* ============================================================== */}
+      {/* BOX 1 SIDE: VEDIKA BOT IN SCHOOL UNIFORM (SMALLER PANEL: 2)    */}
+      {/* ============================================================== */}
+      <div className="box1-side">
+        {/* Top Status */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 14px',
+          borderRadius: 9999,
+          background: 'rgba(124, 58, 237, 0.12)',
+          border: '1px solid rgba(124, 58, 237, 0.3)',
+          fontSize: '0.78rem',
+          fontWeight: 700,
+          color: '#C4B5FD',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase'
+        }}>
+          <span style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: '#A855F7',
+            boxShadow: '0 0 10px #A855F7'
+          }} />
+          <span>Academic Viva Examiner</span>
+        </div>
+
+        {/* Middle: Bot Avatar in School Dress (No glow, clean shadow) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          width: '100%',
+          margin: '10px 0'
+        }}>
+          {/* Bot Avatar Image in School Uniform Dress */}
+          <img
+            src="/vedika-bot-school.png"
+            alt="Vedika Bot in School Uniform Dress"
+            style={{
+              width: 190,
+              maxWidth: '82%',
+              height: 'auto',
+              position: 'relative',
+              zIndex: 2,
+              animation: 'botFloatBounce 3.2s ease-in-out infinite',
+              filter: 'drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45))'
+            }}
+          />
+
+
+        </div>
+
+        {/* Bottom: Switch to Technical Interview Button */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          alignItems: 'center'
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsRightOpen(true);
+              setSessionMode('interview');
+              if (!topic) setTopic('Full Stack Web Development');
+            }}
+            style={{
+              width: '100%',
+              maxWidth: 290,
+              padding: '12px 20px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: '0 8px 24px rgba(14, 165, 233, 0.45)',
+              transition: 'all 0.25s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 28px rgba(14, 165, 233, 0.65)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(14, 165, 233, 0.45)';
+            }}
+          >
+            <span>Technical Interview Mode</span>
+            <span>➔</span>
+          </button>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            fontSize: '0.72rem',
+            color: '#64748B'
+          }}>
+            <span>📚 Syllabus Driven</span>
+            <span>•</span>
+            <span>🎙️ Spoken Defense</span>
+          </div>
         </div>
       </div>
-    );
-  }
+
+      {/* ============================================================== */}
+      {/* BOX 2 SIDE: VEDIKA BOT IN SUIT (SMALLER PANEL: FLEX 2)          */}
+      {/* ============================================================== */}
+      <div className="box2-side">
+        {/* Top Status */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 14px',
+          borderRadius: 9999,
+          background: 'rgba(14, 165, 233, 0.12)',
+          border: '1px solid rgba(14, 165, 233, 0.3)',
+          fontSize: '0.78rem',
+          fontWeight: 700,
+          color: '#38BDF8',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase'
+        }}>
+          <span style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: '#0EA5E9',
+            boxShadow: '0 0 10px #0EA5E9'
+          }} />
+          <span>Technical Interviewer</span>
+        </div>
+
+        {/* Middle: Bot Avatar in Suit (No glow, clean shadow) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          width: '100%',
+          margin: '10px 0'
+        }}>
+          {/* Bot Avatar Image in Suit (Transparent Standing Bot) */}
+          <img
+            src="/vedika-bot-suit.png"
+            alt="Vedika Bot in Suit"
+            style={{
+              width: 190,
+              maxWidth: '82%',
+              height: 'auto',
+              position: 'relative',
+              zIndex: 2,
+              animation: 'botFloatBounce 3.2s ease-in-out infinite',
+              filter: 'drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45))'
+            }}
+          />
+
+
+        </div>
+
+        {/* Bottom: Switch to Academic Viva Button */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          alignItems: 'center'
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsRightOpen(false);
+              setSessionMode('viva');
+              if (!customVivaTopic) setCustomVivaTopic('Database Management Systems (DBMS)');
+            }}
+            style={{
+              width: '100%',
+              maxWidth: 290,
+              padding: '12px 20px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: '0 8px 24px rgba(124, 58, 237, 0.45)',
+              transition: 'all 0.25s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 28px rgba(124, 58, 237, 0.65)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(124, 58, 237, 0.45)';
+            }}
+          >
+            <span>← Academic Viva Mode</span>
+          </button>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            fontSize: '0.72rem',
+            color: '#64748B'
+          }}>
+            <span>⚙️ System Architecture</span>
+            <span>•</span>
+            <span>💻 Live Tech Screen</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* BOX 2 CONTENT: TECHNICAL INTERVIEW WORKBENCH (LARGER: FLEX 4)  */}
+      {/* ============================================================== */}
+      <div className="box2-content" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        minWidth: 0,
+        boxSizing: 'border-box',
+        position: 'relative'
+      }}>
+        {/* Top Spacer matching Box 1 Back Button height to keep steppers aligned */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          height: 31,
+          marginBottom: 6,
+          flexShrink: 0
+        }} />
+
+        {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
+        <div className="step-progress-wrapper">
+          <div className="step-progress-container">
+            <div
+              className="step-progress-bar interview-bar"
+              style={{ width: `calc((100% - 42px) * ${((interviewStep - 1) / 3)})` }}
+            />
+            {[
+              { step: 1, caption: 'Target Role', hero: 'Iron Man', heroKey: 'ironman', icon: '/vedika-bot-ironman-icon.png' },
+              { step: 2, caption: 'Seniority', hero: 'Batman', heroKey: 'batman', icon: '/vedika-bot-batman-icon.png' },
+              { step: 3, caption: 'Rigor & Mode', hero: 'Doctor Strange', heroKey: 'doctorstrange', icon: '/vedika-bot-doctorstrange-icon.png' },
+              { step: 4, caption: 'Start', hero: 'Superman', heroKey: 'superman', icon: '/vedika-bot-superman-icon.png' }
+            ].map((item) => {
+              const isRevealed = item.step <= maxUnlockedInterviewStep;
+              const isPassed = interviewStep >= item.step;
+              const isCurrent = interviewStep === item.step;
+              const isEntering = enteringHeroInterview === item.step;
+
+              if (!isRevealed) {
+                return (
+                  <div
+                    key={item.step}
+                    className="step-circle locked-circle"
+                    title={`Step ${item.step}: ${item.caption} (Locked - click Next to reveal)`}
+                  >
+                    <Lock size={8} color="#64748B" />
+                    <div className="step-caption locked-caption">
+                      {item.caption}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={item.step}
+                  className={`step-circle interview-circle ${isPassed ? 'active' : ''}`}
+                  onClick={() => {
+                    if (item.step <= maxUnlockedInterviewStep) {
+                      if (item.step > 1 && !topic.trim()) {
+                        setTopic('Full Stack Web Development');
+                      }
+                      setInterviewStep(item.step);
+                    }
+                  }}
+                  title={`Step ${item.step}: ${item.caption} (${item.hero})`}
+                >
+                      {/* Superhero Realistic Sprite Sheet Sequence Actor (clean shadow, no colored glow) */}
+                      <div
+                        className={`hero-actor-container ${item.heroKey} ${isEntering ? 'entering' : 'idle'}`}
+                        style={{
+                          filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.55))'
+                        }}
+                      >
+                        <div
+                          className={`hero-sprite-frame ${item.heroKey} ${isEntering ? 'playing' : 'settled'}`}
+                        />
+                      </div>
+
+                  <div
+                    className="step-caption"
+                    style={{
+                      color: isCurrent ? '#FFFFFF' : isPassed ? '#7DD3FC' : '#64748B',
+                      textShadow: isCurrent ? '0 0 10px rgba(14, 165, 233, 0.5)' : 'none'
+                    }}
+                  >
+                    {item.caption}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* STEP 1: TARGET ROLE */}
+        {interviewStep === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontWeight: 800,
+                margin: 0,
+                color: '#F8FAFC',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                Choose your target role
+              </h1>
+              <p style={{
+                fontSize: '0.88rem',
+                color: '#94A3B8',
+                marginTop: 4,
+                marginBottom: 16
+              }}>
+                Select an engineering discipline or customize your target tech stack.
+              </p>
+
+              {/* Search Input Bar */}
+              <div style={{ position: 'relative', width: '100%', marginBottom: 18 }}>
+                <Search
+                  size={18}
+                  color="#38BDF8"
+                  style={{
+                    position: 'absolute',
+                    left: 18,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g., Full Stack Web Development, Backend Go/Java, React Frontend, Machine Learning..."
+                  style={{
+                    width: '100%',
+                    height: 48,
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1.5px solid rgba(14, 165, 233, 0.35)',
+                    borderRadius: 14,
+                    paddingLeft: 46,
+                    paddingRight: 16,
+                    color: '#F8FAFC',
+                    fontSize: '0.92rem',
+                    fontWeight: 500,
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#0EA5E9';
+                    e.currentTarget.style.boxShadow = '0 0 16px rgba(14, 165, 233, 0.3)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(14, 165, 233, 0.35)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Technical Screening Intelligence Banner */}
+              <div style={{
+                marginTop: 18,
+                padding: '16px 20px',
+                borderRadius: 14,
+                background: 'rgba(14, 165, 233, 0.05)',
+                border: '1px solid rgba(14, 165, 233, 0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  color: '#38BDF8'
+                }}>
+                  <Code2 size={16} color="#0EA5E9" />
+                  <span>Role-Specific Technical Probing</span>
+                </div>
+                <p style={{
+                  fontSize: '0.82rem',
+                  color: '#94A3B8',
+                  lineHeight: 1.5,
+                  margin: 0
+                }}>
+                  Vedika evaluates software architecture, production edge cases, API designs, algorithmic problem-solving, and system trade-offs tailored precisely to your role.
+                </p>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 16,
+                  paddingTop: 4,
+                  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                  fontSize: '0.78rem',
+                  color: '#CBD5E1'
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle2 size={13} color="#0EA5E9" /> System Architecture
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle2 size={13} color="#0EA5E9" /> Real-time Voice Screen
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle2 size={13} color="#0EA5E9" /> Engineering Trade-off Probes
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Nav Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                className="step-btn prev-btn"
+                disabled={true}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className="step-btn interview-btn"
+                onClick={() => {
+                  if (!topic.trim()) setTopic('Full Stack Web Development');
+                  advanceInterviewStep(2);
+                }}
+              >
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: SENIORITY & TECH STACK */}
+        {interviewStep === 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontWeight: 800,
+                margin: 0,
+                color: '#F8FAFC',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                Seniority & Tech Stack
+              </h1>
+              <p style={{
+                fontSize: '0.88rem',
+                color: '#94A3B8',
+                marginTop: 4,
+                marginBottom: 16
+              }}>
+                Select your target seniority level and primary programming language or framework.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Seniority Level */}
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                    Target Seniority Level
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { id: 'Junior', title: 'Junior / Fresher', desc: '0 - 2 Years experience • Core syntax & basic algorithms' },
+                      { id: 'Mid-Level', title: 'Mid-Level Engineer', desc: '2 - 5 Years hands-on • System design & feature ownership' },
+                      { id: 'Senior', title: 'Senior / Staff', desc: '5+ Years architecture • High scale & team technical leadership' }
+                    ].map((s) => {
+                      const isSel = level === s.id;
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => setLevel(s.id)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: isSel ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                            border: isSel ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
+                            transition: 'all 0.2s ease',
+                            boxShadow: isSel ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
+                            {s.title}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 3 }}>
+                            {s.desc}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Programming Language */}
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                    Primary Programming Language / Stack
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {['JavaScript', 'TypeScript', 'Python', 'Go', 'Java', 'C++', 'SQL', 'Rust'].map((lang) => {
+                      const isSel = programmingLanguage === lang;
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setProgrammingLanguage(lang)}
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: 9999,
+                            fontSize: '0.84rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            background: isSel ? 'rgba(14, 165, 233, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                            border: isSel ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
+                            color: isSel ? '#38BDF8' : '#CBD5E1',
+                            boxShadow: isSel ? '0 0 12px rgba(14, 165, 233, 0.35)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {lang}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Nav Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                className="step-btn prev-btn"
+                onClick={() => setInterviewStep(1)}
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                className="step-btn interview-btn"
+                onClick={() => advanceInterviewStep(3)}
+              >
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: RIGOR & INTERVIEW MODE */}
+        {interviewStep === 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontWeight: 800,
+                margin: 0,
+                color: '#F8FAFC',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                Interview Rigor & Format
+              </h1>
+              <p style={{
+                fontSize: '0.88rem',
+                color: '#94A3B8',
+                marginTop: 4,
+                marginBottom: 16
+              }}>
+                Set candidate evaluation standards and voice interaction mode.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Interview Rigor */}
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                    Interview Rigor / Bar
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { id: 'Easy', title: 'Standard Screening', desc: 'Fundamentals, logic verification & clean code basics' },
+                      { id: 'Medium', title: 'In-Depth Technical', desc: 'Architecture trade-offs, concurrency & edge cases' },
+                      { id: 'Hard', title: 'FAANG Bar Raiser', desc: 'Large scale distributed systems & architectural rigor' }
+                    ].map((d) => {
+                      const isSel = difficulty === d.id;
+                      return (
+                        <div
+                          key={d.id}
+                          onClick={() => setDifficulty(d.id)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: isSel ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                            border: isSel ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
+                            transition: 'all 0.2s ease',
+                            boxShadow: isSel ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
+                            {d.title}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 3 }}>
+                            {d.desc}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Voice Interaction Format */}
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                    Interview Format
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+                    <div
+                      onClick={() => setExecutionMode('live')}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        background: executionMode === 'live' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: executionMode === 'live' ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
+                        cursor: 'pointer',
+                        boxShadow: executionMode === 'live' ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
+                        <Zap size={16} color="#38BDF8" />
+                        <span>Realtime Voice (Gemini Live)</span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
+                        Natural live voice screening with instant interruption and fluid technical conversation.
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => setExecutionMode('turn')}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        background: executionMode === 'turn' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: executionMode === 'turn' ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
+                        cursor: 'pointer',
+                        boxShadow: executionMode === 'turn' ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
+                        <Clock size={16} color="#38BDF8" />
+                        <span>Turn-by-Turn Guided Rounds</span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
+                        Structured questions with 90s countdown timer and instant evaluation playback.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Nav Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                className="step-btn prev-btn"
+                onClick={() => setInterviewStep(2)}
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                className="step-btn interview-btn"
+                onClick={() => advanceInterviewStep(4)}
+              >
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: REVIEW & START INTERVIEW */}
+        {interviewStep === 4 && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontWeight: 800,
+                margin: 0,
+                color: '#F8FAFC',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                Ready for your interview?
+              </h1>
+              <p style={{
+                fontSize: '0.88rem',
+                color: '#94A3B8',
+                marginTop: 4,
+                marginBottom: 16
+              }}>
+                Review your setup summary and launch your technical interview round.
+              </p>
+
+              {/* Summary Box */}
+              <div style={{
+                padding: '16px 20px',
+                borderRadius: 14,
+                background: 'rgba(14, 165, 233, 0.05)',
+                border: '1px solid rgba(14, 165, 233, 0.25)',
+                marginBottom: 16
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px 16px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Target Track</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38BDF8' }}>
+                      {topic || 'Full Stack Web Development'}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Seniority</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
+                      {level} Level
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Primary Language</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
+                      {programmingLanguage}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Interview Rigor</span>
+                    <span style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      background: 'rgba(14, 165, 233, 0.2)',
+                      color: '#38BDF8',
+                      display: 'inline-block'
+                    }}>
+                      {difficulty}
+                    </span>
+                  </div>
+                  <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Interaction Engine</span>
+                    <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#E2E8F0' }}>
+                      {executionMode === 'live' ? '⚡ Realtime Voice Screen (Gemini Live)' : '⏱ Turn-by-Turn Guided Rounds (90s Timed)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Readiness Checklist */}
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={15} color="#0EA5E9" />
+                  <span>Live microphone activation for spoken engineering responses</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={15} color="#0EA5E9" />
+                  <span>5 architectural questions with adaptive deep probes</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={15} color="#0EA5E9" />
+                  <span>FAANG-calibrated scorecard with trade-off analysis</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Nav Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                className="step-btn prev-btn"
+                onClick={() => setInterviewStep(3)}
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                disabled={loading || !topic.trim()}
+                onClick={() => {
+                  if (!topic.trim()) setTopic('Full Stack Web Development');
+                  startVoiceSession();
+                }}
+                className="step-btn interview-btn"
+                style={{ flex: 1, maxWidth: 340 }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Launching Technical Interviewer...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic size={18} />
+                    <span>Start Voice Technical Interview</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+}
 
   // Active Gameplay, Analyzing & Scorecard Views
   return (
