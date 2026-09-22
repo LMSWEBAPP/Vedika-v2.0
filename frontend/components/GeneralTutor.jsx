@@ -8,7 +8,7 @@ import {
   Brain, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, Code2, BarChart3, Home, Zap, Award, FileText, FolderOpen, Briefcase,
-  Trash, History, X, Plus, Pin, Search
+  Trash, History, X, Plus, Pin, Search, Check
 } from 'lucide-react';
 import {
   T, geminiCall,
@@ -77,25 +77,79 @@ export default function GeneralTutor() {
   const [historySearch, setHistorySearch] = useState('');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
-  // FeralUI Background Theme ('pastel' is the user's latest wisteria/sakura flow, 'glacier' is deep hanada)
-  const [bgTheme, setBgTheme] = useState('pastel');
+  // FeralUI Fluid Background Themes: 'aurora' (Northern lights), 'glacier' (Deep Ocean), 'pastel' (Opal)
+  const BG_THEMES = useMemo(() => [
+    {
+      id: 'aurora',
+      name: 'Aurora Flow',
+      shortLabel: 'Aurora',
+      emoji: '🌌',
+      desc: 'Northern Lights · Emerald & Midnight',
+      gradient: 'linear-gradient(135deg, #4BE8A0 0%, #2E7A6A 50%, #16224D 100%)',
+      color: '#4BE8A0',
+      border: 'rgba(75, 232, 160, 0.45)',
+      bg: 'rgba(75, 232, 160, 0.12)'
+    },
+    {
+      id: 'glacier',
+      name: 'Glacier Flow',
+      shortLabel: 'Glacier',
+      emoji: '❄️',
+      desc: 'Deep Ocean · Lapis & Hanada',
+      gradient: 'linear-gradient(135deg, #65BED0 0%, #277EA3 50%, #183F60 100%)',
+      color: '#65BED0',
+      border: 'rgba(101, 190, 208, 0.45)',
+      bg: 'rgba(101, 190, 208, 0.12)'
+    },
+    {
+      id: 'pastel',
+      name: 'Pastel Flow',
+      shortLabel: 'Pastel',
+      emoji: '🌸',
+      desc: 'Opal · Lavender & Sakura Pink',
+      gradient: 'linear-gradient(135deg, #9BE0E8 0%, #C4B5F7 50%, #F8B8D9 100%)',
+      color: '#D8B4FE',
+      border: 'rgba(192, 132, 252, 0.45)',
+      bg: 'rgba(192, 132, 252, 0.12)'
+    }
+  ], []);
+
+  const [bgTheme, setBgTheme] = useState('aurora');
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const themeDropdownRef = useRef(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vedika_tutor_bg_theme');
-      if (saved === 'pastel' || saved === 'glacier') {
+      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel') {
         setBgTheme(saved);
       }
     }
   }, []);
 
-  const toggleBgTheme = () => {
-    const next = bgTheme === 'pastel' ? 'glacier' : 'pastel';
-    setBgTheme(next);
+  const selectBgTheme = (themeId) => {
+    setBgTheme(themeId);
+    setShowThemeDropdown(false);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('vedika_tutor_bg_theme', next);
+      localStorage.setItem('vedika_tutor_bg_theme', themeId);
     }
   };
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(e.target)) {
+        setShowThemeDropdown(false);
+      }
+    };
+    if (showThemeDropdown) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showThemeDropdown]);
+
+  const activeThemeConfig = BG_THEMES.find(t => t.id === bgTheme) || BG_THEMES[0];
   
   const [jwtToken, setJwtToken] = useState(null);
   const [authenticating, setAuthenticating] = useState(true);
@@ -1296,30 +1350,136 @@ export default function GeneralTutor() {
               </button>
             </div>
 
-            {/* FeralUI Background Theme Switcher */}
-            <button
-              onClick={toggleBgTheme}
-              title={`Switch Background Theme (Currently: ${bgTheme === 'pastel' ? 'Pastel Flow' : 'Glacier Flow'})`}
-              aria-label="Toggle background theme"
-              style={{
-                border: `1px solid ${bgTheme === 'pastel' ? 'rgba(192, 132, 252, 0.4)' : 'rgba(101, 190, 208, 0.4)'}`,
-                background: bgTheme === 'pastel' ? 'rgba(192, 132, 252, 0.12)' : 'rgba(101, 190, 208, 0.12)',
-                color: bgTheme === 'pastel' ? '#D8B4FE' : '#65BED0',
-                borderRadius: 14,
-                padding: '3px 8px',
-                fontSize: 10,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontFamily: 'inherit',
-                transition: 'all 0.2s'
-              }}
-            >
-              <Sparkles size={11} color={bgTheme === 'pastel' ? '#D8B4FE' : '#65BED0'} />
-              <span>{bgTheme === 'pastel' ? 'Pastel' : 'Glacier'}</span>
-            </button>
+            {/* FeralUI Background Theme Switcher Dropdown */}
+            <div ref={themeDropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowThemeDropdown(prev => !prev)}
+                title={`Select Fluid Background Theme (Currently: ${activeThemeConfig.name})`}
+                aria-label="Select background theme"
+                aria-expanded={showThemeDropdown}
+                style={{
+                  border: `1px solid ${activeThemeConfig.border}`,
+                  background: activeThemeConfig.bg,
+                  color: activeThemeConfig.color,
+                  borderRadius: 14,
+                  padding: '3px 10px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s',
+                  boxShadow: showThemeDropdown ? `0 0 14px ${activeThemeConfig.border}` : 'none'
+                }}
+              >
+                <span style={{ fontSize: 11 }}>{activeThemeConfig.emoji}</span>
+                <span>{activeThemeConfig.shortLabel}</span>
+                <ChevronDown
+                  size={11}
+                  style={{
+                    transform: showThemeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease',
+                    opacity: 0.8
+                  }}
+                />
+              </button>
+
+              {showThemeDropdown && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    right: 0,
+                    width: 240,
+                    background: 'rgba(15, 23, 42, 0.88)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.14)',
+                    borderRadius: 14,
+                    padding: '6px',
+                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+                    zIndex: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4
+                  }}
+                >
+                  <div style={{
+                    padding: '4px 8px 6px',
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: '#94A3B8',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    Fluid Theme
+                  </div>
+
+                  {BG_THEMES.map((theme) => {
+                    const isSelected = bgTheme === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => selectBgTheme(theme.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 9,
+                          padding: '7px 9px',
+                          borderRadius: 10,
+                          border: isSelected ? `1px solid ${theme.border}` : '1px solid transparent',
+                          background: isSelected ? theme.bg : 'transparent',
+                          color: isSelected ? theme.color : '#E2E8F0',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontFamily: 'inherit',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
+                      >
+                        {/* Swatch circle with gradient */}
+                        <div
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            background: theme.gradient,
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)'
+                          }}
+                        />
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>{theme.name}</span>
+                          </div>
+                          <div style={{ fontSize: 9.5, color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {theme.desc}
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <Check size={13} color={theme.color} style={{ flexShrink: 0 }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

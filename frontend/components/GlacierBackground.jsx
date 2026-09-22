@@ -1,25 +1,27 @@
 'use client';
 
 import React from 'react';
-import FeralUIFlowCanvas from './FeralUIFlowCanvas';
+import FeralUIFlowCanvas, { PRESETS } from './FeralUIFlowCanvas';
 
 /**
  * GlacierBackground - FeralUI Gradient Flow Background for Ask Vedika
  * 
- * Supports:
- * - 'pastel': The official FeralUI "Opal" Flow preset (Fluid. ALWAYS IN MOTION).
- *             Real-time 60 FPS GPU fluid shader with Wisteria Lavender, Ice Cyan, Sakura Pink, and Pearl White.
- *             Overlayed with authentic FeralUI grain (#grainp). 100% bright, zero black fade/vignette.
- * - 'glacier': FeralUI 4K Vector Flow (Deep Hanada #183F60, Inked Lapis #277EA3, Clear Hanada #65BED0, Sky Haze #B9E3DF).
+ * Supports all 3 live flowing presets (Fluid. ALWAYS IN MOTION):
+ * - 'aurora': FeralUI Aurora Palette (Frost Mint #EAFFF4, Emerald #4BE8A0, Teal #2E7A6A, Cyan #2E6E80, Midnight #16224D)
+ * - 'glacier': FeralUI Glacier Palette (Deep Hanada #183F60, Inked Lapis #277EA3, Clear Hanada #65BED0, Sky Haze #B9E3DF, Pale Matcha #EAF4E6)
+ * - 'pastel': FeralUI Opal Palette (Pearl White #F6F9FF, Ice Cyan #9BE0E8, Wisteria Lavender #C4B5F7, Sakura Blush Pink #F8B8D9)
+ * 
+ * All run the 60 FPS real-time WebGL/2D fluid engine with authentic FeralUI grain overlay.
+ * Zero black fade/vignette overlays - 100% radiant and luminous.
  */
 export default function GlacierBackground({
-  variant = 'pastel',
+  variant = 'aurora',
   opacity = 1.0,
-  showVignette = false,
   style = {},
   className = ''
 }) {
-  const isPastel = variant === 'pastel';
+  const activeVariant = PRESETS[variant] ? variant : 'aurora';
+  const baseBg = PRESETS[activeVariant]?.baseColor || '#16224D';
 
   return (
     <div
@@ -31,76 +33,39 @@ export default function GlacierBackground({
         pointerEvents: 'none',
         zIndex: 0,
         userSelect: 'none',
-        backgroundColor: isPastel ? '#FAF7FD' : '#183F60',
+        backgroundColor: baseBg,
         ...style
       }}
       aria-hidden="true"
     >
-      {isPastel ? (
-        /* ── FERALUI "OPAL" REAL-TIME FLUID FLOW (ALWAYS IN MOTION - NO BLACK FADE) ── */
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: opacity,
+          overflow: 'hidden'
+        }}
+      >
+        {/* Base radiant color layer */}
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: baseBg }} />
+
+        {/* Real-time 60fps GPU WebGL / 2D Fluid Shader (ALWAYS IN MOTION) */}
+        <FeralUIFlowCanvas variant={activeVariant} />
+
+        {/* Authentic FeralUI Grain Overlay (from official #grainp pattern) */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            opacity: opacity,
-            overflow: 'hidden'
-          }}
-        >
-          {/* Base luminous background */}
-          <div style={{ position: 'absolute', inset: 0, backgroundColor: '#FAF7FD' }} />
-
-          {/* Real-time 60fps GPU WebGL / 2D Fluid Shader */}
-          <FeralUIFlowCanvas />
-
-          {/* Authentic FeralUI Grain Overlay (from official #grainp pattern) */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: "url('/grain-pattern.png')",
-              backgroundSize: '256px 256px',
-              backgroundRepeat: 'repeat',
-              mixBlendMode: 'overlay',
-              opacity: 0.22,
-              pointerEvents: 'none'
-            }}
-          />
-        </div>
-      ) : (
-        /* ── GLACIER 4K VECTOR FLOW ── */
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: opacity,
-            transition: 'opacity 0.4s ease'
-          }}
-        >
-          <img
-            src="/glacier-flow.svg"
-            alt=""
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block'
-            }}
-          />
-        </div>
-      )}
-
-      {/* Optional subtle edge vignette ONLY when explicitly enabled for Glacier */}
-      {showVignette && !isPastel && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'radial-gradient(ellipse at center, rgba(11, 15, 25, 0.25) 0%, rgba(10, 18, 32, 0.65) 100%), linear-gradient(180deg, rgba(10, 18, 32, 0.4) 0%, transparent 20%, transparent 80%, rgba(10, 18, 32, 0.7) 100%)',
+            backgroundImage: "url('/grain-pattern.png')",
+            backgroundSize: '256px 256px',
+            backgroundRepeat: 'repeat',
+            mixBlendMode: 'overlay',
+            opacity: 0.22,
             pointerEvents: 'none'
           }}
         />
-      )}
+      </div>
     </div>
   );
 }
