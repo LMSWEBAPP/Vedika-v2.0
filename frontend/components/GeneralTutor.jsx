@@ -73,7 +73,6 @@ export default function GeneralTutor() {
   const [voiceSessions, setVoiceSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [voiceSessionToRestore, setVoiceSessionToRestore] = useState(null);
-  const [showChatHistory, setShowChatHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
@@ -153,6 +152,7 @@ export default function GeneralTutor() {
 
   // Floating Glassmorphic Left Page Navbar state & shortcut
   const [showLeftNav, setShowLeftNav] = useState(false);
+  const [leftNavView, setLeftNavView] = useState('menu'); // 'menu' | 'history'
   const leftNavRef = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -178,7 +178,10 @@ export default function GeneralTutor() {
     const handleKeyShortcut = (e) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
         e.preventDefault();
-        setShowLeftNav(prev => !prev);
+        setShowLeftNav(prev => {
+          if (!prev) setLeftNavView('menu');
+          return !prev;
+        });
       } else if (e.key === 'Escape' && showLeftNav) {
         setShowLeftNav(false);
       }
@@ -576,8 +579,8 @@ export default function GeneralTutor() {
     setCurrentSessionId(session.id);
     setSessionDocs(session.documents || []);
     setErr(''); setTopic(''); setUploadErr('');
-    if (isMobile) setShowChatHistory(false);
-  }, [isMobile]);
+    setShowLeftNav(false);
+  }, []);
 
   const handleNewChat = useCallback(() => {
     setMessages([]);
@@ -589,8 +592,8 @@ export default function GeneralTutor() {
     setShowVoiceAgent(false);
     setVoiceSessionToRestore(null);
     try { localStorage.removeItem('current-general-tutor-session-id'); } catch {}
-    if (isMobile) setShowChatHistory(false);
-  }, [isMobile]);
+    setShowLeftNav(false);
+  }, []);
 
   // Handle click outside to close open feature cards (excluding Visual Summary which only closes on explicit close)
   useEffect(() => {
@@ -1249,256 +1252,519 @@ export default function GeneralTutor() {
         {showLeftNav && (
           <aside
             ref={leftNavRef}
+            data-left-sidebar="true"
             style={{
-              position: 'absolute',
+              position: 'fixed',
               top: 20,
               bottom: 20,
               left: 20,
-              width: isMobile ? 'calc(100vw - 40px)' : 240,
-              background: 'rgba(10, 18, 38, 0.72)',
+              width: isMobile ? 'calc(100vw - 40px)' : (leftNavView === 'history' ? 340 : 260),
+              background: 'rgba(10, 18, 38, 0.85)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
+              border: '1px solid rgba(56, 189, 248, 0.28)',
               borderRadius: 24,
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65), 0 0 32px rgba(56, 189, 248, 0.15)',
-              zIndex: 70,
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75), 0 0 32px rgba(56, 189, 248, 0.18)',
+              zIndex: 1100,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              padding: '18px 16px',
-              animation: 'slideInLeftDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+              padding: '16px 14px',
+              animation: 'slideInLeftDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              transition: 'width 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+              overflow: 'hidden'
             }}
           >
-            {/* Top: Close Button + Action List */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
-                <button
-                  onClick={() => setShowLeftNav(false)}
-                  title="Close Menu (Esc / Ctrl+B)"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                    padding: 4,
-                    borderRadius: 6,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
+            {leftNavView === 'menu' ? (
+              <>
+                {/* Top: Close Button + Action List */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
+                    <button
+                      onClick={() => setShowLeftNav(false)}
+                      title="Close Menu (Esc / Ctrl+B)"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: '#94A3B8',
+                        cursor: 'pointer',
+                        padding: 5,
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
 
-              {/* Navigation items list matching the screenshot */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {/* New Chat */}
-                <button
-                  onClick={() => { handleNewChat(); setShowLeftNav(false); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#E2E8F0',
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
-                >
-                  <Plus size={16} color="#C084FC" />
-                  <span>New Chat</span>
-                </button>
+                  {/* Navigation items list matching the screenshot */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* New Chat */}
+                    <button
+                      onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#E2E8F0',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
+                    >
+                      <Plus size={16} color="#C084FC" />
+                      <span>New Chat</span>
+                    </button>
 
-                {/* History */}
-                <button
-                  onClick={() => { setShowChatHistory(true); setShowLeftNav(false); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#E2E8F0',
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
-                >
-                  <History size={16} color="#38BDF8" />
-                  <span style={{ flex: 1 }}>History</span>
-                  {mergedSessions && mergedSessions.length > 0 && (
-                    <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
-                      {mergedSessions.length}
-                    </span>
-                  )}
-                </button>
+                    {/* History */}
+                    <button
+                      onClick={() => setLeftNavView('history')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#E2E8F0',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
+                    >
+                      <History size={16} color="#38BDF8" />
+                      <span style={{ flex: 1 }}>History</span>
+                      {mergedSessions && mergedSessions.length > 0 && (
+                        <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                          {mergedSessions.length}
+                        </span>
+                      )}
+                    </button>
 
-                {/* Vedika AI (Active highlighted pill matching the screenshot) */}
+                    {/* Vedika AI (Active highlighted pill matching the screenshot) */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        background: 'rgba(147, 51, 234, 0.35)',
+                        border: '1px solid rgba(168, 85, 247, 0.55)',
+                        boxShadow: '0 4px 18px rgba(147, 51, 234, 0.25)',
+                        color: '#FFFFFF',
+                        fontSize: 13.5,
+                        fontWeight: 700
+                      }}
+                    >
+                      <Brain size={16} color="#E9D5FF" />
+                      <span>Vedika AI</span>
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)', margin: '4px 6px' }} />
+
+                    {/* Text */}
+                    <button
+                      onClick={() => { setActiveTab('text'); setShowLeftNav(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '9px 14px',
+                        borderRadius: 14,
+                        background: activeTab === 'text' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                        border: activeTab === 'text' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                        color: activeTab === 'text' ? '#FFFFFF' : '#94A3B8',
+                        fontSize: 13,
+                        fontWeight: activeTab === 'text' ? 700 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                      onMouseLeave={e => { if (activeTab !== 'text') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
+                    >
+                      <Type size={16} />
+                      <span>Text</span>
+                    </button>
+
+                    {/* Voice */}
+                    <button
+                      onClick={() => { setActiveTab('voice'); setShowLeftNav(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '9px 14px',
+                        borderRadius: 14,
+                        background: activeTab === 'voice' ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
+                        border: activeTab === 'voice' ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid transparent',
+                        color: activeTab === 'voice' ? '#FFFFFF' : '#94A3B8',
+                        fontSize: 13,
+                        fontWeight: activeTab === 'voice' ? 700 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)'; }}
+                      onMouseLeave={e => { if (activeTab !== 'voice') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
+                    >
+                      <Waves size={16} />
+                      <span>Voice</span>
+                    </button>
+
+                    {/* Theme Selector (Aurora / Glacier / Pastel) */}
+                    <button
+                      onClick={() => {
+                        const ids = BG_THEMES.map(t => t.id);
+                        const nextIdx = (ids.indexOf(bgTheme) + 1) % ids.length;
+                        selectBgTheme(ids[nextIdx]);
+                      }}
+                      title={`Switch fluid background theme (Current: ${activeThemeConfig.name})`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '9px 14px',
+                        borderRadius: 14,
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: `1px solid ${activeThemeConfig.border}`,
+                        color: '#E2E8F0',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; e.currentTarget.style.color = '#E2E8F0'; }}
+                    >
+                      <span style={{ fontSize: 14 }}>{activeThemeConfig.emoji}</span>
+                      <span style={{ flex: 1 }}>{activeThemeConfig.shortLabel}</span>
+                      <span style={{ fontSize: 9.5, color: '#94A3B8', background: 'rgba(255, 255, 255, 0.08)', padding: '1px 5px', borderRadius: 4 }}>Cycle</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom: User Profile Capsule matching reference image */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    background: 'rgba(147, 51, 234, 0.35)',
-                    border: '1px solid rgba(168, 85, 247, 0.55)',
-                    boxShadow: '0 4px 18px rgba(147, 51, 234, 0.25)',
+                    gap: 10,
+                    padding: '10px 12px',
+                    borderRadius: 16,
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s'
+                  }}
+                  onClick={() => { router.push('/profile'); setShowLeftNav(false); }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#38BDF8'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.65)'; }}
+                >
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 12,
                     color: '#FFFFFF',
-                    fontSize: 13.5,
-                    fontWeight: 700
-                  }}
-                >
-                  <Brain size={16} color="#E9D5FF" />
-                  <span>Vedika AI</span>
+                    flexShrink: 0
+                  }}>
+                    {userInitials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {userName}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#94A3B8' }}>
+                      Free Plan
+                    </div>
+                  </div>
+                  <ChevronRight size={14} color="#94A3B8" />
+                </div>
+              </>
+            ) : (
+              /* History Subview inside the Floating Glassmorphic Sidebar */
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: 10 }}>
+                {/* Header: Back to Menu + History Title with Badge + New Chat + Close */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => setLeftNavView('menu')}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: '#38BDF8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        cursor: 'pointer',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        padding: '4px 8px',
+                        borderRadius: 8,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)'; e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                      title="Back to Menu"
+                    >
+                      <ChevronLeft size={15} />
+                      <span>Menu</span>
+                    </button>
+
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>History</span>
+                      {mergedSessions?.length > 0 && (
+                        <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                          {mergedSessions.length}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'rgba(168, 85, 247, 0.2)',
+                        border: '1px solid rgba(168, 85, 247, 0.45)',
+                        borderRadius: 8,
+                        padding: '4px 8px',
+                        color: '#E9D5FF',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                      title="Start New Chat"
+                    >
+                      <Plus size={13} color="#C084FC" />
+                      <span>New</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowLeftNav(false)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: '#94A3B8',
+                        cursor: 'pointer',
+                        padding: 5,
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                      title="Close"
+                      aria-label="Close"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Divider */}
-                <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)', margin: '4px 6px' }} />
-
-                {/* Text */}
-                <button
-                  onClick={() => { setActiveTab('text'); setShowLeftNav(false); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '9px 14px',
-                    borderRadius: 14,
-                    background: activeTab === 'text' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                    border: activeTab === 'text' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
-                    color: activeTab === 'text' ? '#FFFFFF' : '#94A3B8',
-                    fontSize: 13,
-                    fontWeight: activeTab === 'text' ? 700 : 500,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
-                  onMouseLeave={e => { if (activeTab !== 'text') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
-                >
-                  <Type size={16} />
-                  <span>Text</span>
-                </button>
-
-                {/* Voice */}
-                <button
-                  onClick={() => { setActiveTab('voice'); setShowLeftNav(false); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '9px 14px',
-                    borderRadius: 14,
-                    background: activeTab === 'voice' ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
-                    border: activeTab === 'voice' ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid transparent',
-                    color: activeTab === 'voice' ? '#FFFFFF' : '#94A3B8',
-                    fontSize: 13,
-                    fontWeight: activeTab === 'voice' ? 700 : 500,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)'; }}
-                  onMouseLeave={e => { if (activeTab !== 'voice') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
-                >
-                  <Waves size={16} />
-                  <span>Voice</span>
-                </button>
-
-                {/* Theme Selector (Aurora / Glacier / Pastel) */}
-                <button
-                  onClick={() => {
-                    const ids = BG_THEMES.map(t => t.id);
-                    const nextIdx = (ids.indexOf(bgTheme) + 1) % ids.length;
-                    selectBgTheme(ids[nextIdx]);
-                  }}
-                  title={`Switch fluid background theme (Current: ${activeThemeConfig.name})`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '9px 14px',
-                    borderRadius: 14,
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${activeThemeConfig.border}`,
-                    color: '#E2E8F0',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; e.currentTarget.style.color = '#E2E8F0'; }}
-                >
-                  <span style={{ fontSize: 14 }}>{activeThemeConfig.emoji}</span>
-                  <span style={{ flex: 1 }}>{activeThemeConfig.shortLabel}</span>
-                  <span style={{ fontSize: 9.5, color: '#94A3B8', background: 'rgba(255, 255, 255, 0.08)', padding: '1px 5px', borderRadius: 4 }}>Cycle</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom: User Profile Capsule matching reference image */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 12px',
-                borderRadius: 16,
-                background: 'rgba(15, 23, 42, 0.65)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              onClick={() => { router.push('/profile'); setShowLeftNav(false); }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#38BDF8'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.65)'; }}
-            >
-              <div style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: 12,
-                color: '#FFFFFF',
-                flexShrink: 0
-              }}>
-                {userInitials}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {userName}
+                {/* Search Bar */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 10,
+                  padding: '6px 10px',
+                  flexShrink: 0
+                }}>
+                  <Search size={13} color="#64748B" style={{ flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    value={historySearch}
+                    onChange={e => setHistorySearch(e.target.value)}
+                    placeholder="Search conversations..."
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#F1F5F9',
+                      fontSize: 12,
+                      width: '100%',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                  {historySearch && (
+                    <button
+                      onClick={() => setHistorySearch('')}
+                      style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94A3B8' }}>
-                  Free Plan
+
+                {/* Sessions Scroll List */}
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 2 }}>
+                  {isLoadingHistory && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '16px', color: '#94A3B8', fontSize: 11.5 }}>
+                      <Loader2 size={13} className="custom-spin" color="#38BDF8" />
+                      <span>Syncing history...</span>
+                    </div>
+                  )}
+
+                  {['Today', 'Yesterday', 'This Week', 'Older'].map(groupKey => {
+                    const list = sessionGroups[groupKey] || [];
+                    if (list.length === 0) return null;
+                    return (
+                      <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', color: '#38BDF8', textTransform: 'uppercase', paddingLeft: 4 }}>
+                          {groupKey}
+                        </div>
+                        {list.map(session => {
+                          const isActive = session.id === currentSessionId;
+                          const isVoice = session.type === 'voice';
+                          const title = session.label || session.topic || (isVoice ? 'Voice Session' : 'Untitled Conversation');
+                          const msgCount = session.messages?.length || 0;
+                          const timeStr = session.timestamp ? new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                          return (
+                            <div
+                              key={session.id}
+                              onClick={() => { handleSelectSession(session); setShowLeftNav(false); }}
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 6,
+                                padding: '9px 11px',
+                                borderRadius: 12,
+                                background: isActive ? 'rgba(168, 85, 247, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                                border: `1px solid ${isActive ? 'rgba(168, 85, 247, 0.55)' : 'rgba(255, 255, 255, 0.07)'}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={e => {
+                                if (!isActive) {
+                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (!isActive) {
+                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
+                                }
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                <span style={{
+                                  color: isActive ? '#FFFFFF' : '#E2E8F0',
+                                  fontSize: 12,
+                                  fontWeight: isActive ? 700 : 500,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  flex: 1
+                                }}>
+                                  {isVoice ? '🎙️ ' : ''}{title}
+                                </span>
+                                <button
+                                  onClick={(e) => handleDeleteSession(session.id, e)}
+                                  title="Delete session"
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#64748B',
+                                    cursor: 'pointer',
+                                    padding: 2,
+                                    borderRadius: 4,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    opacity: 0.6,
+                                    transition: 'opacity 0.15s, color 0.15s'
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#F87171'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = '#64748B'; }}
+                                >
+                                  <Trash size={12} />
+                                </button>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: '#94A3B8' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  {session.mode && (
+                                    <span style={{
+                                      background: `${modeColors[session.mode] || T.purple}25`,
+                                      color: modeColors[session.mode] || '#C084FC',
+                                      padding: '1px 5px',
+                                      borderRadius: 4,
+                                      fontWeight: 600
+                                    }}>
+                                      {session.mode}
+                                    </span>
+                                  )}
+                                  {msgCount > 0 && <span>{msgCount} msgs</span>}
+                                </div>
+                                {timeStr && <span style={{ fontSize: 9.5, color: '#64748B' }}>{timeStr}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+
+                  {filteredSessions.length === 0 && !isLoadingHistory && (
+                    <div style={{ padding: '30px 10px', textAlign: 'center', color: '#64748B', fontSize: 11.5 }}>
+                      <History size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                      <div>No conversations found.</div>
+                      <button
+                        onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                        style={{
+                          marginTop: 10,
+                          background: 'rgba(168, 85, 247, 0.2)',
+                          border: '1px solid rgba(168, 85, 247, 0.4)',
+                          borderRadius: 8,
+                          color: '#E9D5FF',
+                          padding: '5px 10px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Start New Chat
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-              <ChevronRight size={14} color="#94A3B8" />
-            </div>
+            )}
           </aside>
         )}
 
@@ -1528,258 +1794,6 @@ export default function GeneralTutor() {
             {/* ── CHAT & WATERMARK CONTAINER ── */}
             <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               
-              {/* Slide-out Chat History Drawer */}
-              {showChatHistory && (
-                <aside
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    width: isMobile ? '88vw' : '330px',
-                    maxWidth: '380px',
-                    background: '#0B0F19',
-                    borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                    zIndex: 50,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    boxShadow: '12px 0 40px rgba(0, 0, 0, 0.75)',
-                    animation: 'slideInLeftDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
-                  }}
-                >
-                  {/* Top Bar */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 16px',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(16, 22, 36, 0.95)',
-                      flexShrink: 0
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#F8FAFC', fontSize: 12.5, fontWeight: 700, letterSpacing: '0.03em' }}>
-                      <History size={15} color="#38BDF8" />
-                      <span>Chat Sessions</span>
-                      {mergedSessions && mergedSessions.length > 0 && (
-                        <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
-                          {mergedSessions.length}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button
-                        onClick={handleNewChat}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          background: 'rgba(168, 85, 247, 0.18)',
-                          border: '1px solid rgba(168, 85, 247, 0.38)',
-                          borderRadius: 6,
-                          padding: '3px 8px',
-                          color: '#E9D5FF',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                        title="Start New Chat"
-                      >
-                        <Plus size={12} color="#C084FC" />
-                        <span>New</span>
-                      </button>
-                      <button
-                        onClick={() => setShowChatHistory(false)}
-                        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                        title="Close Drawer"
-                        aria-label="Close Drawer"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Search Bar */}
-                  <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(11, 15, 25, 0.7)' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 8,
-                      padding: '5px 9px'
-                    }}>
-                      <Search size={13} color="#64748B" style={{ flexShrink: 0 }} />
-                      <input
-                        type="text"
-                        value={historySearch}
-                        onChange={e => setHistorySearch(e.target.value)}
-                        placeholder="Search conversations..."
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          outline: 'none',
-                          color: '#F1F5F9',
-                          fontSize: 12,
-                          width: '100%',
-                          fontFamily: 'inherit'
-                        }}
-                      />
-                      {historySearch && (
-                        <button
-                          onClick={() => setHistorySearch('')}
-                          style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Session List */}
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {isLoadingHistory && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', color: '#94A3B8', fontSize: 11.5 }}>
-                        <Loader2 size={13} className="custom-spin" color="#38BDF8" />
-                        <span>Syncing history...</span>
-                      </div>
-                    )}
-
-                    {['Today', 'Yesterday', 'This Week', 'Older'].map(groupKey => {
-                      const list = sessionGroups[groupKey] || [];
-                      if (list.length === 0) return null;
-                      return (
-                        <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#64748B', textTransform: 'uppercase', paddingLeft: 4 }}>
-                            {groupKey}
-                          </div>
-                          {list.map(session => {
-                            const isActive = session.id === currentSessionId;
-                            const isVoice = session.type === 'voice';
-                            const title = session.label || session.topic || (isVoice ? 'Voice Session' : 'Untitled Conversation');
-                            const msgCount = session.messages?.length || 0;
-                            const timeStr = session.timestamp ? new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                            return (
-                              <div
-                                key={session.id}
-                                onClick={() => handleSelectSession(session)}
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 6,
-                                  padding: '10px 12px',
-                                  borderRadius: 10,
-                                  background: isActive ? 'rgba(168, 85, 247, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                                  border: `1px solid ${isActive ? 'rgba(168, 85, 247, 0.45)' : 'rgba(255, 255, 255, 0.06)'}`,
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                  position: 'relative'
-                                }}
-                                onMouseEnter={e => {
-                                  if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                                  }
-                                }}
-                                onMouseLeave={e => {
-                                  if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                                  }
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                                  <span style={{
-                                    color: isActive ? '#FFFFFF' : '#E2E8F0',
-                                    fontSize: 12.5,
-                                    fontWeight: isActive ? 700 : 500,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    flex: 1
-                                  }}>
-                                    {isVoice ? '🎙️ ' : ''}{title}
-                                  </span>
-                                  <button
-                                    onClick={(e) => handleDeleteSession(session.id, e)}
-                                    title="Delete session"
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      color: '#64748B',
-                                      cursor: 'pointer',
-                                      padding: 3,
-                                      borderRadius: 4,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      opacity: 0.6,
-                                      transition: 'opacity 0.15s, color 0.15s'
-                                    }}
-                                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#F87171'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = '#64748B'; }}
-                                  >
-                                    <Trash size={12} />
-                                  </button>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5, color: '#94A3B8' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    {session.mode && (
-                                      <span style={{
-                                        background: `${modeColors[session.mode] || T.purple}20`,
-                                        color: modeColors[session.mode] || '#C084FC',
-                                        padding: '1px 5px',
-                                        borderRadius: 4,
-                                        fontWeight: 600
-                                      }}>
-                                        {session.mode}
-                                      </span>
-                                    )}
-                                    {msgCount > 0 && <span>{msgCount} msgs</span>}
-                                  </div>
-                                  {timeStr && <span style={{ fontSize: 10, color: '#64748B' }}>{timeStr}</span>}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-
-                    {filteredSessions.length === 0 && !isLoadingHistory && (
-                      <div style={{ padding: '36px 12px', textAlign: 'center', color: '#64748B', fontSize: 12 }}>
-                        <History size={26} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-                        {historySearch ? (
-                          <div>No conversations match "{historySearch}"</div>
-                        ) : (
-                          <div>
-                            <div>No conversations found.</div>
-                            <button
-                              onClick={handleNewChat}
-                              style={{
-                                marginTop: 12,
-                                background: 'rgba(168, 85, 247, 0.2)',
-                                border: '1px solid rgba(168, 85, 247, 0.4)',
-                                borderRadius: 8,
-                                color: '#E9D5FF',
-                                padding: '6px 12px',
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              + Start a New Chat
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </aside>
-              )}
-
               {/* FeralUI SVG flow gradient background */}
               <GlacierBackground variant={bgTheme} opacity={1.0} />
 
@@ -2267,7 +2281,12 @@ export default function GeneralTutor() {
           <button
             type="button"
             data-leftnav-toggle="true"
-            onClick={() => setShowLeftNav(prev => !prev)}
+            onClick={() => {
+              setShowLeftNav(prev => {
+                if (!prev) setLeftNavView('menu');
+                return !prev;
+              });
+            }}
             title={showLeftNav ? "Close Menu (Esc / Ctrl+B)" : "Open Navigation (Ctrl+B)"}
             aria-label="Toggle Navigation Menu"
             style={{
@@ -2357,7 +2376,10 @@ export default function GeneralTutor() {
                   data-leftnav-toggle="true"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowLeftNav(prev => !prev);
+                    setShowLeftNav(prev => {
+                      if (!prev) setLeftNavView('menu');
+                      return !prev;
+                    });
                   }}
                   title="Toggle Vedika Menu (Ctrl+B)"
                   style={{

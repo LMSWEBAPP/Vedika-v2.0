@@ -158,6 +158,14 @@ export default function TopNavbar() {
   useEffect(() => {
     if (!isAskVedika) return;
     const handleMouseMove = (e) => {
+      // Keep left sidebar interaction zone completely clear (sidebar is at left: 20px, width up to 340px)
+      if (e.clientX <= 440) {
+        if (!coursesDropdownOpen && !profileDropdownOpen) {
+          handleScheduleHideTopNav();
+        }
+        return;
+      }
+
       if (e.clientY <= 55) {
         handleShowTopNav();
       } else if (e.clientY > 120 && !coursesDropdownOpen && !profileDropdownOpen) {
@@ -171,13 +179,13 @@ export default function TopNavbar() {
   if (isAskVedika) {
     return (
       <>
-        {/* Top hover detection strip */}
+        {/* Top hover detection strip (active only outside the left sidebar region) */}
         <div
           onMouseEnter={handleShowTopNav}
           style={{
             position: 'fixed',
             top: 0,
-            left: 0,
+            left: 440,
             right: 0,
             height: 38,
             zIndex: 999,
@@ -233,15 +241,15 @@ export default function TopNavbar() {
             padding: isMobile ? '8px 14px' : '10px 24px',
             fontFamily: 'var(--font-outfit), sans-serif',
             boxSizing: 'border-box',
-            pointerEvents: isTopNavVisible ? 'auto' : 'none',
+            pointerEvents: 'none',
             transform: isTopNavVisible ? 'translateY(0)' : 'translateY(-105%)',
             opacity: isTopNavVisible ? 1 : 0,
             transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease'
           }}
         >
-          {/* Left: Brand Logo Capsule */}
+          {/* Left: Brand Logo Capsule (hidden on Ask Vedika so it never overlaps the left floating sidebar) */}
           <div style={{
-            display: 'flex',
+            display: isAskVedika ? 'none' : 'flex',
             alignItems: 'center',
             background: 'rgba(15, 23, 42, 0.65)',
             backdropFilter: 'blur(20px)',
@@ -249,7 +257,8 @@ export default function TopNavbar() {
             border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: 14,
             padding: '4px 10px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+            pointerEvents: isTopNavVisible ? 'auto' : 'none'
           }}>
             <button
               onClick={() => router.push('/')}
@@ -297,7 +306,8 @@ export default function TopNavbar() {
             border: '1px solid rgba(56, 189, 248, 0.25)',
             borderRadius: 9999,
             padding: '4px 10px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12)'
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12)',
+            pointerEvents: isTopNavVisible ? 'auto' : 'none'
           }}>
             {/* Home (active glowing purple circle badge matching reference image) */}
             <button
@@ -533,7 +543,7 @@ export default function TopNavbar() {
           </nav>
 
           {/* Right: Theme Toggle, Notifications, User Capsule */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, pointerEvents: isTopNavVisible ? 'auto' : 'none' }}>
             {/* Sun/Moon Toggle */}
             <button
               onClick={toggleTheme}
