@@ -23,6 +23,7 @@ import MermaidDiagram from '@/components/MermaidDiagram';
 import { getJwtToken } from '@/lib/jwtCache';
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
+import GlacierBackground from '@/components/GlacierBackground';
 
 const MODES = ['Beginner', 'Exam', 'Interview', 'Revision'];
 const LENGTHS = ['Short', 'Medium', 'Deep'];
@@ -75,6 +76,26 @@ export default function GeneralTutor() {
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  // FeralUI Background Theme ('pastel' is the user's latest wisteria/sakura flow, 'glacier' is deep hanada)
+  const [bgTheme, setBgTheme] = useState('pastel');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vedika_tutor_bg_theme');
+      if (saved === 'pastel' || saved === 'glacier') {
+        setBgTheme(saved);
+      }
+    }
+  }, []);
+
+  const toggleBgTheme = () => {
+    const next = bgTheme === 'pastel' ? 'glacier' : 'pastel';
+    setBgTheme(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vedika_tutor_bg_theme', next);
+    }
+  };
   
   const [jwtToken, setJwtToken] = useState(null);
   const [authenticating, setAuthenticating] = useState(true);
@@ -1274,6 +1295,31 @@ export default function GeneralTutor() {
                 Voice
               </button>
             </div>
+
+            {/* FeralUI Background Theme Switcher */}
+            <button
+              onClick={toggleBgTheme}
+              title={`Switch Background Theme (Currently: ${bgTheme === 'pastel' ? 'Pastel Flow' : 'Glacier Flow'})`}
+              aria-label="Toggle background theme"
+              style={{
+                border: `1px solid ${bgTheme === 'pastel' ? 'rgba(192, 132, 252, 0.4)' : 'rgba(101, 190, 208, 0.4)'}`,
+                background: bgTheme === 'pastel' ? 'rgba(192, 132, 252, 0.12)' : 'rgba(101, 190, 208, 0.12)',
+                color: bgTheme === 'pastel' ? '#D8B4FE' : '#65BED0',
+                borderRadius: 14,
+                padding: '3px 8px',
+                fontSize: 10,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                fontFamily: 'inherit',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Sparkles size={11} color={bgTheme === 'pastel' ? '#D8B4FE' : '#65BED0'} />
+              <span>{bgTheme === 'pastel' ? 'Pastel' : 'Glacier'}</span>
+            </button>
           </div>
         </div>
 
@@ -1555,38 +1601,8 @@ export default function GeneralTutor() {
                 </aside>
               )}
 
-              {/* WhatsApp-style subtle learning doodles wallpaper watermark ("very very lite") */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: "url('/vedika-doodles.svg')",
-                backgroundRepeat: 'repeat',
-                backgroundSize: '360px 360px',
-                opacity: 0.055,
-                pointerEvents: 'none',
-                zIndex: 0,
-                userSelect: 'none'
-              }} />
-
-              {/* Bot image as a watermark in background so text never overlaps */}
-              <div style={{
-                position: 'absolute',
-                right: isMobile ? '-10px' : '36px',
-                bottom: isMobile ? '0px' : '15px',
-                width: isMobile ? '260px' : '430px',
-                maxWidth: '48vw',
-                pointerEvents: 'none',
-                zIndex: 0,
-                opacity: 0.32,
-                filter: 'drop-shadow(0 0 35px rgba(168, 85, 247, 0.28))',
-                userSelect: 'none'
-              }}>
-                <img
-                  src="/vedika-ask-watermark-v2.png?v=2"
-                  alt="Vedika AI Watermark"
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                />
-              </div>
+              {/* FeralUI SVG flow gradient background */}
+              <GlacierBackground variant={bgTheme} opacity={1.0} />
 
               {/* ── CHAT AREA (z-index: 1 sits cleanly over watermark) ── */}
               <div ref={chatRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 120px' : '28px 28px 135px' }}>
