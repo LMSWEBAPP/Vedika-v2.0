@@ -10,7 +10,7 @@ import {
   Code2, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, BarChart3, Home, Zap, Brain, Award, FileText, FolderOpen, Briefcase,
-  Trash, X, History
+  Trash, X, History, Plus, Search, PanelLeft, Type, Waves
 } from 'lucide-react';
 import {
   T, geminiCall,
@@ -27,6 +27,7 @@ import MermaidDiagram from '@/components/MermaidDiagram';
 import { getJwtToken } from '@/lib/jwtCache';
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
+import GlacierBackground from '@/components/GlacierBackground';
 import dynamic from 'next/dynamic';
 
 const Playground = dynamic(() => import('./Playground'), { ssr: false });
@@ -220,7 +221,124 @@ export default function CodingTutor() {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [activeTab, setActiveTab] = useState('text'); // 'text' or 'voice'
   const [voiceSessionToRestore, setVoiceSessionToRestore] = useState(null);
-  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // FeralUI Fluid Background Themes: 'aurora' (Northern lights), 'glacier' (Deep Ocean), 'pastel' (Opal)
+  const BG_THEMES = useMemo(() => [
+    {
+      id: 'aurora',
+      name: 'Aurora Flow',
+      shortLabel: 'Aurora',
+      emoji: '🌌',
+      desc: 'Ghost light · Luminous Ray & Night Sky',
+      gradient: 'linear-gradient(135deg, #F4F8FF 0%, #BFD4EE 35%, #5C749A 65%, #232E4A 100%)',
+      color: '#BFD4EE',
+      border: 'rgba(191, 212, 238, 0.5)',
+      bg: 'rgba(191, 212, 238, 0.12)'
+    },
+    {
+      id: 'glacier',
+      name: 'Glacier Flow',
+      shortLabel: 'Glacier',
+      emoji: '❄️',
+      desc: 'Deep Ocean · Lapis & Hanada',
+      gradient: 'linear-gradient(135deg, #65BED0 0%, #277EA3 50%, #183F60 100%)',
+      color: '#65BED0',
+      border: 'rgba(101, 190, 208, 0.45)',
+      bg: 'rgba(101, 190, 208, 0.12)'
+    },
+    {
+      id: 'pastel',
+      name: 'Pastel Flow',
+      shortLabel: 'Pastel',
+      emoji: '🌸',
+      desc: 'Opal · Lavender & Sakura Pink',
+      gradient: 'linear-gradient(135deg, #9BE0E8 0%, #C4B5F7 50%, #F8B8D9 100%)',
+      color: '#D8B4FE',
+      border: 'rgba(192, 132, 252, 0.45)',
+      bg: 'rgba(192, 132, 252, 0.12)'
+    }
+  ], []);
+
+  const [bgTheme, setBgTheme] = useState('aurora');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vedika_tutor_bg_theme');
+      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel') {
+        setBgTheme(saved);
+      }
+    }
+  }, []);
+
+  const selectBgTheme = (themeId) => {
+    setBgTheme(themeId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vedika_tutor_bg_theme', themeId);
+    }
+  };
+
+  const activeThemeConfig = BG_THEMES.find(t => t.id === bgTheme) || BG_THEMES[0];
+
+  // Floating Glassmorphic Left Page Navbar state & shortcut
+  const [showLeftNav, setShowLeftNav] = useState(false);
+  const [leftNavView, setLeftNavView] = useState('menu'); // 'menu' | 'history'
+  const leftNavRef = useRef(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('frappe_user');
+        if (stored) setCurrentUser(JSON.parse(stored));
+      } catch (e) {}
+    }
+  }, []);
+
+  const userInitials = (currentUser?.name || currentUser?.full_name || 'Aarav')
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'AM';
+  const userName = currentUser?.name?.split(' ')[0] || currentUser?.full_name?.split(' ')[0] || 'Aarav';
+
+  // Global Keyboard Shortcut: Ctrl+B or Cmd+B toggles Left Page Navbar, Escape closes it
+  useEffect(() => {
+    const handleKeyShortcut = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        setShowLeftNav(prev => {
+          if (!prev) setLeftNavView('menu');
+          return !prev;
+        });
+      } else if (e.key === 'Escape' && showLeftNav) {
+        setShowLeftNav(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyShortcut);
+    return () => window.removeEventListener('keydown', handleKeyShortcut);
+  }, [showLeftNav]);
+
+  // Click outside listener for Left Page Navbar
+  useEffect(() => {
+    const handleLeftNavOutside = (e) => {
+      if (
+        leftNavRef.current &&
+        !leftNavRef.current.contains(e.target) &&
+        !e.target.closest('[data-leftnav-toggle]')
+      ) {
+        setShowLeftNav(false);
+      }
+    };
+    if (showLeftNav) {
+      document.addEventListener('mousedown', handleLeftNavOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleLeftNavOutside);
+    };
+  }, [showLeftNav]);
   
   const [jwtToken, setJwtToken] = useState(null);
   const [authenticating, setAuthenticating] = useState(true);
@@ -525,7 +643,14 @@ export default function CodingTutor() {
   const [isInputHovered, setIsInputHovered] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isInputPinned, setIsInputPinned] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const configDropdownRef = useRef(null);
+
+  const handleChatScroll = useCallback(() => {
+    if (!chatRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
+    setShowScrollDown(scrollHeight - scrollTop - clientHeight > 140);
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -552,12 +677,31 @@ export default function CodingTutor() {
     return 'Older';
   }
 
-  // Load local sessions
+  // Load local sessions and restore active session if present
   useEffect(() => {
+    let localText = [];
     try {
       const raw = localStorage.getItem(textSessKey);
-      if (raw) setTextSessions(JSON.parse(raw));
-    } catch {}
+      if (raw) {
+        localText = JSON.parse(raw);
+        setTextSessions(localText);
+      }
+    } catch (e) {
+      console.error("Failed to parse local sessions:", e);
+    }
+
+    const activeSid = localStorage.getItem('current-coding-tutor-session-id');
+    if (activeSid && localText.length > 0) {
+      const active = localText.find(s => s.id === activeSid);
+      if (active && active.messages && active.messages.length > 0) {
+        const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {} }));
+        setMessages(msgs);
+        setMode(active.mode || 'Beginner');
+        setLength(active.length || 'Short');
+        setCurrentSessionId(active.id);
+        setSessionDocs(active.documents || []);
+      }
+    }
   }, []);
 
   // Auto-resize the input textarea height
@@ -600,6 +744,57 @@ export default function CodingTutor() {
     return text;
   }, [textSessions]);
 
+  const filteredSessions = useMemo(() => {
+    if (!historySearch.trim()) return mergedSessions;
+    const q = historySearch.toLowerCase();
+    return mergedSessions.filter(s =>
+      (s.label && s.label.toLowerCase().includes(q)) ||
+      (s.topic && s.topic.toLowerCase().includes(q)) ||
+      (s.messages && s.messages.some(m => m.content && m.content.toLowerCase().includes(q)))
+    );
+  }, [mergedSessions, historySearch]);
+
+  const sessionGroups = useMemo(() => {
+    const groups = { 'Today': [], 'Yesterday': [], 'This Week': [], 'Older': [] };
+    for (const s of filteredSessions) {
+      const label = getDateLabel(s.timestamp || s.startedAt);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(s);
+    }
+    return groups;
+  }, [filteredSessions]);
+
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setSessionDocs([]);
+    setTopic('');
+    setErr('');
+    setUploadErr('');
+    setIsPlaygroundOpen(false);
+    setCodeOverride(null);
+    setExplanationOverride(null);
+    try { localStorage.removeItem('current-coding-tutor-session-id'); } catch {}
+    setShowLeftNav(false);
+  }, []);
+
+  const handleDeleteSession = useCallback(async (sid, e) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this chat session?')) return;
+
+    const updated = textSessions.filter(s => s.id !== sid);
+    setTextSessions(updated);
+    try { localStorage.setItem(textSessKey, JSON.stringify(updated)); } catch {}
+
+    if (currentSessionId === sid) {
+      setMessages([]);
+      setCurrentSessionId(null);
+      setSessionDocs([]);
+      setTopic('');
+      try { localStorage.removeItem('current-coding-tutor-session-id'); } catch {}
+    }
+  }, [textSessions, textSessKey, currentSessionId]);
+
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, streamingText]);
@@ -615,6 +810,7 @@ export default function CodingTutor() {
     setCurrentSessionId(session.id);
     setSessionDocs(session.documents || []);
     setErr(''); setTopic(''); setUploadErr('');
+    setShowLeftNav(false);
   }, []);
 
   // Handle click outside to close open feature cards (excluding Visual Summary which only closes on explicit close)
@@ -1321,352 +1517,691 @@ export default function CodingTutor() {
     <>
       <MobileNav title="Code with AI Tutor" accent={T.amber} items={[]} dropdownItems={NAV} extras={tutorExtras} />
       <div style={{ display: 'flex', height: '100%', maxHeight: '100%', width: '100%', background: T.bg, overflow: 'hidden' }}>
-        <div id="tutor-workspace-container" style={{ flex: 1, display: 'flex', flexDirection: showVerticalSplit ? 'column' : 'row', height: '100%', maxHeight: '100%', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+        <div id="tutor-workspace-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
           
-          {/* Chat Container */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            maxHeight: '100%',
-            minHeight: 0,
-            overflow: 'hidden',
-            background: T.bg,
-            position: 'relative'
-          }}>
-            {/* ── COMPACT HEADER ── */}
-            <div style={{ padding: isMobile ? '6px 12px' : '8px 20px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: T.s1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={() => router.push('/vedika-ai')}
-                  title="Back to Vedika AI"
-                  aria-label="Back to Vedika AI"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 10px',
-                    height: 28,
-                    borderRadius: 8,
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${T.border}`,
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    fontFamily: 'inherit',
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(6, 182, 212, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.45)';
-                    e.currentTarget.style.color = '#F1F5F9';
-                    e.currentTarget.style.transform = 'translateX(-2px)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                    e.currentTarget.style.borderColor = T.border;
-                    e.currentTarget.style.color = '#94A3B8';
-                    e.currentTarget.style.transform = 'none';
-                  }}
-                >
-                  <ChevronLeft size={14} />
-                  {!isMobile && <span>Vedika AI</span>}
-                </button>
+          {/* Floating Glassmorphic Left Page Navbar */}
+          {showLeftNav && (
+            <aside
+              ref={leftNavRef}
+              data-left-sidebar="true"
+              style={{
+                position: 'fixed',
+                top: 20,
+                bottom: 20,
+                left: 20,
+                width: isMobile ? 'calc(100vw - 40px)' : (leftNavView === 'history' ? 340 : 260),
+                background: 'rgba(10, 18, 38, 0.85)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                border: '1px solid rgba(56, 189, 248, 0.28)',
+                borderRadius: 24,
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75), 0 0 32px rgba(56, 189, 248, 0.18)',
+                zIndex: 1100,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                padding: '16px 14px',
+                animation: 'slideInLeftDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: 'width 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                overflow: 'hidden'
+              }}
+            >
+              {leftNavView === 'menu' ? (
+                <>
+                  {/* Top: Close Button + Action List */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
+                      <button
+                        onClick={() => setShowLeftNav(false)}
+                        title="Close Menu (Esc / Ctrl+B)"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          color: '#94A3B8',
+                          cursor: 'pointer',
+                          padding: 5,
+                          borderRadius: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
 
-                {/* Chat History Drawer Toggle Button */}
-                <button
-                  onClick={() => setShowChatHistory(prev => !prev)}
-                  title={showChatHistory ? "Close Chat History" : "Open Chat History"}
-                  aria-label="Chat History"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 10px',
-                    height: 28,
-                    borderRadius: 8,
-                    background: showChatHistory ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${showChatHistory ? 'rgba(6, 182, 212, 0.45)' : T.border}`,
-                    color: showChatHistory ? '#06B6D4' : '#94A3B8',
-                    cursor: 'pointer',
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    fontFamily: 'inherit',
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => {
-                    if (!showChatHistory) {
-                      e.currentTarget.style.background = 'rgba(6, 182, 212, 0.1)';
-                      e.currentTarget.style.color = '#F1F5F9';
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!showChatHistory) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                      e.currentTarget.style.color = '#94A3B8';
-                    }
-                  }}
-                >
-                  <History size={13} color={showChatHistory ? "#06B6D4" : "#94A3B8"} />
-                  {!isMobile && <span>Chat History</span>}
-                  {messages && messages.length > 0 && (
-                    <span style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      background: showChatHistory ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                      color: showChatHistory ? '#06B6D4' : '#CBD5E1',
-                      padding: '1px 6px',
-                      borderRadius: 10,
-                      lineHeight: 1.2
-                    }}>
-                      {messages.length}
-                    </span>
-                  )}
-                </button>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(6, 182, 212, 0.18)', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Code2 size={14} color="#06B6D4" />
-                </div>
-                <div>
-                  <h2 style={{ color: T.text, fontSize: isMobile ? 13 : 14.5, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>Code with AI Tutor</h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: T.green, flexShrink: 0 }} />
-                    <span style={{ fontSize: 10, color: T.muted, fontWeight: 500 }}>Programming AI Agent</span>
-                    <Lock size={9} color={T.dim} />
-                  </div>
-                </div>
-              </div>
+                    {/* Navigation items list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* New Chat */}
+                      <button
+                        onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '10px 14px',
+                          borderRadius: 14,
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#E2E8F0',
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
+                      >
+                        <Plus size={16} color="#06B6D4" />
+                        <span>New Chat</span>
+                      </button>
 
-              {/* Action Button for Sandbox & Text/Voice Toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={() => setIsPlaygroundOpen(!isPlaygroundOpen)}
-                  style={{
-                    background: isPlaygroundOpen ? `${T.accent}15` : 'transparent',
-                    border: `1px solid ${isPlaygroundOpen ? T.accent : T.border}`,
-                    color: isPlaygroundOpen ? T.accent : T.text,
-                    padding: '4px 10px',
-                    height: 28,
-                    borderRadius: 7,
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    transition: 'all 0.15s',
-                    fontFamily: 'inherit'
-                  }}
-                  title={isPlaygroundOpen ? "Hide Python Sandbox" : "Open Python Sandbox"}
-                >
-                  <Zap size={12} fill={isPlaygroundOpen ? T.accent : 'none'} />
-                  {isPlaygroundOpen ? 'Close Sandbox' : 'Open Sandbox'}
-                </button>
+                      {/* History */}
+                      <button
+                        onClick={() => setLeftNavView('history')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '10px 14px',
+                          borderRadius: 14,
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#E2E8F0',
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E2E8F0'; }}
+                      >
+                        <History size={16} color="#38BDF8" />
+                        <span style={{ flex: 1 }}>History</span>
+                        {mergedSessions && mergedSessions.length > 0 && (
+                          <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                            {mergedSessions.length}
+                          </span>
+                        )}
+                      </button>
 
-                <div style={{ display: 'flex', background: T.s2, borderRadius: 16, padding: 2, border: `1px solid ${T.border}` }}>
-                  <button onClick={() => setActiveTab('text')}
-                    style={{
-                      border: 'none', background: activeTab === 'text' ? T.amber : 'transparent',
-                      color: activeTab === 'text' ? '#fff' : T.muted, borderRadius: 13,
-                      padding: '3px 10px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit', transition: 'all 0.2s'
-                    }}>
-                    Text
-                  </button>
-                  <button onClick={() => setActiveTab('voice')}
-                    style={{
-                      border: 'none', background: activeTab === 'voice' ? T.amber : 'transparent',
-                      color: activeTab === 'voice' ? '#fff' : T.muted, borderRadius: 13,
-                      padding: '3px 10px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit', transition: 'all 0.2s'
-                    }}>
-                    Voice
-                  </button>
-                </div>
-
-                {isMobile && streamingText && (
-                  <Loader2 size={13} color={T.accent} className="custom-spin" />
-                )}
-              </div>
-            </div>
-
-            {activeTab === 'voice' ? (
-              <VoiceAgentView
-                inline={true}
-                onClose={() => { setActiveTab('text'); setVoiceSessionToRestore(null); }}
-                initialSession={voiceSessionToRestore}
-                sessionId={currentSessionId}
-                userId={userId}
-                onSessionComplete={(voiceMsgs) => {
-                  if (voiceMsgs?.length > 0) {
-                    const mapped = voiceMsgs.map(m => ({
-                      role: m.sender === 'student' ? 'user' : 'ai',
-                      content: m.text
-                    }));
-                    setMessages(prev => {
-                      const updated = [...prev, ...mapped];
-                      setTimeout(() => saveSession(updated, currentSessionId), 100);
-                      return updated;
-                    });
-                  }
-                }}
-              />
-            ) : (
-              <>
-                {/* ── CHAT & WATERMARK CONTAINER ── */}
-                <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-                  
-                  {/* WhatsApp-style subtle learning doodles wallpaper watermark ("very very lite") */}
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: "url('/vedika-doodles.svg')",
-                    backgroundRepeat: 'repeat',
-                    backgroundSize: '360px 360px',
-                    opacity: 0.055,
-                    pointerEvents: 'none',
-                    zIndex: 0,
-                    userSelect: 'none'
-                  }} />
-
-                  {/* Coding Bot image as a watermark in background so text never overlaps */}
-                  <div style={{
-                    position: 'absolute',
-                    right: isMobile ? '-10px' : '36px',
-                    bottom: isMobile ? '0px' : '15px',
-                    width: isMobile ? '260px' : '430px',
-                    maxWidth: '48vw',
-                    pointerEvents: 'none',
-                    zIndex: 0,
-                    opacity: 0.32,
-                    filter: 'drop-shadow(0 0 35px rgba(6, 182, 212, 0.28))',
-                    userSelect: 'none'
-                  }}>
-                    <img
-                      src="/vedika-code-watermark.png?v=2"
-                      alt="Vedika Code AI Watermark"
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
-
-                  {/* Slide-out Chat History Drawer */}
-                  {showChatHistory && (
-                    <aside
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        bottom: 0,
-                        left: 0,
-                        width: isMobile ? '85vw' : '320px',
-                        maxWidth: '360px',
-                        background: '#0B0F19',
-                        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                        zIndex: 50,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        boxShadow: '10px 0 35px rgba(0, 0, 0, 0.65)',
-                        animation: 'slideInLeftDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    >
+                      {/* Vedika Code AI (Active highlighted pill) */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '12px 16px',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                          background: 'rgba(16, 22, 36, 0.92)',
-                          flexShrink: 0
+                          gap: 12,
+                          padding: '10px 14px',
+                          borderRadius: 14,
+                          background: 'rgba(6, 182, 212, 0.28)',
+                          border: '1px solid rgba(6, 182, 212, 0.55)',
+                          boxShadow: '0 4px 18px rgba(6, 182, 212, 0.2)',
+                          color: '#FFFFFF',
+                          fontSize: 13.5,
+                          fontWeight: 700
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#F8FAFC', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                          <History size={14} color="#06B6D4" />
-                          <span>Chat History</span>
-                          {messages && messages.length > 0 && (
-                            <span style={{ fontSize: 10, background: 'rgba(6, 182, 212, 0.2)', color: '#06B6D4', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
-                              {messages.length}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setShowChatHistory(false)}
-                          style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                          title="Close Chat History"
-                          aria-label="Close Chat History"
-                        >
-                          <X size={15} />
-                        </button>
+                        <Code2 size={16} color="#38BDF8" />
+                        <span>Code with Vedika</span>
                       </div>
 
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {messages && messages.length > 0 ? (
-                          messages.map((msg, idx) => {
-                            const isUser = msg.role === 'user';
-                            const text = msg.content || '';
-                            const hasInfographic = msg.activeFeature === 'infographic' || msg.features?.infographic;
+                      {/* Divider */}
+                      <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)', margin: '4px 6px' }} />
+
+                      {/* Python Sandbox Toggle */}
+                      <button
+                        onClick={() => { setIsPlaygroundOpen(prev => !prev); setShowLeftNav(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '9px 14px',
+                          borderRadius: 14,
+                          background: isPlaygroundOpen ? 'rgba(6, 182, 212, 0.22)' : 'transparent',
+                          border: isPlaygroundOpen ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid transparent',
+                          color: isPlaygroundOpen ? '#38BDF8' : '#E2E8F0',
+                          fontSize: 13,
+                          fontWeight: isPlaygroundOpen ? 700 : 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(6, 182, 212, 0.15)'; }}
+                        onMouseLeave={e => { if (!isPlaygroundOpen) { e.currentTarget.style.color = '#E2E8F0'; e.currentTarget.style.background = 'transparent'; } }}
+                      >
+                        <Zap size={16} fill={isPlaygroundOpen ? '#38BDF8' : 'none'} color="#38BDF8" />
+                        <span>Python Sandbox</span>
+                      </button>
+
+                      {/* Text Mode */}
+                      <button
+                        onClick={() => { setActiveTab('text'); setShowLeftNav(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '9px 14px',
+                          borderRadius: 14,
+                          background: activeTab === 'text' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                          border: activeTab === 'text' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                          color: activeTab === 'text' ? '#FFFFFF' : '#94A3B8',
+                          fontSize: 13,
+                          fontWeight: activeTab === 'text' ? 700 : 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                        onMouseLeave={e => { if (activeTab !== 'text') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
+                      >
+                        <Type size={16} />
+                        <span>Text Mode</span>
+                      </button>
+
+                      {/* Voice Mode */}
+                      <button
+                        onClick={() => { setActiveTab('voice'); setShowLeftNav(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '9px 14px',
+                          borderRadius: 14,
+                          background: activeTab === 'voice' ? 'rgba(6, 182, 212, 0.3)' : 'transparent',
+                          border: activeTab === 'voice' ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
+                          color: activeTab === 'voice' ? '#FFFFFF' : '#94A3B8',
+                          fontSize: 13,
+                          fontWeight: activeTab === 'voice' ? 700 : 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)'; }}
+                        onMouseLeave={e => { if (activeTab !== 'voice') { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; } }}
+                      >
+                        <Waves size={16} />
+                        <span>Voice Mode</span>
+                      </button>
+
+                      {/* Theme Selector (Aurora / Glacier / Pastel) */}
+                      <button
+                        onClick={() => {
+                          const ids = BG_THEMES.map(t => t.id);
+                          const nextIdx = (ids.indexOf(bgTheme) + 1) % ids.length;
+                          selectBgTheme(ids[nextIdx]);
+                        }}
+                        title={`Switch fluid background theme (Current: ${activeThemeConfig.name})`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '9px 14px',
+                          borderRadius: 14,
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: `1px solid ${activeThemeConfig.border}`,
+                          color: '#E2E8F0',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; e.currentTarget.style.color = '#E2E8F0'; }}
+                      >
+                        <span style={{ fontSize: 14 }}>{activeThemeConfig.emoji}</span>
+                        <span style={{ flex: 1 }}>{activeThemeConfig.shortLabel}</span>
+                        <span style={{ fontSize: 9.5, color: '#94A3B8', background: 'rgba(255, 255, 255, 0.08)', padding: '1px 5px', borderRadius: 4 }}>Cycle</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bottom: User Profile Capsule */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 12px',
+                      borderRadius: 16,
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                    onClick={() => { router.push('/profile'); setShowLeftNav(false); }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#38BDF8'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.65)'; }}
+                  >
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #0284C7 0%, #06B6D4 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      color: '#FFFFFF',
+                      flexShrink: 0
+                    }}>
+                      {userInitials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {userName}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#94A3B8' }}>
+                        Free Plan
+                      </div>
+                    </div>
+                    <ChevronRight size={14} color="#94A3B8" />
+                  </div>
+                </>
+              ) : (
+                /* History Subview inside the Floating Glassmorphic Sidebar */
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: 10 }}>
+                  {/* Header: Back to Menu + History Title with Badge + New Chat + Close */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        onClick={() => setLeftNavView('menu')}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: '#38BDF8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          cursor: 'pointer',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '4px 8px',
+                          borderRadius: 8,
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)'; e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                        title="Back to Menu"
+                      >
+                        <ChevronLeft size={15} />
+                        <span>Menu</span>
+                      </button>
+
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span>History</span>
+                        {mergedSessions?.length > 0 && (
+                          <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                            {mergedSessions.length}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          background: 'rgba(6, 182, 212, 0.2)',
+                          border: '1px solid rgba(6, 182, 212, 0.45)',
+                          borderRadius: 8,
+                          padding: '4px 8px',
+                          color: '#38BDF8',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                        title="Start New Chat"
+                      >
+                        <Plus size={13} color="#06B6D4" />
+                        <span>New</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowLeftNav(false)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          color: '#94A3B8',
+                          cursor: 'pointer',
+                          padding: 5,
+                          borderRadius: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                        title="Close"
+                        aria-label="Close"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 10,
+                    padding: '6px 10px',
+                    flexShrink: 0
+                  }}>
+                    <Search size={13} color="#64748B" style={{ flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      value={historySearch}
+                      onChange={e => setHistorySearch(e.target.value)}
+                      placeholder="Search code conversations..."
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        color: '#F1F5F9',
+                        fontSize: 12,
+                        width: '100%',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                    {historySearch && (
+                      <button
+                        onClick={() => setHistorySearch('')}
+                        style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sessions Scroll List */}
+                  <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 2 }}>
+                    {['Today', 'Yesterday', 'This Week', 'Older'].map(groupKey => {
+                      const list = sessionGroups[groupKey] || [];
+                      if (list.length === 0) return null;
+                      return (
+                        <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', color: '#38BDF8', textTransform: 'uppercase', paddingLeft: 4 }}>
+                            {groupKey}
+                          </div>
+                          {list.map(session => {
+                            const isActive = session.id === currentSessionId;
+                            const title = session.label || session.topic || 'Untitled Session';
+                            const msgCount = session.messages?.length || 0;
+                            const timeStr = session.timestamp ? new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                             return (
                               <div
-                                key={msg.id || idx}
-                                onClick={() => {
-                                  const el = document.getElementById(`msg-${idx}`);
-                                  if (el) {
-                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                  }
-                                  if (isMobile) setShowChatHistory(false);
-                                }}
+                                key={session.id}
+                                onClick={() => { handleSelectSession(session); setShowLeftNav(false); }}
                                 style={{
                                   display: 'flex',
                                   flexDirection: 'column',
-                                  gap: 5,
-                                  padding: '9px 12px',
-                                  borderRadius: 10,
-                                  background: isUser ? 'rgba(6, 182, 212, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                                  border: `1px solid ${isUser ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.06)'}`,
+                                  gap: 6,
+                                  padding: '9px 11px',
+                                  borderRadius: 12,
+                                  background: isActive ? 'rgba(6, 182, 212, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                                  border: `1px solid ${isActive ? 'rgba(6, 182, 212, 0.55)' : 'rgba(255, 255, 255, 0.07)'}`,
                                   cursor: 'pointer',
                                   transition: 'all 0.15s ease'
                                 }}
                                 onMouseEnter={e => {
-                                  e.currentTarget.style.background = isUser ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.07)';
-                                  e.currentTarget.style.borderColor = isUser ? 'rgba(6, 182, 212, 0.45)' : 'rgba(255, 255, 255, 0.15)';
+                                  if (!isActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                  }
                                 }}
                                 onMouseLeave={e => {
-                                  e.currentTarget.style.background = isUser ? 'rgba(6, 182, 212, 0.08)' : 'rgba(255, 255, 255, 0.03)';
-                                  e.currentTarget.style.borderColor = isUser ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.06)';
+                                  if (!isActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
+                                  }
                                 }}
-                                title="Click to jump to message"
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontWeight: 600 }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isUser ? '#06B6D4' : '#38BDF8' }}>
-                                    <span>{isUser ? '👤 You' : '💻 Code AI'}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                  <span style={{
+                                    color: isActive ? '#FFFFFF' : '#E2E8F0',
+                                    fontSize: 12,
+                                    fontWeight: isActive ? 700 : 500,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    flex: 1
+                                  }}>
+                                    💻 {title}
                                   </span>
-                                  <span style={{ color: '#64748B', fontSize: 10 }}>#{idx + 1}</span>
+                                  <button
+                                    onClick={(e) => handleDeleteSession(session.id, e)}
+                                    title="Delete session"
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#64748B',
+                                      cursor: 'pointer',
+                                      padding: 2,
+                                      borderRadius: 4,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      opacity: 0.6,
+                                      transition: 'opacity 0.15s, color 0.15s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#F87171'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = '#64748B'; }}
+                                  >
+                                    <Trash size={12} />
+                                  </button>
                                 </div>
-                                <div style={{ color: '#CBD5E1', fontSize: 11.5, lineHeight: 1.45, maxHeight: 68, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                                  {text || 'Code Query'}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: '#94A3B8' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                    {session.mode && (
+                                      <span style={{
+                                        background: `${modeColors[session.mode] || T.amber}25`,
+                                        color: modeColors[session.mode] || '#F59E0B',
+                                        padding: '1px 5px',
+                                        borderRadius: 4,
+                                        fontWeight: 600
+                                      }}>
+                                        {session.mode}
+                                      </span>
+                                    )}
+                                    {msgCount > 0 && <span>{msgCount} msgs</span>}
+                                  </div>
+                                  {timeStr && <span style={{ fontSize: 9.5, color: '#64748B' }}>{timeStr}</span>}
                                 </div>
-                                {hasInfographic && (
-                                  <span style={{ alignSelf: 'flex-start', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                                    Active Infographic 🎯
-                                  </span>
-                                )}
                               </div>
                             );
-                          })
-                        ) : (
-                          <div style={{ padding: '36px 12px', textAlign: 'center', color: '#64748B', fontSize: 12 }}>
-                            <History size={24} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-                            <div>No code queries yet. Ask a question or paste code to begin!</div>
-                          </div>
-                        )}
-                      </div>
-                    </aside>
-                  )}
+                          })}
+                        </div>
+                      );
+                    })}
 
-                  {/* ── CHAT MESSAGES AREA (z-index: 1 sits cleanly over watermark) ── */}
-                  <div ref={chatRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 10px' : '28px 28px 16px' }}>
+                    {filteredSessions.length === 0 && (
+                      <div style={{ padding: '30px 10px', textAlign: 'center', color: '#64748B', fontSize: 11.5 }}>
+                        <History size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                        <div>No conversations found.</div>
+                        <button
+                          onClick={() => { handleNewChat(); setShowLeftNav(false); }}
+                          style={{
+                            marginTop: 10,
+                            background: 'rgba(6, 182, 212, 0.2)',
+                            border: '1px solid rgba(6, 182, 212, 0.4)',
+                            borderRadius: 8,
+                            color: '#38BDF8',
+                            padding: '5px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + Start New Chat
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </aside>
+          )}
+
+          {activeTab === 'voice' ? (
+            <VoiceAgentView
+              inline={true}
+              onClose={() => { setActiveTab('text'); setVoiceSessionToRestore(null); }}
+              initialSession={voiceSessionToRestore}
+              sessionId={currentSessionId}
+              userId={userId}
+              onSessionComplete={(voiceMsgs) => {
+                if (voiceMsgs?.length > 0) {
+                  const mapped = voiceMsgs.map(m => ({
+                    role: m.sender === 'student' ? 'user' : 'ai',
+                    content: m.text
+                  }));
+                  setMessages(prev => {
+                    const updated = [...prev, ...mapped];
+                    setTimeout(() => saveSession(updated, currentSessionId), 100);
+                    return updated;
+                  });
+                }
+              }}
+            />
+          ) : (
+            <>
+              {/* ── CHAT & WATERMARK CONTAINER ── */}
+              <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+                
+                {/* FeralUI Flow Gradient Canvas Background */}
+                <GlacierBackground variant={bgTheme} opacity={1.0} />
+
+                {/* Coding Bot image as a subtle watermark in background so text never overlaps */}
+                <div style={{
+                  position: 'absolute',
+                  right: isMobile ? '-10px' : '36px',
+                  bottom: isMobile ? '0px' : '15px',
+                  width: isMobile ? '260px' : '430px',
+                  maxWidth: '48vw',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                  opacity: 0.28,
+                  filter: 'drop-shadow(0 0 35px rgba(6, 182, 212, 0.28))',
+                  userSelect: 'none'
+                }}>
+                  <img
+                    src="/vedika-code-watermark.png?v=2"
+                    alt="Vedika Code AI Watermark"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+
+                {/* Floating Top-Right Controls: Python Sandbox Toggle & Mode Pill */}
+                <div style={{
+                  position: 'absolute',
+                  top: 14,
+                  right: isMobile ? 12 : 20,
+                  zIndex: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'rgba(15, 23, 42, 0.65)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 14,
+                  padding: '4px 8px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)'
+                }}>
+                  <button
+                    onClick={() => setIsPlaygroundOpen(!isPlaygroundOpen)}
+                    style={{
+                      background: isPlaygroundOpen ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
+                      border: isPlaygroundOpen ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
+                      color: isPlaygroundOpen ? '#38BDF8' : '#CBD5E1',
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      transition: 'all 0.15s',
+                      fontFamily: 'inherit'
+                    }}
+                    title={isPlaygroundOpen ? "Close Python Sandbox" : "Open Python Sandbox"}
+                  >
+                    <Zap size={12} fill={isPlaygroundOpen ? '#38BDF8' : 'none'} color={isPlaygroundOpen ? '#38BDF8' : '#CBD5E1'} />
+                    <span>{isPlaygroundOpen ? 'Close Sandbox' : 'Python Sandbox'}</span>
+                  </button>
+
+                  <div style={{ width: 1, height: 16, background: 'rgba(255, 255, 255, 0.12)' }} />
+
+                  <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 10, padding: 2 }}>
+                    <button
+                      onClick={() => setActiveTab('text')}
+                      style={{
+                        border: 'none',
+                        background: activeTab === 'text' ? 'rgba(6, 182, 212, 0.3)' : 'transparent',
+                        color: activeTab === 'text' ? '#FFFFFF' : '#94A3B8',
+                        borderRadius: 8,
+                        padding: '3px 8px',
+                        fontSize: 11,
+                        fontWeight: activeTab === 'text' ? 700 : 500,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      Text
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('voice')}
+                      style={{
+                        border: 'none',
+                        background: activeTab === 'voice' ? 'rgba(6, 182, 212, 0.3)' : 'transparent',
+                        color: activeTab === 'voice' ? '#FFFFFF' : '#94A3B8',
+                        borderRadius: 8,
+                        padding: '3px 8px',
+                        fontSize: 11,
+                        fontWeight: activeTab === 'voice' ? 700 : 500,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      Voice
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── CHAT MESSAGES AREA (z-index: 1 sits cleanly over watermark) ── */}
+                <div ref={chatRef} onScroll={handleChatScroll} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 120px' : '28px 28px 135px' }}>
+                  
+                  {/* Centered Date Capsule */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.55)',
+                      backdropFilter: 'blur(12px)',
+                      WebkitBackdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: 20,
+                      padding: '4px 14px',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: '#94A3B8'
+                    }}>
+                      Today, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </div>
                     {/* Welcome AI Message */}
                     <div style={{ display: 'flex', gap: rGap, marginBottom: 24, maxWidth: msgMaxW }}>
                       <div style={{ width: isMobile ? 32 : 38, height: isMobile ? 32 : 38, borderRadius: '50%', background: 'rgba(6, 182, 212, 0.18)', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -2074,297 +2609,562 @@ export default function CodingTutor() {
                 </div>
               )}
             </div>
-          </div>
 
-            {/* ── FOOTER: Collapsible Mode/Depth selection + Collapsible Text Input ── */}
+        {/* ── SCROLL FOR MORE BUTTON MATCHING REFERENCE IMAGE ── */}
+        {showScrollDown && (
+          <button
+            type="button"
+            onClick={() => {
+              if (chatRef.current) {
+                chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' });
+              }
+            }}
+            style={{
+              position: 'absolute',
+              bottom: isMobile ? 68 : 78,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.14)',
+              borderRadius: 20,
+              padding: '4px 14px',
+              color: '#CBD5E1',
+              fontSize: 11.5,
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              zIndex: 32,
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#06B6D4';
+              e.currentTarget.style.transform = 'translateX(-50%) translateY(-2px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = '#CBD5E1';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.14)';
+              e.currentTarget.style.transform = 'translateX(-50%) translateY(0)';
+            }}
+          >
+            <ChevronDown size={14} color="#06B6D4" />
+            <span>Scroll for more</span>
+          </button>
+        )}
+
+        {/* ── CREATIVE FLOATING DYNAMIC OMNIBAR CONTAINER WITH TOGGLE BUTTON ── */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: isMobile ? 12 : 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: isMobile ? 'calc(100% - 24px)' : (!isInputHovered && !isInputFocused && !isInputPinned && !topic.trim() && !isConfigOpen && !showMentionDropdown && !uploading && (!sessionDocs || sessionDocs.length === 0) && messages.length > 0 && !loading && !streamingText ? 'min(640px, calc(100% - 48px))' : 'min(840px, calc(100% - 48px))'),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            zIndex: 35,
+            pointerEvents: 'none',
+            transition: 'width 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar */}
+          <button
+            type="button"
+            data-leftnav-toggle="true"
+            onClick={() => {
+              setShowLeftNav(prev => {
+                if (!prev) setLeftNavView('menu');
+                return !prev;
+              });
+            }}
+            title={showLeftNav ? "Close Menu (Esc / Ctrl+B)" : "Open Navigation (Ctrl+B)"}
+            aria-label="Toggle Navigation Menu"
+            style={{
+              pointerEvents: 'auto',
+              width: isMobile ? 42 : 48,
+              height: isMobile ? 42 : 48,
+              borderRadius: isMobile ? 21 : 24,
+              background: showLeftNav ? 'rgba(6, 182, 212, 0.35)' : 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: showLeftNav ? '1px solid rgba(6, 182, 212, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
+              boxShadow: showLeftNav
+                ? '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.3)'
+                : '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: showLeftNav ? '#FFFFFF' : '#94A3B8',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              position: 'relative'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#06B6D4';
+              e.currentTarget.style.transform = 'scale(1.06)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
+              e.currentTarget.style.borderColor = showLeftNav ? 'rgba(6, 182, 212, 0.7)' : 'rgba(255, 255, 255, 0.16)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <PanelLeft size={isMobile ? 16 : 18} />
+            {!isMobile && (
+              <span style={{
+                position: 'absolute',
+                bottom: -6,
+                background: 'rgba(10, 15, 28, 0.95)',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                borderRadius: 4,
+                fontSize: 8,
+                fontWeight: 800,
+                color: '#38BDF8',
+                padding: '0 4px',
+                lineHeight: '12px',
+                letterSpacing: '0.04em'
+              }}>
+                ^B
+              </span>
+            )}
+          </button>
+
+          {!isInputHovered && !isInputFocused && !isInputPinned && !topic.trim() && !isConfigOpen && !showMentionDropdown && !uploading && (!sessionDocs || sessionDocs.length === 0) && messages.length > 0 && !loading && !streamingText ? (
+            /* Sleek Resting Pill Capsule */
+            <div
+              onMouseEnter={() => setIsInputHovered(true)}
+              onClick={() => {
+                setIsInputHovered(true);
+                setIsInputFocused(true);
+                setTimeout(() => inputRef.current?.focus(), 60);
+              }}
+              style={{
+                pointerEvents: 'auto',
+                flex: 1,
+                minWidth: 0,
+                height: 48,
+                borderRadius: 24,
+                background: 'rgba(15, 20, 35, 0.85)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 10px 0 14px',
+                cursor: 'pointer',
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                animation: 'fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <div
+                  data-leftnav-toggle="true"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLeftNav(prev => {
+                      if (!prev) setLeftNavView('menu');
+                      return !prev;
+                    });
+                  }}
+                  title="Toggle Vedika Menu (Ctrl+B)"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.45), rgba(2, 132, 199, 0.45))',
+                    border: '1px solid rgba(6, 182, 212, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 0 12px rgba(6, 182, 212, 0.35)',
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <Code2 size={14} color="#38BDF8" />
+                </div>
+                <span style={{
+                  color: '#94A3B8',
+                  fontSize: isMobile ? 12.5 : 13.5,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontWeight: 500
+                }}>
+                  Ask a coding question, debug an algorithm, or type @...
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  borderRadius: 999,
+                  padding: '3px 8px',
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  color: modeColors[mode] || '#CBD5E1'
+                }}>
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: modeColors[mode] || T.amber }} />
+                  <span>{mode}</span>
+                </div>
+
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 10px rgba(6, 182, 212, 0.4)',
+                    color: '#FFFFFF'
+                  }}
+                >
+                  <Send size={14} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Full Creative Omnibar */
             <div
               onMouseEnter={() => setIsInputHovered(true)}
               onMouseLeave={() => setIsInputHovered(false)}
               style={{
-                flexShrink: 0,
-                borderTop: `1px solid ${T.border}`,
-                background: 'rgba(11, 15, 25, 0.96)',
-                padding: isMobile ? '8px 12px 10px' : '8px 24px 12px',
-                backdropFilter: 'blur(16px)',
-                transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                position: 'relative',
-                zIndex: 10
+                pointerEvents: 'auto',
+                flex: 1,
+                minWidth: 0,
+                background: 'rgba(12, 16, 28, 0.92)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                border: '1px solid rgba(6, 182, 212, 0.38)',
+                borderRadius: 18,
+                padding: isMobile ? '10px 12px' : '12px 16px',
+                boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.75), 0 0 35px rgba(6, 182, 212, 0.22)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                animation: 'fadeSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                position: 'relative'
               }}
             >
-              {/* If chat has started and user is not near/hovering or typing, collapse down to just the Send button */}
-              {messages.length > 0 && !isInputHovered && !isInputFocused && !topic.trim() && !loading && !streamingText ? (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '2px 0' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsInputHovered(true);
-                      setIsInputFocused(true);
-                      setTimeout(() => inputRef.current?.focus(), 50);
-                    }}
-                    title="Ask next coding question to Vedika..."
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 14,
-                      background: 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
-                      border: '1px solid rgba(6, 182, 212, 0.45)',
-                      boxShadow: '0 4px 20px rgba(6, 182, 212, 0.45)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                      transform: 'scale(1)'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                  >
-                    <Send size={18} color="#FFFFFF" />
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, animation: 'fadeIn 0.25s ease' }}>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15, 23, 42, 0.62)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(6, 182, 212, 0.28)', borderRadius: 14, padding: '7px 14px', position: 'relative', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)' }}>
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
-                    <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                      style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploading ? '#06B6D4' : '#94A3B8', padding: '2px', display: 'flex', alignItems: 'center' }}
-                      title="Upload PDF Context">
-                      {uploading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Paperclip size={16} />}
-                    </button>
-
-                    {/* Autocomplete Dropdown popup */}
-                    {showMentionDropdown && filteredMentions.length > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: 'calc(100% + 8px)',
-                        left: 0,
-                        right: 0,
-                        background: T.s3,
-                        border: `1px solid ${T.border}`,
-                        borderRadius: 12,
-                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
-                        maxHeight: 220,
-                        overflowY: 'auto',
-                        zIndex: 100,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '6px 0'
-                      }}>
-                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '0.05em', padding: '6px 14px 4px', textTransform: 'uppercase', borderBottom: `1px solid ${T.border}`, marginBottom: 4 }}>
-                          Coding Tutor Commands
-                        </div>
-                        {filteredMentions.map((opt, idx) => {
-                          const isSelected = idx === selectedMentionIndex;
-                          return (
-                            <div
-                              key={opt.id}
-                              onMouseEnter={() => setSelectedMentionIndex(idx)}
-                              style={{
-                                padding: '8px 14px',
-                                background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                                borderLeft: `3px solid ${isSelected ? opt.color : 'transparent'}`,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                transition: 'all 0.15s'
-                              }}
-                            >
-                              <div onClick={() => handleSelectMention(opt)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
-                                <span style={{ fontSize: 16 }}>{opt.icon}</span>
-                                <div style={{ flex: 1, overflow: 'hidden' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontWeight: 700, color: opt.color, fontSize: 12.5 }}>@ {opt.name}</span>
-                                    <span style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{opt.label}</span>
-                                  </div>
-                                  <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{opt.desc}</div>
-                                </div>
-                              </div>
-                              {opt.isDoc && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (confirm(`Are you sure you want to permanently delete "${opt.label}" from your library?`)) {
-                                      await handleLibraryDelete(opt.id);
-                                    }
-                                  }}
-                                  style={{
-                                    background: 'none', border: 'none', color: T.red, cursor: 'pointer', padding: '4px',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
-                                  }}
-                                  title="Delete from library"
-                                >
-                                  <Trash size={12} />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <textarea ref={inputRef} value={topic}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setTopic(val);
-                        const selectionStart = e.target.selectionStart;
-                        const textBeforeCursor = val.slice(0, selectionStart);
-                        const atIndex = textBeforeCursor.lastIndexOf('@');
-                        
-                        if (atIndex !== -1 && !textBeforeCursor.slice(atIndex).includes(' ')) {
-                          const query = textBeforeCursor.slice(atIndex + 1);
-                          setMentionSearch(query);
-                          setShowMentionDropdown(true);
-                          setSelectedMentionIndex(0);
-                          if (query === '') {
-                            fetchAvailableDocs();
-                          }
-                        } else {
-                          setShowMentionDropdown(false);
-                        }
-                      }}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
-                      placeholder="Type your coding question to Vedika..." rows={1}
-                      onKeyDown={handleKeyDown}
-                      style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F1F5F9', fontSize: 13.5, lineHeight: 1.5, resize: 'none', fontFamily: 'inherit', padding: 0, minHeight: 22, maxHeight: 110 }} />
-
-                    {/* Collapsible Mode & Depth Pill Button inside input */}
-                    <div style={{ position: 'relative', flexShrink: 0 }} ref={configDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setIsConfigOpen(prev => !prev)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          padding: '4px 9px',
-                          borderRadius: 9999,
-                          background: 'rgba(255, 255, 255, 0.07)',
-                          border: '1px solid rgba(255, 255, 255, 0.12)',
-                          color: '#CBD5E1',
-                          fontSize: 10.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          transition: 'all 0.15s ease'
-                        }}
-                        title="Change learning mode & explanation depth"
-                      >
-                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.green, flexShrink: 0 }} />
-                        <span>{mode} &middot; {length}</span>
-                        <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              {/* Attached PDF documents pills (if any) */}
+              {sessionDocs && sessionDocs.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingBottom: 6, borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
+                  {sessionDocs.map(doc => (
+                    <div key={doc.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.35)', borderRadius: 8, padding: '3px 8px', fontSize: 11, color: '#E2E8F0' }}>
+                      <span>📄</span>
+                      <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                      {doc.status && doc.status !== 'completed' && <span style={{ fontSize: 9, opacity: 0.8 }}>({doc.status})</span>}
+                      <button type="button" onClick={() => handleDeleteDoc(doc.id)} style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                        <X size={12} />
                       </button>
-
-                      {/* Popover */}
-                      {isConfigOpen && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: 'calc(100% + 10px)',
-                          right: 0,
-                          background: 'rgba(15, 19, 34, 0.98)',
-                          backdropFilter: 'blur(20px)',
-                          WebkitBackdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          borderRadius: 14,
-                          padding: '12px 14px',
-                          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 10,
-                          zIndex: 250,
-                          minWidth: 230
-                        }}>
-                          <div>
-                            <div style={{ fontSize: 9.5, fontWeight: 800, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-                              Learning Mode
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                              {MODES.map(m => {
-                                const isSel = mode === m;
-                                return (
-                                  <button
-                                    key={m}
-                                    type="button"
-                                    onClick={() => setMode(m)}
-                                    style={{
-                                      padding: '5px 8px',
-                                      borderRadius: 8,
-                                      fontSize: 11,
-                                      fontWeight: isSel ? 700 : 500,
-                                      background: isSel ? `${modeColors[m] || '#06B6D4'}25` : 'rgba(255, 255, 255, 0.04)',
-                                      border: isSel ? `1px solid ${modeColors[m] || '#06B6D4'}` : '1px solid transparent',
-                                      color: isSel ? (modeColors[m] || '#FFFFFF') : T.muted,
-                                      cursor: 'pointer',
-                                      textAlign: 'center',
-                                      transition: 'all 0.12s'
-                                    }}
-                                  >
-                                    {m}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div style={{ fontSize: 9.5, fontWeight: 800, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-                              Explanation Depth
-                            </div>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              {LENGTHS.map(l => {
-                                const isSel = length === l;
-                                return (
-                                  <button
-                                    key={l}
-                                    type="button"
-                                    onClick={() => setLength(l)}
-                                    style={{
-                                      flex: 1,
-                                      padding: '5px 8px',
-                                      borderRadius: 8,
-                                      fontSize: 11,
-                                      fontWeight: isSel ? 700 : 500,
-                                      background: isSel ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.04)',
-                                      border: isSel ? '1px solid #06B6D4' : '1px solid transparent',
-                                      color: isSel ? '#FFFFFF' : T.muted,
-                                      cursor: 'pointer',
-                                      textAlign: 'center',
-                                      transition: 'all 0.12s'
-                                    }}
-                                  >
-                                    {l}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                  <button onClick={handleSend} disabled={loading}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      background: loading ? T.dim : 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
-                      border: 'none',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: loading ? 'none' : '0 4px 16px rgba(6, 182, 212, 0.35)',
-                      transition: 'all 0.2s ease'
-                    }}>
-                    {loading ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} color="#fff" />}
-                  </button>
+                  ))}
                 </div>
               )}
+
+              {/* Mention Dropdown Popup */}
+              {showMentionDropdown && filteredMentions.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 10px)',
+                  left: 0,
+                  right: 0,
+                  background: 'rgba(15, 22, 40, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  borderRadius: 14,
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)',
+                  maxHeight: 220,
+                  overflowY: 'auto',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '6px 0'
+                }}>
+                  <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.05em', padding: '6px 14px 4px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: 4 }}>
+                    Coding Tutor Commands & Docs
+                  </div>
+                  {filteredMentions.map((opt, idx) => {
+                    const isSelected = idx === selectedMentionIndex;
+                    return (
+                      <div
+                        key={opt.id}
+                        onMouseEnter={() => setSelectedMentionIndex(idx)}
+                        style={{
+                          padding: '8px 14px',
+                          background: isSelected ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+                          borderLeft: `3px solid ${isSelected ? opt.color : 'transparent'}`,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <div onClick={() => handleSelectMention(opt)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+                          <span style={{ fontSize: 16 }}>{opt.icon}</span>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 700, color: opt.color, fontSize: 12.5 }}>@ {opt.name}</span>
+                              <span style={{ fontWeight: 600, color: '#F1F5F9', fontSize: 12 }}>{opt.label}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{opt.desc}</div>
+                          </div>
+                        </div>
+                        {opt.isDoc && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm(`Are you sure you want to permanently delete "${opt.label}" from your library?`)) {
+                                await handleLibraryDelete(opt.id);
+                              }
+                            }}
+                            style={{
+                              background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: '4px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
+                            }}
+                            title="Delete from library"
+                          >
+                            <Trash size={12} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Main Textarea Line */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 8,
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    color: uploading ? '#06B6D4' : '#94A3B8',
+                    padding: '6px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s'
+                  }}
+                  title="Upload PDF Context"
+                >
+                  {uploading ? <Loader2 size={16} className="custom-spin" /> : <Paperclip size={16} />}
+                </button>
+
+                <textarea
+                  ref={inputRef}
+                  value={topic}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setTopic(val);
+                    const selectionStart = e.target.selectionStart;
+                    const textBeforeCursor = val.slice(0, selectionStart);
+                    const atIndex = textBeforeCursor.lastIndexOf('@');
+                    
+                    if (atIndex !== -1 && !textBeforeCursor.slice(atIndex).includes(' ')) {
+                      const query = textBeforeCursor.slice(atIndex + 1);
+                      setMentionSearch(query);
+                      setShowMentionDropdown(true);
+                      setSelectedMentionIndex(0);
+                      if (query === '') {
+                        fetchAvailableDocs();
+                      }
+                    } else {
+                      setShowMentionDropdown(false);
+                    }
+                  }}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  placeholder="Ask a coding question, debug an algorithm, or type @..."
+                  rows={1}
+                  onKeyDown={handleKeyDown}
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#F1F5F9',
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                    padding: 0,
+                    minHeight: 24,
+                    maxHeight: 110
+                  }}
+                />
+
+                {/* Mode & Depth Config Pill Button inside input */}
+                <div style={{ position: 'relative', flexShrink: 0 }} ref={configDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfigOpen(prev => !prev)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '4px 9px',
+                      borderRadius: 9999,
+                      background: 'rgba(255, 255, 255, 0.07)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#CBD5E1',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Change learning mode & explanation depth"
+                  >
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.amber, flexShrink: 0 }} />
+                    <span>{mode} &middot; {length}</span>
+                    <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+
+                  {/* Popover */}
+                  {isConfigOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 10px)',
+                      right: 0,
+                      background: 'rgba(15, 19, 34, 0.98)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      borderRadius: 14,
+                      padding: '12px 14px',
+                      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      zIndex: 250,
+                      minWidth: 230
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Learning Mode
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                          {MODES.map(m => {
+                            const isSel = mode === m;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setMode(m)}
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  fontWeight: isSel ? 700 : 500,
+                                  background: isSel ? `${modeColors[m] || '#06B6D4'}25` : 'rgba(255, 255, 255, 0.04)',
+                                  border: isSel ? `1px solid ${modeColors[m] || '#06B6D4'}` : '1px solid transparent',
+                                  color: isSel ? (modeColors[m] || '#FFFFFF') : '#94A3B8',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.12s'
+                                }}
+                              >
+                                {m}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Explanation Depth
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {LENGTHS.map(l => {
+                            const isSel = length === l;
+                            return (
+                              <button
+                                key={l}
+                                type="button"
+                                onClick={() => setLength(l)}
+                                style={{
+                                  flex: 1,
+                                  padding: '5px 8px',
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  fontWeight: isSel ? 700 : 500,
+                                  background: isSel ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                                  border: isSel ? '1px solid #06B6D4' : '1px solid transparent',
+                                  color: isSel ? '#FFFFFF' : '#94A3B8',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.12s'
+                                }}
+                              >
+                                {l}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Send Button */}
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={loading}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 12,
+                    background: loading ? '#334155' : 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
+                    border: 'none',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: loading ? 'none' : '0 4px 16px rgba(6, 182, 212, 0.35)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}
+                </button>
+              </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
+      </div>
+    </>
+  )}
       </div>
 
           {/* Floating Sandbox Modal Overlay */}
@@ -2452,7 +3252,6 @@ export default function CodingTutor() {
           )}
 
         </div>
-      </div>
 
       <style>{`
         .md-content p { margin: 0 0 0.6em 0; text-align: justify; line-height: 1.65; }

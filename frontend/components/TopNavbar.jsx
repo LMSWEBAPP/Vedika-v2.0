@@ -138,7 +138,7 @@ export default function TopNavbar() {
     }, 200);
   };
 
-  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask';
+  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
   const [isTopNavVisible, setIsTopNavVisible] = useState(false);
   const hideTimerRef = useRef(null);
 
@@ -158,17 +158,9 @@ export default function TopNavbar() {
   useEffect(() => {
     if (!isAskVedika) return;
     const handleMouseMove = (e) => {
-      // Keep left sidebar interaction zone completely clear (sidebar is at left: 20px, width up to 340px)
-      if (e.clientX <= 440) {
-        if (!coursesDropdownOpen && !profileDropdownOpen) {
-          handleScheduleHideTopNav();
-        }
-        return;
-      }
-
       if (e.clientY <= 55) {
         handleShowTopNav();
-      } else if (e.clientY > 120 && !coursesDropdownOpen && !profileDropdownOpen) {
+      } else if (e.clientY > 135 && !coursesDropdownOpen && !profileDropdownOpen) {
         handleScheduleHideTopNav();
       }
     };
@@ -179,15 +171,15 @@ export default function TopNavbar() {
   if (isAskVedika) {
     return (
       <>
-        {/* Top hover detection strip (active only outside the left sidebar region) */}
+        {/* Top hover detection strip spanning full screen width */}
         <div
           onMouseEnter={handleShowTopNav}
           style={{
             position: 'fixed',
             top: 0,
-            left: 440,
+            left: 0,
             right: 0,
-            height: 38,
+            height: 44,
             zIndex: 999,
             pointerEvents: isTopNavVisible ? 'none' : 'auto'
           }}
@@ -205,109 +197,64 @@ export default function TopNavbar() {
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 998,
-              padding: '3px 14px 4px',
-              background: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              borderBottomLeftRadius: 10,
-              borderBottomRightRadius: 10,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '2px 20px 5px',
+              background: 'rgba(10, 18, 38, 0.82)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              borderBottomLeftRadius: 12,
+              borderBottomRightRadius: 12,
+              border: '1px solid rgba(56, 189, 248, 0.35)',
               borderTop: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-              transition: 'all 0.2s'
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45), 0 0 12px rgba(56, 189, 248, 0.25)',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
-            <div style={{ width: 22, height: 3, borderRadius: 2, background: 'rgba(56, 189, 248, 0.6)' }} />
+            <div style={{ width: 28, height: 3, borderRadius: 2, background: 'linear-gradient(90deg, #38BDF8, #818CF8)' }} />
           </div>
         )}
 
-        {/* Floating Auto-Hiding Top Navbar (matching reference image) */}
+        {/* Main Navbar Box: Sticks to the top of the screen with rounded bottom corners and smooth slide-down */}
         <header
           onMouseEnter={handleShowTopNav}
           onMouseLeave={handleScheduleHideTopNav}
           style={{
             position: 'fixed',
             top: 0,
-            left: 0,
-            right: 0,
+            left: '50%',
+            transform: isTopNavVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
+            transformOrigin: 'top center',
+            opacity: isTopNavVisible ? 1 : 0,
+            transition: 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, box-shadow 0.35s ease',
             zIndex: 1000,
+            background: 'rgba(10, 18, 38, 0.92)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            border: '1px solid rgba(56, 189, 248, 0.28)',
+            borderTop: 'none',
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            borderBottomLeftRadius: 20,
+            borderBottomRightRadius: 20,
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.16)',
+            padding: isMobile ? '6px 12px 8px' : '6px 18px 8px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: isMobile ? '8px 14px' : '10px 24px',
+            gap: isMobile ? 8 : 12,
             fontFamily: 'var(--font-outfit), sans-serif',
             boxSizing: 'border-box',
-            pointerEvents: 'none',
-            transform: isTopNavVisible ? 'translateY(0)' : 'translateY(-105%)',
-            opacity: isTopNavVisible ? 1 : 0,
-            transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease'
+            pointerEvents: isTopNavVisible ? 'auto' : 'none',
+            maxWidth: 'calc(100vw - 32px)'
           }}
         >
-          {/* Left: Brand Logo Capsule (hidden on Ask Vedika so it never overlaps the left floating sidebar) */}
-          <div style={{
-            display: isAskVedika ? 'none' : 'flex',
-            alignItems: 'center',
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: 14,
-            padding: '4px 10px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-            pointerEvents: isTopNavVisible ? 'auto' : 'none'
-          }}>
-            <button
-              onClick={() => router.push('/')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0
-              }}
-            >
-              <div style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)'
-              }}>
-                <Sparkles size={15} color="#FFFFFF" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.02em', color: '#FFFFFF', lineHeight: 1.1 }}>
-                  VEDIKA
-                </span>
-                <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.08em', color: '#38BDF8', textTransform: 'uppercase' }}>
-                  AI TUTOR
-                </span>
-              </div>
-            </button>
-          </div>
-
-          {/* Center: Floating Capsule with Nav Icons matching reference image */}
+          {/* Navigation Icons */}
           <nav style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            background: 'rgba(15, 23, 42, 0.72)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
-            borderRadius: 9999,
-            padding: '4px 10px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12)',
-            pointerEvents: isTopNavVisible ? 'auto' : 'none'
+            gap: 6
           }}>
             {/* Home (active glowing purple circle badge matching reference image) */}
             <button
@@ -542,8 +489,11 @@ export default function TopNavbar() {
             </button>
           </nav>
 
+          {/* Divider between Nav & Controls */}
+          <div style={{ height: 22, width: 1, background: 'rgba(255, 255, 255, 0.12)', flexShrink: 0 }} />
+
           {/* Right: Theme Toggle, Notifications, User Capsule */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, pointerEvents: isTopNavVisible ? 'auto' : 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Sun/Moon Toggle */}
             <button
               onClick={toggleTheme}

@@ -14,7 +14,7 @@ import FeralUIFlowCanvas, { PRESETS } from './FeralUIFlowCanvas';
  * All run the 60 FPS real-time WebGL/2D fluid engine with authentic FeralUI grain overlay.
  * Zero black fade/vignette overlays - 100% radiant and luminous.
  */
-export default function GlacierBackground({
+const GlacierBackground = React.memo(function GlacierBackground({
   variant = 'aurora',
   opacity = 1.0,
   style = {},
@@ -68,4 +68,6 @@ export default function GlacierBackground({
       </div>
     </div>
   );
-}
+});
+
+export default GlacierBackground;

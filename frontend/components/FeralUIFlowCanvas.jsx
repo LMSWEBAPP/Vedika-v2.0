@@ -98,9 +98,9 @@ const FS_SRC = `
   vec2 getOrbitalPos(float idx, float t) {
     float n = idx * 0.37;
     float n2_1 = fract(idx / 3.0);
-    float o = 0.6 + n2_1 * 0.9;
+    float o = 0.22 + n2_1 * 0.25;
     float n2_2 = fract((idx + 1.0) / 4.0);
-    float i = 0.8 + n2_2;
+    float i = 0.26 + n2_2 * 0.28;
     return vec2(
       0.5 + 0.5 * sin(t * o + n),
       0.5 + 0.5 * cos(t * i + n * 1.5)
@@ -114,17 +114,18 @@ const FS_SRC = `
     if (u_is_aurora > 0.5) {
       // FeralUI Aurora "Ghost light" curtain & ray engine
       // Scale: 51%, Fold (distortion): 45%, Swirl: 18%, Dir: 2 (vertical curtain)
-      float t = u_time * 0.75 + 20.75;
+      // Tuned to calm, silky, slower ambient flow
+      float t = u_time * 0.12 + 20.75;
       
       // Undulating arch trajectory across the sky
-      float w1 = sin(st.x * 2.6 + t * 0.45) * 0.13;
-      float w2 = cos(st.x * 4.8 - t * 0.32) * 0.06;
-      float w3 = sin(st.x * 8.0 + t * 0.7) * 0.025;
+      float w1 = sin(st.x * 2.2 + t * 0.22) * 0.10;
+      float w2 = cos(st.x * 4.2 - t * 0.14) * 0.05;
+      float w3 = sin(st.x * 6.8 + t * 0.28) * 0.02;
       float archY = 0.38 + w1 + w2 + w3;
       
-      // Vertical curtain ray streaks (aurora rays cascading downwards)
-      float ray1 = sin(st.x * 38.0 + sin(st.y * 14.0 + t * 1.1) * 3.5 + t * 1.4);
-      float ray2 = cos(st.x * 76.0 - t * 1.8);
+      // Vertical curtain ray streaks (aurora rays cascading downwards gently)
+      float ray1 = sin(st.x * 24.0 + sin(st.y * 9.0 + t * 0.35) * 1.8 + t * 0.38);
+      float ray2 = cos(st.x * 48.0 - t * 0.45);
       float rayInt = pow(clamp(ray1 * 0.5 + 0.5, 0.0, 1.0), 2.2) * 0.65 + 
                      pow(clamp(ray2 * 0.5 + 0.5, 0.0, 1.0), 2.8) * 0.35;
                      
@@ -146,10 +147,6 @@ const FS_SRC = `
       float horizonPool = smoothstep(-0.05, 0.45, st.y) * smoothstep(0.88, 0.35, st.y) * 0.55;
       
       // Stage the four Ghost light tones:
-      // Darkest floods the night: u_c3 (#232E4A)
-      // Horizon pool / fringe: u_c2 (#5C749A)
-      // Ray glow: u_c1 (#BFD4EE)
-      // Lightest burns lower border: u_c0 (#F4F8FF)
       vec3 col = u_c3;
       col = mix(col, u_c2, clamp(horizonPool + rayGlow * 0.35, 0.0, 1.0));
       col = mix(col, u_c1, clamp(rayGlow * 0.85, 0.0, 1.0));
@@ -161,11 +158,11 @@ const FS_SRC = `
 
     // FeralUI Flow (Glacier / Pastel) parameters
     float scale = 0.4 + (52.0 / 100.0) * 1.2;
-    float distortion = 46.0 / 100.0;
-    float swirl = 8.0 / 100.0;
+    float distortion = 38.0 / 100.0;
+    float swirl = 6.0 / 100.0;
     
-    // Dynamic time clock for visible fluid flow
-    float t_clock = u_time * 1.25 + 20.75;
+    // Dynamic time clock tuned to smooth, gentle fluid motion
+    float t_clock = u_time * 0.16 + 20.75;
 
     vec2 p = (st - 0.5) / scale + 0.5;
     float dist = length(p - 0.5);
@@ -215,7 +212,7 @@ const FS_SRC = `
   }
 `;
 
-export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
+const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aurora' }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const variantRef = useRef(variant);
@@ -386,15 +383,15 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
           const pixels = imgData.data;
 
           if (currentPreset === 'aurora') {
-            const t = ((now - startTime) / 1000) * 0.75 + 20.75;
+            const t = ((now - startTime) / 1000) * 0.12 + 20.75;
             let ptr = 0;
             for (let y = 0; y < offH; y++) {
               const py = (y + 0.5) / offH;
               for (let x = 0; x < offW; x++) {
                 const px = (x + 0.5) / offW;
-                const archY = 0.38 + Math.sin(px * 2.6 + t * 0.45) * 0.13 + Math.cos(px * 4.8 - t * 0.32) * 0.06;
+                const archY = 0.38 + Math.sin(px * 2.2 + t * 0.22) * 0.10 + Math.cos(px * 4.2 - t * 0.14) * 0.05;
                 const dY = py - archY;
-                const ray1 = Math.sin(px * 38.0 + Math.sin(py * 14.0 + t * 1.1) * 3.5 + t * 1.4);
+                const ray1 = Math.sin(px * 24.0 + Math.sin(py * 9.0 + t * 0.35) * 1.8 + t * 0.38);
                 const rayInt = Math.pow(Math.max(0, ray1 * 0.5 + 0.5), 2.2);
                 const curtain = Math.max(0, Math.min(1, (0.48 - dY) / 0.5)) * Math.max(0, Math.min(1, (dY + 0.22) / 0.24));
                 const rim = Math.exp(-Math.abs(dY) * 36.0);
@@ -423,11 +420,11 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
               }
             }
           } else {
-            const t_clock = ((now - startTime) / 1000) * 1.25 + 20.75;
+            const t_clock = ((now - startTime) / 1000) * 0.16 + 20.75;
             const getOrbital = (idx) => {
               const n = idx * 0.37;
-              const o = 0.6 + ((idx / 3.0) % 1) * 0.9;
-              const i = 0.8 + (((idx + 1.0) / 4.0) % 1);
+              const o = 0.22 + ((idx / 3.0) % 1) * 0.25;
+              const i = 0.26 + (((idx + 1.0) / 4.0) % 1) * 0.28;
               return [
                 0.5 + 0.5 * Math.sin(t_clock * o + n),
                 0.5 + 0.5 * Math.cos(t_clock * i + n * 1.5)
@@ -510,4 +507,6 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
       />
     </div>
   );
-}
+});
+
+export default FeralUIFlowCanvas;
