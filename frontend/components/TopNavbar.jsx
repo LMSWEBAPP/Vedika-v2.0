@@ -131,6 +131,13 @@ export default function TopNavbar() {
     setCoursesDropdownOpen(true);
   };
 
+  const handleCoursesMouseLeave = () => {
+    if (coursesHoverTimer.current) clearTimeout(coursesHoverTimer.current);
+    coursesHoverTimer.current = setTimeout(() => {
+      setCoursesDropdownOpen(false);
+    }, 200);
+  };
+
   const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask';
   const [isTopNavVisible, setIsTopNavVisible] = useState(false);
   const hideTimerRef = useRef(null);
