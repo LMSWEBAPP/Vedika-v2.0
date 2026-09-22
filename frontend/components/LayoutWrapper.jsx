@@ -162,6 +162,7 @@ export default function LayoutWrapper({ children }) {
   }
 
   const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments';
+  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask';
 
   return (
     <div style={{
@@ -181,8 +182,8 @@ export default function LayoutWrapper({ children }) {
         width: '100%',
         overflowY: isFixedPage ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isFixedPage ? 'calc(100vh - 64px)' : 'auto',
-        maxHeight: isFixedPage ? 'calc(100vh - 64px)' : 'none'
+        height: isFixedPage ? (isAskVedika ? '100vh' : 'calc(100vh - 64px)') : 'auto',
+        maxHeight: isFixedPage ? (isAskVedika ? '100vh' : 'calc(100vh - 64px)') : 'none'
       }}>
         {children}
       </main>
