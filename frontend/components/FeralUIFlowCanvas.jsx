@@ -16,21 +16,21 @@ import React, { useRef, useEffect } from 'react';
 
 export const PRESETS = {
   aurora: {
-    name: 'Aurora Flow',
-    baseColor: '#16224D',
+    name: 'Aurora Flow (Ghost light)',
+    baseColor: '#232E4A',
     stops: [
-      [234 / 255, 255 / 255, 244 / 255], // #EAFFF4 Frost Mint
-      [75 / 255, 232 / 255, 160 / 255],  // #4BE8A0 Aurora Emerald
-      [46 / 255, 122 / 255, 106 / 255],  // #2E7A6A Deep Teal
-      [46 / 255, 110 / 255, 128 / 255],  // #2E6E80 Arctic Cyan
-      [22 / 255, 34 / 255, 77 / 255]     // #16224D Midnight Sky
+      [244 / 255, 248 / 255, 255 / 255], // #F4F8FF Lightest burning lower border
+      [191 / 255, 212 / 255, 238 / 255], // #BFD4EE Ray glow soft ice blue
+      [92 / 255, 116 / 255, 154 / 255],  // #5C749A Horizon pool / border fringe
+      [35 / 255, 46 / 255, 74 / 255],    // #232E4A Darkest night navy flood
+      [22 / 255, 30 / 255, 52 / 255]     // #161E34 Deep midnight
     ],
     rgbStops: [
-      [234, 255, 244],
-      [75, 232, 160],
-      [46, 122, 106],
-      [46, 110, 128],
-      [22, 34, 77]
+      [244, 248, 255],
+      [191, 212, 238],
+      [92, 116, 154],
+      [35, 46, 74],
+      [22, 30, 52]
     ]
   },
   glacier: {
@@ -82,6 +82,7 @@ const FS_SRC = `
   precision highp float;
   uniform vec2 u_res;
   uniform float u_time;
+  uniform float u_is_aurora;
 
   uniform vec3 u_c0;
   uniform vec3 u_c1;
@@ -110,7 +111,55 @@ const FS_SRC = `
     vec2 st = gl_FragCoord.xy / u_res.xy;
     st.y = 1.0 - st.y;
 
-    // FeralUI Flow parameters
+    if (u_is_aurora > 0.5) {
+      // FeralUI Aurora "Ghost light" curtain & ray engine
+      // Scale: 51%, Fold (distortion): 45%, Swirl: 18%, Dir: 2 (vertical curtain)
+      float t = u_time * 0.75 + 20.75;
+      
+      // Undulating arch trajectory across the sky
+      float w1 = sin(st.x * 2.6 + t * 0.45) * 0.13;
+      float w2 = cos(st.x * 4.8 - t * 0.32) * 0.06;
+      float w3 = sin(st.x * 8.0 + t * 0.7) * 0.025;
+      float archY = 0.38 + w1 + w2 + w3;
+      
+      // Vertical curtain ray streaks (aurora rays cascading downwards)
+      float ray1 = sin(st.x * 38.0 + sin(st.y * 14.0 + t * 1.1) * 3.5 + t * 1.4);
+      float ray2 = cos(st.x * 76.0 - t * 1.8);
+      float rayInt = pow(clamp(ray1 * 0.5 + 0.5, 0.0, 1.0), 2.2) * 0.65 + 
+                     pow(clamp(ray2 * 0.5 + 0.5, 0.0, 1.0), 2.8) * 0.35;
+                     
+      // Distance from the arch's burning lower border
+      float dY = st.y - archY;
+      
+      // Curtain envelope cascading downwards from arch
+      float curtainDown = smoothstep(0.48, -0.02, dY);
+      float curtainUp = smoothstep(-0.22, 0.02, dY);
+      float curtain = curtainDown * curtainUp;
+      
+      // The burning lower rim (lightest crisp white #F4F8FF)
+      float rimGlow = exp(-abs(dY) * 36.0);
+      
+      // Soft ray glow trailing vertically (#BFD4EE)
+      float rayGlow = curtain * (0.35 + 0.65 * rayInt);
+      
+      // Horizon pooling in the middle/lower sky (#5C749A)
+      float horizonPool = smoothstep(-0.05, 0.45, st.y) * smoothstep(0.88, 0.35, st.y) * 0.55;
+      
+      // Stage the four Ghost light tones:
+      // Darkest floods the night: u_c3 (#232E4A)
+      // Horizon pool / fringe: u_c2 (#5C749A)
+      // Ray glow: u_c1 (#BFD4EE)
+      // Lightest burns lower border: u_c0 (#F4F8FF)
+      vec3 col = u_c3;
+      col = mix(col, u_c2, clamp(horizonPool + rayGlow * 0.35, 0.0, 1.0));
+      col = mix(col, u_c1, clamp(rayGlow * 0.85, 0.0, 1.0));
+      col = mix(col, u_c0, clamp(rimGlow * 1.25 + rayGlow * rayInt * 0.3, 0.0, 1.0));
+
+      gl_FragColor = vec4(col, 1.0);
+      return;
+    }
+
+    // FeralUI Flow (Glacier / Pastel) parameters
     float scale = 0.4 + (52.0 / 100.0) * 1.2;
     float distortion = 46.0 / 100.0;
     float swirl = 8.0 / 100.0;
@@ -277,6 +326,7 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
 
           const uRes = gl.getUniformLocation(prog, 'u_res');
           const uTime = gl.getUniformLocation(prog, 'u_time');
+          const uIsAurora = gl.getUniformLocation(prog, 'u_is_aurora');
           const uC0 = gl.getUniformLocation(prog, 'u_c0');
           const uC1 = gl.getUniformLocation(prog, 'u_c1');
           const uC2 = gl.getUniformLocation(prog, 'u_c2');
@@ -287,6 +337,7 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
 
           const applyColors = (activePreset) => {
             const config = PRESETS[activePreset] || PRESETS.aurora;
+            gl.uniform1f(uIsAurora, activePreset === 'aurora' ? 1.0 : 0.0);
             gl.uniform3fv(uC0, config.stops[0]);
             gl.uniform3fv(uC1, config.stops[1]);
             gl.uniform3fv(uC2, config.stops[2]);
@@ -316,7 +367,7 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
         }
       }
     } else {
-      // 2D Canvas Fallback (FeralUI exact Sd downsampled algorithm)
+      // 2D Canvas Fallback
       const ctx = canvas.getContext('2d');
       if (ctx) {
         const offscreen = document.createElement('canvas');
@@ -327,7 +378,6 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
         const offCtx = offscreen.getContext('2d');
 
         const render2D = (now) => {
-          const t_clock = ((now - startTime) / 1000) * 1.25 + 20.75;
           const currentPreset = PRESETS[variantRef.current] ? variantRef.current : 'aurora';
           const config = PRESETS[currentPreset] || PRESETS.aurora;
           const rgbStops = config.rgbStops;
@@ -335,44 +385,84 @@ export default function FeralUIFlowCanvas({ variant = 'aurora' }) {
           const imgData = offCtx.createImageData(offW, offH);
           const pixels = imgData.data;
 
-          const getOrbital = (idx) => {
-            const n = idx * 0.37;
-            const o = 0.6 + ((idx / 3.0) % 1) * 0.9;
-            const i = 0.8 + (((idx + 1.0) / 4.0) % 1);
-            return [
-              0.5 + 0.5 * Math.sin(t_clock * o + n),
-              0.5 + 0.5 * Math.cos(t_clock * i + n * 1.5)
-            ];
-          };
+          if (currentPreset === 'aurora') {
+            const t = ((now - startTime) / 1000) * 0.75 + 20.75;
+            let ptr = 0;
+            for (let y = 0; y < offH; y++) {
+              const py = (y + 0.5) / offH;
+              for (let x = 0; x < offW; x++) {
+                const px = (x + 0.5) / offW;
+                const archY = 0.38 + Math.sin(px * 2.6 + t * 0.45) * 0.13 + Math.cos(px * 4.8 - t * 0.32) * 0.06;
+                const dY = py - archY;
+                const ray1 = Math.sin(px * 38.0 + Math.sin(py * 14.0 + t * 1.1) * 3.5 + t * 1.4);
+                const rayInt = Math.pow(Math.max(0, ray1 * 0.5 + 0.5), 2.2);
+                const curtain = Math.max(0, Math.min(1, (0.48 - dY) / 0.5)) * Math.max(0, Math.min(1, (dY + 0.22) / 0.24));
+                const rim = Math.exp(-Math.abs(dY) * 36.0);
+                const rayGlow = curtain * (0.35 + 0.65 * rayInt);
+                const pool = Math.max(0, Math.min(1, (py + 0.05) / 0.5)) * Math.max(0, Math.min(1, (0.88 - py) / 0.53)) * 0.55;
 
-          const f0 = getOrbital(0);
-          const f1 = getOrbital(1);
-          const f2 = getOrbital(2);
-          const f3 = getOrbital(3);
-          const f4 = getOrbital(4);
+                const c0 = rgbStops[0], c1 = rgbStops[1], c2 = rgbStops[2], c3 = rgbStops[3];
+                let r = c3[0], g = c3[1], b = c3[2];
+                const m2 = Math.min(1, pool + rayGlow * 0.35);
+                r = r * (1 - m2) + c2[0] * m2;
+                g = g * (1 - m2) + c2[1] * m2;
+                b = b * (1 - m2) + c2[2] * m2;
+                const m1 = Math.min(1, rayGlow * 0.85);
+                r = r * (1 - m1) + c1[0] * m1;
+                g = g * (1 - m1) + c1[1] * m1;
+                b = b * (1 - m1) + c1[2] * m1;
+                const m0 = Math.min(1, rim * 1.25 + rayGlow * rayInt * 0.3);
+                r = r * (1 - m0) + c0[0] * m0;
+                g = g * (1 - m0) + c0[1] * m0;
+                b = b * (1 - m0) + c0[2] * m0;
 
-          let ptr = 0;
-          for (let y = 0; y < offH; y++) {
-            const py = (y + 0.5) / offH;
-            for (let x = 0; x < offW; x++) {
-              const px = (x + 0.5) / offW;
-              const d0 = (px - f0[0]) ** 2 + (py - f0[1]) ** 2;
-              const d1 = (px - f1[0]) ** 2 + (py - f1[1]) ** 2;
-              const d2 = (px - f2[0]) ** 2 + (py - f2[1]) ** 2;
-              const d3 = (px - f3[0]) ** 2 + (py - f3[1]) ** 2;
-              const d4 = (px - f4[0]) ** 2 + (py - f4[1]) ** 2;
+                pixels[ptr++] = Math.round(r);
+                pixels[ptr++] = Math.round(g);
+                pixels[ptr++] = Math.round(b);
+                pixels[ptr++] = 255;
+              }
+            }
+          } else {
+            const t_clock = ((now - startTime) / 1000) * 1.25 + 20.75;
+            const getOrbital = (idx) => {
+              const n = idx * 0.37;
+              const o = 0.6 + ((idx / 3.0) % 1) * 0.9;
+              const i = 0.8 + (((idx + 1.0) / 4.0) % 1);
+              return [
+                0.5 + 0.5 * Math.sin(t_clock * o + n),
+                0.5 + 0.5 * Math.cos(t_clock * i + n * 1.5)
+              ];
+            };
 
-              const w0 = 1 / ((d0 ** 1.75) + 0.0001);
-              const w1 = 1 / ((d1 ** 1.75) + 0.0001);
-              const w2 = 1 / ((d2 ** 1.75) + 0.0001);
-              const w3 = 1 / ((d3 ** 1.75) + 0.0001);
-              const w4 = 1 / ((d4 ** 1.75) + 0.0001);
-              const sum = w0 + w1 + w2 + w3 + w4;
+            const f0 = getOrbital(0);
+            const f1 = getOrbital(1);
+            const f2 = getOrbital(2);
+            const f3 = getOrbital(3);
+            const f4 = getOrbital(4);
 
-              pixels[ptr++] = Math.round((rgbStops[0][0] * w0 + rgbStops[1][0] * w1 + rgbStops[2][0] * w2 + rgbStops[3][0] * w3 + rgbStops[4][0] * w4) / sum);
-              pixels[ptr++] = Math.round((rgbStops[0][1] * w0 + rgbStops[1][1] * w1 + rgbStops[2][1] * w2 + rgbStops[3][1] * w3 + rgbStops[4][1] * w4) / sum);
-              pixels[ptr++] = Math.round((rgbStops[0][2] * w0 + rgbStops[1][2] * w1 + rgbStops[2][2] * w2 + rgbStops[3][2] * w3 + rgbStops[4][2] * w4) / sum);
-              pixels[ptr++] = 255;
+            let ptr = 0;
+            for (let y = 0; y < offH; y++) {
+              const py = (y + 0.5) / offH;
+              for (let x = 0; x < offW; x++) {
+                const px = (x + 0.5) / offW;
+                const d0 = (px - f0[0]) ** 2 + (py - f0[1]) ** 2;
+                const d1 = (px - f1[0]) ** 2 + (py - f1[1]) ** 2;
+                const d2 = (px - f2[0]) ** 2 + (py - f2[1]) ** 2;
+                const d3 = (px - f3[0]) ** 2 + (py - f3[1]) ** 2;
+                const d4 = (px - f4[0]) ** 2 + (py - f4[1]) ** 2;
+
+                const w0 = 1 / ((d0 ** 1.75) + 0.0001);
+                const w1 = 1 / ((d1 ** 1.75) + 0.0001);
+                const w2 = 1 / ((d2 ** 1.75) + 0.0001);
+                const w3 = 1 / ((d3 ** 1.75) + 0.0001);
+                const w4 = 1 / ((d4 ** 1.75) + 0.0001);
+                const sum = w0 + w1 + w2 + w3 + w4;
+
+                pixels[ptr++] = Math.round((rgbStops[0][0] * w0 + rgbStops[1][0] * w1 + rgbStops[2][0] * w2 + rgbStops[3][0] * w3 + rgbStops[4][0] * w4) / sum);
+                pixels[ptr++] = Math.round((rgbStops[0][1] * w0 + rgbStops[1][1] * w1 + rgbStops[2][1] * w2 + rgbStops[3][1] * w3 + rgbStops[4][1] * w4) / sum);
+                pixels[ptr++] = Math.round((rgbStops[0][2] * w0 + rgbStops[1][2] * w1 + rgbStops[2][2] * w2 + rgbStops[3][2] * w3 + rgbStops[4][2] * w4) / sum);
+                pixels[ptr++] = 255;
+              }
             }
           }
 

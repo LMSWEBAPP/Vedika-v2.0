@@ -84,11 +84,11 @@ export default function GeneralTutor() {
       name: 'Aurora Flow',
       shortLabel: 'Aurora',
       emoji: '🌌',
-      desc: 'Northern Lights · Emerald & Midnight',
-      gradient: 'linear-gradient(135deg, #4BE8A0 0%, #2E7A6A 50%, #16224D 100%)',
-      color: '#4BE8A0',
-      border: 'rgba(75, 232, 160, 0.45)',
-      bg: 'rgba(75, 232, 160, 0.12)'
+      desc: 'Ghost light · Luminous Ray & Night Sky',
+      gradient: 'linear-gradient(135deg, #F4F8FF 0%, #BFD4EE 35%, #5C749A 65%, #232E4A 100%)',
+      color: '#BFD4EE',
+      border: 'rgba(191, 212, 238, 0.5)',
+      bg: 'rgba(191, 212, 238, 0.12)'
     },
     {
       id: 'glacier',

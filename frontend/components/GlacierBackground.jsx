@@ -21,7 +21,7 @@ export default function GlacierBackground({
   className = ''
 }) {
   const activeVariant = PRESETS[variant] ? variant : 'aurora';
-  const baseBg = PRESETS[activeVariant]?.baseColor || '#16224D';
+  const baseBg = PRESETS[activeVariant]?.baseColor || '#232E4A';
 
   return (
     <div
