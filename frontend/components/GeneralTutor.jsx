@@ -579,7 +579,7 @@ export default function GeneralTutor() {
   const handleSelectSession = useCallback((session) => {
     if (session.type === 'voice') {
       setVoiceSessionToRestore(session);
-      setShowVoiceAgent(true);
+      setActiveTab('voice');
       return;
     }
     const msgs = (session.messages || []).map(m => ({
@@ -602,7 +602,7 @@ export default function GeneralTutor() {
     setTopic('');
     setErr('');
     setUploadErr('');
-    setShowVoiceAgent(false);
+    setActiveTab('text');
     setVoiceSessionToRestore(null);
     try { localStorage.removeItem('current-general-tutor-session-id'); } catch {}
     setShowLeftNav(false);
