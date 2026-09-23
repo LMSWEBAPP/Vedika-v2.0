@@ -21,6 +21,7 @@
     "ai": "^6.0.201",
     "dotenv": "^16.4.7",
     "express": "^4.22.2",
+    "feral-blob": "^0.2.0",
     "framer-motion": "^11.2.10",
     "katex": "^0.18.1",
     "lucide-react": "^0.395.0",

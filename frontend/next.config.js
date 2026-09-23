@@ -1,5 +1,6 @@
 const nextConfig = {
   compress: true,
+  transpilePackages: ['feral-blob'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'three', 'katex', '@upstash/redis', '@google/genai'],
   },

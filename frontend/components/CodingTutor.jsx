@@ -28,6 +28,7 @@ import { getJwtToken } from '@/lib/jwtCache';
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import GlacierBackground from '@/components/GlacierBackground';
+import UserBlobAvatar from '@/components/UserBlobAvatar';
 import dynamic from 'next/dynamic';
 
 const Playground = dynamic(() => import('./Playground'), { ssr: false });
@@ -207,6 +208,8 @@ export default function CodingTutor() {
   }, []);
 
   const [topic, setTopic] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimerRef = useRef(null);
   const [mode, setMode] = useState('Beginner');
   const [length, setLength] = useState('Short');
   const [messages, setMessages] = useState([]);
@@ -1063,6 +1066,8 @@ export default function CodingTutor() {
     const raw = topic.trim();
     if (!raw) return;
     setTopic(''); setErr('');
+    setIsTyping(false);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
 
     const sid = currentSessionId || Date.now().toString(36);
     if (!currentSessionId) setCurrentSessionId(sid);
@@ -1489,7 +1494,17 @@ export default function CodingTutor() {
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      setIsTyping(false);
       handleSend();
+      return;
+    }
+
+    if (!['Control', 'Alt', 'Shift', 'Meta', 'Escape', 'Tab', 'CapsLock'].includes(e.key)) {
+      setIsTyping(true);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => {
+        setIsTyping(false);
+      }, 2500);
     }
   };
 
@@ -2242,9 +2257,8 @@ export default function CodingTutor() {
                   <div key={msg.id || mi} id={`msg-${mi}`} style={{ marginBottom: 20 }}>
                     {/* User Bubble */}
                     {msg.role === 'user' && (
-                      <div style={{ display: 'flex', gap: rGap, justifyContent: 'flex-end', maxWidth: msgMaxW, marginLeft: 'auto' }}>
+                      <div style={{ display: 'flex', gap: rGap, justifyContent: 'flex-end', maxWidth: msgMaxW, marginLeft: 'auto', alignItems: 'flex-start' }}>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 4 }}>YOU</div>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.45)',
                             backdropFilter: 'blur(16px)',
@@ -2275,7 +2289,7 @@ export default function CodingTutor() {
                           </div>
                           <div style={{ fontSize: 10, color: T.dim, marginTop: 4 }}>{msg.mode} &middot; {msg.length}</div>
                         </div>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, color: '#E2E8F0', fontWeight: 700, backdropFilter: 'blur(10px)' }}>S</div>
+                        <UserBlobAvatar isTyping={isTyping} isAiLoading={loading || Boolean(streamingText)} size={54} />
                       </div>
                     )}
 
@@ -2664,7 +2678,7 @@ export default function CodingTutor() {
             bottom: isMobile ? 12 : 20,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: isMobile ? 'calc(100% - 24px)' : (!isInputHovered && !isInputFocused && !isInputPinned && !topic.trim() && !isConfigOpen && !showMentionDropdown && !uploading && (!sessionDocs || sessionDocs.length === 0) && messages.length > 0 && !loading && !streamingText ? 'min(640px, calc(100% - 48px))' : 'min(840px, calc(100% - 48px))'),
+            width: isMobile ? 'calc(100% - 24px)' : 'min(840px, calc(100% - 48px))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -2739,113 +2753,8 @@ export default function CodingTutor() {
             )}
           </button>
 
-          {!isInputHovered && !isInputFocused && !isInputPinned && !topic.trim() && !isConfigOpen && !showMentionDropdown && !uploading && (!sessionDocs || sessionDocs.length === 0) && messages.length > 0 && !loading && !streamingText ? (
-            /* Sleek Resting Pill Capsule */
-            <div
-              onMouseEnter={() => setIsInputHovered(true)}
-              onClick={() => {
-                setIsInputHovered(true);
-                setIsInputFocused(true);
-                setTimeout(() => inputRef.current?.focus(), 60);
-              }}
-              style={{
-                pointerEvents: 'auto',
-                flex: 1,
-                minWidth: 0,
-                height: 48,
-                borderRadius: 24,
-                background: 'rgba(15, 20, 35, 0.85)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
-                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 10px 0 14px',
-                cursor: 'pointer',
-                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                animation: 'fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                <div
-                  data-leftnav-toggle="true"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLeftNav(prev => {
-                      if (!prev) setLeftNavView('menu');
-                      return !prev;
-                    });
-                  }}
-                  title="Toggle Vedika Menu (Ctrl+B)"
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.45), rgba(2, 132, 199, 0.45))',
-                    border: '1px solid rgba(6, 182, 212, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 0 12px rgba(6, 182, 212, 0.35)',
-                    cursor: 'pointer',
-                    transition: 'transform 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                >
-                  <Code2 size={14} color="#38BDF8" />
-                </div>
-                <span style={{
-                  color: '#94A3B8',
-                  fontSize: isMobile ? 12.5 : 13.5,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  fontWeight: 500
-                }}>
-                  Ask a coding question, debug an algorithm, or type @...
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  borderRadius: 999,
-                  padding: '3px 8px',
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  color: modeColors[mode] || '#CBD5E1'
-                }}>
-                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: modeColors[mode] || T.amber }} />
-                  <span>{mode}</span>
-                </div>
-
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 10px rgba(6, 182, 212, 0.4)',
-                    color: '#FFFFFF'
-                  }}
-                >
-                  <Send size={14} />
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Full Creative Omnibar */
-            <div
+          {/* Full Creative Omnibar - Always active by default */}
+          <div
               onMouseEnter={() => setIsInputHovered(true)}
               onMouseLeave={() => setIsInputHovered(false)}
               style={{
@@ -2985,6 +2894,15 @@ export default function CodingTutor() {
                   onChange={e => {
                     const val = e.target.value;
                     setTopic(val);
+                    if (val.trim()) {
+                      setIsTyping(true);
+                      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                      typingTimerRef.current = setTimeout(() => {
+                        setIsTyping(false);
+                      }, 1500);
+                    } else {
+                      setIsTyping(false);
+                    }
                     const selectionStart = e.target.selectionStart;
                     const textBeforeCursor = val.slice(0, selectionStart);
                     const atIndex = textBeforeCursor.lastIndexOf('@');
@@ -3160,7 +3078,6 @@ export default function CodingTutor() {
                 </button>
               </div>
             </div>
-          )}
         </div>
       </div>
     </>

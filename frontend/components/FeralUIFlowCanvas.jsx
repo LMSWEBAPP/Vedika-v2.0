@@ -54,19 +54,20 @@ export const PRESETS = {
   pastel: {
     name: 'Pastel Flow',
     baseColor: '#FAF7FD',
+    speed: 0.28,
     stops: [
-      [246 / 255, 249 / 255, 255 / 255], // #F6F9FF Pearl White
-      [155 / 255, 224 / 255, 232 / 255], // #9BE0E8 Ice Cyan
-      [196 / 255, 181 / 255, 247 / 255], // #C4B5F7 Wisteria Lavender
-      [248 / 255, 184 / 255, 217 / 255], // #F8B8D9 Sakura Blush Pink
-      [250 / 255, 247 / 255, 253 / 255]  // #FAF7FD Soft Lilac White
+      [248 / 255, 250 / 255, 252 / 255], // #F8FAFC Luminous Pearl White
+      [56 / 255, 189 / 255, 248 / 255],  // #38BDF8 Radiant Ice Aqua
+      [168 / 255, 85 / 255, 247 / 255],  // #A855F7 Velvet Wisteria Lavender
+      [251 / 255, 113 / 255, 133 / 255], // #FB7185 Vibrant Sakura Coral
+      [237 / 255, 233 / 255, 254 / 255]  // #EDE9FE Soft Lilac Mist
     ],
     rgbStops: [
-      [246, 249, 255],
-      [155, 224, 232],
-      [196, 181, 247],
-      [248, 184, 217],
-      [250, 247, 253]
+      [248, 250, 252],
+      [56, 189, 248],
+      [168, 85, 247],
+      [251, 113, 133],
+      [237, 233, 254]
     ]
   }
 };
@@ -83,6 +84,8 @@ const FS_SRC = `
   uniform vec2 u_res;
   uniform float u_time;
   uniform float u_is_aurora;
+  uniform float u_preset;
+  uniform float u_speed;
 
   uniform vec3 u_c0;
   uniform vec3 u_c1;
@@ -95,12 +98,12 @@ const FS_SRC = `
     return clamped * clamped * (3.0 - 2.0 * clamped);
   }
 
-  vec2 getOrbitalPos(float idx, float t) {
+  vec2 getOrbitalPos(float idx, float t, float isPastel) {
     float n = idx * 0.37;
     float n2_1 = fract(idx / 3.0);
-    float o = 0.22 + n2_1 * 0.25;
+    float o = isPastel > 0.5 ? (0.32 + n2_1 * 0.32) : (0.22 + n2_1 * 0.25);
     float n2_2 = fract((idx + 1.0) / 4.0);
-    float i = 0.26 + n2_2 * 0.28;
+    float i = isPastel > 0.5 ? (0.35 + n2_2 * 0.35) : (0.26 + n2_2 * 0.28);
     return vec2(
       0.5 + 0.5 * sin(t * o + n),
       0.5 + 0.5 * cos(t * i + n * 1.5)
@@ -157,12 +160,14 @@ const FS_SRC = `
     }
 
     // FeralUI Flow (Glacier / Pastel) parameters
+    float isPastel = (u_preset > 0.5 && u_preset < 1.5) ? 1.0 : 0.0;
     float scale = 0.4 + (52.0 / 100.0) * 1.2;
-    float distortion = 38.0 / 100.0;
-    float swirl = 6.0 / 100.0;
+    float distortion = isPastel > 0.5 ? (45.0 / 100.0) : (38.0 / 100.0);
+    float swirl = isPastel > 0.5 ? (9.0 / 100.0) : (6.0 / 100.0);
     
-    // Dynamic time clock tuned to smooth, gentle fluid motion
-    float t_clock = u_time * 0.16 + 20.75;
+    // Dynamic time clock with preset speed: Pastel flows at 0.38 (calm, silky, smooth), Glacier at 0.30
+    float speed = u_speed > 0.0 ? u_speed : (isPastel > 0.5 ? 0.38 : 0.30);
+    float t_clock = u_time * speed + 20.75;
 
     vec2 p = (st - 0.5) / scale + 0.5;
     float dist = length(p - 0.5);
@@ -173,6 +178,12 @@ const FS_SRC = `
     for (float z = 1.0; z <= 2.0; z += 1.0) {
       p.x += (distortion * b / z) * sin(t_clock + z * 0.4 * smoothG1(p.y)) * cos(0.2 * t_clock + z * 2.4 * smoothG1(p.y));
       p.y += (distortion * b / z) * cos(t_clock + z * 2.0 * smoothG1(p.x));
+    }
+
+    // Pastel ripple harmonics: adds gentle, silky fluid folds
+    if (isPastel > 0.5) {
+      p.x += sin(p.y * 3.0 + t_clock * 0.45) * 0.04 + cos(p.x * 2.2 - t_clock * 0.3) * 0.03;
+      p.y += cos(p.x * 2.6 + t_clock * 0.4) * 0.04 + sin(p.y * 2.2 - t_clock * 0.35) * 0.03;
     }
 
     // Vortex swirl transform around core
@@ -186,11 +197,11 @@ const FS_SRC = `
     ) + 0.5;
 
     // 5 orbital spot positions
-    vec2 f0 = getOrbitalPos(0.0, t_clock);
-    vec2 f1 = getOrbitalPos(1.0, t_clock);
-    vec2 f2 = getOrbitalPos(2.0, t_clock);
-    vec2 f3 = getOrbitalPos(3.0, t_clock);
-    vec2 f4 = getOrbitalPos(4.0, t_clock);
+    vec2 f0 = getOrbitalPos(0.0, t_clock, isPastel);
+    vec2 f1 = getOrbitalPos(1.0, t_clock, isPastel);
+    vec2 f2 = getOrbitalPos(2.0, t_clock, isPastel);
+    vec2 f3 = getOrbitalPos(3.0, t_clock, isPastel);
+    vec2 f4 = getOrbitalPos(4.0, t_clock, isPastel);
 
     // Inverse distance weighting (FeralUI xd=3.5)
     float d0 = dot(p - f0, p - f0);
@@ -324,6 +335,8 @@ const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aur
           const uRes = gl.getUniformLocation(prog, 'u_res');
           const uTime = gl.getUniformLocation(prog, 'u_time');
           const uIsAurora = gl.getUniformLocation(prog, 'u_is_aurora');
+          const uPreset = gl.getUniformLocation(prog, 'u_preset');
+          const uSpeed = gl.getUniformLocation(prog, 'u_speed');
           const uC0 = gl.getUniformLocation(prog, 'u_c0');
           const uC1 = gl.getUniformLocation(prog, 'u_c1');
           const uC2 = gl.getUniformLocation(prog, 'u_c2');
@@ -334,7 +347,12 @@ const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aur
 
           const applyColors = (activePreset) => {
             const config = PRESETS[activePreset] || PRESETS.aurora;
-            gl.uniform1f(uIsAurora, activePreset === 'aurora' ? 1.0 : 0.0);
+            const isAurora = activePreset === 'aurora' ? 1.0 : 0.0;
+            const presetId = activePreset === 'pastel' ? 1.0 : (activePreset === 'glacier' ? 0.0 : 2.0);
+            const speed = config.speed || (activePreset === 'pastel' ? 0.28 : (activePreset === 'glacier' ? 0.22 : 0.12));
+            gl.uniform1f(uIsAurora, isAurora);
+            if (uPreset) gl.uniform1f(uPreset, presetId);
+            if (uSpeed) gl.uniform1f(uSpeed, speed);
             gl.uniform3fv(uC0, config.stops[0]);
             gl.uniform3fv(uC1, config.stops[1]);
             gl.uniform3fv(uC2, config.stops[2]);
@@ -402,7 +420,7 @@ const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aur
                 let r = c3[0], g = c3[1], b = c3[2];
                 const m2 = Math.min(1, pool + rayGlow * 0.35);
                 r = r * (1 - m2) + c2[0] * m2;
-                g = g * (1 - m2) + c2[1] * m2;
+                g = g * (1 - m2) + c2[0] * m2;
                 b = b * (1 - m2) + c2[2] * m2;
                 const m1 = Math.min(1, rayGlow * 0.85);
                 r = r * (1 - m1) + c1[0] * m1;
@@ -420,11 +438,13 @@ const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aur
               }
             }
           } else {
-            const t_clock = ((now - startTime) / 1000) * 0.16 + 20.75;
+            const isPastel = currentPreset === 'pastel';
+            const speed = config.speed || (isPastel ? 0.28 : 0.22);
+            const t_clock = ((now - startTime) / 1000) * speed + 20.75;
             const getOrbital = (idx) => {
               const n = idx * 0.37;
-              const o = 0.22 + ((idx / 3.0) % 1) * 0.25;
-              const i = 0.26 + (((idx + 1.0) / 4.0) % 1) * 0.28;
+              const o = isPastel ? (0.32 + ((idx / 3.0) % 1) * 0.32) : (0.22 + ((idx / 3.0) % 1) * 0.25);
+              const i = isPastel ? (0.35 + (((idx + 1.0) / 4.0) % 1) * 0.35) : (0.26 + (((idx + 1.0) / 4.0) % 1) * 0.28);
               return [
                 0.5 + 0.5 * Math.sin(t_clock * o + n),
                 0.5 + 0.5 * Math.cos(t_clock * i + n * 1.5)
@@ -441,12 +461,17 @@ const FeralUIFlowCanvas = React.memo(function FeralUIFlowCanvas({ variant = 'aur
             for (let y = 0; y < offH; y++) {
               const py = (y + 0.5) / offH;
               for (let x = 0; x < offW; x++) {
-                const px = (x + 0.5) / offW;
-                const d0 = (px - f0[0]) ** 2 + (py - f0[1]) ** 2;
-                const d1 = (px - f1[0]) ** 2 + (py - f1[1]) ** 2;
-                const d2 = (px - f2[0]) ** 2 + (py - f2[1]) ** 2;
-                const d3 = (px - f3[0]) ** 2 + (py - f3[1]) ** 2;
-                const d4 = (px - f4[0]) ** 2 + (py - f4[1]) ** 2;
+                let px = (x + 0.5) / offW;
+                let pyAdj = py;
+                if (isPastel) {
+                  px += Math.sin(py * 3.6 + t_clock * 0.85) * 0.04;
+                  pyAdj += Math.cos(px * 3.2 + t_clock * 0.75) * 0.04;
+                }
+                const d0 = (px - f0[0]) ** 2 + (pyAdj - f0[1]) ** 2;
+                const d1 = (px - f1[0]) ** 2 + (pyAdj - f1[1]) ** 2;
+                const d2 = (px - f2[0]) ** 2 + (pyAdj - f2[1]) ** 2;
+                const d3 = (px - f3[0]) ** 2 + (pyAdj - f3[1]) ** 2;
+                const d4 = (px - f4[0]) ** 2 + (pyAdj - f4[1]) ** 2;
 
                 const w0 = 1 / ((d0 ** 1.75) + 0.0001);
                 const w1 = 1 / ((d1 ** 1.75) + 0.0001);
