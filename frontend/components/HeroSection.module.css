@@ -1,0 +1,585 @@
+.heroSection {
+  position: relative;
+  min-height: calc(100vh - 80px);
+  padding: 4.5rem 3rem 2rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  align-items: center;
+  gap: 3rem;
+}
+
+/* ========================================================= */
+/* LEFT CONTENT COLUMN                                       */
+/* ========================================================= */
+.contentCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 580px;
+  z-index: 5;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.mainTitle {
+  margin: 0.25rem 0 0.6rem 0;
+}
+
+/* 1. Delicate Font: Thinoo for Eyebrow / Lead */
+.titleLead {
+  font-family: var(--font-thinoo), var(--sub-font), -apple-system, sans-serif;
+  font-size: clamp(0.85rem, 1.2vw, 1.08rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-lab-physics, #00c2ff);
+  margin-bottom: 0.35rem;
+  text-shadow: 0 0 20px rgba(0, 194, 255, 0.45);
+}
+
+/* ========================================================= */
+/* PAIRED HORIZONTAL ANIMATION: SYLLABLE CHARTS CONTAINERS    */
+/* ========================================================= */
+.titleH1 {
+  font-family: var(--main-font, 'Reforma 1918', var(--font-calluna), Georgia, serif);
+  font-size: clamp(3.0rem, 5.4vw, 5.4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+}
+
+.titleRow2 {
+  padding-left: 0.45rem;
+}
+
+.titleChartsCont {
+  display: flex;
+  overflow: hidden;
+}
+
+.titleChartsCont span {
+  display: inline-block;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    var(--color-lab-physics, #00c2ff) 16%,
+    var(--color-lab-math, #a855f7) 36%,
+    var(--color-lab-chemistry, #00f298) 56%,
+    var(--color-lab-biology, #ff9900) 76%,
+    var(--color-lab-physics, #00c2ff) 92%,
+    #ffffff 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 35px rgba(0, 194, 255, 0.4));
+  animation: multiColorFlow 7s linear infinite;
+}
+
+@keyframes multiColorFlow {
+  0% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 30px rgba(0, 194, 255, 0.5));
+  }
+  25% {
+    background-position: 75% 50%;
+    filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.55));
+  }
+  50% {
+    background-position: 150% 50%;
+    filter: drop-shadow(0 0 32px rgba(0, 242, 152, 0.5));
+  }
+  75% {
+    background-position: 225% 50%;
+    filter: drop-shadow(0 0 32px rgba(255, 153, 0, 0.5));
+  }
+  100% {
+    background-position: 300% 50%;
+    filter: drop-shadow(0 0 30px rgba(0, 194, 255, 0.5));
+  }
+}
+
+#ai {
+  margin-right: 0.45rem;
+}
+
+/* 3. Simple Font: Vollkorn for Subline & Descriptions */
+.titleSubline {
+  font-family: var(--font-vollkorn), Georgia, serif;
+  font-size: clamp(1.35rem, 2.1vw, 2.1rem);
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+  margin-top: 0.35rem;
+}
+
+.description {
+  font-family: var(--font-vollkorn), Georgia, serif;
+  color: #94a3b8;
+  font-size: clamp(1.05rem, 1.22vw, 1.2rem);
+  line-height: 1.75;
+  max-width: 500px;
+}
+
+/* ========================================================= */
+/* RIGHT VISUAL STAGE & MASCOT WITH HEAVY PARTICLES          */
+/* ========================================================= */
+.visualCol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.visualCol::before {
+  content: '';
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(168, 85, 247, 0.12) 0%,
+    rgba(0, 194, 255, 0.10) 35%,
+    rgba(0, 242, 152, 0.06) 60%,
+    transparent 75%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stageFrame {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 1.328 / 1;
+  overflow: visible;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  perspective: 850px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+/* Space backdrop: Clean Earth Horizon with smooth edge feathering into deep space */
+.spaceBackdrop {
+  position: absolute;
+  inset: -6% -10% -4% -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+  -webkit-mask-image: radial-gradient(
+    ellipse 55% 48% at 50% 52%,
+    #000000 18%,
+    rgba(0, 0, 0, 0.85) 38%,
+    rgba(0, 0, 0, 0.35) 60%,
+    rgba(0, 0, 0, 0.08) 78%,
+    transparent 96%
+  );
+  mask-image: radial-gradient(
+    ellipse 55% 48% at 50% 52%,
+    #000000 18%,
+    rgba(0, 0, 0, 0.85) 38%,
+    rgba(0, 0, 0, 0.35) 60%,
+    rgba(0, 0, 0, 0.08) 78%,
+    transparent 96%
+  );
+}
+
+.spaceBackdropImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+/* Glowing 4-Lab Colors Aura Backplate */
+.portalAuraGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 94%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 50% 68% at 50% 50%,
+    rgba(168, 85, 247, 0.20) 0%,
+    rgba(0, 194, 255, 0.16) 32%,
+    rgba(0, 242, 152, 0.12) 55%,
+    rgba(255, 153, 0, 0.10) 75%,
+    transparent 100%
+  );
+  filter: blur(52px);
+  pointer-events: none;
+  z-index: 1;
+  animation: portalPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes portalPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.96);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.04);
+    opacity: 1;
+  }
+}
+
+/* 3D Particle Swarm in stage behind the mascot */
+.stageParticlesWrapper {
+  position: absolute;
+  inset: -14%;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Central Mascot Container: Perfectly holds both layered human & bot images */
+.mascotContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 95%;
+  aspect-ratio: 0.7467;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Base Layer: Inner Vedika Bot aligned underneath */
+.innerRobotLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.robotLayerActive {
+  opacity: 1;
+}
+
+.robotLayerHidden {
+  opacity: 0;
+}
+
+.botImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 25px rgba(0, 194, 255, 0.4));
+  pointer-events: none;
+}
+
+/* Fallback Human Layer to ensure kid is immediately visible on SSR / reload */
+.baseHumanFallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.baseHumanFallbackReady {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.humanFallbackImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Canvas Layer on Top: Human Student with talking visemes & fluid hover reveal */
+.sceneCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+
+
+/* ========================================================= */
+/* INTERACTION HINT BADGE                                    */
+/* ========================================================= */
+.idleHint {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(10, 16, 32, 0.88);
+  border: 1px solid rgba(0, 194, 255, 0.35);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 194, 255, 0.2);
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 15;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+}
+
+.idleHint:hover {
+  transform: translateX(-50%) scale(1.03);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 194, 255, 0.35);
+}
+
+.idleHintLocked {
+  border-color: rgba(255, 153, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 153, 0, 0.2);
+}
+
+.idleHintLocked .idleHintIcon {
+  color: #ff9900;
+}
+
+.idleHintActive {
+  border-color: rgba(0, 242, 152, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 242, 152, 0.25);
+}
+
+.idleHintActive .idleHintIcon {
+  color: #00f298;
+}
+
+.idleHintIcon {
+  color: var(--color-lab-physics, #00c2ff);
+  animation: pulseGlow 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.hintQuoteText {
+  font-family: var(--font-thinoo), var(--font-space), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #f1f5f9;
+  white-space: nowrap;
+}
+
+/* Mini Audio Equalizer Wave inside bottom badge */
+.eqMini {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.eqMiniBar {
+  width: 2.5px;
+  height: 100%;
+  background: var(--color-lab-physics, #00c2ff);
+  border-radius: 2px;
+  animation: eqMiniBounce 0.8s infinite ease-in-out alternate;
+}
+
+.eqMiniBar:nth-child(1) {
+  animation-delay: 0.1s;
+  height: 55%;
+}
+.eqMiniBar:nth-child(2) {
+  animation-delay: 0.3s;
+  height: 100%;
+}
+.eqMiniBar:nth-child(3) {
+  animation-delay: 0.15s;
+  height: 75%;
+}
+
+@keyframes eqMiniBounce {
+  0% {
+    transform: scaleY(0.3);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.speakingTimer {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-left: 0.25rem;
+}
+
+.audioReplayBtn {
+  font-family: var(--font-thinoo), monospace, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #00c2ff;
+  background: rgba(0, 194, 255, 0.12);
+  border: 1px solid rgba(0, 194, 255, 0.28);
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.idleHint:hover .audioReplayBtn {
+  background: rgba(0, 194, 255, 0.25);
+  border-color: rgba(0, 194, 255, 0.5);
+  color: #ffffff;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+/* Fine Glowing Pointer Dot */
+.fluidPointerDot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.15s ease;
+}
+
+.pointerHalo {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 194, 255, 0.6) 0%, transparent 75%);
+  animation: pulseHalo 1.2s infinite ease-in-out;
+}
+
+.pointerCore {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #00c2ff;
+  box-shadow: 0 0 10px #00c2ff, 0 0 20px #a855f7;
+}
+
+@keyframes pulseHalo {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 1;
+  }
+}
+
+/* ========================================================= */
+/* RESPONSIVE DESIGN                                         */
+/* ========================================================= */
+@media (max-width: 1140px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+  .contentCol {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .description {
+    max-width: 100%;
+  }
+  .stageFrame {
+    max-width: 600px;
+  }
+}
+
+@media (max-width: 680px) {
+  .heroSection {
+    padding: 5rem 1.25rem 2rem 1.25rem;
+  }
+  .stageFrame {
+    aspect-ratio: 1.15 / 1;
+  }
+  .titleH1 {
+    font-size: clamp(2.4rem, 10vw, 3.2rem);
+  }
+  .titleRow2 {
+    padding-left: 0.2rem;
+  }
+  .idleHint {
+    padding: 0.35rem 0.85rem;
+  }
+  .hintQuoteText {
+    font-size: 0.72rem;
+  }
+}

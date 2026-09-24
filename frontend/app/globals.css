@@ -1,7 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://db.onlinewebfonts.com/c/21b2809e6e69b9e96ed194863cd472a5?family=Calluna');
+@import url('https://db.onlinewebfonts.com/c/284402b44f3438c454c86266a898ca87?family=thinoo');
 @import 'feral-blob/blob.css';
 
 :root {
+  /* Cosmic Home Page Design Tokens */
+  --bg-primary: #02050c;
+  --bg-secondary: #060b18;
+  --bg-tertiary: #0c1428;
+  --card-bg: rgba(12, 17, 32, 0.65);
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  --color-black: #000;
+  --color-white: #fff;
+
+  --main-font: "Reforma 1918", 'Calluna', Georgia, serif;
+  --sub-font: "Poppins", 'thinoo', -apple-system, sans-serif;
+
+  --font-calluna: 'Calluna', Georgia, 'Times New Roman', serif;
+  --font-thinoo: 'thinoo', 'Poppins', -apple-system, sans-serif;
+  --font-vollkorn: 'Vollkorn', Georgia, serif;
+
+  --color-lab-math: #a855f7;      /* Math Lab - Neon Purple */
+  --color-lab-physics: #00c2ff;   /* Physics Lab - Electric Cyan */
+  --color-lab-chemistry: #00f298; /* Chemistry Lab - Neon Emerald Green */
+  --color-lab-biology: #ff9900;   /* Biology Lab - Warm Amber */
+
+  --color-disco-gold: #ffd700;
+  --color-disco-amber: #f59e0b;
+
+  --accent-cyan: #00c2ff;
+  --accent-blue: #38bdf8;
+  --accent-purple: #a855f7;
+  --accent-green: #00f298;
+  --accent-gold: #ff9900;
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
   /* Default: Light Theme (Soft Pastel style) */
   --bg: #F4F7FB;
   --s1: #FFFFFF;

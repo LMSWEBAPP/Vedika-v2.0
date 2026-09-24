@@ -29,12 +29,13 @@ const COURSE_SUBMENU = [
 ];
 
 const NAV_ITEMS = [
-  { id: '/',            Icon: Home,         label: 'Dashboard'   },
-  { id: '/courses',     Icon: BookOpen,     label: 'Courses', hasDropdown: true },
-  { id: '/vedika-ai',   Icon: Brain,        label: 'Vedika AI'   },
-  { id: '/vedika-labs', Icon: FlaskConical, label: 'Vedika Labs' },
-  { id: '/jobs',        Icon: Briefcase,    label: 'Jobs'        },
-  { id: '/progress',    Icon: BarChart3,    label: 'Progress'    },
+  { id: '/',                 Icon: Home,         label: 'Home'        },
+  { id: '/prev-home-page',   Icon: BarChart3,    label: 'Dashboard'   },
+  { id: '/courses',          Icon: BookOpen,     label: 'Courses', hasDropdown: true },
+  { id: '/vedika-ai',        Icon: Brain,        label: 'Vedika AI'   },
+  { id: '/vedika-labs',      Icon: FlaskConical, label: 'Vedika Labs' },
+  { id: '/jobs',             Icon: Briefcase,    label: 'Jobs'        },
+  { id: '/progress',         Icon: Award,        label: 'Progress'    },
 ];
 
 export default function TopNavbar() {
@@ -117,6 +118,7 @@ export default function TopNavbar() {
 
   const isActive = (navId) => {
     if (navId === '/') return pathname === '/';
+    if (navId === '/prev-home-page') return pathname === '/prev-home-page';
     if (navId === '/courses') return isCoursesActive();
     return pathname.startsWith(navId);
   };

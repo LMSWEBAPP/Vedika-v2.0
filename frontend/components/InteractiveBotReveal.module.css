@@ -1,0 +1,410 @@
+.heroSection {
+  position: relative;
+  min-height: calc(100vh - 75px);
+  padding: 7.5rem 2.5rem 3.5rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.container {
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 4.5rem;
+  position: relative;
+}
+
+/* Left Column: Clean Editorial Presentation */
+.contentCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 540px;
+}
+
+.eyebrowBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(18, 24, 38, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.95rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(16px);
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.badgeText {
+  font-family: var(--font-space), monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #d1d5db;
+}
+
+.titleWrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.brandTitle {
+  font-family: var(--font-space), -apple-system, sans-serif;
+  font-size: clamp(3.8rem, 6.5vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 0.95;
+  color: #ffffff;
+  text-shadow: 0 0 50px rgba(255, 255, 255, 0.12);
+}
+
+.categoryPill {
+  font-family: var(--font-space), -apple-system, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #00f0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Rewritten Quote Block */
+.quoteBlock {
+  position: relative;
+  background: rgba(14, 20, 34, 0.7);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 1.15rem 1.4rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.quoteLead {
+  font-family: var(--font-space), -apple-system, sans-serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.4rem;
+}
+
+.quoteSub {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+/* Value Description */
+.description {
+  color: #94a3b8;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-bottom: 2.25rem;
+}
+
+/* Action Buttons matching Reference Image 1 */
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(18, 24, 38, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.7rem 0.85rem 0.7rem 1.6rem;
+  border-radius: var(--radius-full);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
+}
+
+.primaryBtn:hover {
+  background: rgba(28, 36, 56, 0.95);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.btnDotPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.65rem;
+  transition: background 0.2s;
+}
+
+.primaryBtn:hover .btnDotPill {
+  background: var(--accent-cyan);
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #ffffff;
+}
+
+.primaryBtn:hover .dot {
+  background-color: #07090e;
+}
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.45rem;
+  border-radius: var(--radius-full);
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+}
+
+.secondaryBtn:hover {
+  color: #ffffff;
+  border-color: rgba(157, 78, 221, 0.4);
+  background: rgba(157, 78, 221, 0.1);
+  box-shadow: 0 0 20px rgba(157, 78, 221, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Subtle Hint */
+.interactionHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-family: var(--font-space), monospace;
+}
+
+.hintIcon {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+/* Right Column: Stage */
+.stageCol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.ambientGlowPrimary {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, rgba(0, 240, 255, 0.04) 55%, transparent 70%);
+  filter: blur(60px);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulseGlow 6s infinite alternate ease-in-out;
+  z-index: 1;
+}
+
+.ambientGlowSecondary {
+  position: absolute;
+  top: 45%;
+  left: 55%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 65%);
+  filter: blur(50px);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Mascot Stage */
+.mascotStage {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  height: 610px;
+  cursor: crosshair;
+  user-select: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(0, 240, 255, 0.15);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+/* Base Layer: Robot */
+.robotLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  padding: 1.5rem;
+  background: #000000;
+}
+
+.botImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.35));
+}
+
+/* Fluid Canvas Layer */
+.flowCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Fine 25px Glowing Pointer Dot */
+.fluidPointerDot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.15s ease;
+}
+
+.pointerHalo {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.45) 0%, transparent 70%);
+  animation: pulseGlow 1.2s infinite ease-in-out;
+}
+
+.pointerCore {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+/* Idle Prompt */
+.idlePrompt {
+  position: absolute;
+  bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(14, 20, 32, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  padding: 0.35rem 0.95rem;
+  border-radius: var(--radius-full);
+  color: #cbd5e1;
+  font-family: var(--font-space), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+  pointer-events: none;
+  z-index: 8;
+  animation: pulseGlow 2.5s infinite ease-in-out;
+  transition: opacity 0.2s ease;
+}
+
+.promptIcon {
+  color: var(--accent-cyan);
+}
+
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+  .contentCol {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .titleWrapper {
+    justify-content: center;
+  }
+  .quoteBlock {
+    text-align: left;
+  }
+  .actionRow {
+    justify-content: center;
+  }
+  .mascotStage {
+    height: 520px;
+  }
+}
+
+@media (max-width: 640px) {
+  .heroSection {
+    padding: 6.5rem 1.25rem 2.5rem 1.25rem;
+  }
+  .brandTitle {
+    font-size: 3.2rem;
+  }
+  .actionRow {
+    flex-direction: column;
+    width: 100%;
+  }
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+    justify-content: center;
+  }
+  .mascotStage {
+    height: 420px;
+  }
+}

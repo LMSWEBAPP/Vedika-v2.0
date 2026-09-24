@@ -42,6 +42,7 @@ export default function LayoutWrapper({ children }) {
     }
 
     const isAuthPage = pathname === '/login' || pathname === '/users' || pathname === '/admin/login' || pathname.startsWith('/auth');
+    const isPublicPage = pathname === '/' || isAuthPage;
 
     const isAdmin = currentUser && (
       (currentUser.role || '').toLowerCase() === 'administrator' ||
@@ -61,7 +62,7 @@ export default function LayoutWrapper({ children }) {
     }
 
     if (!currentUser) {
-      if (!isAuthPage) {
+      if (!isPublicPage) {
         // Redirect to unified login page if not logged in
         setUser(null);
         setLoading(true);
@@ -76,13 +77,13 @@ export default function LayoutWrapper({ children }) {
         if (isAdmin) {
           router.replace('/admin');
         } else {
-          router.replace('/');
+          router.replace('/prev-home-page');
         }
         return;
       } else {
         // Logged-in page validation
         if (isAdmin) {
-          if (!pathname.startsWith('/admin')) {
+          if (!pathname.startsWith('/admin') && pathname !== '/') {
             setLoading(true);
             router.replace('/admin');
             return;
@@ -142,6 +143,14 @@ export default function LayoutWrapper({ children }) {
   }
 
   const isAuthPage = pathname === '/login' || pathname === '/users' || pathname === '/admin/login' || pathname.startsWith('/auth');
+
+  if (pathname === '/') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#02050c', color: '#f8fafc', width: '100%', overflowX: 'hidden' }}>
+        {children}
+      </div>
+    );
+  }
 
   // Auth pages (like /login) render directly without a sidebar
   if (isAuthPage || !user) {
