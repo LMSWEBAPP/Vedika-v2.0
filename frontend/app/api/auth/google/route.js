@@ -8,7 +8,7 @@ export async function GET(request) {
     const parsedOrigin = new URL(origin, 'https://vedika-v20c.vercel.app').origin;
     const redirectTo = searchParams.get('redirect_to') || `${parsedOrigin}/auth/callback`;
 
-    const backendUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vyomanta.onrender.com').replace(/\/$/, '');
+    const backendUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
 
     // 1. Attempt to fetch authorize URL directly from Frappe backend
     try {

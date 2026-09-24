@@ -30,7 +30,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'No active session identifier found.' }, { status: 401 });
     }
     
-    const frappeUrl = process.env.FRAPPE_URL || 'https://vyomanta.onrender.com';
+    const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
     const exchangeUrl = `${frappeUrl}/api/method/lms.lms.api.get_jwt`;
     
     try {

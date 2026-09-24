@@ -15,7 +15,7 @@ export default function AuthCallback() {
   useEffect(() => {
     async function verifyAndFetchUser() {
       try {
-        const frappeUrl = process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vyomanta.onrender.com';
+        const frappeUrl = (process.env.NEXT_PUBLIC_FRAPPE_URL || process.env.FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
         
         // Retrieve sid from search parameters if present (passed via redirect URL parameter)
         let sid = searchParams.get('sid');

@@ -42,7 +42,7 @@ export async function authenticateRequest(request, { requireAuth = true, require
       if (sidMatch && sidMatch[1] && sidMatch[1] !== 'Guest') {
         const sid = sidMatch[1];
         try {
-          const frappeUrl = process.env.FRAPPE_URL || 'https://vyomanta.onrender.com';
+          const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
           const verifyRes = await fetch(`${frappeUrl}/api/method/frappe.auth.get_logged_user`, {
             headers: { 'Cookie': `sid=${sid}` }
           });

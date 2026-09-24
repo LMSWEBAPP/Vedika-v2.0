@@ -191,7 +191,7 @@ try:
             or os.environ.get("BACKEND_URL") 
             or os.environ.get("FRAPPE_URL") 
             or os.environ.get("NEXT_PUBLIC_FRAPPE_URL") 
-            or "https://vyomantha-testing.onrender.com"
+            or "https://vedika-v2-0.onrender.com"
         )
         backend_url = backend_url.rstrip("/")
         redirect_url = f"{backend_url}/api/method/frappe.integrations.oauth2_logins.login_via_google"

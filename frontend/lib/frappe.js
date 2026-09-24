@@ -1,8 +1,8 @@
 // lib/frappe.js
 
 const FRAPPE_URL = typeof window !== 'undefined'
-  ? window.location.origin
-  : (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'http://localhost:8080');
+  ? (process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com')
+  : (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
 
 export function sanitizeTitle(title) {
   if (!title) return title;

@@ -11,7 +11,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username/email and password are required.' }, { status: 400 });
     }
 
-    const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vyomanta.onrender.com').replace(/\/$/, '');
+    const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
     
     // Call Frappe backend login endpoint server-to-server (bypasses browser CORS)
     let frappeRes;
