@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import { callGemini } from '@/lib/gemini';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const { code, puzzleId, stepIndex, stepDescription, problemStatement, allSteps } = await request.json();
 
     if (!code || stepDescription === undefined) {
       return NextResponse.json({ error: 'Missing required parameters.' }, { status: 400 });
+    }
+
+    if (typeof code === 'string' && code.length > 10000) {
+      return NextResponse.json({ error: 'Code submission exceeds maximum limit (10,000 characters).' }, { status: 400 });
     }
 
     const systemInstruction = `You are a strict, helpful programming tutor validating a student's code step-by-step.

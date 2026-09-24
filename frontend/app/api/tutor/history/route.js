@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 // Ensure table exists on first request
 let tableInitialized = false;
@@ -33,14 +34,20 @@ async function ensureTable() {
 // GET /api/tutor/history?userId=...&type=general
 export async function GET(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     await ensureTable();
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const requestedUserId = searchParams.get('userId');
     const type = searchParams.get('type') || 'general';
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    // Prevent cross-user data access unless admin
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Cannot access tutor history of another user.' }, { status: 403 });
     }
+
+    const userId = requestedUserId || auth.user.user_id || auth.user.email;
 
     const [rows] = await pool.query(
       `SELECT id, user_id, type, label, mode, length, messages, documents, created_at, updated_at
@@ -91,10 +98,13 @@ export async function GET(request) {
 // Body: { id, userId, type, label, mode, length, messages, documents }
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     await ensureTable();
     const body = await request.json();
     const sessionData = body.session || body;
-    const userId = body.userId || sessionData.userId;
+    const requestedUserId = body.userId || sessionData.userId;
     const id = sessionData.id || body.id;
     const type = sessionData.type || body.type || 'general';
     const label = sessionData.label || sessionData.topic || body.label;
@@ -103,9 +113,14 @@ export async function POST(request) {
     const messages = sessionData.messages || body.messages || [];
     const documents = sessionData.documents || body.documents || [];
 
-    if (!id || !userId) {
-      return NextResponse.json({ error: 'id and userId are required' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 });
     }
+
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Cannot save tutor history for another user.' }, { status: 403 });
+    }
+    const userId = auth.user.user_id || auth.user.email;
 
     const messagesJson = JSON.stringify(messages || []);
     const documentsJson = JSON.stringify(documents || []);
@@ -144,19 +159,31 @@ export async function POST(request) {
 // DELETE /api/tutor/history?id=...&userId=...
 export async function DELETE(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     await ensureTable();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const userId = searchParams.get('userId');
+    const requestedUserId = searchParams.get('userId');
 
-    if (!id || !userId) {
-      return NextResponse.json({ error: 'id and userId are required' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 });
     }
 
-    await pool.query(
-      `DELETE FROM tab_tutor_sessions WHERE id = ? AND user_id = ?`,
-      [id, userId]
-    );
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Cannot delete tutor history of another user.' }, { status: 403 });
+    }
+    const userId = auth.isAdmin && requestedUserId ? requestedUserId : (auth.user.user_id || auth.user.email);
+
+    let deleteSql = `DELETE FROM tab_tutor_sessions WHERE id = ?`;
+    const deleteParams = [id];
+    if (!auth.isAdmin) {
+      deleteSql += ` AND user_id = ?`;
+      deleteParams.push(userId);
+    }
+
+    await pool.query(deleteSql, deleteParams);
 
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err) {

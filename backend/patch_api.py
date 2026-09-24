@@ -16,7 +16,8 @@ def main():
         'execute_py', 'get_courses_optimized', 'get_course_syllabus_optimized',
         'sign_jwt', 'get_jwt', 'retrieve_secure_chunks_internal', 
         'invalidate_permission_cache', 'get_lms_students_optimized',
-        'save_course_lesson_custom', 'save_course_chapter_custom'
+        'save_course_lesson_custom', 'save_course_chapter_custom',
+        'read_any_file', 'get_bench_logs', 'get_environ_debug', 'test_login_via_google'
     ]
     marker = "# --- BEGIN ANTI-GRAVITY CUSTOM ENDPOINTS ---"
     if marker in content:
@@ -28,117 +29,18 @@ def main():
                 content = content[:idx].rstrip()
                 break
 
-    patch_code = "\n\n" + marker + "\n" + """
+    patch_code = "\n\n" + marker + """
 
 @frappe.whitelist(allow_guest=True)
 def get_google_auth_url(redirect_to: str = None):
     import frappe
-    import traceback
     try:
         from frappe.utils.oauth import get_oauth2_authorize_url
         return get_oauth2_authorize_url("google", redirect_to)
     except Exception as e:
+        frappe.log_error(title="Google Auth URL Error", message=str(e))
         return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-@frappe.whitelist(allow_guest=True)
-def test_google_auth_traceback(redirect_to: str = None):
-    import frappe
-    import traceback
-    try:
-        from frappe.utils.oauth import get_oauth2_authorize_url
-        return get_oauth2_authorize_url("google", redirect_to or "http://localhost:3000/auth/callback")
-    except Exception as e:
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-@frappe.whitelist(allow_guest=True)
-def get_bench_logs(filename: str = None):
-    import os
-    logs_dir = "/home/frappe/frappe-bench/logs"
-    if not os.path.exists(logs_dir):
-        return f"Logs directory not found at {logs_dir}"
-    
-    if not filename:
-        return {
-            "files": os.listdir(logs_dir),
-            "site_logs": os.listdir("/home/frappe/frappe-bench/sites/lms.render/logs") if os.path.exists("/home/frappe/frappe-bench/sites/lms.render/logs") else []
-        }
-    
-    filepath = os.path.join(logs_dir, filename)
-    if not os.path.exists(filepath):
-        filepath = os.path.join("/home/frappe/frappe-bench/sites/lms.render/logs", filename)
-        if not os.path.exists(filepath):
-            return f"File {filename} not found"
-            
-    with open(filepath, 'r') as f:
-        lines = f.readlines()
-        return "".join(lines[-200:])
-
-@frappe.whitelist(allow_guest=True)
-def get_api_file():
-    with open(__file__, 'r') as f:
-        return f.read()
-
-@frappe.whitelist(allow_guest=True)
-def test_login_via_google(code: str = None, state: str = None, **kwargs):
-    import traceback
-    try:
-        from frappe.integrations.oauth2_logins import login_via_google
-        return login_via_google(code, state)
-    except Exception as e:
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-@frappe.whitelist(allow_guest=True)
-def get_environ_debug():
-    import os
-    client_id = os.environ.get("GOOGLE_CLIENT_ID") or ""
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET") or ""
-    return {
-        "client_id": client_id,
-        "client_secret_len": len(client_secret),
-        "client_secret_start": client_secret[:10],
-        "client_secret_end": client_secret[-4:] if client_secret else ""
-    }
-
-@frappe.whitelist(allow_guest=True)
-def read_any_file(path: str, start: int = 1, end: int = 100):
-    try:
-        with open(path, 'r') as f:
-            lines = f.readlines()
-            return "".join(lines[start-1:end])
-    except Exception as e:
-        return str(e)
-
-@frappe.whitelist(allow_guest=True)
-def execute_py(code: str):
-    import frappe
-    try:
-        import sys
-        from io import StringIO
-        old_stdout = sys.stdout
-        redirected_output = sys.stdout = StringIO()
-        
-        loc = {"frappe": frappe}
-        exec(code, globals(), loc)
-        
-        sys.stdout = old_stdout
-        return {
-            "output": redirected_output.getvalue(),
-            "result": str(loc.get("result", ""))
-        }
-    except Exception as e:
-        import traceback
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": "Could not generate Google authorization URL"
         }
 
 @frappe.whitelist(allow_guest=True)
@@ -160,26 +62,26 @@ def get_courses_optimized():
                 enrollment_counts[row["course"]] = row["count"]
         except Exception:
             pass
-            
-        mapped = []
+
+        result = []
         for c in courses:
-            mapped.append({
-                "id": c.name,
-                "title": c.title,
-                "instructor": "Administrator",
-                "category": c.category or "Web Development",
-                "tagline": c.short_introduction or "Learn the basics and get started.",
-                "lessonsCount": c.lessons or 0,
-                "enrolled": enrollment_counts.get(c.name, 0),
-                "status": "Published" if c.published else "Draft",
-                "date": c.creation.strftime("%b %d, %Y") if c.creation else ""
+            c_name = c["name"]
+            result.append({
+                "name": c_name,
+                "title": c.get("title") or c_name,
+                "status": "Published" if c.get("published") else "Draft",
+                "creation": str(c.get("creation") or ""),
+                "category": c.get("category") or "General",
+                "short_introduction": c.get("short_introduction") or "",
+                "lessonsCount": len(c.get("lessons") or []),
+                "enrollmentCount": enrollment_counts.get(c_name, 0)
             })
-        return mapped
+            
+        return result
     except Exception as e:
-        import traceback
+        frappe.log_error(title="get_courses_optimized Error", message=str(e))
         return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": "Failed to retrieve courses"
         }
 
 @frappe.whitelist(allow_guest=True)
@@ -240,75 +142,47 @@ def get_course_syllabus_optimized(course_id: str):
                                 pass
                                 
                         lessons.append({
-                            "id": lDoc["name"],
-                            "title": lDoc["title"],
-                            "dur": "10 min",
-                            "vid": lDoc.get("youtube") or "",
-                            "overview": lDoc.get("body") or "",
+                            "id": l_name,
+                            "title": lDoc.get("title") or l_name,
+                            "youtube": lDoc.get("youtube") or "",
+                            "body": lDoc.get("body") or "",
                             "pts": pts,
                             "quizQuestions": quiz_questions,
                             "codingExercise": coding_exercise
                         })
-                    elif l_name:
-                        lessons.append({
-                            "id": l_name,
-                            "title": "Untitled Lesson",
-                            "dur": "10 min",
-                            "vid": "",
-                            "overview": "",
-                            "pts": [],
-                            "quizQuestions": [],
-                            "codingExercise": {
-                                "hasExercise": False,
-                                "language": "python",
-                                "instruction": "",
-                                "starterCode": "",
-                                "solutionCode": "",
-                                "testCases": []
-                            }
-                        })
-                        
                 modules.append({
                     "id": ch.name,
-                    "title": ch.title,
-                    "emoji": "📖",
-                    "accent": "#5B8CF8",
+                    "title": ch.title or ch.name,
                     "lessons": lessons
                 })
                 
         return {
-            "id": course_id,
-            "title": course.title,
-            "tagline": course.short_introduction or "",
+            "title": course.title or course.name,
+            "description": course.description or course.short_introduction or "",
+            "category": course.category or "General",
             "modules": modules
         }
     except Exception as e:
-        import traceback
+        frappe.log_error(title="get_course_syllabus_optimized Error", message=str(e))
         return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": "Failed to retrieve course syllabus"
         }
 
-@frappe.whitelist(allow_guest=True)
-def save_course_lesson_custom(lesson_id: str, title: str = None, chapter_id: str = None, youtube: str = None, body: str = None, instructor_notes: str = None, user_email: str = None):
+@frappe.whitelist()
+def save_course_lesson_custom(lesson_id: str, title: str = None, chapter_id: str = None, youtube: str = None, body: str = None, instructor_notes: str = None):
     import frappe
     try:
         user = frappe.session.user
-        if user == "Guest" and user_email:
-            user = str(user_email).strip().lower()
+        if not user or user == "Guest":
+            frappe.throw("Authentication required to modify course lessons.", frappe.PermissionError)
 
-        is_admin = False
-        if user in ["Administrator", "admin@lms.com"]:
-            is_admin = True
-        else:
-            roles = frappe.get_roles(user)
-            if any(r in roles for r in ["System Manager", "Course Creator", "Instructor", "Administrator"]):
-                is_admin = True
+        roles = frappe.get_roles(user)
+        is_authorized = user in ["Administrator", "admin@lms.com"] or any(
+            r in roles for r in ["System Manager", "Course Creator", "Instructor", "Administrator"]
+        )
 
-        if not is_admin:
+        if not is_authorized:
             frappe.throw("Permission Denied: Only Admin (admin@lms.com) or Instructors can edit lessons.", frappe.PermissionError)
-
-        frappe.set_user("Administrator")
 
         ch_link = chapter_id if (chapter_id and not chapter_id.startswith("ch_")) else ""
 
@@ -333,30 +207,25 @@ def save_course_lesson_custom(lesson_id: str, title: str = None, chapter_id: str
         frappe.db.commit()
         return {"status": "success", "name": doc.name, "youtube": doc.youtube}
     except Exception as e:
-        frappe.log_error(f"save_course_lesson_custom error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        frappe.log_error(title="save_course_lesson_custom error", message=str(e))
+        return {"status": "error", "message": "Failed to save lesson"}
 
-@frappe.whitelist(allow_guest=True)
-def save_course_chapter_custom(chapter_id: str, title: str = None, course: str = None, lessons: list = None, user_email: str = None):
+@frappe.whitelist()
+def save_course_chapter_custom(chapter_id: str, title: str = None, course: str = None, lessons: list = None):
     import frappe
     import json
     try:
         user = frappe.session.user
-        if user == "Guest" and user_email:
-            user = str(user_email).strip().lower()
+        if not user or user == "Guest":
+            frappe.throw("Authentication required to modify course chapters.", frappe.PermissionError)
 
-        is_admin = False
-        if user in ["Administrator", "admin@lms.com"]:
-            is_admin = True
-        else:
-            roles = frappe.get_roles(user)
-            if any(r in roles for r in ["System Manager", "Course Creator", "Instructor", "Administrator"]):
-                is_admin = True
+        roles = frappe.get_roles(user)
+        is_authorized = user in ["Administrator", "admin@lms.com"] or any(
+            r in roles for r in ["System Manager", "Course Creator", "Instructor", "Administrator"]
+        )
 
-        if not is_admin:
+        if not is_authorized:
             frappe.throw("Permission Denied: Only Admin (admin@lms.com) or Instructors can edit chapters.", frappe.PermissionError)
-
-        frappe.set_user("Administrator")
 
         if isinstance(lessons, str):
             try:
@@ -387,20 +256,11 @@ def save_course_chapter_custom(chapter_id: str, title: str = None, course: str =
                     if frappe.db.exists("Course Lesson", l_id):
                         doc.append("lessons", {"lesson": l_id})
             doc.insert(ignore_permissions=True)
-
-        # Automatically link chapter in LMS Course chapters child table if course is provided
-        if course and frappe.db.exists("LMS Course", course):
-            course_doc = frappe.get_doc("LMS Course", course)
-            existing_ch_names = [ch.chapter for ch in (course_doc.chapters or []) if ch.chapter]
-            if doc.name not in existing_ch_names:
-                course_doc.append("chapters", {"chapter": doc.name})
-                course_doc.save(ignore_permissions=True)
-
         frappe.db.commit()
         return {"status": "success", "name": doc.name, "modified_by": doc.modified_by}
     except Exception as e:
-        frappe.log_error(f"save_course_chapter_custom error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        frappe.log_error(title="save_course_chapter_custom error", message=str(e))
+        return {"status": "error", "message": "Failed to save chapter"}
 
 def sign_jwt(payload, secret_key):
     import hmac
@@ -419,6 +279,7 @@ def sign_jwt(payload, secret_key):
 def get_jwt():
     import frappe
     import time
+    import os
     if frappe.session.user == "Guest":
         frappe.local.response["http_status_code"] = 401
         return {"error": "Unauthorized"}
@@ -432,8 +293,10 @@ def get_jwt():
         "exp": int(time.time()) + 3600
     }
     
-    import os
-    secret_key = os.environ.get("JWT_SECRET") or frappe.local.conf.encryption_key or "default_secret"
+    secret_key = os.environ.get("JWT_SECRET") or getattr(frappe.local.conf, "encryption_key", None)
+    if not secret_key:
+        frappe.local.response["http_status_code"] = 500
+        return {"error": "JWT configuration missing on server"}
     token = sign_jwt(payload, secret_key)
     return {"token": token}
 
@@ -446,8 +309,8 @@ def retrieve_secure_chunks_internal(security_context: str, query_vector: str, si
     import uuid
     
     req_token = frappe.get_request_header("X-Internal-Token")
-    secret_token = os.environ.get("INTERNAL_SERVICE_TOKEN") or "internal_key_123"
-    if req_token != secret_token:
+    secret_token = os.environ.get("INTERNAL_SERVICE_TOKEN")
+    if not secret_token or req_token != secret_token:
         frappe.local.response["http_status_code"] = 401
         return {"error": "Unauthorized service call"}
     
@@ -466,7 +329,6 @@ def retrieve_secure_chunks_internal(security_context: str, query_vector: str, si
     if not tenant_id or not user_id or not session_id or not course_id:
         frappe.local.response["http_status_code"] = 400
         return {"error": "Missing security context parameters"}
-        
 
     redis_url = os.environ.get("UPSTASH_REDIS_REST_URL")
     redis_token = os.environ.get("UPSTASH_REDIS_REST_TOKEN")
@@ -478,89 +340,129 @@ def retrieve_secure_chunks_internal(security_context: str, query_vector: str, si
             is_instructor_res = requests.get(url_role, headers={"Authorization": f"Bearer {redis_token}"}).json()
             redis_val = is_instructor_res.get("result")
             if redis_val is not None:
-                is_instructor = redis_val == "1"
+                is_instructor = (redis_val == "true" or redis_val is True)
             else:
-                is_instructor = bool(frappe.db.exists("Course Instructor", {"parent": course_id, "instructor": user_id}))
+                db_inst = frappe.db.get_value("Course Instructor", {"parent": course_id, "instructor": user_id})
+                is_instructor = bool(db_inst)
+                requests.post(f"{redis_url}/set/user:is_instructor:{user_id}:{course_id}/{'true' if is_instructor else 'false'}?ex=300", 
+                              headers={"Authorization": f"Bearer {redis_token}"})
         except Exception:
-            is_instructor = bool(frappe.db.exists("Course Instructor", {"parent": course_id, "instructor": user_id}))
+            db_inst = frappe.db.get_value("Course Instructor", {"parent": course_id, "instructor": user_id})
+            is_instructor = bool(db_inst)
     else:
-        is_instructor = bool(frappe.db.exists("Course Instructor", {"parent": course_id, "instructor": user_id}))
+        db_inst = frappe.db.get_value("Course Instructor", {"parent": course_id, "instructor": user_id})
+        is_instructor = bool(db_inst)
         
-    params = [query_vector, tenant_id, session_id]
+    has_session_doc = frappe.db.sql(
+        "SELECT name FROM `tabLMS Session Document` WHERE session_id = %s AND owner = %s LIMIT 1",
+        (session_id, user_id)
+    )
     
-    if not is_instructor:
-        # Check student enrollment or session ownership to allow students to query their own sessions
-        is_enrolled = bool(frappe.db.exists("LMS Enrollment", {"member": user_id, "course": course_id}))
-        if not is_enrolled:
-            owns_session = bool(frappe.db.sql(
-                "SELECT name FROM `tabLMS Session Document` WHERE session_id = %s AND owner = %s LIMIT 1",
-                (session_id, user_id)
-            ))
-            if not owns_session:
-                frappe.local.response["http_status_code"] = 403
-                return {"error": "Access denied: Student is not enrolled in this course and does not own this session."}
-            
+    session_owner_filter = "AND owner = %s"
+    role_filter = "AND (c.user_id = %s OR d.course_id = 'general' OR d.course_id IN (SELECT course FROM `tabLMS Enrollment` WHERE member = %s))"
+    
+    if is_instructor:
         session_owner_filter = "AND (owner = %s OR owner IN (SELECT parent FROM `tabHas Role` WHERE role IN ('Instructor', 'System Manager')))"
-        role_filter = "AND (c.user_id = %s OR d.course_id = 'general' OR d.course_id IN (SELECT course FROM `tabLMS Enrollment` WHERE member = %s))"
-        params.extend([user_id, user_id, user_id])
-    else:
-        session_owner_filter = ""
-        role_filter = "AND (c.course_id = %s OR d.course_id = %s)"
-        params.extend([course_id, course_id])
-        
-    params.extend([similarity_threshold, limit])
-    
-    sql = '''
-        SELECT c.id, c.document_id, c.content, c.page_number, 1 - VEC_COSINE_DISTANCE(c.embedding, %s) AS similarity
+        role_filter = "AND (c.user_id = %s OR d.course_id = 'general' OR d.course_id = %s)"
+
+    sql = f'''
+        SELECT c.content,
+               (1 - (c.embedding <=> %s)) AS similarity
         FROM `LMS Document Chunk` c
         JOIN `tabLMS Session Document` d ON c.document_id = d.name
-        WHERE c.tenant_id = %s AND c.is_flagged = 0 AND d.file_key IN (
+        WHERE c.tenant_id = %s
+          AND d.file_key IN (
             SELECT file_key FROM `tabLMS Session Document` WHERE session_id = %s {session_owner_filter}
-        )
-        {role_filter}
-        HAVING similarity >= %s
+          )
+          {role_filter}
+          AND (1 - (c.embedding <=> %s)) >= %s
         ORDER BY similarity DESC
         LIMIT %s
     '''
     
-    sql_formatted = sql.format(session_owner_filter=session_owner_filter, role_filter=role_filter)
-    rows = frappe.db.sql(sql_formatted, params, as_dict=True)
+    q_vec_str = json.dumps(q_vec)
     
-    log_id = str(uuid.uuid4())
-    frappe.db.sql('''
-        INSERT INTO `LMS RAG Audit Log` (id, user_id, action, document_id, session_id, tenant_id, ip_address)
-        VALUES (%s, %s, 'retrieval', NULL, %s, %s, %s)
-    ''', (log_id, user_id, session_id, tenant_id, getattr(frappe.local, "ip", None) or "127.0.0.1"))
-    frappe.db.commit()
-    
-    return {"chunks": rows}
+    if is_instructor:
+        params = (
+            q_vec_str,
+            tenant_id,
+            session_id,
+            user_id,
+            user_id,
+            course_id,
+            q_vec_str,
+            similarity_threshold,
+            limit
+        )
+    else:
+        params = (
+            q_vec_str,
+            tenant_id,
+            session_id,
+            user_id,
+            user_id,
+            user_id,
+            q_vec_str,
+            similarity_threshold,
+            limit
+        )
+        
+    try:
+        results = frappe.db.sql(sql, params, as_dict=True)
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"error": "Database query error during vector retrieval"}
 
-def invalidate_permission_cache(doc, method=None):
-    import frappe
-    import requests
+    audit_log = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "action": "query",
+        "document_id": None,
+        "session_id": session_id,
+        "tenant_id": tenant_id,
+        "ip_address": frappe.local.request_ip or "127.0.0.1"
+    }
+    try:
+        frappe.db.sql('''
+            INSERT INTO `LMS RAG Audit Log` 
+            (id, user_id, action, document_id, session_id, tenant_id, ip_address)
+            VALUES (%(id)s, %(user_id)s, %(action)s, %(document_id)s, %(session_id)s, %(tenant_id)s, %(ip_address)s)
+        ''', audit_log)
+        frappe.db.commit()
+    except Exception:
+        pass
+
+    return {"chunks": results}
+
+def invalidate_permission_cache(doc, method):
     import os
-    
-    user_id = doc.get("member") or doc.get("instructor")
-    if not user_id:
-        return
-        
+    import requests
     redis_url = os.environ.get("UPSTASH_REDIS_REST_URL")
-    token = os.environ.get("UPSTASH_REDIS_REST_TOKEN")
-    if not redis_url or not token:
+    redis_token = os.environ.get("UPSTASH_REDIS_REST_TOKEN")
+    if not redis_url or not redis_token:
         return
         
-    headers = {"Authorization": f"Bearer {token}"}
-    
-    requests.get(f"{redis_url}/del/user:courses:{{user_id}}".format(user_id=user_id), headers=headers)
-    
-    course_id = doc.get("course") or doc.get("parent")
-    if course_id:
-        requests.get(f"{redis_url}/del/user:is_instructor:{{user_id}}:{{course_id}}".format(user_id=user_id, course_id=course_id), headers=headers)
+    try:
+        doctype = doc.doctype
+        user_id = getattr(doc, "member", None) or getattr(doc, "instructor", None)
+        course_id = getattr(doc, "course", None) or getattr(doc, "parent", None)
+        
+        if user_id and course_id:
+            if doctype == "LMS Enrollment":
+                url = f"{redis_url}/del/user:is_enrolled:{user_id}:{course_id}"
+                requests.post(url, headers={"Authorization": f"Bearer {redis_token}"})
+            elif doctype == "Course Instructor":
+                url = f"{redis_url}/del/user:is_instructor:{user_id}:{course_id}"
+                requests.post(url, headers={"Authorization": f"Bearer {redis_token}"})
+    except Exception:
+        pass
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_lms_students_optimized():
     import frappe
-    import traceback
+    if frappe.session.user == "Guest":
+        frappe.local.response["http_status_code"] = 401
+        return {"error": "Unauthorized"}
     try:
         users = frappe.get_all("User", 
                                fields=["name", "email", "full_name", "enabled"],
@@ -568,15 +470,15 @@ def get_lms_students_optimized():
                                limit_page_length=500)
         return [{"username": u.email or u.name, "name": u.full_name or u.name} for u in users]
     except Exception as e:
+        frappe.log_error(title="get_lms_students_optimized error", message=str(e))
         return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": "Failed to retrieve student directory"
         }
 """
 
     with open(api_path, 'w') as f:
         f.write(content.strip() + patch_code)
-    print("✅ Patched apps/lms/lms/lms/api.py successfully with execute_py!")
+    print("✅ Patched apps/lms/lms/lms/api.py successfully with hardened endpoints!")
 
     # 2. Patch apps/lms/lms/lms/hooks.py (for startup monkey patching)
     hooks_path = '/home/frappe/frappe-bench/apps/lms/lms/hooks.py'
@@ -597,6 +499,7 @@ def get_lms_students_optimized():
 
 # MONKEY PATCH COOKIES AND GOOGLE OAUTH REDIRECTS FOR CROSS-DOMAIN AUTHENTICATION
 try:
+    import os
     import frappe
     import frappe.auth
     
@@ -609,7 +512,6 @@ try:
         return orig_set_cookie(self, key, value, expires=expires, secure=secure, httponly=httponly, samesite=samesite, max_age=max_age, deduplicate=deduplicate)
         
     frappe.auth.CookieManager.set_cookie = patched_set_cookie
-    print("CookieManager.set_cookie monkey patched successfully with SameSite=None and Secure=True!")
     
     import frappe.integrations.oauth2_logins
     orig_login_via_google = frappe.integrations.oauth2_logins.login_via_google
@@ -621,9 +523,6 @@ try:
             if code and " " in code:
                 code = code.replace(" ", "+")
                 
-            frappe.log_error(title="Google Login Attempted", message=f"Code: {code}\\nState: {state}\\nKwargs: {kwargs}")
-            frappe.db.commit()
-            
             res = orig_login_via_google(code, state)
             # Intercept successful Google login redirect and append the sid query parameter
             if frappe.local.response.get("type") == "redirect":
@@ -645,7 +544,7 @@ try:
             import base64
             import json
             from urllib.parse import urlparse
-            frontend_url = os.environ.get("FRONTEND_URL") or "https://vedika-pet-testing.vercel.app"
+            frontend_url = os.environ.get("FRONTEND_URL") or "https://vyomanta.onrender.com"
             try:
                 state_data = json.loads(base64.b64decode(state).decode("utf-8"))
                 redirect_to = state_data.get("redirect_to")
@@ -688,7 +587,6 @@ try:
                 "on_trash": "lms.lms.api.invalidate_permission_cache"
             }
         }
-    print("doc_events cache invalidation hooks registered successfully in hooks.py!")
     
 except Exception as patch_err:
     import frappe

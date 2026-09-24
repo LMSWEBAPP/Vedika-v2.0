@@ -70,8 +70,8 @@ export function verifyJwt(token) {
     const payloadStr = Buffer.from(payloadB64, 'base64url').toString('utf8');
     const payload = JSON.parse(payloadStr);
     
-    // Check expiry
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
+    // Require valid, non-expired expiration claim
+    if (!payload.exp || typeof payload.exp !== 'number' || (Date.now() / 1000 > payload.exp)) {
       return null;
     }
     
@@ -112,7 +112,6 @@ export function isAdminUser(userOrPayload) {
     role === 'system manager' ||
     userId === 'administrator' ||
     userId === 'admin@lms.com' ||
-    email === 'admin@lms.com' ||
-    (email.startsWith('admin@') && !email.includes('student'))
+    email === 'admin@lms.com'
   );
 }

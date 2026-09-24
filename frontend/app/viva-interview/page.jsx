@@ -1193,7 +1193,9 @@ export default function VivaInterviewPage() {
       const targetWsHost = forcePort || primaryWsHost;
 
       const voiceSid = 'viva-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
       let wsUrl = `${targetWsHost}/api/ws?mode=${sessionMode}&topic=${encodeURIComponent(activeTopic)}&difficulty=${activeDifficulty}&level=${activeLevel}&programmingLanguage=${encodeURIComponent(programmingLanguage)}&sessionId=${voiceSid}`;
+      if (jwtToken) wsUrl += `&token=${encodeURIComponent(jwtToken)}`;
       if (isReconnect) wsUrl += `&reconnect=true`;
 
       const ws = new WebSocket(wsUrl);

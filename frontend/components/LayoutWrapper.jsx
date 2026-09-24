@@ -49,7 +49,6 @@ export default function LayoutWrapper({ children }) {
       (currentUser.role || '').toLowerCase() === 'admin' ||
       (currentUser.role || '').toLowerCase() === 'system manager' ||
       (currentUser.email || '').toLowerCase() === 'admin@lms.com' ||
-      (currentUser.email || '').toLowerCase().startsWith('admin@') ||
       (currentUser.username || '').toLowerCase() === 'administrator' ||
       (currentUser.username || '').toLowerCase() === 'admin'
     );

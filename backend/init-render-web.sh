@@ -62,9 +62,10 @@ with open(path, 'w') as f:
 fi
 
 # Apply environment configurations dynamically
+CORS_ORIGIN="${FRONTEND_URL:-http://localhost:3000}"
 bench set-mariadb-host "$DB_HOST"
 bench set-config -g db_port "$DB_PORT"
-bench set-config -g allow_cors "${FRONTEND_URL:-*}"
+bench set-config -g allow_cors "$CORS_ORIGIN"
 
 # Ensure site config and logs directories exist
 mkdir -p sites/lms.render/logs
@@ -79,8 +80,8 @@ cat <<EOF > sites/lms.render/site_config.json
  "db_type": "mariadb",
  "db_user": "$DB_USER",
  "db_ssl_ca": "/etc/ssl/certs/ca-certificates.crt",
- "encryption_key": "${ENCRYPTION_KEY:-8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=}",
- "allow_cors": "${FRONTEND_URL:-*}",
+ "encryption_key": "${ENCRYPTION_KEY}",
+ "allow_cors": "$CORS_ORIGIN",
  "session_cookie_samesite": "Lax"
 }
 EOF
@@ -147,6 +148,7 @@ except Exception as e:
     done
     
     echo "Wipe complete. Running bench new-site..."
+    ADMIN_PASS="${ADMIN_PASSWORD:-$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")}"
     # Initialize site tables and default users in the pre-existing database
     bench new-site lms.render \
       --db-name "$DB_NAME" \
@@ -154,7 +156,7 @@ except Exception as e:
       --db-password "$DB_PASSWORD" \
       --db-host "$DB_HOST" \
       --db-port "$DB_PORT" \
-      --admin-password "${ADMIN_PASSWORD:-admin}" \
+      --admin-password "$ADMIN_PASS" \
       --install-app payments \
       --install-app lms \
       --no-setup-db \

@@ -254,7 +254,11 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
         );
         const voiceSid = sessionId || voiceSessionIdRef.current || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
         voiceSessionIdRef.current = voiceSid;
-        const wsUrl = `${wsHost}/api/ws?language=${selectedLanguage}&subject=${selectedSubject}&sessionId=${voiceSid}&userId=${activeUserId}`;
+        const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
+        let wsUrl = `${wsHost}/api/ws?language=${selectedLanguage}&subject=${selectedSubject}&sessionId=${voiceSid}&userId=${activeUserId}`;
+        if (jwtToken) {
+          wsUrl += `&token=${encodeURIComponent(jwtToken)}`;
+        }
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 

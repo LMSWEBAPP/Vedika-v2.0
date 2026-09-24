@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getRotatedKey } from '@/lib/keys';
+import { callGemini } from '@/lib/gemini';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const { difficulty, language = 'python' } = await request.json();
     const apiKey = getRotatedKey();
 
@@ -10,8 +15,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Gemini API key is not configured on the server.' }, { status: 500 });
     }
 
-    if (!difficulty) {
-      return NextResponse.json({ error: 'Missing difficulty parameter.' }, { status: 400 });
+    if (!difficulty || !['beginner', 'intermediate', 'advanced'].includes(String(difficulty).toLowerCase())) {
+      return NextResponse.json({ error: 'Valid difficulty (beginner, intermediate, advanced) parameter is required.' }, { status: 400 });
     }
 
     const systemInstruction = `You are a creative programming educator.

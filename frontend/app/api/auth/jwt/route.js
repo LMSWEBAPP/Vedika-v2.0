@@ -14,7 +14,7 @@ export async function GET(request) {
       if (match) sid = match[1];
     }
     
-    const isDev = process.env.NODE_ENV === 'development' || request.headers.get('host')?.includes('localhost');
+    const isDev = process.env.NODE_ENV === 'development';
 
     if (!sid) {
       if (isDev) {
@@ -50,20 +50,27 @@ export async function GET(request) {
         }
       }
       console.warn(`[JWT Proxy] Frappe token exchange response status: ${response.status}`);
+
+      // Authoritative fallback: verify session via get_logged_user
+      const verifyRes = await fetch(`${frappeUrl}/api/method/frappe.auth.get_logged_user`, {
+        headers: { 'Cookie': `sid=${sid}` }
+      });
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json();
+        const loggedUser = verifyData.message;
+        if (loggedUser && loggedUser !== 'Guest') {
+          const isAdmin = loggedUser === 'Administrator' || loggedUser === 'admin@lms.com';
+          const token = signJwt({
+            user_id: loggedUser,
+            email: loggedUser.includes('@') ? loggedUser : 'admin@lms.com',
+            role: isAdmin ? 'Administrator' : 'Student',
+            tenant_id: 'default'
+          }, { expiresIn: 3600 });
+          return NextResponse.json({ token });
+        }
+      }
     } catch (err) {
       console.error("[JWT Proxy] Connection to Frappe backend failed:", err.message);
-    }
-
-    // If connection to Frappe failed on local dev, fallback to dev token
-    if (isDev) {
-      console.warn("[JWT Proxy] Dev mode fallback: Backend offline, generating dev JWT token...");
-      const mockPayload = {
-        user_id: 'student@lms.com',
-        tenant_id: 'default_tenant',
-        role: 'Student'
-      };
-      const token = signJwt(mockPayload, { expiresIn: 3600 });
-      return NextResponse.json({ token });
     }
 
     return NextResponse.json({ error: 'Failed to authenticate session with authentication server.' }, { status: 401 });

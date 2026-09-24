@@ -52,9 +52,14 @@ export default function YouTubeTutorPanel({ videoId, title = 'Video Lesson', get
     setChatLoading(true);
 
     try {
+      const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (jwtToken) {
+        headers['Authorization'] = `Bearer ${jwtToken}`;
+      }
       const res = await fetch('/api/youtube/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           videoId,
           title,

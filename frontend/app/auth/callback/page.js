@@ -66,7 +66,7 @@ export default function AuthCallback() {
         
         // Check if the user is an admin
         const emailLower = (userDoc.email || '').toLowerCase();
-        const isAdmin = emailLower === 'admin@lms.com' || emailLower.startsWith('admin@') || Boolean(userDoc.roles?.some?.(r => r.role === 'Administrator' || r.role === 'System Manager' || r === 'Administrator' || r === 'System Manager'));
+        const isAdmin = emailLower === 'admin@lms.com' || Boolean(userDoc.roles?.some?.(r => (r.role || r) === 'Administrator' || (r.role || r) === 'System Manager'));
         const role = isAdmin ? 'Administrator' : 'Student';
         
         const userProfile = {
@@ -75,6 +75,21 @@ export default function AuthCallback() {
           name: userDoc.full_name || `${userDoc.first_name || ''} ${userDoc.last_name || ''}`.trim() || userDoc.email,
           role
         };
+
+        // Exchange session sid for JWT token for secure API access
+        try {
+          const jwtRes = await fetch(`/api/auth/jwt${sid ? `?sid=${encodeURIComponent(sid)}` : ''}`);
+          if (jwtRes.ok) {
+            const jwtData = await jwtRes.json();
+            if (jwtData.token) {
+              localStorage.setItem('token', jwtData.token);
+              localStorage.setItem('jwt', jwtData.token);
+              userProfile.token = jwtData.token;
+            }
+          }
+        } catch (jwtErr) {
+          console.warn('Could not exchange session for JWT token:', jwtErr);
+        }
         
         setStatus('Synchronizing course progress...');
         

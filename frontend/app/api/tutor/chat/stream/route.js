@@ -34,10 +34,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized JWT token.' }, { status: 401 });
     }
 
-    const { system, user, maxOutputTokens, sessionId, userId, courseId: bodyCourseId } = await request.json();
+    const authenticatedUser = payload.user_id || payload.email || payload.sub;
+    const body = await request.json();
+    const { system, user, maxOutputTokens, sessionId, userId: requestedUserId, courseId: bodyCourseId } = body;
+
     if (!user || !sessionId) {
       return NextResponse.json({ error: 'User message and sessionId are required.' }, { status: 400 });
     }
+
+    if (typeof user === 'string' && user.length > 12000) {
+      return NextResponse.json({ error: 'User prompt exceeds safe length limit (12,000 characters).' }, { status: 400 });
+    }
+
+    if (requestedUserId && requestedUserId !== authenticatedUser && authenticatedUser !== 'Administrator') {
+      return NextResponse.json({ error: 'Forbidden: Cannot query tutor data on behalf of another user.' }, { status: 403 });
+    }
+    const userId = authenticatedUser;
 
     let courseId = bodyCourseId;
     if (!courseId || courseId === 'general' || courseId === 'null') {

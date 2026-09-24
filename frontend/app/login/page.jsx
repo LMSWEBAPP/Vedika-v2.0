@@ -66,7 +66,6 @@ export default function LoginPage() {
         (user.role || '').toLowerCase() === 'admin' ||
         (user.role || '').toLowerCase() === 'system manager' ||
         (user.email || '').toLowerCase() === 'admin@lms.com' ||
-        (user.email || '').toLowerCase().startsWith('admin@') ||
         (user.username || '').toLowerCase() === 'administrator' ||
         (user.username || '').toLowerCase() === 'admin'
       );

@@ -40,15 +40,27 @@ export async function authenticateRequest(request, { requireAuth = true, require
       const cookieHeader = request.headers.get('cookie') || '';
       const sidMatch = cookieHeader.match(/sid=([^;]+)/);
       if (sidMatch && sidMatch[1] && sidMatch[1] !== 'Guest') {
-        // If there's an active session cookie, we can permit local dev or treat as authenticated user
-        const isDev = process.env.NODE_ENV === 'development' || request.headers.get('host')?.includes('localhost');
-        if (isDev) {
-          payload = {
-            user_id: 'Administrator',
-            email: 'admin@lms.com',
-            role: 'Administrator',
-            tenant_id: 'default'
-          };
+        const sid = sidMatch[1];
+        try {
+          const frappeUrl = process.env.FRAPPE_URL || 'https://vyomanta.onrender.com';
+          const verifyRes = await fetch(`${frappeUrl}/api/method/frappe.auth.get_logged_user`, {
+            headers: { 'Cookie': `sid=${sid}` }
+          });
+          if (verifyRes.ok) {
+            const data = await verifyRes.json();
+            const loggedUser = data.message;
+            if (loggedUser && loggedUser !== 'Guest') {
+              const isAdmin = loggedUser === 'Administrator' || loggedUser === 'admin@lms.com';
+              payload = {
+                user_id: loggedUser,
+                email: loggedUser.includes('@') ? loggedUser : 'admin@lms.com',
+                role: isAdmin ? 'Administrator' : 'Student',
+                tenant_id: 'default'
+              };
+            }
+          }
+        } catch (e) {
+          console.warn('[ServerAuth] Could not verify sid with auth backend:', e.message);
         }
       }
     }

@@ -1059,7 +1059,7 @@ export function isAdminUser(userOrEmail) {
   if (!userOrEmail) return false;
   if (typeof userOrEmail === 'string') {
     const s = userOrEmail.trim().toLowerCase();
-    return s === 'admin' || s === 'administrator' || s === 'admin@lms.com' || s.startsWith('admin@') || s.includes('administrator');
+    return s === 'admin' || s === 'administrator' || s === 'admin@lms.com';
   }
   const role = (userOrEmail.role || '').toLowerCase();
   const email = (userOrEmail.email || '').toLowerCase();
@@ -1069,7 +1069,6 @@ export function isAdminUser(userOrEmail) {
     role === 'admin' ||
     role === 'system manager' ||
     email === 'admin@lms.com' ||
-    email.startsWith('admin@') ||
     username === 'administrator' ||
     username === 'admin'
   );
@@ -1109,13 +1108,8 @@ export async function login(email, password) {
     throw new Error("Invalid credentials");
   }
 
-  // Map admin@lms.com to backend seed user
   let usr = email;
   let pwd = password;
-  if (isAdmin && (trimmedPassword === 'admin123' || trimmedPassword === 'admin')) {
-    usr = 'Administrator';
-    pwd = 'admin';
-  }
 
   try {
     const res = await fetch(`${FRAPPE_URL}/api/method/login`, {
@@ -1144,32 +1138,10 @@ export async function login(email, password) {
         role: backendRole
       };
     } else {
-      throw new Error(data.message || "Invalid credentials");
+      throw new Error(data.message || "Invalid email or password.");
     }
   } catch (err) {
-    // If the backend request fails (e.g. connection refused or suspended backend), fall back to local credentials
-    if (isAdmin && (trimmedPassword === 'admin123' || trimmedPassword === 'admin' || trimmedPassword.length > 0)) {
-      return {
-        email: normalizedEmail.includes('@') ? normalizedEmail : 'admin@lms.com',
-        username: 'Administrator',
-        name: 'Administrator',
-        role: 'Administrator'
-      };
-    }
-    if (normalizedEmail === 'student@lms.com' && (trimmedPassword === 'student123' || trimmedPassword === 'student')) {
-      return { email: normalizedEmail, username: normalizedEmail, name: 'Student', role: 'Student' };
-    }
-    const studentMatch = normalizedEmail.match(/^student([1-5])@lms\.com$/);
-    if (studentMatch && (trimmedPassword === 'student123' || trimmedPassword === 'student')) {
-      const idx = parseInt(studentMatch[1], 10);
-      const studentNames = ['Aarav Mehta', 'Sneha Patel', 'Rohan Sharma', 'Priya Nair', 'Aditya Rao'];
-      return {
-        email: normalizedEmail,
-        username: normalizedEmail,
-        name: studentNames[idx - 1],
-        role: 'Student'
-      };
-    }
+    console.error('[Auth Login Error]:', err.message);
     throw err;
   }
 }

@@ -32,10 +32,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized JWT token.' }, { status: 401 });
     }
 
-    const { system, user, maxOutputTokens, sessionId, userId, courseId: bodyCourseId } = await request.json();
-    if (!user || !sessionId) {
+    const { system, user, maxOutputTokens, sessionId, userId: requestedUserId, courseId: bodyCourseId } = await request.json();
+    if (!user || typeof user !== 'string' || !user.trim() || !sessionId) {
       return NextResponse.json({ error: 'User message and sessionId are required.' }, { status: 400 });
     }
+
+    if (user.length > 12000) {
+      return NextResponse.json({ error: 'Message exceeds maximum length of 12,000 characters.' }, { status: 400 });
+    }
+
+    // Bind identity to verified JWT to prevent cross-user access
+    const authenticatedUserId = payload.user_id || payload.email;
+    const isAdmin = isAdminUser(payload);
+    if (requestedUserId && requestedUserId !== authenticatedUserId && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Cannot invoke tutor on behalf of another student.' }, { status: 403 });
+    }
+    const userId = (isAdmin && requestedUserId) ? requestedUserId : authenticatedUserId;
 
     let courseId = bodyCourseId;
     if (!courseId || courseId === 'general' || courseId === 'null') {

@@ -8,14 +8,17 @@ export async function POST(request) {
     const { action, sessionId, userId, messages } = await request.json();
 
     // Verify user authorization: caller cannot inspect another user's recall memories
-    const effectiveUserId = auth.authenticated && auth.user?.user_id
-      ? auth.user.user_id
-      : (userId || 'anonymous');
+    if (!auth.authenticated && userId && userId !== 'anonymous') {
+      return NextResponse.json({ error: 'Unauthorized: Authentication required to access user memory.' }, { status: 401 });
+    }
 
-    // If caller explicitly tries to access another user's memories without admin rights
     if (auth.authenticated && !auth.isAdmin && userId && userId !== auth.user?.user_id && userId !== auth.user?.email) {
       return NextResponse.json({ error: 'Forbidden: Cannot access other users conversation memory.' }, { status: 403 });
     }
+
+    const effectiveUserId = auth.authenticated && auth.user?.user_id
+      ? auth.user.user_id
+      : 'anonymous';
 
     if (action === 'save' && sessionId && messages?.length > 0) {
       await saveHistory(sessionId, messages);

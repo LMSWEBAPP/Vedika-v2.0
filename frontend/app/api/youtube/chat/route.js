@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAllKeys } from '@/lib/keys';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 function formatTimestamp(seconds) {
   const total = Math.floor(seconds || 0);
@@ -57,6 +58,9 @@ async function generateWithFallback({ contents, systemInstruction, maxOutputToke
 
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const body = await request.json().catch(() => ({}));
     const { videoId, title = '', question = '', history = [], timestamp = 0 } = body;
 
@@ -65,6 +69,9 @@ export async function POST(request) {
     }
     if (!question || !question.trim()) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
+    }
+    if (typeof question === 'string' && question.length > 2000) {
+      return NextResponse.json({ error: 'Question exceeds maximum length limit of 2,000 characters.' }, { status: 400 });
     }
 
     const cleanId = String(videoId).trim();
