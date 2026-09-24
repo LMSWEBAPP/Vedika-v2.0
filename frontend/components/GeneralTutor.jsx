@@ -62,6 +62,7 @@ export default function GeneralTutor() {
   const router = useRouter();
   const [topic, setTopic] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isJustSent, setIsJustSent] = useState(false);
   const typingTimerRef = useRef(null);
   const [mode, setMode] = useState('Beginner');
   const [length, setLength] = useState('Short');
@@ -900,6 +901,8 @@ export default function GeneralTutor() {
   const handleSend = async () => {
     const raw = topic.trim();
     if (!raw) return;
+    setIsJustSent(true);
+    setTimeout(() => setIsJustSent(false), 2200);
     setTopic(''); setErr('');
     setIsTyping(false);
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
@@ -1823,7 +1826,7 @@ export default function GeneralTutor() {
               <GlacierBackground variant={bgTheme} opacity={1.0} />
 
               {/* ── CHAT AREA (z-index: 1 sits cleanly over watermark) ── */}
-              <div ref={chatRef} onScroll={handleChatScroll} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 120px' : '28px 28px 135px' }}>
+              <div ref={chatRef} onScroll={handleChatScroll} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 110px' : '24px 24px 125px' }}>
 
                 {/* Centered Date Capsule matching reference image */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
@@ -1904,7 +1907,7 @@ export default function GeneralTutor() {
                     </div>
                     <div style={{ fontSize: 10, color: T.dim, marginTop: 4 }}>{msg.mode} &middot; {msg.length}</div>
                   </div>
-                  <UserBlobAvatar isTyping={isTyping} isAiLoading={loading || Boolean(streamingText)} size={54} />
+                  <UserBlobAvatar isTyping={false} isAiLoading={false} size={54} />
                 </div>
               )}
 
@@ -2248,7 +2251,7 @@ export default function GeneralTutor() {
             }}
             style={{
               position: 'absolute',
-              bottom: isMobile ? 68 : 78,
+              bottom: isMobile ? 96 : 112,
               left: '50%',
               transform: 'translateX(-50%)',
               background: 'rgba(15, 23, 42, 0.75)',
@@ -2284,23 +2287,52 @@ export default function GeneralTutor() {
           </button>
         )}
 
-        {/* ── CREATIVE FLOATING DYNAMIC OMNIBAR CONTAINER WITH TOGGLE BUTTON ── */}
+        {/* ── CREATIVE FLOATING DYNAMIC OMNIBAR CONTAINER WITH COMPANION BLOB ── */}
         <div
           style={{
             position: 'absolute',
-            bottom: isMobile ? 12 : 20,
+            bottom: isMobile ? 10 : 16,
             left: '50%',
             transform: 'translateX(-50%)',
             width: isMobile ? 'calc(100% - 24px)' : 'min(840px, calc(100% - 48px))',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
+            flexDirection: 'column',
+            alignItems: 'flex-end',
             zIndex: 35,
             pointerEvents: 'none',
             transition: 'width 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
+          {/* Interactive Jelly Blob Mascot Companion perched right above text box with tight gap */}
+          <div
+            style={{
+              pointerEvents: 'auto',
+              marginBottom: 4,
+              marginRight: isMobile ? 12 : 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45))'
+            }}
+          >
+            <UserBlobAvatar
+              isTyping={isTyping}
+              isAiLoading={loading || Boolean(streamingText)}
+              isJustSent={isJustSent}
+              size={isMobile ? 64 : 76}
+            />
+          </div>
+
+          {/* Omnibar input row with toggle button + omnibar */}
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10
+            }}
+          >
           {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar */}
           <button
             type="button"
@@ -2722,6 +2754,7 @@ export default function GeneralTutor() {
                 </div>
               </div>
             </div>
+          </div>
         </div>
       </div>
       </>
