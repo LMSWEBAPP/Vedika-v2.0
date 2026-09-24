@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import AdminSidebar from './AdminSidebar';
-import TopNavbar from './TopNavbar';
+import Header from './Header';
 import { T } from '@/lib/lms-data';
 
 export default function LayoutWrapper({ children }) {
@@ -105,7 +105,7 @@ export default function LayoutWrapper({ children }) {
 
   useEffect(() => {
     // Configure layout background dynamically matching theme
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
     document.body.style.backgroundColor = theme === 'dark' ? '#07080F' : '#F9FAFB';
   }, []);
@@ -144,16 +144,8 @@ export default function LayoutWrapper({ children }) {
 
   const isAuthPage = pathname === '/login' || pathname === '/users' || pathname === '/admin/login' || pathname.startsWith('/auth');
 
-  if (pathname === '/') {
-    return (
-      <div style={{ minHeight: '100vh', background: '#02050c', color: '#f8fafc', width: '100%', overflowX: 'hidden' }}>
-        {children}
-      </div>
-    );
-  }
-
-  // Auth pages (like /login) render directly without a sidebar
-  if (isAuthPage || !user) {
+  // Auth pages (like /login) render directly without a navbar
+  if (isAuthPage) {
     return <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>{children}</div>;
   }
 
@@ -170,32 +162,35 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
+  const isHomePage = pathname === '/';
   const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments';
-  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
 
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: isFixedPage ? '100vh' : 'auto',
+      height: isFixedPage && !isHomePage ? '100vh' : 'auto',
       minHeight: '100vh',
-      maxHeight: isFixedPage ? '100vh' : 'none',
-      background: 'var(--bg)',
-      color: 'var(--text)',
+      maxHeight: isFixedPage && !isHomePage ? '100vh' : 'none',
+      background: isHomePage ? '#02050c' : 'var(--bg)',
+      color: isHomePage ? '#f8fafc' : 'var(--text)',
       width: '100%',
-      overflow: isFixedPage ? 'hidden' : 'visible'
+      overflow: isFixedPage && !isHomePage ? 'hidden' : 'visible'
     }}>
-      <TopNavbar />
+      {/* Present Navbar displayed consistently on every page */}
+      <Header />
       <main style={{
         flex: 1,
         width: '100%',
-        overflowY: isFixedPage ? 'hidden' : 'auto',
+        overflowY: isFixedPage && !isHomePage ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isFixedPage ? (isAskVedika ? '100vh' : 'calc(100vh - 64px)') : 'auto',
-        maxHeight: isFixedPage ? (isAskVedika ? '100vh' : 'calc(100vh - 64px)') : 'none'
+        height: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'auto',
+        maxHeight: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'none',
+        paddingTop: isHomePage ? 0 : '72px'
       }}>
         {children}
       </main>
     </div>
   );
 }
+

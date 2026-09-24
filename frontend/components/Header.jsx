@@ -6,7 +6,7 @@ import styles from './Header.module.css';
 import {
   Search, ArrowRight, ChevronDown, BookOpen, Award, FileText,
   FolderOpen, Menu, X, Brain, FlaskConical, Briefcase, BarChart3,
-  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon
+  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles
 } from 'lucide-react';
 
 export default function Header() {
@@ -14,11 +14,15 @@ export default function Header() {
   const pathname = usePathname();
 
   const [coursesDropdownOpen, setCoursesDropdownOpen] = useState(false);
+  const [aiDropdownOpen, setAiDropdownOpen] = useState(false);
+  const [labsDropdownOpen, setLabsDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
   const coursesDropdownTimer = useRef(null);
+  const aiDropdownTimer = useRef(null);
+  const labsDropdownTimer = useRef(null);
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +40,8 @@ export default function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
     setCoursesDropdownOpen(false);
+    setAiDropdownOpen(false);
+    setLabsDropdownOpen(false);
     setProfileDropdownOpen(false);
   }, [pathname]);
 
@@ -53,12 +59,33 @@ export default function Header() {
     if (coursesDropdownTimer.current) clearTimeout(coursesDropdownTimer.current);
     setCoursesDropdownOpen(true);
   };
-
   const handleCoursesMouseLeave = () => {
     if (coursesDropdownTimer.current) clearTimeout(coursesDropdownTimer.current);
     coursesDropdownTimer.current = setTimeout(() => {
       setCoursesDropdownOpen(false);
-    }, 220);
+    }, 200);
+  };
+
+  const handleAiMouseEnter = () => {
+    if (aiDropdownTimer.current) clearTimeout(aiDropdownTimer.current);
+    setAiDropdownOpen(true);
+  };
+  const handleAiMouseLeave = () => {
+    if (aiDropdownTimer.current) clearTimeout(aiDropdownTimer.current);
+    aiDropdownTimer.current = setTimeout(() => {
+      setAiDropdownOpen(false);
+    }, 200);
+  };
+
+  const handleLabsMouseEnter = () => {
+    if (labsDropdownTimer.current) clearTimeout(labsDropdownTimer.current);
+    setLabsDropdownOpen(true);
+  };
+  const handleLabsMouseLeave = () => {
+    if (labsDropdownTimer.current) clearTimeout(labsDropdownTimer.current);
+    labsDropdownTimer.current = setTimeout(() => {
+      setLabsDropdownOpen(false);
+    }, 200);
   };
 
   const handleLogout = () => {
@@ -76,11 +103,31 @@ export default function Header() {
   };
 
   const courseSublinks = [
-    { label: 'Explore Courses', desc: 'Browse syllabus & modules', path: '/courses', Icon: BookOpen, color: '#38bdf8' },
+    { label: 'Explore Courses', desc: 'Browse catalog, syllabus & modules', path: '/courses', Icon: BookOpen, color: '#38bdf8' },
     { label: 'Quizzes', desc: 'Test knowledge with domain quizzes', path: '/quizzes', Icon: Award, color: '#a855f7' },
     { label: 'Assignments', desc: 'Hands-on projects & evaluations', path: '/assignments', Icon: FileText, color: '#00f298' },
     { label: 'Resource Hub', desc: 'Library, cheat sheets & DSA sheets', path: '/resources', Icon: FolderOpen, color: '#ff9900' },
   ];
+
+  const vedikaAiSublinks = [
+    { label: 'Vedika AI Hub', desc: 'All interactive learning tutors', path: '/vedika-ai', Icon: Brain, color: '#38bdf8' },
+    { label: 'Ask Vedika', desc: 'General tutor, quizzes & infographics', path: '/general-tutor', Icon: Sparkles, color: '#a855f7' },
+    { label: 'Code with Vedika', desc: 'Coding tutor, analysis & debugger', path: '/coding-tutor', Icon: FileText, color: '#00f298' },
+    { label: 'Code Puzzle', desc: 'Interactive coding puzzles & tests', path: '/code-puzzle', Icon: Award, color: '#ff9900' },
+    { label: 'Viva & Interview', desc: 'AI mock interviews & voice practice', path: '/viva-interview', Icon: Briefcase, color: '#f43f5e' },
+  ];
+
+  const labsSublinks = [
+    { label: 'All Virtual Labs', desc: 'Interactive science simulations', path: '/vedika-labs', Icon: FlaskConical, color: '#38bdf8' },
+    { label: 'Physics Lab', desc: 'PhET interactive physics experiments', path: '/vedika-labs/physics', Icon: FlaskConical, color: '#818cf8' },
+    { label: 'Chemistry Lab', desc: 'Molecular & chemical reactions', path: '/vedika-labs/chemistry', Icon: FlaskConical, color: '#a855f7' },
+    { label: 'Biology Lab', desc: 'Cellular & anatomical models', path: '/vedika-labs/biology', Icon: FlaskConical, color: '#00f298' },
+    { label: 'Math Lab', desc: 'Calculus, geometry & graph plots', path: '/vedika-labs/math', Icon: FlaskConical, color: '#ff9900' },
+  ];
+
+  const isCoursesActive = pathname.startsWith('/courses') || pathname.startsWith('/quizzes') || pathname.startsWith('/assignments') || pathname.startsWith('/resources') || pathname.startsWith('/lesson');
+  const isAiActive = pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview';
+  const isLabsActive = pathname.startsWith('/vedika-labs') || pathname.startsWith('/labs');
 
   return (
     <header className={styles.header}>
@@ -126,7 +173,7 @@ export default function Header() {
             {pathname === '/' && <span className={styles.activeGlowIndicator} />}
           </button>
 
-          {/* 2. Dashboard (Prev Home Page) */}
+          {/* 2. Dashboard */}
           <button
             type="button"
             className={`${styles.navLink} ${pathname === '/prev-home-page' ? styles.activeNavLink : ''}`}
@@ -144,14 +191,12 @@ export default function Header() {
           >
             <button
               type="button"
-              className={`${styles.navLink} ${pathname.startsWith('/courses') || pathname.startsWith('/quizzes') || pathname.startsWith('/assignments') || pathname.startsWith('/resources') ? styles.activeNavLink : ''}`}
+              className={`${styles.navLink} ${isCoursesActive ? styles.activeNavLink : ''}`}
               onClick={() => router.push('/courses')}
             >
               <span>Courses</span>
               <ChevronDown size={13} style={{ opacity: 0.7, transform: coursesDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              {(pathname.startsWith('/courses') || pathname.startsWith('/quizzes') || pathname.startsWith('/assignments') || pathname.startsWith('/resources')) && (
-                <span className={styles.activeGlowIndicator} />
-              )}
+              {isCoursesActive && <span className={styles.activeGlowIndicator} />}
             </button>
 
             {coursesDropdownOpen && (
@@ -178,25 +223,85 @@ export default function Header() {
             )}
           </div>
 
-          {/* 4. Vedika AI */}
-          <button
-            type="button"
-            className={`${styles.navLink} ${pathname.startsWith('/vedika-ai') ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/vedika-ai')}
+          {/* 4. Vedika AI (with Submenu) */}
+          <div
+            className={styles.navItemWrapper}
+            onMouseEnter={handleAiMouseEnter}
+            onMouseLeave={handleAiMouseLeave}
           >
-            <span>Vedika AI</span>
-            {pathname.startsWith('/vedika-ai') && <span className={styles.activeGlowIndicator} />}
-          </button>
+            <button
+              type="button"
+              className={`${styles.navLink} ${isAiActive ? styles.activeNavLink : ''}`}
+              onClick={() => router.push('/vedika-ai')}
+            >
+              <span>Vedika AI</span>
+              <ChevronDown size={13} style={{ opacity: 0.7, transform: aiDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              {isAiActive && <span className={styles.activeGlowIndicator} />}
+            </button>
 
-          {/* 5. Labs */}
-          <button
-            type="button"
-            className={`${styles.navLink} ${pathname.startsWith('/vedika-labs') ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/vedika-labs')}
+            {aiDropdownOpen && (
+              <div className={styles.dropdownMenu} style={{ width: 300 }}>
+                <div className={styles.dropdownHeading}>AI Learning Suite</div>
+                {vedikaAiSublinks.map((item) => (
+                  <button
+                    key={item.path}
+                    type="button"
+                    className={styles.dropdownItem}
+                    onClick={() => {
+                      setAiDropdownOpen(false);
+                      router.push(item.path);
+                    }}
+                  >
+                    <item.Icon size={16} color={item.color} />
+                    <div className={styles.dropdownItemContent}>
+                      <span className={styles.dropdownItemLabel}>{item.label}</span>
+                      <span className={styles.dropdownItemDesc}>{item.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 5. Labs (with Submenu) */}
+          <div
+            className={styles.navItemWrapper}
+            onMouseEnter={handleLabsMouseEnter}
+            onMouseLeave={handleLabsMouseLeave}
           >
-            <span>Labs</span>
-            {pathname.startsWith('/vedika-labs') && <span className={styles.activeGlowIndicator} />}
-          </button>
+            <button
+              type="button"
+              className={`${styles.navLink} ${isLabsActive ? styles.activeNavLink : ''}`}
+              onClick={() => router.push('/vedika-labs')}
+            >
+              <span>Labs</span>
+              <ChevronDown size={13} style={{ opacity: 0.7, transform: labsDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              {isLabsActive && <span className={styles.activeGlowIndicator} />}
+            </button>
+
+            {labsDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownHeading}>Virtual Science Labs</div>
+                {labsSublinks.map((item) => (
+                  <button
+                    key={item.path}
+                    type="button"
+                    className={styles.dropdownItem}
+                    onClick={() => {
+                      setLabsDropdownOpen(false);
+                      router.push(item.path);
+                    }}
+                  >
+                    <item.Icon size={16} color={item.color} />
+                    <div className={styles.dropdownItemContent}>
+                      <span className={styles.dropdownItemLabel}>{item.label}</span>
+                      <span className={styles.dropdownItemDesc}>{item.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* 6. Jobs */}
           <button
@@ -369,7 +474,7 @@ export default function Header() {
           </button>
           <button
             type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-ai') ? styles.mobileNavActive : ''}`}
+            className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' ? styles.mobileNavActive : ''}`}
             onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
           >
             <span>Vedika AI</span>
@@ -433,3 +538,4 @@ export default function Header() {
     </header>
   );
 }
+
