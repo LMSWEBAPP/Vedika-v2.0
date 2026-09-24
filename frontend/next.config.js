@@ -5,8 +5,10 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'three', 'katex', '@upstash/redis', '@google/genai'],
   },
   async rewrites() {
-    const backendUrl = process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL;
-    if (!backendUrl) return [];
+    let backendUrl = process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com';
+    if (backendUrl.includes('vyomanta.onrender.com')) {
+      backendUrl = 'https://vedika-v2-0.onrender.com';
+    }
     return [
       {
         source: '/api/method/:path*',

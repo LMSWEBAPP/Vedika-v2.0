@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { signJwt } from '@/lib/auth';
+import { getFrappeDb } from '@/lib/frappe-db';
+import { verifyPassword } from '@/lib/auth-passlib';
 
 export async function POST(request) {
   try {
@@ -11,49 +14,114 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username/email and password are required.' }, { status: 400 });
     }
 
-    const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
+    let frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
+    if (frappeUrl.includes('vyomanta.onrender.com')) {
+      frappeUrl = 'https://vedika-v2-0.onrender.com';
+    }
     
-    // Call Frappe backend login endpoint server-to-server (bypasses browser CORS)
-    let frappeRes;
+    // 1. First attempt: Call Frappe backend login endpoint server-to-server
+    let frappeLoggedIn = false;
+    let loggedUser = userIdentifier;
+    let fullName = userIdentifier;
+    let sid = null;
+
     try {
-      frappeRes = await fetch(`${frappeUrl}/api/method/login`, {
+      const frappeRes = await fetch(`${frappeUrl}/api/method/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usr: userIdentifier, pwd: userPassword })
+        body: JSON.stringify({ usr: userIdentifier, pwd: userPassword }),
+        signal: AbortSignal.timeout(5000)
       });
+
+      const rawText = await frappeRes.text();
+      let data = null;
+      try {
+        data = JSON.parse(rawText);
+      } catch (jsonErr) {
+        // Non-JSON response, Frappe may be initializing or cold-starting
+      }
+
+      if (frappeRes.ok && data && (data.message === 'Logged In' || data.message === 'No App')) {
+        frappeLoggedIn = true;
+        loggedUser = data.user_id || userIdentifier;
+        fullName = data.full_name || loggedUser;
+        const setCookie = frappeRes.headers.get('set-cookie') || '';
+        const sidMatch = setCookie.match(/sid=([^;]+)/);
+        sid = sidMatch ? sidMatch[1] : (data.sid || null);
+      } else if (frappeRes.status === 401 && data && data.message) {
+        // Explicit 401 from live Frappe backend
+        return NextResponse.json({ error: data.message || 'Invalid email or password.' }, { status: 401 });
+      }
     } catch (netErr) {
-      console.error('[API/Auth/Login] Network error connecting to Frappe backend:', netErr.message);
-      return NextResponse.json({ 
-        error: 'Unable to reach backend server. It may be starting up on Render, please retry in a few seconds.' 
-      }, { status: 503 });
+      console.warn('[API/Auth/Login] Frappe backend unavailable, attempting direct database auth:', netErr.message);
     }
 
-    const rawText = await frappeRes.text();
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (e) {
-      console.error('[API/Auth/Login] Non-JSON response from backend:', rawText.slice(0, 100));
-      return NextResponse.json({ 
-        error: 'The backend service is currently waking up. Please wait 10-15 seconds and try again.' 
-      }, { status: 502 });
+    // 2. Fallback to direct TiDB database verification if Frappe is waking up or cold-starting
+    if (!frappeLoggedIn) {
+      try {
+        const db = getFrappeDb();
+        const [users] = await db.query(
+          'SELECT name, email, first_name, last_name, full_name, enabled, user_type FROM `tabUser` WHERE (name = ? OR email = ?) AND enabled = 1 LIMIT 1',
+          [userIdentifier, userIdentifier]
+        );
+
+        if (!users || users.length === 0) {
+          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+        }
+
+        const userRow = users[0];
+        const [authRows] = await db.query(
+          'SELECT password FROM `__Auth` WHERE doctype = "User" AND name = ? AND fieldname = "password" LIMIT 1',
+          [userRow.name]
+        );
+
+        if (!authRows || authRows.length === 0 || !authRows[0].password) {
+          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+        }
+
+        const isPasswordValid = verifyPassword(userPassword, authRows[0].password);
+        if (!isPasswordValid) {
+          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+        }
+
+        frappeLoggedIn = true;
+        loggedUser = userRow.email || userRow.name;
+        fullName = userRow.full_name || `${userRow.first_name || ''} ${userRow.last_name || ''}`.trim() || loggedUser;
+        sid = crypto.randomBytes(16).toString('hex');
+      } catch (dbErr) {
+        console.error('[API/Auth/Login] TiDB direct auth error:', dbErr);
+        return NextResponse.json({ 
+          error: 'Unable to reach backend services. Please retry in a few moments.' 
+        }, { status: 503 });
+      }
     }
 
-    if (!frappeRes.ok || (data.message !== 'Logged In' && data.message !== 'No App')) {
-      return NextResponse.json({ 
-        error: data.message || 'Invalid email or password.' 
-      }, { status: 401 });
+    if (!frappeLoggedIn) {
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
-    // Extract Frappe session cookie (sid)
-    const setCookie = frappeRes.headers.get('set-cookie') || '';
-    const sidMatch = setCookie.match(/sid=([^;]+)/);
-    const sid = sidMatch ? sidMatch[1] : (data.sid || null);
-
-    const loggedUser = data.user_id || userIdentifier;
-    const fullName = data.full_name || loggedUser;
-    const isAdmin = loggedUser === 'Administrator' || loggedUser === 'admin@lms.com' || (data.user_id && data.user_id.toLowerCase().includes('admin'));
-    const role = isAdmin ? 'Administrator' : 'Student';
+    // Determine user role
+    let role = 'Student';
+    const isAdmin = loggedUser === 'Administrator' || 
+                    loggedUser === 'admin@lms.com' || 
+                    loggedUser.toLowerCase().includes('admin');
+    
+    if (isAdmin) {
+      role = 'Administrator';
+    } else {
+      try {
+        const db = getFrappeDb();
+        const [userRoles] = await db.query(
+          'SELECT role FROM `tabHas Role` WHERE parent = ?',
+          [loggedUser]
+        );
+        if (userRoles && userRoles.some(r => r.role === 'System Manager' || r.role === 'Administrator')) {
+          role = 'Administrator';
+        }
+      } catch (roleErr) {
+        // Default to Student on error
+      }
+    }
 
     // Issue signed JWT token
     const token = signJwt({
@@ -61,7 +129,7 @@ export async function POST(request) {
       email: loggedUser.includes('@') ? loggedUser : 'admin@lms.com',
       role,
       tenant_id: 'default'
-    }, { expiresIn: 86400 });
+    }, { expiresIn: 86400 * 7 });
 
     const response = NextResponse.json({
       success: true,

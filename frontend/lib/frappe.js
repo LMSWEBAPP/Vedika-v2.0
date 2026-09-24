@@ -1,8 +1,12 @@
 // lib/frappe.js
 
-const FRAPPE_URL = typeof window !== 'undefined'
+const rawFrappeUrl = typeof window !== 'undefined'
   ? (process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com')
   : (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
+
+const FRAPPE_URL = (rawFrappeUrl && rawFrappeUrl.includes('vyomanta.onrender.com'))
+  ? 'https://vedika-v2-0.onrender.com'
+  : (rawFrappeUrl || 'https://vedika-v2-0.onrender.com');
 
 export function sanitizeTitle(title) {
   if (!title) return title;
