@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ async function writeAssignments(data) {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error('Failed to write assignments file:', err);
+    console.error('Failed to write assignments file:', err.message);
   }
 }
 
@@ -42,12 +43,15 @@ export async function GET(request) {
 
     return NextResponse.json(list);
   } catch (error) {
-    console.error('Error in GET /api/assignments:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in GET /api/assignments:', error.message);
+    return NextResponse.json({ error: 'Failed to retrieve assignments.' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const assignment = body.assignment || body;
@@ -76,12 +80,15 @@ export async function POST(request) {
     await writeAssignments(list);
     return NextResponse.json({ status: 'success', assignment: record });
   } catch (error) {
-    console.error('Error in POST /api/assignments:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in POST /api/assignments:', error.message);
+    return NextResponse.json({ error: 'Failed to save assignment.' }, { status: 500 });
   }
 }
 
 export async function DELETE(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     let id = searchParams.get('id');
@@ -103,7 +110,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ status: 'success', deleted: id });
   } catch (error) {
-    console.error('Error in DELETE /api/assignments:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in DELETE /api/assignments:', error.message);
+    return NextResponse.json({ error: 'Failed to delete assignment.' }, { status: 500 });
   }
 }

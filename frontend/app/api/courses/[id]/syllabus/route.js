@@ -131,8 +131,13 @@ export async function GET(req, { params }) {
   return NextResponse.json({ ok: true, modules: [] });
 }
 
+import { authenticateRequest } from '@/lib/serverAuth';
+
 // POST /api/courses/[id]/syllabus
 export async function POST(req, { params }) {
+  const auth = await authenticateRequest(req, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const { id } = params;
     memorySyllabusCache.delete(id);
@@ -145,6 +150,7 @@ export async function POST(req, { params }) {
 
     return NextResponse.json({ success: true, syllabus });
   } catch (e) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    console.error('[API/Syllabus] POST error:', e.message);
+    return NextResponse.json({ success: false, error: 'Failed to update syllabus.' }, { status: 500 });
   }
 }

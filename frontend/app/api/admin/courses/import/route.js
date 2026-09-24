@@ -61,7 +61,12 @@ function sanitizeTitle(title) {
   return title.replace(/#/g, 'No.');
 }
 
+import { authenticateRequest } from '@/lib/serverAuth';
+
 export async function POST(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");

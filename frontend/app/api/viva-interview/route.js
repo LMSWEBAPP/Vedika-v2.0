@@ -32,7 +32,15 @@ export async function POST(request) {
       experimentName = '', resumeBlueprint = null, resumeBase64 = null, 
       resumeMimeType = 'application/pdf', audioBase64 = null, audioMimeType = 'audio/webm', 
       questionIndex = 0
-    } = body;
+    } = body || {};
+
+    // Input payload size constraints
+    if (resumeBase64 && typeof resumeBase64 === 'string' && resumeBase64.length > 10 * 1024 * 1024 * 1.37) {
+      return NextResponse.json({ error: 'Resume payload exceeds 10MB limit.' }, { status: 400 });
+    }
+    if (audioBase64 && typeof audioBase64 === 'string' && audioBase64.length > 15 * 1024 * 1024 * 1.37) {
+      return NextResponse.json({ error: 'Audio payload exceeds 15MB limit.' }, { status: 400 });
+    }
 
     // -------------------------------------------------------------
     // ACTION: PARSE RESUME

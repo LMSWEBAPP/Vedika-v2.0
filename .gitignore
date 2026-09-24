@@ -65,6 +65,8 @@ backend/mariadb-data/
 backend/redis-data/
 backend/frappe-bench-data/
 backend/.env
+backup.sql
+*.sql
 
 # Local scratch files & developer scripts
 payload.json

@@ -20,6 +20,13 @@ export async function POST(request) {
       );
     }
 
+    if (query.length > 8000) {
+      return NextResponse.json(
+        { error: 'Question exceeds maximum limit of 8,000 characters.' },
+        { status: 400 }
+      );
+    }
+
     // Extract experiment metadata for comprehensive briefing
     const expTitle = experiment?.title || 'Virtual Science Experiment';
     const expSubject = (subject || experiment?.category || 'Science').toUpperCase();
@@ -130,9 +137,9 @@ Tone & Formatting Guidelines:
     });
 
   } catch (err) {
-    console.error('[Labs Tutor API Error]:', err);
+    console.error('[Labs Tutor API Error]:', err.message);
     return NextResponse.json(
-      { error: err.message || 'Internal Server Error' }, 
+      { error: 'Failed to process virtual lab query.' }, 
       { status: 500 }
     );
   }

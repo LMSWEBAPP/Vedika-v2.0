@@ -1,18 +1,5 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
-
-// Helper to sign a local fallback token matching the JWT verification logic
-function signMockJwt(payload) {
-  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || '8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=';
-  const header = { alg: "HS256", typ: "JWT" };
-  const headerB64 = Buffer.from(JSON.stringify(header)).toString('base64url');
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const msg = `${headerB64}.${payloadB64}`;
-  const signatureB64 = crypto.createHmac('sha256', secret)
-    .update(msg, 'utf8')
-    .digest('base64url');
-  return `${msg}.${signatureB64}`;
-}
+import { signJwt } from '@/lib/auth';
 
 export async function GET(request) {
   try {
@@ -27,18 +14,17 @@ export async function GET(request) {
       if (match) sid = match[1];
     }
     
-    // Detect if running on localhost / development environment
     const isDev = process.env.NODE_ENV === 'development' || request.headers.get('host')?.includes('localhost');
 
     if (!sid) {
       if (isDev) {
-        console.warn("[JWT Proxy] Localhost fallback: No session found. Generating mock JWT token...");
+        console.warn("[JWT Proxy] Dev mode fallback: No session found. Generating dev JWT token...");
         const mockPayload = {
           user_id: 'student@lms.com',
           tenant_id: 'default_tenant',
-          exp: Math.floor(Date.now() / 1000) + 3600
+          role: 'Student'
         };
-        const token = signMockJwt(mockPayload);
+        const token = signJwt(mockPayload, { expiresIn: 3600 });
         return NextResponse.json({ token });
       }
       return NextResponse.json({ error: 'No active session identifier found.' }, { status: 401 });
@@ -46,8 +32,6 @@ export async function GET(request) {
     
     const frappeUrl = process.env.FRAPPE_URL || 'https://vyomanta.onrender.com';
     const exchangeUrl = `${frappeUrl}/api/method/lms.lms.api.get_jwt`;
-    
-    console.warn(`[JWT Proxy] Requesting JWT from backend for session ${sid.slice(0, 10)}...`);
     
     try {
       const response = await fetch(exchangeUrl, {
@@ -65,26 +49,26 @@ export async function GET(request) {
           return NextResponse.json({ token });
         }
       }
-      console.warn(`[JWT Proxy] Frappe token exchange failed or returned empty token. Status: ${response.status}`);
+      console.warn(`[JWT Proxy] Frappe token exchange response status: ${response.status}`);
     } catch (err) {
       console.error("[JWT Proxy] Connection to Frappe backend failed:", err.message);
     }
 
-    // If connection to Frappe failed but we are on localhost, fallback to mock JWT token
+    // If connection to Frappe failed on local dev, fallback to dev token
     if (isDev) {
-      console.warn("[JWT Proxy] Localhost fallback: Frappe container offline, generating mock JWT token...");
+      console.warn("[JWT Proxy] Dev mode fallback: Backend offline, generating dev JWT token...");
       const mockPayload = {
         user_id: 'student@lms.com',
         tenant_id: 'default_tenant',
-        exp: Math.floor(Date.now() / 1000) + 3600
+        role: 'Student'
       };
-      const token = signMockJwt(mockPayload);
+      const token = signJwt(mockPayload, { expiresIn: 3600 });
       return NextResponse.json({ token });
     }
 
-    return NextResponse.json({ error: 'Failed to authenticate session with Frappe.' }, { status: 401 });
+    return NextResponse.json({ error: 'Failed to authenticate session with authentication server.' }, { status: 401 });
   } catch (error) {
-    console.error("[JWT Proxy API] Server exception:", error);
+    console.error("[JWT Proxy API] Server exception:", error.message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

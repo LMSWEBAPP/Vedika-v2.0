@@ -69,15 +69,25 @@ export async function POST(request) {
       }
     }
     
+    // Validate File Size (<= 10MB) early
+    if (file.size && file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size exceeds maximum limit of 10MB.' }, { status: 400 });
+    }
+
     // Validate PDF MIME-Type
-    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+    if (file.type !== 'application/pdf' && !file.name?.toLowerCase().endsWith('.pdf')) {
       return NextResponse.json({ error: 'Only PDF documents are allowed.' }, { status: 400 });
     }
     
-    // Validate File Size (<= 10MB)
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     if (fileBuffer.length > 10 * 1024 * 1024) {
       return NextResponse.json({ error: 'File size exceeds maximum limit of 10MB.' }, { status: 400 });
+    }
+    
+    // Validate PDF Magic Bytes (%PDF-)
+    const magic = fileBuffer.slice(0, 5).toString('ascii');
+    if (!magic.startsWith('%PDF-')) {
+      return NextResponse.json({ error: 'Invalid document: File does not have valid PDF magic headers.' }, { status: 400 });
     }
     
     // Validate Page Count (<= 50 pages)

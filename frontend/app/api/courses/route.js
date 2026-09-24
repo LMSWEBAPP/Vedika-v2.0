@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import pool from '@/lib/db';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'courses.json');
@@ -25,7 +27,7 @@ function readCoursesFromFile() {
     const parsed = JSON.parse(content);
     return Array.isArray(parsed) ? parsed : DEFAULT_COURSES;
   } catch (e) {
-    console.error('[API/Courses] Error reading courses file:', e);
+    console.error('[API/Courses] Error reading courses file:', e.message);
     return DEFAULT_COURSES;
   }
 }
@@ -37,11 +39,9 @@ function writeCoursesToFile(courses) {
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(courses, null, 2), 'utf-8');
   } catch (e) {
-    console.error('[API/Courses] Error writing courses file:', e);
+    console.error('[API/Courses] Error writing courses file:', e.message);
   }
 }
-
-import pool from '@/lib/db';
 
 let memoryCoursesCache = null;
 let lastCoursesCacheTime = 0;
@@ -103,8 +103,11 @@ export async function GET() {
   return NextResponse.json({ success: true, courses });
 }
 
-// POST: Add new course or sync multiple courses
+// POST: Add new course or sync multiple courses (Admin only)
 export async function POST(req) {
+  const auth = await authenticateRequest(req, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   memoryCoursesCache = null;
   try {
     const body = await req.json();
@@ -133,13 +136,16 @@ export async function POST(req) {
 
     return NextResponse.json({ error: 'Invalid course payload' }, { status: 400 });
   } catch (e) {
-    console.error('[API/Courses] POST error:', e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[API/Courses] POST error:', e.message);
+    return NextResponse.json({ error: 'Failed to save course.' }, { status: 500 });
   }
 }
 
-// PUT: Update an existing course
+// PUT: Update an existing course (Admin only)
 export async function PUT(req) {
+  const auth = await authenticateRequest(req, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   memoryCoursesCache = null;
   try {
     const body = await req.json();
@@ -166,13 +172,16 @@ export async function PUT(req) {
     writeCoursesToFile(courses);
     return NextResponse.json({ success: true, course: { ...course, id: strId } });
   } catch (e) {
-    console.error('[API/Courses] PUT error:', e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[API/Courses] PUT error:', e.message);
+    return NextResponse.json({ error: 'Failed to update course.' }, { status: 500 });
   }
 }
 
-// DELETE: Delete a course by ID
+// DELETE: Delete a course by ID (Admin only)
 export async function DELETE(req) {
+  const auth = await authenticateRequest(req, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   memoryCoursesCache = null;
   try {
     const { searchParams } = new URL(req.url);
@@ -188,7 +197,7 @@ export async function DELETE(req) {
 
     return NextResponse.json({ success: true });
   } catch (e) {
-    console.error('[API/Courses] DELETE error:', e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[API/Courses] DELETE error:', e.message);
+    return NextResponse.json({ error: 'Failed to delete course.' }, { status: 500 });
   }
 }

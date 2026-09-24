@@ -89,10 +89,11 @@ export async function POST(request) {
     
     // 4. Redis Cleanup: Clear chat history and workspace cached files list
     console.warn(`[Delete API] Clearing Redis caches for session: ${sessionId}`);
-    await Promise.all([
-      redis.del(`chat:${sessionId}`),
-      redis.del(`ws_ticket:*`)
-    ]);
+    const cleanupOps = [redis.del(`chat:${sessionId}`)];
+    if (sessionId) {
+      cleanupOps.push(redis.del(`ws_ticket:${sessionId}`));
+    }
+    await Promise.all(cleanupOps);
     
     return NextResponse.json({ message: 'Document deleted successfully.' });
   } catch (error) {

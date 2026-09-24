@@ -97,10 +97,10 @@ export default function LoginPage() {
   const fillCredentials = (role, stdEmail = '') => {
     if (role === 'admin') {
       setEmail('admin@lms.com');
-      setPassword('admin123');
+      setPassword('');
     } else if (role === 'student' && stdEmail) {
       setEmail(stdEmail);
-      setPassword('student123');
+      setPassword('');
     }
     setError('');
   };
@@ -374,7 +374,7 @@ export default function LoginPage() {
             gap: 12
           }}>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>💡</span> Demo Credentials (click to fill)
+              <span>💡</span> Select Account (Quick Email Fill)
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -412,7 +412,7 @@ export default function LoginPage() {
                     <div style={{ fontSize: 9.5, color: T.muted, fontFamily: 'monospace' }}>admin@lms.com</div>
                   </div>
                 </div>
-                <span style={{ fontSize: 9.5, color: T.dim }}>password: admin123</span>
+                <span style={{ fontSize: 9.5, color: T.dim }}>Default Admin</span>
               </button>
 
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>

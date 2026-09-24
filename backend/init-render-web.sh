@@ -65,7 +65,6 @@ fi
 bench set-mariadb-host "$DB_HOST"
 bench set-config -g db_port "$DB_PORT"
 bench set-config -g allow_cors "${FRONTEND_URL:-*}"
-bench set-config -g ignore_csrf 1
 
 # Ensure site config and logs directories exist
 mkdir -p sites/lms.render/logs
@@ -80,9 +79,9 @@ cat <<EOF > sites/lms.render/site_config.json
  "db_type": "mariadb",
  "db_user": "$DB_USER",
  "db_ssl_ca": "/etc/ssl/certs/ca-certificates.crt",
- "encryption_key": "8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=",
+ "encryption_key": "${ENCRYPTION_KEY:-8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=}",
  "allow_cors": "${FRONTEND_URL:-*}",
- "session_cookie_samesite": "None"
+ "session_cookie_samesite": "Lax"
 }
 EOF
 
@@ -131,7 +130,13 @@ except Exception as e:
     print('DB check exception:', e)
     sys.exit(1)
 "; then
-    echo "Database is incomplete or uninitialized. Wiping tables and folder to ensure a clean non-interactive install..."
+    if [ "${ALLOW_DESTRUCTIVE_DATABASE_RESET:-0}" != "1" ]; then
+        echo "[FATAL SAFETY GUARD] Database is incomplete or uninitialized, but ALLOW_DESTRUCTIVE_DATABASE_RESET!=1."
+        echo "Refusing to automatically wipe production database tables. Check connection and credentials."
+        exit 1
+    fi
+
+    echo "Database reset flag enabled. Wiping tables and folder to ensure a clean non-interactive install..."
     
     # Delete pre-existing site folder to prevent overwrite confirmation prompts
     rm -rf sites/lms.render

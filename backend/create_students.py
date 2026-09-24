@@ -141,9 +141,11 @@ for s in students:
     else:
         print(f"User {email} already exists.")
 
-    # Always set/update the password to ensure it matches 'student123'
-    print(f"Setting password for {email} to 'student123'...")
-    update_password(user=email, pwd="student123", logout_all_sessions=False)
+    import os
+    initial_student_pwd = os.environ.get("INITIAL_STUDENT_PASSWORD")
+    if initial_student_pwd and not frappe.db.exists("User", email):
+        print(f"Setting initial password for new user {email}...")
+        update_password(user=email, pwd=initial_student_pwd, logout_all_sessions=False)
 
 # Bootstrap administrator user 'admin@lms.com'
 admin_email = "admin@lms.com"
@@ -161,6 +163,11 @@ if not frappe.db.exists("User", admin_email):
     for r in ["System Manager", "Instructor", "LMS Student"]:
         if frappe.db.exists("Role", r):
             user.add_roles(r)
+    
+    initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
+    if initial_admin_pwd:
+        print(f"Setting initial password for administrator {admin_email}...")
+        update_password(user=admin_email, pwd=initial_admin_pwd, logout_all_sessions=False)
 else:
     # Ensure role permissions are updated even if the user exists
     user = frappe.get_doc("User", admin_email)
@@ -168,10 +175,6 @@ else:
         if frappe.db.exists("Role", r) and r not in [ur.role for ur in user.roles]:
             user.add_roles(r)
     print(f"Administrator {admin_email} already exists, roles verified.")
-
-# Always set/update the admin password to ensure it matches 'admin123'
-print(f"Setting password for {admin_email} to 'admin123'...")
-update_password(user=admin_email, pwd="admin123", logout_all_sessions=False)
 
 # Seed Google Social Login Key
 try:

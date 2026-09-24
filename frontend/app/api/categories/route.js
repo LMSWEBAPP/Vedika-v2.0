@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ async function writeCategories(list) {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(categoriesFilePath, JSON.stringify(list, null, 2), 'utf8');
   } catch (err) {
-    console.error('Failed to write categories file:', err);
+    console.error('Failed to write categories file:', err.message);
   }
 }
 
@@ -59,12 +60,15 @@ export async function GET() {
     const merged = Array.from(new Set([...storedCategories, ...courseCategories].map(c => c.trim()).filter(Boolean)));
     return NextResponse.json(merged);
   } catch (error) {
-    console.error('Error in GET /api/categories:', error);
+    console.error('Error in GET /api/categories:', error.message);
     return NextResponse.json(DEFAULT_CATEGORIES);
   }
 }
 
 export async function POST(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const newCategory = (body.category || '').trim();
@@ -83,7 +87,7 @@ export async function POST(request) {
 
     return NextResponse.json({ status: 'success', category: newCategory, categories: current });
   } catch (error) {
-    console.error('Error in POST /api/categories:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in POST /api/categories:', error.message);
+    return NextResponse.json({ error: 'Failed to create category.' }, { status: 500 });
   }
 }

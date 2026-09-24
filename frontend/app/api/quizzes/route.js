@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ async function writeQuizzes(data) {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error('Failed to write quizzes file:', err);
+    console.error('Failed to write quizzes file:', err.message);
   }
 }
 
@@ -42,12 +43,15 @@ export async function GET(request) {
 
     return NextResponse.json(list);
   } catch (error) {
-    console.error('Error in GET /api/quizzes:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in GET /api/quizzes:', error.message);
+    return NextResponse.json({ error: 'Failed to retrieve quizzes.' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const quiz = body.quiz || body;
@@ -76,12 +80,15 @@ export async function POST(request) {
     await writeQuizzes(list);
     return NextResponse.json({ status: 'success', quiz: record });
   } catch (error) {
-    console.error('Error in POST /api/quizzes:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in POST /api/quizzes:', error.message);
+    return NextResponse.json({ error: 'Failed to save quiz.' }, { status: 500 });
   }
 }
 
 export async function DELETE(request) {
+  const auth = await authenticateRequest(request, { requireAdmin: true });
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     let id = searchParams.get('id');
@@ -103,7 +110,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ status: 'success', deleted: id });
   } catch (error) {
-    console.error('Error in DELETE /api/quizzes:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error in DELETE /api/quizzes:', error.message);
+    return NextResponse.json({ error: 'Failed to delete quiz.' }, { status: 500 });
   }
 }

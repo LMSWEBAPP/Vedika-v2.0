@@ -127,7 +127,6 @@ bench set-redis-socketio-host redis://redis:6379
 
 # Set global configuration rules (applicable to all sites)
 bench set-config -g allow_cors "http://localhost:3000"
-bench set-config -g ignore_csrf 1
 
 # Remove redis and watch from Procfile since Docker handles them separately
     sed -i '/redis/d' ./Procfile

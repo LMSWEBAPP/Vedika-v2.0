@@ -5,48 +5,74 @@ import { cacheGet, cacheSet, makeCacheKey } from '@/lib/cache';
 import { getRotatedKey } from '@/lib/keys';
 import { loadHistory, saveHistory, recall, buildMemoryContext, trackApiConsumption } from '@/lib/memory';
 
+const MAX_USER_INPUT_CHARS = 12000;
+const MAX_SYSTEM_CHARS = 12000;
+
 export async function POST(request) {
-  const { system, user, maxOutputTokens, sessionId, userId } = await request.json();
-  const apiKey = getRotatedKey();
-
-  if (!apiKey) {
-    return NextResponse.json({ error: 'Gemini API key is not configured on the server.' }, { status: 500 });
-  }
-  if (!user) {
-    return NextResponse.json({ error: 'User message is required.' }, { status: 400 });
-  }
-
-  // Load memory context
-  console.warn(`[GeminiStream] sessionId=${sessionId} userId=${userId}`);
-  const [history, memories] = await Promise.all([
-    loadHistory(sessionId),
-    recall(userId),
-  ]);
-  const memoryCtx = buildMemoryContext(history, memories);
-  const fullSystem = system + memoryCtx;
-  console.warn(`[GeminiStream] history=${history?.length} memories=${memories?.length} ctxLen=${memoryCtx.length}`);
-
-  const cacheKey = makeCacheKey('stream', fullSystem, user, maxOutputTokens);
-  const cached = cacheGet(cacheKey);
-  if (cached) {
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(encoder.encode(cached));
-        controller.close();
-      },
-    });
-    return new Response(stream, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
-    });
-  }
-
   try {
+    const body = await request.json();
+    const { system, user, maxOutputTokens, sessionId, userId } = body || {};
+    const apiKey = getRotatedKey();
+
+    if (!apiKey) {
+      return NextResponse.json({ error: 'AI processing service is not currently configured.' }, { status: 503 });
+    }
+    if (!user || typeof user !== 'string' || !user.trim()) {
+      return NextResponse.json({ error: 'User message is required.' }, { status: 400 });
+    }
+    if (user.length > MAX_USER_INPUT_CHARS) {
+      return NextResponse.json(
+        { error: `User message exceeds the maximum allowed limit of ${MAX_USER_INPUT_CHARS} characters.` },
+        { status: 400 }
+      );
+    }
+
+    const clampedTokens = Math.min(Math.max(parseInt(maxOutputTokens, 10) || 4096, 50), 8192);
+    const sanitizedSystem = typeof system === 'string' ? system.slice(0, MAX_SYSTEM_CHARS) : '';
+
+    // Load memory context safely
+    let memoryCtx = '';
+    try {
+      if (sessionId || userId) {
+        const [history, memories] = await Promise.all([
+          loadHistory(sessionId),
+          recall(userId),
+        ]);
+        memoryCtx = buildMemoryContext(history, memories);
+      }
+    } catch (memErr) {
+      console.warn('[GeminiStream] Memory retrieval notice:', memErr.message);
+    }
+
+    const fullSystem = sanitizedSystem ? sanitizedSystem + memoryCtx : memoryCtx;
+
+    const cacheKey = makeCacheKey('stream', fullSystem, user, clampedTokens);
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(cached));
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
+      });
+    }
+
     const provider = createGoogleGenerativeAI({ apiKey });
-    const model = provider.languageModel('gemini-3.6-flash');
+    const model = provider.languageModel('gemini-2.5-flash');
+
+    let history = [];
+    if (sessionId) {
+      try {
+        history = (await loadHistory(sessionId)) || [];
+      } catch (_) {}
+    }
 
     const fullMessages = [
-      ...(history || []).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+      ...history.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
       { role: 'user', content: user },
     ];
 
@@ -55,20 +81,19 @@ export async function POST(request) {
       system: fullSystem,
       messages: fullMessages,
       temperature: 0.4,
-      maxTokens: maxOutputTokens || 8192,
+      maxTokens: clampedTokens,
       onFinish({ text }) {
         if (text) {
           cacheSet(cacheKey, text);
           trackApiConsumption(userId, user, text);
         }
-        // Save working memory asynchronously
-        if (sessionId) {
+        if (sessionId && text) {
           const updated = [
-            ...(history || []),
+            ...history,
             { role: 'user', content: user },
             { role: 'assistant', content: text },
           ];
-          saveHistory(sessionId, updated);
+          saveHistory(sessionId, updated).catch(e => console.warn('[GeminiStream] History save notice:', e.message));
         }
       },
     });
@@ -81,7 +106,8 @@ export async function POST(request) {
             controller.enqueue(encoder.encode(chunk));
           }
         } catch (e) {
-          controller.enqueue(encoder.encode(`[Error: ${e.message}]`));
+          console.error('[GeminiStream] Stream error:', e.message);
+          controller.enqueue(encoder.encode(`\n[AI generation interrupted]`));
         } finally {
           controller.close();
         }
@@ -92,6 +118,7 @@ export async function POST(request) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
     });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error('[Gemini Stream Error]:', error.message);
+    return NextResponse.json({ error: 'Failed to process AI stream request.' }, { status: 500 });
   }
 }
