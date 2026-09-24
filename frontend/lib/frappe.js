@@ -1080,65 +1080,30 @@ export function isAdminUser(userOrEmail) {
 export async function login(email, password) {
   const normalizedEmail = (email || '').trim().toLowerCase();
   const trimmedPassword = (password || '').trim();
-  const isAdmin = isAdminUser(normalizedEmail);
 
-  if (!FRAPPE_URL) {
-    if (isAdmin && (trimmedPassword === 'admin123' || trimmedPassword === 'admin' || trimmedPassword.length > 0)) {
-      return {
-        email: normalizedEmail.includes('@') ? normalizedEmail : 'admin@lms.com',
-        username: 'Administrator',
-        name: 'Administrator',
-        role: 'Administrator'
-      };
-    }
-    if (normalizedEmail === 'student@lms.com' && (trimmedPassword === 'student123' || trimmedPassword === 'student')) {
-      return { email: normalizedEmail, username: normalizedEmail, name: 'Student', role: 'Student' };
-    }
-    const studentMatch = normalizedEmail.match(/^student([1-5])@lms\.com$/);
-    if (studentMatch && (trimmedPassword === 'student123' || trimmedPassword === 'student')) {
-      const idx = parseInt(studentMatch[1], 10);
-      const studentNames = ['Aarav Mehta', 'Sneha Patel', 'Rohan Sharma', 'Priya Nair', 'Aditya Rao'];
-      return {
-        email: normalizedEmail,
-        username: normalizedEmail,
-        name: studentNames[idx - 1],
-        role: 'Student'
-      };
-    }
-    throw new Error("Invalid credentials");
+  if (!normalizedEmail || !trimmedPassword) {
+    throw new Error('Please enter both email and password.');
   }
 
-  let usr = email;
-  let pwd = password;
-
   try {
-    const res = await fetch(`${FRAPPE_URL}/api/method/login`, {
+    const res = await fetch('/api/auth/login', {
       method: "POST",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usr, pwd })
+      body: JSON.stringify({ email: normalizedEmail, password: trimmedPassword })
     });
 
     const data = await res.json();
-    if (res.ok && (data.message === "Logged In" || data.message === "No App")) {
-      if (typeof window !== 'undefined' && data.sid) {
-        localStorage.setItem('frappe_sid', data.sid);
+    if (res.ok && data.success) {
+      if (typeof window !== 'undefined') {
+        if (data.sid) localStorage.setItem('frappe_sid', data.sid);
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('jwt', data.token);
+        }
       }
-      const backendRole = (
-        isAdmin ||
-        usr === 'Administrator' ||
-        (data.user_id && data.user_id.toLowerCase().includes('admin')) ||
-        (data.full_name && data.full_name.toLowerCase().includes('admin'))
-      ) ? 'Administrator' : 'Student';
-
-      return {
-        email: data.user_id || (isAdmin ? 'admin@lms.com' : usr),
-        username: data.user_id || (isAdmin ? 'Administrator' : usr),
-        name: data.full_name || (isAdmin ? 'Administrator' : usr),
-        role: backendRole
-      };
+      return data.user;
     } else {
-      throw new Error(data.message || "Invalid email or password.");
+      throw new Error(data.error || data.message || "Invalid email or password.");
     }
   } catch (err) {
     console.error('[Auth Login Error]:', err.message);
@@ -2605,11 +2570,5 @@ export async function getLMSStudents() {
       console.error("Failed to fetch students from Frappe REST API, falling back.", e);
     }
   }
-  return [
-    { username: 'student1@lms.com', name: 'Aarav Mehta' },
-    { username: 'student2@lms.com', name: 'Sneha Patel' },
-    { username: 'student3@lms.com', name: 'Rohan Sharma' },
-    { username: 'student4@lms.com', name: 'Priya Nair' },
-    { username: 'student5@lms.com', name: 'Aditya Rao' }
-  ];
+  return [];
 }

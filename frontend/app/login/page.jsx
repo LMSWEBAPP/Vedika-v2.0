@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Eye, EyeOff, Shield, GraduationCap, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Lock, Mail } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { login } from '@/lib/frappe';
 
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const showDemoCredentials = true;
 
   // Clear any existing session on mount and parse query errors
   useEffect(() => {
@@ -36,18 +35,13 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const frappeUrl = process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vyomanta.onrender.com';
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      const res = await fetch(`${frappeUrl}/api/method/lms.lms.api.get_google_auth_url?redirect_to=${encodeURIComponent(redirectUrl)}`);
-      if (!res.ok) {
-        throw new Error('Failed to retrieve Google OAuth authorization URL from backend.');
-      }
+      const res = await fetch(`/api/auth/google?redirect_to=${encodeURIComponent(redirectUrl)}`);
       const data = await res.json();
-      if (!data.message) {
-        throw new Error('Invalid response from backend Google OAuth initializer.');
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Failed to initialize Google Sign-in.');
       }
-      window.location.href = data.message;
+      window.location.href = data.url;
     } catch (err) {
       setError(err.message || 'Could not initiate Google Sign-in. Please try again.');
       setLoading(false);
@@ -82,26 +76,6 @@ export default function LoginPage() {
       setError(err.message || 'Invalid email or password.');
       setLoading(false);
     }
-  };
-
-
-  const students = [
-    { email: 'student1@lms.com', name: 'Aarav Mehta', desc: '80% Progress (Committed learner)' },
-    { email: 'student2@lms.com', name: 'Sneha Patel', desc: '50% Progress (Half-way through)' },
-    { email: 'student3@lms.com', name: 'Rohan Sharma', desc: '90% Progress (High performer)' },
-    { email: 'student4@lms.com', name: 'Priya Nair', desc: '20% Progress (Just started)' },
-    { email: 'student5@lms.com', name: 'Aditya Rao', desc: '0% Progress (New enrollee)' }
-  ];
-
-  const fillCredentials = (role, stdEmail = '') => {
-    if (role === 'admin') {
-      setEmail('admin@lms.com');
-      setPassword('');
-    } else if (role === 'student' && stdEmail) {
-      setEmail(stdEmail);
-      setPassword('');
-    }
-    setError('');
   };
 
   return (
@@ -188,7 +162,7 @@ export default function LoginPage() {
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"
-                  placeholder="Enter email or username (e.g. admin@lms.com or admin)"
+                  placeholder="Enter your email or username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -225,7 +199,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -266,12 +240,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Hint Note */}
-            <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center', lineHeight: '1.4', marginTop: 4 }}>
-              🔒 Role is auto-detected from credentials.<br />
-              Redirects to Admin or Student dashboard based on role.
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -291,7 +259,8 @@ export default function LoginPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8
+                gap: 8,
+                marginTop: 6
               }}
             >
               {loading ? (
@@ -360,111 +329,6 @@ export default function LoginPage() {
             </a>
           </div>
         </div>
-
-        {/* Credentials helper panel */}
-        {showDemoCredentials && (
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: `1px solid ${T.border}`,
-            borderRadius: 12,
-            padding: '18px 20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12
-          }}>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>💡</span> Select Account (Quick Email Fill)
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {/* Admin trigger */}
-              <button
-                type="button"
-                onClick={() => fillCredentials('admin')}
-                style={{
-                  background: email === 'admin@lms.com' ? 'rgba(155, 110, 248, 0.12)' : T.s2,
-                  border: `1px solid ${email === 'admin@lms.com' ? T.purple : T.border}`,
-                  borderRadius: 8,
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => { if (email !== 'admin@lms.com') e.currentTarget.style.background = T.s3; }}
-                onMouseLeave={(e) => { if (email !== 'admin@lms.com') e.currentTarget.style.background = T.s2; }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'rgba(155, 110, 248, 0.2)',
-                    color: T.purple,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <Shield size={14} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: T.purple }}>Admin Workspace</div>
-                    <div style={{ fontSize: 9.5, color: T.muted, fontFamily: 'monospace' }}>admin@lms.com</div>
-                  </div>
-                </div>
-                <span style={{ fontSize: 9.5, color: T.dim }}>Default Admin</span>
-              </button>
-
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>👥</span> Select Student Profile to Sign In
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {students.map((std) => (
-                  <button
-                    key={std.email}
-                    type="button"
-                    onClick={() => fillCredentials('student', std.email)}
-                    style={{
-                      background: email === std.email ? `${T.accent}12` : T.s2,
-                      border: `1px solid ${email === std.email ? T.accent : T.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                      transition: 'all 0.15s'
-                    }}
-                    onMouseEnter={(e) => { if (email !== std.email) e.currentTarget.style.background = T.s3; }}
-                    onMouseLeave={(e) => { if (email !== std.email) e.currentTarget.style.background = T.s2; }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 26, height: 26, borderRadius: '50%',
-                        background: `${T.accent}20`,
-                        color: T.accent,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <User size={13} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{std.name}</div>
-                        <div style={{ fontSize: 9.5, color: T.muted }}>{std.email}</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 9.5, color: T.accent, fontWeight: 600, background: `${T.accent}10`, padding: '2px 6px', borderRadius: 4 }}>
-                        {std.desc}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Footer info */}
         <div style={{ textAlign: 'center', fontSize: 11.5, color: T.dim }}>
