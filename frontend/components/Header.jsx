@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import styles from './Header.module.css';
 import {
@@ -24,6 +24,36 @@ export default function Header() {
   const aiDropdownTimer = useRef(null);
   const labsDropdownTimer = useRef(null);
   const profileRef = useRef(null);
+
+  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
+  const [isTopNavVisible, setIsTopNavVisible] = useState(false);
+  const hideTimerRef = useRef(null);
+
+  const handleShowTopNav = useCallback(() => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    setIsTopNavVisible(true);
+  }, []);
+
+  const handleScheduleHideTopNav = useCallback(() => {
+    if (coursesDropdownOpen || aiDropdownOpen || labsDropdownOpen || profileDropdownOpen) return;
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setIsTopNavVisible(false);
+    }, 850);
+  }, [coursesDropdownOpen, aiDropdownOpen, labsDropdownOpen, profileDropdownOpen]);
+
+  useEffect(() => {
+    if (!isAskVedika) return;
+    const handleMouseMove = (e) => {
+      if (e.clientY <= 55) {
+        handleShowTopNav();
+      } else if (e.clientY > 135 && !coursesDropdownOpen && !aiDropdownOpen && !labsDropdownOpen && !profileDropdownOpen) {
+        handleScheduleHideTopNav();
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isAskVedika, coursesDropdownOpen, aiDropdownOpen, labsDropdownOpen, profileDropdownOpen, handleShowTopNav, handleScheduleHideTopNav]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -129,10 +159,9 @@ export default function Header() {
   const isAiActive = pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview';
   const isLabsActive = pathname.startsWith('/vedika-labs') || pathname.startsWith('/labs');
 
-  return (
-    <header className={styles.header}>
-      <div className={styles.container}>
-        {/* Left Logo */}
+  const navContent = (
+    <div className={styles.container}>
+      {/* Left Logo */}
         <button
           type="button"
           className={styles.logoWrap}
@@ -404,122 +433,170 @@ export default function Header() {
           </button>
         </div>
       </div>
+  );
 
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className={styles.mobileDrawer}>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname === '/' ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/'); }}
-          >
-            <span>Home</span>
-            <HomeIcon size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname === '/prev-home-page' ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/prev-home-page'); }}
-          >
-            <span>Dashboard</span>
-            <LayoutDashboard size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/courses') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/courses'); }}
-          >
-            <span>Courses</span>
-            <BookOpen size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/quizzes') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/quizzes'); }}
-          >
-            <span>Quizzes</span>
-            <Award size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/assignments') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/assignments'); }}
-          >
-            <span>Assignments</span>
-            <FileText size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/resources') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/resources'); }}
-          >
-            <span>Resources</span>
-            <FolderOpen size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
-          >
-            <span>Vedika AI</span>
-            <Brain size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-labs') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
-          >
-            <span>Vedika Labs</span>
-            <FlaskConical size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/jobs') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
-          >
-            <span>Jobs</span>
-            <Briefcase size={16} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.mobileNavLink} ${pathname.startsWith('/progress') ? styles.mobileNavActive : ''}`}
-            onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
-          >
-            <span>Progress</span>
-            <BarChart3 size={16} />
-          </button>
+  const mobileDrawerContent = mobileMenuOpen && (
+    <div className={styles.mobileDrawer}>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname === '/' ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/'); }}
+      >
+        <span>Home</span>
+        <HomeIcon size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname === '/prev-home-page' ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/prev-home-page'); }}
+      >
+        <span>Dashboard</span>
+        <LayoutDashboard size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/courses') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/courses'); }}
+      >
+        <span>Courses</span>
+        <BookOpen size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/quizzes') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/quizzes'); }}
+      >
+        <span>Quizzes</span>
+        <Award size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/assignments') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/assignments'); }}
+      >
+        <span>Assignments</span>
+        <FileText size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/resources') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/resources'); }}
+      >
+        <span>Resources</span>
+        <FolderOpen size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
+      >
+        <span>Vedika AI</span>
+        <Brain size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-labs') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
+      >
+        <span>Vedika Labs</span>
+        <FlaskConical size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/jobs') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
+      >
+        <span>Jobs</span>
+        <Briefcase size={16} />
+      </button>
+      <button
+        type="button"
+        className={`${styles.mobileNavLink} ${pathname.startsWith('/progress') ? styles.mobileNavActive : ''}`}
+        onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
+      >
+        <span>Progress</span>
+        <BarChart3 size={16} />
+      </button>
 
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
 
-          {user ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ padding: '0 14px', fontSize: 13, color: '#94a3b8' }}>
-                Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
-              </div>
-              <button
-                type="button"
-                className={styles.mobileNavLink}
-                onClick={handleLogout}
-                style={{ color: '#f87171' }}
-              >
-                <span>Sign Out</span>
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className={styles.getStartedBtn}
-              style={{ justifyContent: 'center', width: '100%', padding: '12px' }}
-              onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
-            >
-              <span>Get Started / Log In</span>
-              <ArrowRight size={15} />
-            </button>
-          )}
+      {user ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ padding: '0 14px', fontSize: 13, color: '#94a3b8' }}>
+            Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
+          </div>
+          <button
+            type="button"
+            className={styles.mobileNavLink}
+            onClick={handleLogout}
+            style={{ color: '#f87171' }}
+          >
+            <span>Sign Out</span>
+            <LogOut size={16} />
+          </button>
         </div>
+      ) : (
+        <button
+          type="button"
+          className={styles.getStartedBtn}
+          style={{ justifyContent: 'center', width: '100%', padding: '12px' }}
+          onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
+        >
+          <span>Get Started / Log In</span>
+          <ArrowRight size={15} />
+        </button>
       )}
-    </header>
+    </div>
+  );
+
+  if (isAskVedika) {
+    return (
+      <>
+        {/* Top hover detection strip */}
+        <div
+          onMouseEnter={handleShowTopNav}
+          className={styles.topDetectionStrip}
+          style={{ pointerEvents: isTopNavVisible ? 'none' : 'auto' }}
+        />
+
+        {/* Discreet floating handle when hidden to show navigation is available on hover */}
+        {!isTopNavVisible && (
+          <div
+            onMouseEnter={handleShowTopNav}
+            onClick={handleShowTopNav}
+            className={styles.revealHandle}
+            title="Hover top to reveal navigation"
+          >
+            <div className={styles.revealHandleBar} />
+          </div>
+        )}
+
+        {/* Floating collapsible header */}
+        <header
+          className={styles.headerCollapsible}
+          onMouseEnter={handleShowTopNav}
+          onMouseLeave={handleScheduleHideTopNav}
+          style={{
+            transform: isTopNavVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
+            opacity: isTopNavVisible ? 1 : 0,
+            pointerEvents: isTopNavVisible ? 'auto' : 'none',
+          }}
+        >
+          {navContent}
+        </header>
+
+        {mobileDrawerContent}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <header className={styles.header}>
+        {navContent}
+      </header>
+      {mobileDrawerContent}
+    </>
   );
 }
 

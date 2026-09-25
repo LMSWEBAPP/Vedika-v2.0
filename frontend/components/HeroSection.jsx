@@ -91,12 +91,12 @@ export default function HeroSection() {
   const speechTimeRef = useRef(0);
   const speechStartTimeRef = useRef(null);
 
-  // Locked particle transform coordinates (medium-sized rings centered squarely behind the kid mascot)
+  // Locked particle transform coordinates (medium-sized rings centered squarely around the kid mascot)
   const LOCKED_PARTICLES = {
-    posX: 0,
-    posY: 0,
+    posX: 38,
+    posY: 13.5,
     posZ: -31,
-    scale: 1.25,
+    scale: 1.32,
     rotX: 115,
     rotY: 5,
     rotZ: -40,
@@ -162,12 +162,6 @@ export default function HeroSection() {
       const fourFrames = 0.133333;
       const sixFrames = 0.2;
 
-      const ve = document.querySelector('#ve span');
-      const di = document.querySelector('#di span');
-      const ka = document.querySelector('#ka span');
-      const ai = document.querySelector('#ai span');
-      const tu = document.querySelector('#tu span');
-      const tor = document.querySelector('#tor span');
       const titleLead = document.querySelector(`.${styles.titleLead}`);
       const titleSubline = document.querySelector(`.${styles.titleSubline}`);
       const desc = document.querySelector(`.${styles.description}`);
@@ -176,24 +170,6 @@ export default function HeroSection() {
 
       if (titleLead) {
         timeline.fromTo(titleLead, { y: '-0.5rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, 0);
-      }
-      if (ve) {
-        timeline.fromTo(ve, { x: '3.6rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, 0);
-      }
-      if (di) {
-        timeline.fromTo(di, { x: '-2.6rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, fourFrames);
-      }
-      if (ka) {
-        timeline.fromTo(ka, { x: '2.8rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
-      }
-      if (ai) {
-        timeline.fromTo(ai, { x: '-2.5rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
-      }
-      if (tu) {
-        timeline.fromTo(tu, { x: '2.5rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, fourFrames);
-      }
-      if (tor) {
-        timeline.fromTo(tor, { x: '-3.2rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
       if (titleSubline) {
         timeline.fromTo(titleSubline, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, twoFrames);
@@ -507,16 +483,16 @@ export default function HeroSection() {
             <h1 className={styles.titleH1}>
               {/* Line 1: VEDIKA - noticeably bigger */}
               <div className={`${styles.titleRow} ${styles.titleRowVedika}`} id="titleRow1">
-                <div className={styles.titleChartsCont} id="ve"><span>Ve</span></div>
-                <div className={styles.titleChartsCont} id="di"><span>di</span></div>
-                <div className={styles.titleChartsCont} id="ka"><span>ka</span></div>
+                <div className={styles.titleChartsCont} id="ve"><u><span className={styles.sylVe}>VE</span></u></div>
+                <div className={styles.titleChartsCont} id="di"><u><span className={styles.sylDi}>DI</span></u></div>
+                <div className={styles.titleChartsCont} id="ka"><u><span className={styles.sylKa}>KA</span></u></div>
               </div>
               {/* Line 2: AI TUTOR - smaller with distinct gap between AI and TUTOR */}
               <div className={`${styles.titleRow} ${styles.titleRowAiTutor}`} id="titleRow2">
-                <div className={styles.titleChartsCont} id="ai"><span>AI</span></div>
+                <div className={styles.titleChartsCont} id="ai"><u><span className={styles.sylAi}>AI</span></u></div>
                 <span className={styles.wordGap} aria-hidden="true">&nbsp;</span>
-                <div className={styles.titleChartsCont} id="tu"><span>Tu</span></div>
-                <div className={styles.titleChartsCont} id="tor"><span>tor</span></div>
+                <div className={styles.titleChartsCont} id="tu"><u><span className={styles.sylTu}>TU</span></u></div>
+                <div className={styles.titleChartsCont} id="tor"><u><span className={styles.sylTor}>TOR</span></u></div>
               </div>
             </h1>
             <span className={styles.titleSubline}>Learn Smarter. Go Further.</span>

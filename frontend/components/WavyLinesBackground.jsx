@@ -11,66 +11,40 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
     const svg = containerRef.current.querySelector('svg');
     if (!svg) return;
 
-    const paths = svg.querySelectorAll('path:not(defs path)');
-    const defs = svg.querySelector('defs');
-    if (!defs) return;
-
-    const xmlns = 'http://www.w3.org/2000/svg';
+    const paths = svg.querySelectorAll('path');
     const tweens = [];
 
-    while (defs.firstChild) {
-      defs.removeChild(defs.firstChild);
-    }
-
-    const uid = Math.random().toString(36).substring(2, 7);
-
     paths.forEach((p, i) => {
-      const clone = p.cloneNode(true);
-      clone.setAttribute('stroke-dasharray', '');
-      clone.setAttribute('stroke', '#ffffff');
-      clone.setAttribute('stroke-width', '2px');
+      // Parse dash and gap to find the exact period for mathematically seamless infinite loop
+      const dashAttr = p.getAttribute('stroke-dasharray') || '16 4';
+      const parts = dashAttr.trim().split(/\s+/).map(Number);
+      const dash = parts[0] || 16;
+      const gap = parts[1] || 4;
+      const period = dash + gap;
 
-      const maskId = 'wave-mask-' + uid + '-' + i;
-      const mask = document.createElementNS(xmlns, 'mask');
-      mask.setAttribute('id', maskId);
-      mask.appendChild(clone);
-      defs.appendChild(mask);
+      // Choose an integer multiple of period close to ~600-800px for continuous smooth flow
+      const multiplier = Math.max(12, Math.round(600 / period));
+      const distance = period * multiplier;
 
-      p.setAttribute('mask', 'url(#' + maskId + ')');
+      // Ensure GPU-accelerated rendering
+      p.style.willChange = 'stroke-dashoffset';
 
-      let totalLen = 1200;
-      try {
-        totalLen = clone.getTotalLength() || 1200;
-      } catch (err) {
-        totalLen = 1200;
-      }
+      // Alternating subtle flow speeds across layers for organic fluid depth
+      const baseDuration = 18 + (i % 7) * 1.2;
 
-      gsap.set(clone, {
-        strokeDasharray: totalLen,
-        strokeDashoffset: totalLen
-      });
+      // Set initial offset
+      gsap.set(p, { strokeDashoffset: 0 });
 
-      // Smooth wave revealing motion (increased speed ~22s)
-      const tw1 = gsap.to(clone, {
-        duration: 22,
-        delay: i * 0.06,
+      const tw = gsap.to(p, {
+        strokeDashoffset: -distance,
+        duration: baseDuration,
         repeat: -1,
-        strokeDashoffset: totalLen * 3,
-        ease: 'power1.inOut'
+        ease: 'none',
       });
-      tweens.push(tw1);
-
-      // Continuous fluid wave flow (increased speed ~28s)
-      const tw2 = gsap.to(p, {
-        duration: 28,
-        repeat: -1,
-        strokeDashoffset: totalLen * 0.4,
-        ease: 'none'
-      });
-      tweens.push(tw2);
+      tweens.push(tw);
     });
 
-    gsap.to(svg, { opacity: 1, duration: 1.2, ease: 'power2.out' });
+    gsap.to(svg, { opacity: 1, duration: 1.0, ease: 'power2.out' });
 
     return () => {
       tweens.forEach(tw => tw.kill());
@@ -104,7 +78,6 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
           display: 'block'
         }}
       >
-        <defs></defs>
   <path d="M922.2-71.4c-13.43656-.412-26.48915,5.62324-35.99986,14.90046-14.855,13.16536-29.04824,42.71862-47.9996,46.90013-17.572,1.75686-29.56248-18.48017-40.00091-29.9-29.18831-35.737-40.50058-23.80184-63.99953,7.89994C717.36217-9.113,702.9969-3.10112,678.1999-18.80068c-9.80071-5.794-20.17021-13.15093-31.99991-13.29919-21.53446.34057-37.32314,19.99687-60,8.99916-23.38951-10.14357-39.21427-55.75048-67.99964-38.69961C498.937-51.89154,479.02251-12.143,458.20042-16.39949c-11.45371-3.33172-19.31009-13.99176-28.00056-21.50037C413.92368-52.97929,402.31529-44.67435,390.2-29.99949c-9.99742,11.65631-18.84148,25.89031-31.99977,34.29966-18.84346,10.84032-34.29633-12.23026-52.00044-15.59961-9.15219-2.33868-18.91.39229-27.99975,1.69967-13.97887,2.1049-26.77544-5.99233-40-8.90051-25.62086-6.35959-41.05658,16.23289-64,12.60093-25.66962-6.55755-37.99794-30.49476-68.00018-15.79995-11.469,5.43541-23.12182,12.3855-36,13.69907C38.95149-5.59716,16.01128-31.37117-5.8-49.9" fill="none" stroke="#e8505b" strokeDasharray="8 5"/>
   <path d="M922.2-56.3a56.94513,56.94513,0,0,0-36,12.60012c-14.53055,10.97908-29.409,37.51327-47.99959,38.70049-17.535-1.107-28.95878-21.385-40.00088-33.1-34.37177-42.28981-48.22773-1.69194-71.99957,23.8-15.17058,16.46925-30.61237,13.269-48.00013,2.49878C669.6424-16.81079,660.42445-23.07,650.2-23.5c-22.089-.35286-37.08827,26.6514-60,20.6-26.02393-7.27763-40.04983-64.55317-67.99962-53.8006-23.35574,11.24147-32.78865,42.10628-56,52.80116-15.69881,4.14511-25.8689-13.21158-36.00068-22.2-13.07129-13.02322-23.6025-12.90669-35.99967.90009C383.38367-13.56468,374.59275.985,362.20014,11.1001c-16.20165,13.09869-30.341-2.107-44.00021-10.90058-6.9496-4.44042-15.65447-7.58087-24-6.79922C287.71877-6.15244,280.66752-4.103,274.2-3.50006c-9.34789.98225-18.92261-2.18495-28-3.90008-20.23839-3.97656-34.479,6.7327-51.99982,14.10089C164.92935,19.50593,146.38282-18.809,118.2-17.10041c-12.61817.69626-23.98422,8.03261-36,11.20034C48.334,4.54672,20.14637-19.465-5.8-37.6" fill="none" stroke="#e8505b" strokeDasharray="23 2"/>
   <path d="M922.2-39.1c-14.04.007-28.65536,3.55258-39.99989,12.10028-15.13446,10.18256-31.53287,34.08971-51.99971,23-20.18208-10.4688-36.22226-50.58582-60-45.90088-24.44324,8.54316-32.33009,41.53223-56.0006,51.8003C691.84,10.00314,674.946-13.38164,654.20006-16.40042c-30.30464-2.485-50.05055,53.57238-80.00013,18.59989-12.61224-13.14236-28.55912-54.67817-47.99936-52.39994-21.39506,5.4936-35.01355,39.4101-52.0011,53.59978C445.478,28.28,433.26837-31.16834,406.20014-24.10063c-6.21795,2.33463-11.72848,8.10152-16,13.00081-8.98756,10.157-17.10208,22.42577-28,30.69989C345.88745,32.10033,330.93281,14.17158,318.2,5.09948,311.424.2022,302.69562-3.39677,294.2-2.49964c-10.55386,1.20262-21.23322,5.32248-32,4.39928-21.92555-2.15679-32.92833-.09792-51.99983,11.601-22.17142,13.86705-34.99359,13.9364-56.00005-2.50139C144.42533,3.7228,134.2838-4.7949,122.2-7.7999,110.18133-10.72681,97.77227-6.35379,86.2001-3.39974,73.25632-.18466,59.24117.43781,46.2-2.60024,27.78866-6.61468,11.108-16.39235-5.8-24.3" fill="none" stroke="#e8505b" strokeDasharray="24 4"/>

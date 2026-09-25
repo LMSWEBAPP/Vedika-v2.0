@@ -164,6 +164,7 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
+  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
   const isViewportLocked = isFixedPage || isHomePage;
 
   return (
@@ -183,7 +184,7 @@ export default function LayoutWrapper({ children }) {
       <Header />
       <main style={{
         position: isViewportLocked ? 'fixed' : 'relative',
-        top: isViewportLocked ? 64 : 'auto',
+        top: isViewportLocked ? (isAskVedika ? 0 : 54) : 'auto',
         bottom: isViewportLocked ? 0 : 'auto',
         left: isViewportLocked ? 0 : 'auto',
         right: isViewportLocked ? 0 : 'auto',
@@ -191,10 +192,10 @@ export default function LayoutWrapper({ children }) {
         boxSizing: 'border-box',
         overflowY: isViewportLocked ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isViewportLocked ? 'calc(100vh - 64px)' : 'auto',
-        maxHeight: isViewportLocked ? 'calc(100vh - 64px)' : 'none',
-        minHeight: !isViewportLocked ? 'calc(100vh - 64px)' : 'auto',
-        paddingTop: isViewportLocked ? 0 : '64px',
+        height: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'auto',
+        maxHeight: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'none',
+        minHeight: !isViewportLocked ? 'calc(100vh - 54px)' : 'auto',
+        paddingTop: isViewportLocked ? 0 : '54px',
         background: isHomePage ? '#02050c' : 'var(--bg)'
       }}>
         {children}

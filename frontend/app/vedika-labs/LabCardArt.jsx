@@ -205,7 +205,7 @@ export const MathLabArt = memo(function MathLabArt() {
         <HoloPedestal accentColor="#A855F7" accentRgb={accentRgb} filterId="purplePedestalGlow" />
 
         {/* 1. 3D SCULPTED METALLIC PI (Top-Left Flank, Zero Overlap) */}
-        <g className="live-math-pi-3d" transform="translate(16, 44)" filter="url(#purplePedestalGlow)">
+        <g className="live-math-pi-3d" transform="translate(16, 20)" filter="url(#purplePedestalGlow)">
           <path
             d="M 3 6 Q 13 5 24 6 C 24 8 22 9 19 9 L 8 9 L 8 22 C 8 25 5 26 5 22 L 6 9 L 3 9 Z M 15 9 L 15 22 C 15 25 19 25 21 21 L 21 19 C 19 21 17 21 17 19 L 17 9 Z"
             fill="#3B0764"
@@ -428,6 +428,9 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="3" />
           {/* Solid 3D Volumetric Core Sphere */}
           <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
+          {/* Planetary Latitudinal Atmospheric Bands */}
+          <ellipse cx="0" cy="-6" rx="25" ry="7" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.1" strokeDasharray="6 3" />
+          <ellipse cx="0" cy="7" rx="24.5" ry="6.5" fill="none" stroke="rgba(56, 189, 248, 0.28)" strokeWidth="1.1" strokeDasharray="7 4" />
           {/* Hot Specular Core Highlight */}
           <ellipse cx="-8" cy="-8" rx="7" ry="5" fill="#FFFFFF" opacity="0.65" transform="rotate(-20 -8 -8)" />
           <circle cx="-10" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />

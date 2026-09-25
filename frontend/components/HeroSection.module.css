@@ -93,17 +93,47 @@
   width: clamp(0.7rem, 1.25vw, 1.35rem);
 }
 
+@keyframes maskSlideInRight {
+  0% {
+    transform: translate3d(108%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes maskSlideInLeft {
+  0% {
+    transform: translate3d(-108%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .titleChartsCont {
-  display: flex;
+  display: inline-flex;
   overflow: hidden;
+  position: relative;
+  vertical-align: top;
+}
+
+.titleChartsCont u {
+  display: inline-flex;
+  text-decoration: none;
+  overflow: hidden;
+  position: relative;
+  padding: 4px 0;
+  margin: -4px 0;
 }
 
 .titleChartsCont span {
   display: inline-block;
-  opacity: 0;
-  visibility: hidden;
+  will-change: transform;
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   background: linear-gradient(
     135deg,
     #ffffff 0%,
@@ -115,6 +145,25 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 14px rgba(255, 255, 255, 0.22));
+}
+
+.sylVe {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.04s both;
+}
+.sylDi {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.22s both;
+}
+.sylKa {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.40s both;
+}
+.sylAi {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.18s both;
+}
+.sylTu {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.36s both;
+}
+.sylTor {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.54s both;
 }
 
 /* 3. Simple Font: Vollkorn for Subline & Descriptions */

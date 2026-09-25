@@ -4,8 +4,8 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  height: 64px;
-  padding: 0 2.5rem;
+  height: 54px;
+  padding: 0 2rem;
   background: rgba(3, 7, 18, 0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -13,6 +13,74 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
+}
+
+.topDetectionStrip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  z-index: 999;
+}
+
+.revealHandle {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 998;
+  padding: 2px 20px 5px;
+  background: rgba(10, 18, 38, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-top: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 12px rgba(56, 189, 248, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.revealHandle:hover {
+  background: rgba(15, 25, 55, 0.95);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55), 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.revealHandleBar {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+}
+
+.headerCollapsible {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  transform-origin: top center;
+  z-index: 1000;
+  height: 52px;
+  width: auto;
+  max-width: calc(100vw - 32px);
+  padding: 0 1.25rem;
+  background: rgba(10, 18, 38, 0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-top: none;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.16);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, box-shadow 0.35s ease;
 }
 
 .container {
