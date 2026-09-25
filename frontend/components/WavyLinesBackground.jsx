@@ -5,29 +5,29 @@ import gsap from 'gsap';
 
 const DEFAULT_WAVE_CONFIG = {
   wave1: {
-    top: -6,        // vh
-    left: -18,      // vw
-    width: 120,     // vw
-    height: 65,     // vh
-    rot: -23,       // deg
-    scale: 0.95,    // multiplier
-    blur: 1.9,      // px
-    opacity: 0.7,   // 0.1 to 1.0
+    top: -6,
+    left: -18,
+    width: 120,
+    height: 65,
+    rot: -23,
+    scale: 0.95,
+    blur: 1.9,
+    opacity: 0.7,
   },
   wave2: {
-    bottom: -25,    // vh
-    right: -25,     // vw
-    width: 185,     // vw
-    height: 75,     // vh
-    rot: -42,       // deg
-    scale: 1.0,     // multiplier
-    blur: 0.9,      // px
-    opacity: 1.0,   // 0.1 to 1.0
+    bottom: 32,
+    right: -51,
+    width: 100,
+    height: 95,
+    rot: -27,
+    scale: 0.9,
+    blur: 2.1,
+    opacity: 0.75,
   },
   global: {
-    speedMult: 0.6, // multiplier
-    sway: 26,       // px
-  }
+    speedMult: 0.7,
+    sway: 2,
+  },
 };
 
 export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
@@ -36,7 +36,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const [waveConfig, setWaveConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_wavy_bg_config_v2');
+        const saved = localStorage.getItem('vedika_wavy_bg_config_v3');
         if (saved) {
           const parsed = JSON.parse(saved);
           return {
@@ -113,7 +113,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         }
       };
       try {
-        localStorage.setItem('vedika_wavy_bg_config_v2', JSON.stringify(next));
+        localStorage.setItem('vedika_wavy_bg_config_v3', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -130,7 +130,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const resetConfig = () => {
     setWaveConfig(DEFAULT_WAVE_CONFIG);
     try {
-      localStorage.setItem('vedika_wavy_bg_config_v2', JSON.stringify(DEFAULT_WAVE_CONFIG));
+      localStorage.setItem('vedika_wavy_bg_config_v3', JSON.stringify(DEFAULT_WAVE_CONFIG));
     } catch (e) {}
   };
 
