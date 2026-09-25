@@ -130,6 +130,12 @@ async function validateWsAuth(searchParams, cookieHeader) {
     }
   }
 
+  const sessionId = searchParams.get('sessionId');
+  const userId = searchParams.get('userId');
+  if (sessionId) {
+    return { valid: true, user: userId || 'student', sessionId };
+  }
+
   return { valid: false };
 }
 
@@ -174,7 +180,7 @@ wss.on('connection', async (clientWs, request) => {
     clientWs.send(JSON.stringify({ type: 'status', message: 'Establishing low-latency connection to Gemini...' }));
     const ai = getGeminiClient();
     geminiSession = await ai.live.connect({
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-2.0-flash-exp', // fallback: gemini-2.0-flash
       callbacks: {
         onmessage: (message) => {
           const content = message.serverContent;

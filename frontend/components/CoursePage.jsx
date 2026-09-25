@@ -10,7 +10,6 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import dynamic from 'next/dynamic';
 import PDFViewerModal from './PDFViewerModal';
 import ZimCarousel3D from './ZimCarousel3D';
-import CourseEmotionsSlider from './CourseEmotionsSlider';
 import PacmanPagination from './PacmanPagination';
 import PracticePlaygroundModal from './PracticePlaygroundModal';
 import { getSubjectArtwork } from '@/lib/artwork';
@@ -42,189 +41,6 @@ const CATEGORY_IMAGES = {
   'Cybersecurity': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
   'Cloud Computing': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600'
 };
-
-function InteractiveParticles() {
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-
-    const syncCanvasSize = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-      }
-    };
-
-    syncCanvasSize();
-
-    const resizeObserver = new ResizeObserver(() => {
-      syncCanvasSize();
-    });
-    resizeObserver.observe(container);
-
-    const particleCount = 95;
-    const particles = [];
-
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * (canvas.width || 700),
-        y: Math.random() * (canvas.height || 360),
-        vx: (Math.random() - 0.5) * 1.25,
-        vy: (Math.random() - 0.5) * 1.25,
-        radius: Math.random() * 2.3 + 1.2
-      });
-    }
-
-    const mouse = { x: null, y: null, radius: 160 };
-
-    const getPos = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
-      const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
-      const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-      };
-    };
-
-    const handlePointerMove = (e) => {
-      const pos = getPos(e);
-      mouse.x = pos.x;
-      mouse.y = pos.y;
-    };
-
-    const handlePointerLeave = () => {
-      mouse.x = null;
-      mouse.y = null;
-    };
-
-    canvas.addEventListener('mousemove', handlePointerMove);
-    canvas.addEventListener('mouseleave', handlePointerLeave);
-    canvas.addEventListener('touchmove', handlePointerMove, { passive: true });
-
-    const animate = () => {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
-
-        // Background white particle left fade calculation
-        const pFade = Math.min(1, Math.max(0.08, p.x / (w * 0.38)));
-
-        // Draw particle dot with smooth left fade
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * pFade})`;
-        ctx.fill();
-
-        // Connect nearby nodes with left fade
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 135) {
-            const alpha = 1 - dist / 135;
-            const lineFade = Math.min(1, Math.max(0.05, Math.min(p.x, p2.x) / (w * 0.38)));
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4 * lineFade})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-        }
-
-        // Mouse Grab & Vibrant Un-masked Orange Accent Link
-        if (mouse.x !== null && mouse.y !== null) {
-          const mdx = p.x - mouse.x;
-          const mdy = p.y - mouse.y;
-          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-
-          if (mdist < mouse.radius) {
-            const mAlpha = 1 - mdist / mouse.radius;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(249, 115, 22, ${mAlpha * 0.92})`;
-            ctx.lineWidth = 1.4;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Render exact, 100% sharp orange focal cursor point right at (mouse.x, mouse.y)
-      if (mouse.x !== null && mouse.y !== null) {
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 7.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 3.8, 0, Math.PI * 2);
-        ctx.fillStyle = '#F97316';
-        ctx.fill();
-      }
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      resizeObserver.disconnect();
-      if (canvas) {
-        canvas.removeEventListener('mousemove', handlePointerMove);
-        canvas.removeEventListener('mouseleave', handlePointerLeave);
-        canvas.removeEventListener('touchmove', handlePointerMove);
-      }
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        background: 'transparent',
-        maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 15%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 85%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 15%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 85%, transparent 100%)',
-        cursor: 'default'
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{
-          display: 'block',
-          width: '100%',
-          height: '100%',
-          background: 'transparent'
-        }}
-      />
-    </div>
-  );
-}
 
 function CourseDeckWidget({
   mode = 'courses', // 'categories' | 'courses'
@@ -259,14 +75,14 @@ function CourseDeckWidget({
         background: 'transparent',
         border: 'none',
         borderRadius: 0,
-        padding: '0 0',
-        marginBottom: 2,
+        padding: isMobile ? '4px 0' : '8px 0',
+        marginBottom: 8,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
-        gap: 6
+        gap: isMobile ? 10 : 14
       }}>
         {/* Category Carousel Title Pill */}
         <div style={{
@@ -281,21 +97,90 @@ function CourseDeckWidget({
           fontSize: 11.5,
           fontWeight: 700,
           letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-          marginBottom: 0
+          textTransform: 'uppercase'
         }}>
           <span>📂 Course Categories</span>
           <span style={{ opacity: 0.5 }}>•</span>
           <span>{items.length} {items.length === 1 ? 'Category' : 'Categories'} Available</span>
         </div>
 
-        {/* 3D Geometric Looping Emotions Carousel for Categories */}
-        <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
-          <CourseEmotionsSlider
-            items={items}
-            mode="categories"
-            onSelectCategory={onSelectCategory}
+        {/* Centered ZIM 3D Cylindrical Carousel for Categories */}
+        <div style={{
+          width: '100%',
+          maxWidth: 880,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: isMobile ? 270 : 330,
+          margin: '0 auto'
+        }}>
+          <ZimCarousel3D
+            courses={items}
+            activeIdx={activeIdx}
+            onActiveIdxChange={setActiveIdx}
+            onSelectCourse={(catItem) => onSelectCategory && onSelectCategory(catItem.title)}
+            isMobile={isMobile}
           />
+        </div>
+
+        {/* Active Category Details Centered Below the Carousel */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: 12,
+          maxWidth: 720,
+          width: '100%',
+          margin: '0 auto'
+        }}>
+          <h2 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 900, color: T.text, margin: 0, lineHeight: 1.2, letterSpacing: '-0.03em' }}>
+            {currentItem.title}
+          </h2>
+
+          <p style={{ fontSize: isMobile ? 13.5 : 15, color: T.muted, margin: 0, lineHeight: 1.6, maxWidth: 640 }}>
+            {currentItem.tagline || `Explore all specialized courses under ${currentItem.title}. Select this category to browse the complete curriculum.`}
+          </p>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 11.5, color: T.purple, background: `${T.purple}15`, padding: '3px 10px', borderRadius: 6, fontWeight: 700 }}>
+              {currentItem.badge}
+            </span>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
+              📚 {currentItem.totalLessons || 0} lessons total
+            </span>
+            {currentItem.instructorsCount > 0 && (
+              <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
+                👤 {currentItem.instructorsCount} {currentItem.instructorsCount === 1 ? 'Instructor' : 'Instructors'}
+              </span>
+            )}
+          </div>
+
+          {/* Action Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 6 }}>
+            <button
+              onClick={() => onSelectCategory && onSelectCategory(currentItem.title)}
+              style={{
+                background: T.accent,
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '11px 28px',
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              Explore {currentItem.title} Courses <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -319,49 +204,53 @@ function CourseDeckWidget({
       width: '100%',
       gap: isMobile ? 16 : 20
     }}>
-      {/* Sleek inline Back Button + Category Info Beside It (saving vertical space) */}
+      {/* Top Breadcrumb & Return Bar when inside a category */}
       {activeDrilldownCategory && (
         <div style={{
           width: '100%',
-          maxWidth: 1400,
+          maxWidth: 1120,
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          padding: '0 4px',
-          marginBottom: -4
+          justifyContent: 'space-between',
+          padding: '10px 18px',
+          background: T.s2,
+          border: `1px solid ${T.border}`,
+          borderRadius: 14,
+          flexWrap: 'wrap',
+          gap: 10
         }}>
           <button
             onClick={onBackToCategories}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
-              background: T.s2,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-              padding: '5px 14px',
+              gap: 8,
+              background: `${T.accent}14`,
+              border: `1px solid ${T.accent}40`,
+              color: T.accent,
+              padding: '6px 14px',
               borderRadius: 8,
-              fontSize: 12.5,
-              fontWeight: 600,
+              fontSize: 13,
+              fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
+            onMouseEnter={(e) => e.currentTarget.style.background = `${T.accent}24`}
+            onMouseLeave={(e) => e.currentTarget.style.background = `${T.accent}14`}
           >
-            <ArrowLeft size={14} /> Back
+            <ArrowLeft size={16} /> Back to All Categories
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 13, color: T.muted }}>
               Categories <span style={{ opacity: 0.5 }}>›</span> <strong style={{ color: T.text }}>{activeDrilldownCategory}</strong>
             </span>
             <span style={{
-              fontSize: 11,
+              fontSize: 11.5,
               background: `${T.purple}18`,
               color: T.purple,
-              padding: '2px 8px',
-              borderRadius: 10,
+              padding: '3px 10px',
+              borderRadius: 12,
               fontWeight: 700
             }}>
               {items.length} {items.length === 1 ? 'Course' : 'Courses'}
@@ -370,15 +259,222 @@ function CourseDeckWidget({
         </div>
       )}
 
-      {/* Course Emotions 3D Geometric Interactive Slider */}
-      <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
-        <CourseEmotionsSlider
-          items={items}
-          onSelectCourse={handleSelectCourse}
-          onEnrollFromCard={handleEnrollFromCard}
-          enrolledCourseIds={enrolledCourseIds}
-        />
+      {/* Exactly 3 courses shown at a time */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        gap: 18,
+        width: '100%',
+        maxWidth: 1120,
+        margin: '0 auto',
+        alignItems: 'stretch'
+      }}>
+        {currentCourses.map((c) => {
+          const totalLessons = c.lessonsCount || (c.lessons ? c.lessons.length : 0);
+          const isEnrolled = enrolledCourseIds.includes(c.id);
+          const totalMins = totalLessons * 10;
+          const hours = Math.floor(totalMins / 60);
+          const mins = totalMins % 60;
+          const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+          const level = c.title?.toLowerCase().includes('advanced') || c.title?.toLowerCase().includes('expert')
+            ? 'Advanced'
+            : (c.title?.toLowerCase().includes('intermediate') ? 'Intermediate' : 'Beginner');
+          const thumb = c.thumbnail || c.image || getSubjectArtwork(c.category) || DEFAULT_THUMBNAILS[0];
+
+          return (
+            <div
+              key={c.id}
+              style={{
+                background: T.s1,
+                border: `1px solid ${T.border}`,
+                borderRadius: 16,
+                padding: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = `${T.accent}60`;
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.35)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = T.border;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
+              }}
+              onClick={() => handleSelectCourse(c)}
+            >
+              <div>
+                {/* Course Thumbnail */}
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: 135,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  marginBottom: 12
+                }}>
+                  <img
+                    src={thumb}
+                    alt={c.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    background: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(6px)',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#FFF'
+                  }}>
+                    {level}
+                  </div>
+                </div>
+
+                {/* Category & Instructor */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                  <span style={{
+                    fontSize: 11,
+                    color: T.purple,
+                    background: `${T.purple}16`,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    fontWeight: 700
+                  }}>
+                    {c.category || 'General'}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: T.muted }}>
+                    By {c.instructor || 'Vedika'}
+                  </span>
+                </div>
+
+                {/* Course Title */}
+                <h3 style={{
+                  fontSize: 15.5,
+                  fontWeight: 800,
+                  color: T.text,
+                  margin: '0 0 6px 0',
+                  lineHeight: 1.3,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  {c.title}
+                </h3>
+
+                {/* Course Tagline */}
+                <p style={{
+                  fontSize: 12.5,
+                  color: T.muted,
+                  margin: '0 0 12px 0',
+                  lineHeight: 1.45,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  {c.tagline || 'Master core subject concepts with interactive modules, coding labs, and AI mentorship.'}
+                </p>
+              </div>
+
+              {/* Card Footer: Metadata & Action Button */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: 10,
+                  borderTop: `1px solid ${T.border}`,
+                  marginBottom: 12,
+                  fontSize: 11.5,
+                  color: T.muted
+                }}>
+                  <span>📚 {totalLessons} lessons</span>
+                  <span>⏱️ {durationStr}</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectCourse(c);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: isEnrolled ? `${T.accent}20` : T.accent,
+                      color: isEnrolled ? T.accent : '#FFFFFF',
+                      border: isEnrolled ? `1px solid ${T.accent}50` : 'none',
+                      padding: '9px 12px',
+                      borderRadius: 10,
+                      fontSize: 12.5,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      boxShadow: isEnrolled ? 'none' : '0 4px 14px rgba(59, 130, 246, 0.3)',
+                      transition: 'transform 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    {isEnrolled ? 'Open Course' : 'View Syllabus'} <ChevronRight size={14} />
+                  </button>
+
+                  {!isEnrolled && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEnrollFromCard(c.id, e);
+                      }}
+                      style={{
+                        background: T.s2,
+                        color: T.text,
+                        border: `1px solid ${T.border}`,
+                        padding: '9px 14px',
+                        borderRadius: 10,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = T.accent}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = T.border}
+                    >
+                      Enroll
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Pacman Pagination: rendered only when items > 3 */}
+      {totalPages > 1 && (
+        <div style={{ marginTop: 14 }}>
+          <PacmanPagination
+            currentPage={coursePage}
+            totalPages={totalPages}
+            onPageChange={setCoursePage}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -1018,7 +1114,7 @@ export default function CoursePage() {
       width: '100%',
       height: '100%',
       maxHeight: '100%',
-      overflowY: 'hidden',
+      overflowY: 'auto',
       overflowX: 'hidden',
       background: T.bg,
       boxSizing: 'border-box'

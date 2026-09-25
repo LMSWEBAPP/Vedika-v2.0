@@ -1,84 +1,115 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 export default function VoiceRobotVisualizer() {
   const containerRef = useRef(null);
+  const [webglFailed, setWebglFailed] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof window === 'undefined') return;
 
-    const containerWidth = container.clientWidth || 100;
-    const containerHeight = container.clientHeight || 100;
+    let renderer, animationId;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(containerWidth, containerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    container.appendChild(renderer.domElement);
+    try {
+      const containerWidth = container.clientWidth || 100;
+      const containerHeight = container.clientHeight || 100;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0x9B6EF8, 1.5);
-    pointLight.position.set(5, 5, 5);
-    scene.add(pointLight);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(containerWidth, containerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      container.appendChild(renderer.domElement);
 
-    const robotGroup = new THREE.Group();
-    scene.add(robotGroup);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+      const pointLight = new THREE.PointLight(0x9B6EF8, 1.5);
+      pointLight.position.set(5, 5, 5);
+      scene.add(pointLight);
 
-    const headGeo = new THREE.IcosahedronGeometry(1.2, 1);
-    const headMat = new THREE.MeshPhongMaterial({
-      color: 0x9B6EF8,
-      wireframe: true,
-      emissive: 0x490080,
-      emissiveIntensity: 0.6,
-    });
-    const head = new THREE.Mesh(headGeo, headMat);
-    robotGroup.add(head);
+      const robotGroup = new THREE.Group();
+      scene.add(robotGroup);
 
-    const coreGeo = new THREE.SphereGeometry(0.6, 32, 32);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const core = new THREE.Mesh(coreGeo, coreMat);
-    robotGroup.add(core);
+      const headGeo = new THREE.IcosahedronGeometry(1.2, 1);
+      const headMat = new THREE.MeshPhongMaterial({
+        color: 0x9B6EF8,
+        wireframe: true,
+        emissive: 0x490080,
+        emissiveIntensity: 0.6,
+      });
+      const head = new THREE.Mesh(headGeo, headMat);
+      robotGroup.add(head);
 
-    camera.position.z = 4.5;
+      const coreGeo = new THREE.SphereGeometry(0.6, 32, 32);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      robotGroup.add(core);
 
-    const clock = new THREE.Clock();
-    let animationId;
-    const animate = () => {
-      animationId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
-      robotGroup.position.y = Math.sin(t * 1.5) * 0.15;
-      robotGroup.rotation.y += 0.01;
-      robotGroup.rotation.z = Math.sin(t * 0.5) * 0.1;
-      const scale = 1 + Math.sin(t * 4) * 0.15;
-      core.scale.set(scale, scale, scale);
-      renderer.render(scene, camera);
-    };
-    animate();
+      camera.position.z = 4.5;
 
-    const handleResize = () => {
-      if (!container || !camera || !renderer) return;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    window.addEventListener('resize', handleResize);
+      const clock = new THREE.Clock();
+      const animate = () => {
+        animationId = requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        robotGroup.position.y = Math.sin(t * 1.5) * 0.15;
+        robotGroup.rotation.y += 0.01;
+        robotGroup.rotation.z = Math.sin(t * 0.5) * 0.1;
+        const scale = 1 + Math.sin(t * 4) * 0.15;
+        core.scale.set(scale, scale, scale);
+        renderer.render(scene, camera);
+      };
+      animate();
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (animationId) cancelAnimationFrame(animationId);
-      if (renderer && container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
-      if (renderer) renderer.dispose();
-    };
+      const handleResize = () => {
+        if (!container || !camera || !renderer) return;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (animationId) cancelAnimationFrame(animationId);
+        if (renderer && container.contains(renderer.domElement)) {
+          container.removeChild(renderer.domElement);
+        }
+        if (renderer) renderer.dispose();
+      };
+    } catch (e) {
+      console.warn('[VoiceRobotVisualizer] WebGL unavailable, using CSS orb fallback:', e);
+      setWebglFailed(true);
+    }
   }, []);
+
+  if (webglFailed) {
+    return (
+      <div style={{
+        width: '100%',
+        height: '100%',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, #A855F7 0%, #6D28D9 60%, #4C1D95 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)',
+        animation: 'pulse 2s infinite ease-in-out'
+      }}>
+        <div style={{
+          width: '40%',
+          height: '40%',
+          borderRadius: '50%',
+          background: '#FFFFFF',
+          boxShadow: '0 0 12px #FFFFFF'
+        }} />
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }} />
