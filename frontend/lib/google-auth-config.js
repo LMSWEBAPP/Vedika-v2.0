@@ -1,9 +1,9 @@
 import crypto from 'crypto';
-import mysql from 'mysql2/promise';
+import { getFrappeDb } from '@/lib/frappe-db';
 
 let cachedConfig = null;
 let cacheTime = 0;
-const CACHE_TTL_MS = 60 * 1000; // 1 minute in-memory cache
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds in-memory cache
 
 function fernetDecrypt(tokenB64, keyB64) {
   try {
@@ -14,10 +14,11 @@ function fernetDecrypt(tokenB64, keyB64) {
     const ciphertext = token.subarray(25, token.length - 32);
 
     const decipher = crypto.createDecipheriv('aes-128-cbc', encKey, iv);
+    // Node.js crypto handles PKCS7 padding automatically
     let dec = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-    const pad = dec[dec.length - 1];
-    return dec.subarray(0, dec.length - pad).toString('utf8');
+    return dec.toString('utf8');
   } catch (e) {
+    console.error('[Google OAuth] Fernet decryption error:', e.message);
     return null;
   }
 }
@@ -28,46 +29,39 @@ export async function getGoogleOAuthConfig() {
     return cachedConfig;
   }
 
-  let clientId = (process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
-  let clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
+  let clientId = '';
+  let clientSecret = '';
 
-  // If credentials are not present in process.env, securely fetch from database
-  if (!clientId || !clientSecret) {
-    try {
-      if (process.env.DB_HOST && process.env.DB_USER) {
-        const connection = await mysql.createConnection({
-          host: process.env.DB_HOST,
-          port: Number(process.env.DB_PORT) || 4000,
-          user: process.env.DB_USER,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_NAME || 'test',
-          ssl: { rejectUnauthorized: false }
-        });
-
-        if (!clientId) {
-          const [keyRows] = await connection.execute(
-            "SELECT client_id FROM `tabSocial Login Key` WHERE name = 'google' LIMIT 1"
-          );
-          if (keyRows.length > 0 && keyRows[0].client_id) {
-            clientId = keyRows[0].client_id;
-          }
-        }
-
-        if (!clientSecret) {
-          const [authRows] = await connection.execute(
-            "SELECT password FROM `__Auth` WHERE doctype = 'Social Login Key' AND name = 'google' AND fieldname = 'client_secret' LIMIT 1"
-          );
-          if (authRows.length > 0 && authRows[0].password) {
-            const encKey = process.env.ENCRYPTION_KEY || '8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=';
-            clientSecret = fernetDecrypt(authRows[0].password, encKey);
-          }
-        }
-
-        await connection.end();
-      }
-    } catch (err) {
-      console.warn('[Google OAuth Config] Failed to load credentials from database:', err.message);
+  // 1. Authoritative source: Query TiDB directly for registered client credentials
+  try {
+    const pool = getFrappeDb();
+    const [keyRows] = await pool.query(
+      "SELECT client_id FROM `tabSocial Login Key` WHERE name = 'google' LIMIT 1"
+    );
+    if (keyRows && keyRows.length > 0 && keyRows[0].client_id) {
+      clientId = keyRows[0].client_id.trim();
     }
+
+    const [authRows] = await pool.query(
+      "SELECT password FROM `__Auth` WHERE doctype = 'Social Login Key' AND name = 'google' AND fieldname = 'client_secret' LIMIT 1"
+    );
+    if (authRows && authRows.length > 0 && authRows[0].password) {
+      const encKey = process.env.ENCRYPTION_KEY || '8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=';
+      const decrypted = fernetDecrypt(authRows[0].password, encKey);
+      if (decrypted) {
+        clientSecret = decrypted.trim();
+      }
+    }
+  } catch (dbErr) {
+    console.warn('[Google OAuth Config] Database query notice:', dbErr.message);
+  }
+
+  // 2. Fall back to environment variables if database didn't provide credentials
+  if (!clientId) {
+    clientId = (process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
+  }
+  if (!clientSecret) {
+    clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
   }
 
   cachedConfig = { clientId, clientSecret };
@@ -75,30 +69,8 @@ export async function getGoogleOAuthConfig() {
   return cachedConfig;
 }
 
-export async function getGoogleClientSecretFallback() {
-  try {
-    if (process.env.DB_HOST && process.env.DB_USER) {
-      const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        port: Number(process.env.DB_PORT) || 4000,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || 'test',
-        ssl: { rejectUnauthorized: false }
-      });
-
-      const [authRows] = await connection.execute(
-        "SELECT password FROM `__Auth` WHERE doctype = 'Social Login Key' AND name = 'google' AND fieldname = 'client_secret' LIMIT 1"
-      );
-      await connection.end();
-
-      if (authRows.length > 0 && authRows[0].password) {
-        const encKey = process.env.ENCRYPTION_KEY || '8kAnz-VWclIhMghrU8g_39K2setlLtLR_9PJL1BjRxY=';
-        return fernetDecrypt(authRows[0].password, encKey);
-      }
-    }
-  } catch (err) {
-    console.warn('[Google OAuth Fallback] Failed to fetch secret from database:', err.message);
-  }
-  return null;
+export async function getAlternativeClientSecret() {
+  // Return the environment variable secret if it differs from the database secret
+  const envSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
+  return envSecret || null;
 }

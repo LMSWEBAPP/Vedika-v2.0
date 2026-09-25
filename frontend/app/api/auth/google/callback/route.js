@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import mysql from 'mysql2/promise';
-import { getGoogleOAuthConfig, getGoogleClientSecretFallback } from '@/lib/google-auth-config';
+import { getGoogleOAuthConfig, getAlternativeClientSecret } from '@/lib/google-auth-config';
 
 export async function POST(request) {
   try {
@@ -31,12 +31,12 @@ export async function POST(request) {
     let tokenRes = await exchangeToken(clientSecret);
     let tokenData = await tokenRes.json();
 
-    // Resilient auto-fallback: If configured secret is rejected by Google, query database for fallback secret
+    // Resilient auto-fallback: If initial exchange fails with client secret error, try alternative secret
     if (!tokenRes.ok && (tokenData.error === 'invalid_client' || (tokenData.error_description || '').includes('client secret') || (tokenData.error || '').includes('client secret'))) {
-      console.warn('[Google OAuth] Configured secret was rejected by Google. Retrying with database secret fallback...');
-      const fallbackSecret = await getGoogleClientSecretFallback();
-      if (fallbackSecret && fallbackSecret !== clientSecret) {
-        tokenRes = await exchangeToken(fallbackSecret);
+      const altSecret = await getAlternativeClientSecret();
+      if (altSecret && altSecret !== clientSecret) {
+        console.warn('[Google OAuth] Retrying token exchange with alternative secret...');
+        tokenRes = await exchangeToken(altSecret);
         tokenData = await tokenRes.json();
       }
     }
