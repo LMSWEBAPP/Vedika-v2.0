@@ -62,7 +62,7 @@ with open(path, 'w') as f:
 fi
 
 # Apply environment configurations dynamically
-CORS_ORIGIN="${FRONTEND_URL:-http://localhost:3000}"
+CORS_ORIGIN="${FRONTEND_URL:-https://vedika-v20c.vercel.app,http://localhost:3000}"
 bench set-mariadb-host "$DB_HOST"
 bench set-config -g db_port "$DB_PORT"
 bench set-config -g allow_cors "$CORS_ORIGIN"
@@ -86,13 +86,13 @@ cat <<EOF > sites/lms.render/site_config.json
 }
 EOF
 
-# Parse FRONTEND_URL to configure allow_cors correctly (supporting single, multiple comma-separated, or wildcard origins)
+# Parse FRONTEND_URL to configure allow_cors correctly (supporting single or multiple comma-separated trusted origins)
 python3 -c "
 import json, os
 path = 'sites/lms.render/site_config.json'
 with open(path, 'r') as f:
     config = json.load(f)
-frontend_url = os.environ.get('FRONTEND_URL') or '*'
+frontend_url = os.environ.get('FRONTEND_URL') or 'https://vedika-v20c.vercel.app,http://localhost:3000'
 if ',' in frontend_url:
     config['allow_cors'] = [u.strip() for u in frontend_url.split(',') if u.strip()]
 else:

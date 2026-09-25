@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAllKeys } from '@/lib/keys';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 function formatTimestamp(seconds) {
   const total = Math.floor(seconds || 0);
@@ -63,10 +64,17 @@ export async function POST(request) {
   let transcriptSnippet = '';
 
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const body = await request.json().catch(() => ({}));
     const videoId = body.videoId;
     title = body.title || '';
     const userQuestion = body.userQuestion || '';
+
+    if (userQuestion && typeof userQuestion === 'string' && userQuestion.length > 2000) {
+      return NextResponse.json({ error: 'Question exceeds maximum length limit of 2,000 characters.' }, { status: 400 });
+    }
 
     if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(String(videoId).trim())) {
       return NextResponse.json({ error: 'Valid 11-character YouTube videoId is required' }, { status: 400 });

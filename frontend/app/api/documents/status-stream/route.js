@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+  const documentId = searchParams.get('documentId');
   const cookieHeader = request.headers.get('cookie') || '';
   const cookieMatch = cookieHeader.match(/(?:token|jwt)=([^;]+)/);
   const token = request.headers.get('Authorization') || (cookieMatch ? cookieMatch[1] : null);

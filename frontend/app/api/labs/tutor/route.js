@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { callGemini } from '@/lib/gemini';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const { 
       experiment, 
       subject = 'physics', 

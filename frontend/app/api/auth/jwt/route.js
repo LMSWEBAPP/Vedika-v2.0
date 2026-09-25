@@ -17,7 +17,7 @@ export async function GET(request) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (!sid) {
-      if (isDev) {
+      if (isDev && process.env.ALLOW_DEV_MOCK_AUTH === 'true') {
         console.warn("[JWT Proxy] Dev mode fallback: No session found. Generating dev JWT token...");
         const mockPayload = {
           user_id: 'student@lms.com',
@@ -30,7 +30,10 @@ export async function GET(request) {
       return NextResponse.json({ error: 'No active session identifier found.' }, { status: 401 });
     }
     
-    const frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
+    let frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
+    if (frappeUrl.includes('vyomanta.onrender.com')) {
+      frappeUrl = 'https://vedika-v2-0.onrender.com';
+    }
     const exchangeUrl = `${frappeUrl}/api/method/lms.lms.api.get_jwt`;
     
     try {

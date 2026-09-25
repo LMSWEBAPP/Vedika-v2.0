@@ -1,0 +1,77 @@
+name: Production Security & Quality Gates
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    name: Security & Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run dependency vulnerability audit
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
+
+      - name: Validate secrets are not tracked by Git
+        run: |
+          if git ls-files | grep -E '(\.env$|backup\.sql|\.key$|\.pem$)'; then
+            echo "CRITICAL: Secret or database dump file found tracked in repository!"
+            exit 1
+          fi
+          echo "Secret check passed: No environment or dump files tracked."
+
+  build-validation:
+    name: Production Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Verify production build
+        working-directory: ./frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          DB_HOST: "127.0.0.1"
+          DB_PORT: "3306"
+          DB_USER: "root"
+          DB_PASSWORD: "mock_password"
+          DB_NAME: "test"
+          DB_RESOURCES_NAME: "pdf_resources_db"
+          DB_SSL: "false"
+          ENCRYPTION_KEY: "0123456789012345678901234567890123456789012="
+          INTERNAL_SERVICE_TOKEN: "internal_ci_test_token"
+          FRAPPE_URL: "https://vedika-v2-0.onrender.com"
+          NEXT_PUBLIC_FRAPPE_URL: "https://vedika-v2-0.onrender.com"
+          GOOGLE_CLIENT_ID: "852120357354-nmq14kj51lhouqgvvob7100amv4dbd7r.apps.googleusercontent.com"
+          GEMINI_API_KEY: "mock_key_for_build"
+          UPSTASH_REDIS_REST_URL: "https://mock.upstash.io"
+          UPSTASH_REDIS_REST_TOKEN: "mock_token"
+        run: npm run build

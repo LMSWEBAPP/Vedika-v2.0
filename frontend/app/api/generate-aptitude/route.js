@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { callGemini } from '@/lib/gemini';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 const TOPIC_CATEGORIES = {
   "Quantitative Aptitude": [
@@ -120,6 +121,9 @@ function safeParseGeminiJSON(rawText) {
 
 export async function POST(req) {
   try {
+    const auth = await authenticateRequest(req, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
+
     const body = await req.json().catch(() => ({}));
     const difficulty = body.difficulty || 'Medium';
     const topic = body.topic || 'General Aptitude';

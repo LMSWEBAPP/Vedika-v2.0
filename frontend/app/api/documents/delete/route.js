@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyJwt } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/serverAuth';
 import { deleteFromB2 } from '@/lib/b2';
 import pool from '@/lib/db';
 import { Redis } from '@upstash/redis';
@@ -12,14 +13,11 @@ const redis = new Redis({
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const payload = verifyJwt(authHeader);
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized JWT token.' }, { status: 401 });
-    }
+    const auth = await authenticateRequest(request, { requireAuth: true });
+    if (!auth.authenticated) return auth.response;
     
-    const userId = payload.user_id;
-    const tenantId = payload.tenant_id;
+    const userId = auth.user.user_id;
+    const tenantId = auth.user.tenant_id || 'default';
     
     const { documentId, sessionId } = await request.json();
     if (!documentId || !sessionId) {
