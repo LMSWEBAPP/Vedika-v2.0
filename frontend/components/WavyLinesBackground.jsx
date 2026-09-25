@@ -5,14 +5,14 @@ import gsap from 'gsap';
 
 const DEFAULT_WAVE_CONFIG = {
   wave1: {
-    top: -15,       // vh
-    left: -20,      // vw
-    width: 160,     // vw
+    top: -6,        // vh
+    left: -18,      // vw
+    width: 120,     // vw
     height: 65,     // vh
-    rot: -24,       // deg
-    scale: 1.0,     // multiplier
-    blur: 0.9,      // px
-    opacity: 1.0,   // 0.1 to 1.0
+    rot: -23,       // deg
+    scale: 0.95,    // multiplier
+    blur: 1.9,      // px
+    opacity: 0.7,   // 0.1 to 1.0
   },
   wave2: {
     bottom: -25,    // vh
@@ -25,8 +25,8 @@ const DEFAULT_WAVE_CONFIG = {
     opacity: 1.0,   // 0.1 to 1.0
   },
   global: {
-    speedMult: 1.0, // multiplier
-    sway: 30,       // px
+    speedMult: 0.6, // multiplier
+    sway: 26,       // px
   }
 };
 
@@ -36,7 +36,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const [waveConfig, setWaveConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_wavy_bg_config_v1');
+        const saved = localStorage.getItem('vedika_wavy_bg_config_v2');
         if (saved) {
           const parsed = JSON.parse(saved);
           return {
@@ -54,6 +54,55 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const [activeTab, setActiveTab] = useState('wave1'); // 'wave1' | 'wave2' | 'global'
   const [copiedToast, setCopiedToast] = useState(false);
 
+  // Dragging state for moveable studio dock
+  const [dockPos, setDockPos] = useState({ x: 0, y: 72 });
+  const [hasPositioned, setHasPositioned] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !hasPositioned) {
+      // Default to top-right corner so the bottom wave is 100% visible
+      const initialX = Math.max(20, window.innerWidth - 410);
+      const initialY = 72;
+      setDockPos({ x: initialX, y: initialY });
+      setHasPositioned(true);
+    }
+  }, [hasPositioned]);
+
+  const handlePointerDown = (e) => {
+    // Only drag from the header handle, don't hijack buttons or inputs
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    setIsDragging(true);
+    dragOffsetRef.current = {
+      x: e.clientX - dockPos.x,
+      y: e.clientY - dockPos.y,
+    };
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch (err) {}
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    const newX = e.clientX - dragOffsetRef.current.x;
+    const newY = e.clientY - dragOffsetRef.current.y;
+    const maxX = Math.max(10, window.innerWidth - 385);
+    const maxY = Math.max(10, window.innerHeight - 120);
+    setDockPos({
+      x: Math.max(10, Math.min(maxX, newX)),
+      y: Math.max(10, Math.min(maxY, newY)),
+    });
+  };
+
+  const handlePointerUp = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    } catch (err) {}
+  };
+
   const handleConfigChange = useCallback((section, key, value) => {
     setWaveConfig(prev => {
       const next = {
@@ -64,7 +113,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         }
       };
       try {
-        localStorage.setItem('vedika_wavy_bg_config_v1', JSON.stringify(next));
+        localStorage.setItem('vedika_wavy_bg_config_v2', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -81,7 +130,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const resetConfig = () => {
     setWaveConfig(DEFAULT_WAVE_CONFIG);
     try {
-      localStorage.setItem('vedika_wavy_bg_config_v1', JSON.stringify(DEFAULT_WAVE_CONFIG));
+      localStorage.setItem('vedika_wavy_bg_config_v2', JSON.stringify(DEFAULT_WAVE_CONFIG));
     } catch (e) {}
   };
 
@@ -120,7 +169,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         tweens.push(tw);
       });
 
-      const swayAmt = waveConfig.global.sway ?? 30;
+      const swayAmt = waveConfig.global.sway ?? 26;
       const swayTw = gsap.to(svg, {
         x: svgIdx === 0 ? swayAmt : -swayAmt,
         y: svgIdx === 0 ? -(swayAmt * 0.5) : (swayAmt * 0.5),
@@ -240,7 +289,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
           >
             <path d="M922.2,511.6c-21.53923-17.43958-35.938-11.09444-60.00017-5.09947-30.82048,6.65386-38.82186,17.57216-59.99945,38.30012-14.574,13.707-25.45729,16.32132-44.00046,8.69859-15.062-6.40585-28.55674-7.89069-43.99994-1.89866-37.31019,15.51353-56.93712-17.92116-92-19.301-13.25485-.6424-26.73655,2.92581-39.99993,1.8003-9.186-.5249-18.78164-2.48484-28-2.49985-27.91752-.08951-42.63844,22.77319-72,11.19963-9.46063-3.36911-18.825-8.46031-28-12.49965-22.792-11.17955-47.59671-7.84308-72.00011-6.69942-9.0046.50758-18.95856.91725-27.99994.79935-6.425-.20835-13.68207-.27534-19.99992,1.10027-10.08307,2.00929-19.17407,8.25553-28,13.19988-41.01319,25.76442-53.86731-35.06149-92-29.90061-12.28343,1.841-23.92675,7.79218-36,10.50054-16.95934,3.18035-35.66181,5.47743-52-1.39968C101.28752,507.8918,79.24021,481.74572,50.2,488.4995,31.41714,494.12637,14.66811,511.39267-5.8,500.5" fill="none" stroke="#14b1ab" strokeDasharray="28 2" strokeWidth="1.6"/>
             <path d="M922.2,526c-8.87737-8.10806-19.5582-16.03077-32.0002-16.69971-17.92667-.32772-36.35655,4.84038-51.9999,13.49912-10.77223,6.4889-19.78159,16.42881-27.99983,25.8006-10.1665,11.30037-22.8672,27.26115-40,23.09976-13.42619-3.54931-25.56871-13.453-40.0001-12.79957-11.14419.41683-21.25337,6.76161-32,8.9-12.64528,2.38695-25.48274-2.54884-36-9.30054-36.38527-24.76358-39.15583-29.03836-84.00012-23.29893-12.14621,1.25218-24.63522,3.61652-35.99985,8.19957-10.83917,4.26311-21.00012,11.22992-32,15.09984-21.42558,7.7233-41.84681-6.79861-60-16.50029-19.42008-11.25666-41.62022-16.5733-64.0002-16.49915-15.85242.15755-32.43839.15429-47.99985,3.3987-16.69359,4.04168-28.54265,18.31265-43.9998,24.90073-27.59856,10.58178-43.49119-26.03958-68.00047-31.79965-16.01707-3.88292-32.23571,2.93106-47.99969,5.19911-11.78042,1.53114-24.09733,3.30736-36,3.00068-9.89279-.55909-19.72-4.84545-28-10.10052-24.10617-15.30107-46.83513-34.9667-76-17.79911C24.43464,509.95972,10.00693,517.57848-5.8,510.19994" fill="none" stroke="#f9d56e" strokeDasharray="19 2" strokeWidth="1.6"/>
-            <path d="M922.2,538.9c-8.885-9.07112-19.075-18.84481-32.00015-21.29978-19.92581-3.5035-40.48259,4.93627-55.99989,17.09959-10.56191,8.48035-19.39429,19.839-27.99987,30.20029-10.02844,11.82479-23.01589,26.43207-40.0002,18.89921-14.01619-5.7546-27.99941-17.42642-43.9999-13.09869-8.06094,1.89311-15.94264,6.30534-24,8.19936-12.50182,3.31825-25.77121-1.20473-35.99994-8.50034-25.17093-18.69771-40.158-44.74917-76.00017-36.29883-26.58411,5.38352-48.11281,23.5378-71.99981,35.19944-36.28444,17.05974-67.82326-23.444-100.00033-35.19951-20.15168-8.10942-42.93957-8.5294-63.99972-4.00042-33.28824,4.67376-48.932,42.95688-75.9998,35.00052-14.97164-5.2603-25.894-18.46409-40.00036-25.40019-13.45135-7.01655-29.31582-5.90539-43.99985-5.5001-9.14414.304-18.87457.24289-28,.99956-9.11415.85989-18.8504,2.34642-28,1.1-31.62172-5.21931-51.66955-40.71383-88.00019-26.09934C29.48768,517.27094,13.09828,529.85025-5.8,522.00029" fill="none" stroke="#e8505b" strokeDasharray="22 4" strokeWidth="1.6"/>
+            <path d="M922.2,538.9c-8.885-9.07112-19.075-18.84481-32.00015-21.29978-19.92581-3.5035-40.48259,4.93627-55.99989,17.09959-10.56191,8.48035-19.39429,19.839-27.99987,30.20029-10.02844,11.82479-23.01589,26.43207-40.0002,18.89921-14.01619-5.7546-27.90941-17.42642-43.9999-13.09869-8.06094,1.89311-15.94264,6.30534-24,8.19936-12.50182,3.31825-25.77121-1.20473-35.99994-8.50034-25.17093-18.69771-40.158-44.74917-76.00017-36.29883-26.58411,5.38352-48.11281,23.5378-71.99981,35.19944-36.28444,17.05974-67.82326-23.444-100.00033-35.19951-20.15168-8.10942-42.93957-8.5294-63.99972-4.00042-33.28824,4.67376-48.932,42.95688-75.9998,35.00052-14.97164-5.2603-25.894-18.46409-40.00036-25.40019-13.45135-7.01655-29.31582-5.90539-43.99985-5.5001-9.14414.304-18.87457.24289-28,.99956-9.11415.85989-18.8504,2.34642-28,1.1-31.62172-5.21931-51.66955-40.71383-88.00019-26.09934C29.48768,517.27094,13.09828,529.85025-5.8,522.00029" fill="none" stroke="#e8505b" strokeDasharray="22 4" strokeWidth="1.6"/>
             <path d="M922.2,550.3c-8.94734-10.06834-18.74671-21.31035-32.00009-25.49983-22.3972-6.79782-44.38237,7.62826-60,22.49986-8.56236,8.43722-16.49377,18.73913-23.99989,28.1001-9.38444,11.82063-23.32077,27.69064-40.00017,20.19928-14.1097-5.97464-27.57012-18.70924-43.99984-15.29894-8.0954,1.54621-16.05595,5.70644-24.00007,7.79959-23.85078,6.55337-41.42774-10.41065-55.99971-26.80066-13.25432-14.89786-29.8539-33.64257-52.00044-28.99875C574.861,535.19654,562.2226,545.815,550.2,555.09991c-15.34566,11.70537-32.27338,24.44164-51.9998,26.70047-48.36031,1.51217-75.21916-58.91115-128.00037-53.99979a97.63229,97.63229,0,0,0-35.9999,11.099c-19.74535,9.8579-36.14094,37.93455-59.99957,34.401-16.06178-3.72757-28.65165-16.29191-44.00056-21.90035-10.09905-4.07982-21.36472-6.07995-31.99978-8.20035-10.41138-2.10733-21.34551-4.45261-32-4.8-11.94088-.34427-24.05212,3.453-36,2.8-11.4616-.5661-22.17978-6.446-31.99994-11.90015-22.83485-12.907-40.08684-14.61917-63.99994-2.39911C21.95937,532.84205,7.70533,537.67685-5.8,533.19988" fill="none" stroke="#38bdf8" strokeDasharray="9 2" strokeWidth="1.6"/>
             <path d="M922.2,560.6c-8.86964-11.04682-18.45164-23.48185-32-28.9-25.24762-9.059-47.83356,12.73465-64.00016,29.49962-15.502,14.84328-34.8733,55.35139-59.99936,45.90079-24.38455-10.53124-31.1263-23.31738-60.00054-12.29948-40.07131,14.732-57.28326-18.24992-79.99965-43.80134-8.22409-9.04117-19.0655-18.36184-32.00033-18.09916-24.00275,1.7834-37.89008,25.15894-56.00031,38.09934-35.69743,26.05559-67.643,18.57747-99.99941-8.09987-19.74507-15.482-40.92976-36.12209-68.00022-33.59949-17.63944,2.50681-34.18816,11.63862-48.00006,22.59968-14.54567,11.09954-28.10443,28.72542-47.99978,28.50062-14.14059-.60448-27.0355-8.20021-40.00016-13.10016-10.43844-4.23986-21.66358-7.902-32-12.40007-10.37235-4.35825-20.92873-9.89415-32-12.29993-25.26976-4.54913-40.87739,12.99875-68,1.49932-15.0165-6.46536-31.41508-12.66353-48.00015-9.19855C34.2535,539.07693,15.27547,551.96842-5.8,547.30065" fill="none" stroke="#c084fc" strokeDasharray="10 2" strokeWidth="1.6"/>
             <path d="M922.2,570.5c-34.2366-50.7533-58.75645-38.53765-96.00038.40032-9.6848,10.24149-18.40557,22.38423-27.99957,32.69978-9.33094,10.15289-21.90917,18.96775-36.00023,12.79927-14.04359-6.24008-27.64646-17.57417-43.99991-14.89859-7.88949,1.01144-16.07065,3.84494-23.99994,4.59934-31.653,3.84107-46.82944-19.71512-63.99975-41.6005-9.35744-11.57117-20.19374-25.668-36.00012-27.5995-23.226-.813-38.55488,27.4448-56.00051,39.69937-29.67121,21.37947-72.73806,15.76231-99.99927-7.09956-20.50586-15.08491-39.9873-40.14723-68.00018-37.70033-20.953,3.67979-39.55662,18.53834-56.00045,31.3-17.2389,14.2643-32.298,25.53354-55.99984,22.39992-18.28956-1.9058-36.22224-8.44791-51.99984-17.79924-14.20742-8.11769-27.17484-21.11249-43.99981-23.20031-19.719-1.28929-36.08529,15.45847-56.0003,13.3999C98.25368,557.12845,89.9978,554.3,82.2,552.70043a90.01494,90.01494,0,0,0-24-1.69991c-21.52647,1.87731-42.00025,12.97-64,9.99977" fill="none" stroke="#14b1ab" strokeDasharray="9 3" strokeWidth="1.6"/>
@@ -255,18 +304,20 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         </div>
       </div>
 
-      {/* ── 3. TEMPORARY CUSTOMIZATION TUNER DOCK FOR ASK VEDIKA BACKGROUND ── */}
+      {/* ── 3. MOVEABLE ANYWHERE CUSTOMIZATION TUNER DOCK FOR ASK VEDIKA ── */}
       <div
         style={{
           position: 'fixed',
-          bottom: 24,
-          right: 24,
+          bottom: showTuner ? 'auto' : 24,
+          right: showTuner ? 'auto' : 24,
+          left: showTuner ? `${dockPos.x}px` : 'auto',
+          top: showTuner ? `${dockPos.y}px` : 'auto',
           zIndex: 99999,
           pointerEvents: 'auto',
           fontFamily: 'var(--font-outfit), "Plus Jakarta Sans", system-ui, sans-serif',
         }}
       >
-        {/* Toggle Pill Button */}
+        {/* Toggle Pill Button (when collapsed) */}
         {!showTuner ? (
           <button
             onClick={() => setShowTuner(true)}
@@ -311,43 +362,81 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
             />
           </button>
         ) : (
-          /* Studio Control Panel */
+          /* Moveable Studio Control Panel Window */
           <div
             style={{
               width: 375,
               maxHeight: 'calc(100vh - 100px)',
               display: 'flex',
               flexDirection: 'column',
-              background: 'rgba(8, 12, 24, 0.94)',
-              border: '1px solid rgba(255, 255, 255, 0.16)',
+              background: 'rgba(8, 12, 24, 0.95)',
+              border: isDragging ? '1px solid rgba(20, 177, 171, 0.6)' : '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 18,
-              boxShadow: '0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+              boxShadow: isDragging
+                ? '0 30px 80px rgba(0, 0, 0, 0.9), 0 0 24px rgba(20, 177, 171, 0.3)'
+                : '0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
               overflow: 'hidden',
-              animation: 'dockFadeIn 0.2s ease-out',
+              userSelect: isDragging ? 'none' : 'auto',
+              transition: isDragging ? 'box-shadow 0.15s ease, border-color 0.15s ease' : 'border-color 0.2s ease',
             }}
           >
-            {/* Header */}
+            {/* Draggable Header Bar */}
             <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
               style={{
-                padding: '14px 16px 12px',
+                padding: '12px 16px',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'rgba(255, 255, 255, 0.02)',
+                background: isDragging
+                  ? 'linear-gradient(135deg, rgba(20, 177, 171, 0.18) 0%, rgba(192, 132, 252, 0.18) 100%)'
+                  : 'rgba(255, 255, 255, 0.03)',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                userSelect: 'none',
+                touchAction: 'none',
               }}
+              title="Click and drag to move panel anywhere on screen"
             >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 15 }}>🌊</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.01em' }}>
-                    Ask Vedika Waves Studio
-                  </span>
-                </div>
-                <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 2 }}>
-                  Live 60fps real-time background positioning
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    color: '#94A3B8',
+                    fontSize: 16,
+                    letterSpacing: '-2px',
+                    display: 'inline-flex',
+                    opacity: 0.8,
+                  }}
+                >
+                  ⠿
+                </span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 14 }}>🌊</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.01em' }}>
+                      Waves Studio
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: 'rgba(20, 177, 171, 0.2)',
+                        color: '#14B1AB',
+                        border: '1px solid rgba(20, 177, 171, 0.35)',
+                      }}
+                    >
+                      DRAG
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 1 }}>
+                    Hold header & move anywhere on screen
+                  </div>
                 </div>
               </div>
 

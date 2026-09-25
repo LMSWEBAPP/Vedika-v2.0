@@ -102,13 +102,14 @@ export default function HeroSection() {
     rotZ: -26,
     ringDensity: 1.0,
     dustIntensity: 0.75,
+    ringRotationSpeed: 0.42,
     speed: 0.42,
   };
 
   const [particlesConfig, setParticlesConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_hero_particles_config_v4');
+        const saved = localStorage.getItem('vedika_hero_particles_config_v5');
         if (saved) return { ...DEFAULT_PARTICLES, ...JSON.parse(saved) };
       } catch (e) {}
     }
@@ -122,7 +123,7 @@ export default function HeroSection() {
     setParticlesConfig(prev => {
       const next = { ...prev, [key]: Number(value) };
       try {
-        localStorage.setItem('vedika_hero_particles_config_v4', JSON.stringify(next));
+        localStorage.setItem('vedika_hero_particles_config_v5', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -139,7 +140,7 @@ export default function HeroSection() {
   const resetConfig = () => {
     setParticlesConfig(DEFAULT_PARTICLES);
     try {
-      localStorage.setItem('vedika_hero_particles_config_v4', JSON.stringify(DEFAULT_PARTICLES));
+      localStorage.setItem('vedika_hero_particles_config_v5', JSON.stringify(DEFAULT_PARTICLES));
     } catch (e) {}
   };
 
@@ -759,9 +760,10 @@ export default function HeroSection() {
                 Density, Dust & Speed FX
               </div>
               {[
-                { key: 'ringDensity', label: 'Ring Density (Thickness & Particles)', min: 0.2, max: 2.5, step: 0.05, color: '#38BDF8' },
-                { key: 'dustIntensity', label: 'Golden Dust Intensity (Sparkle & Size)', min: 0.1, max: 3.0, step: 0.05, color: '#FACC15' },
-                { key: 'speed', label: 'Orbit Rotation Speed', min: 0.05, max: 1.5, step: 0.02, color: '#C084FC' },
+                { key: 'ringRotationSpeed', label: 'Ring Rotation Speed', min: 0.0, max: 2.0, step: 0.02, color: '#C084FC' },
+                { key: 'speed', label: 'Particle Flow Speed', min: 0.05, max: 1.8, step: 0.02, color: '#A855F7' },
+                { key: 'ringDensity', label: 'Ring Density (Thickness & Count)', min: 0.2, max: 2.5, step: 0.05, color: '#38BDF8' },
+                { key: 'dustIntensity', label: 'Golden Dust Intensity (Sparkle)', min: 0.1, max: 3.0, step: 0.05, color: '#FACC15' },
               ].map(({ key, label, min, max, step, color }) => (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>

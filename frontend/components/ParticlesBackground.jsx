@@ -78,8 +78,12 @@ export class ParticlesSwarm {
     }
 
     this.speedMult = initialTransform?.speed ?? 0.42;
+    this.ringRotationSpeed = initialTransform?.ringRotationSpeed ?? 0.42;
     this.ringDensity = initialTransform?.ringDensity ?? 1.0;
     this.dustIntensity = initialTransform?.dustIntensity ?? 0.75;
+    this.simTime = 0;
+    this.ringSpinTime = 0;
+    this.rawRotZ = initialTransform?.rotZ ?? -26;
 
     // Default transform
     const defaultTransform = {
@@ -93,6 +97,7 @@ export class ParticlesSwarm {
       ringDensity: 1.0,
       dustIntensity: 0.75,
       speed: 0.42,
+      ringRotationSpeed: 0.42,
     };
     this.updateTransform(initialTransform || defaultTransform);
 
@@ -112,7 +117,8 @@ export class ParticlesSwarm {
     const s = t?.scale ?? 0.9;
     const rx = ((t?.rotX ?? 115) * Math.PI) / 180;
     const ry = ((t?.rotY ?? -5) * Math.PI) / 180;
-    const rz = ((t?.rotZ ?? -26) * Math.PI) / 180;
+    this.rawRotZ = t?.rotZ ?? -26;
+    const rz = (this.rawRotZ * Math.PI) / 180;
 
     this.swarmGroup.position.set(px, py, pz);
     this.swarmGroup.scale.set(s, s, s);
@@ -120,6 +126,9 @@ export class ParticlesSwarm {
 
     if (t?.speed !== undefined) {
       this.speedMult = Number(t.speed);
+    }
+    if (t?.ringRotationSpeed !== undefined) {
+      this.ringRotationSpeed = Number(t.ringRotationSpeed);
     }
     if (t?.ringDensity !== undefined) {
       this.ringDensity = Math.max(0.1, Number(t.ringDensity));
@@ -146,7 +155,10 @@ export class ParticlesSwarm {
 
   animate() {
     this.animationFrameId = requestAnimationFrame(this.animate);
-    const time = this.clock.getElapsedTime() * this.speedMult;
+    const delta = Math.min(this.clock.getDelta(), 0.08);
+    this.simTime = (this.simTime || 0) + delta * (this.speedMult ?? 0.42);
+    this.ringSpinTime = (this.ringSpinTime || 0) + delta * (this.ringRotationSpeed ?? 0.42);
+    const time = this.simTime;
 
     // Mathematical simulation: expanded to 16 concentric lanes for medium-sized, majestic rings
     const s = 50;
@@ -159,7 +171,7 @@ export class ParticlesSwarm {
     const tau = 6.283185307179586;
     const TOTAL_LANES = 16;
     const rows = Math.max(1, Math.ceil(n / TOTAL_LANES));
-    const t = time * v;
+    const t = this.ringSpinTime * v;
     const dt = time * (0.8 + d);
 
     for (let i = 0; i < this.count; i++) {
@@ -339,6 +351,7 @@ export default function ParticlesBackground({
   rotZ = -26,
   ringDensity = 1.0,
   dustIntensity = 0.75,
+  ringRotationSpeed = 0.42,
   speed = 0.42,
   className,
   style,
@@ -360,6 +373,7 @@ export default function ParticlesBackground({
       rotZ,
       ringDensity,
       dustIntensity,
+      ringRotationSpeed,
       speed,
     });
     swarmRef.current = swarm;
@@ -382,10 +396,11 @@ export default function ParticlesBackground({
         rotZ,
         ringDensity,
         dustIntensity,
+        ringRotationSpeed,
         speed,
       });
     }
-  }, [posX, posY, posZ, scale, rotX, rotY, rotZ, ringDensity, dustIntensity, speed]);
+  }, [posX, posY, posZ, scale, rotX, rotY, rotZ, ringDensity, dustIntensity, ringRotationSpeed, speed]);
 
   return (
     <canvas
