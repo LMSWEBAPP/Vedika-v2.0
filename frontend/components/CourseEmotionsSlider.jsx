@@ -209,23 +209,63 @@ export default function CourseEmotionsSlider({
 
                       {/* Footer CTA Button */}
                       <div className="emotions-slider-item__footer">
-                        <button
-                          type="button"
-                          className="emotions-slider-item__btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isCategory) {
+                        {isCategory ? (
+                          <button
+                            type="button"
+                            className="emotions-slider-item__btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               onSelectCategory && onSelectCategory(c.title);
-                            } else {
-                              onSelectCourse && onSelectCourse(c);
-                            }
-                          }}
-                        >
-                          <span>{isCategory ? `Explore ${c.title}` : (isEnrolled ? 'Open Course' : 'Explore Course')}</span>
-                          <span className="emotions-slider-item__btn-icon">
-                            <ArrowUpRight size={16} />
-                          </span>
-                        </button>
+                            }}
+                          >
+                            <span>Explore {c.title}</span>
+                            <span className="emotions-slider-item__btn-icon">
+                              <ArrowUpRight size={16} />
+                            </span>
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+                            <button
+                              type="button"
+                              className="emotions-slider-item__btn"
+                              style={{ flex: 1 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectCourse && onSelectCourse(c);
+                              }}
+                            >
+                              <span>{isEnrolled ? 'Open Course' : 'View Syllabus'}</span>
+                              <span className="emotions-slider-item__btn-icon">
+                                <ArrowUpRight size={16} />
+                              </span>
+                            </button>
+                            {!isEnrolled && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEnrollFromCard && onEnrollFromCard(c.id, e);
+                                }}
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.08)',
+                                  color: '#ffffff',
+                                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                                  padding: '8px 14px',
+                                  borderRadius: 10,
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                              >
+                                Enroll
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

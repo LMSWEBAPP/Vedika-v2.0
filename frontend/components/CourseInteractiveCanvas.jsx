@@ -14,22 +14,22 @@ const SHAPE_CONFIGS = {
   Tetrahedron: {
     color: 0xffb6c1,
     accentHex: '#ec4899',
-    createGeometry: () => new THREE.TetrahedronGeometry(2.3, 0)
+    createGeometry: () => new THREE.TetrahedronGeometry(1.8, 0)
   },
   Octahedron: {
     color: 0xb2d8d8,
     accentHex: '#06b6d4',
-    createGeometry: () => new THREE.OctahedronGeometry(2.2, 0)
+    createGeometry: () => new THREE.OctahedronGeometry(1.75, 0)
   },
   Icosahedron: {
     color: 0xc9a0dc,
     accentHex: '#a855f7',
-    createGeometry: () => new THREE.IcosahedronGeometry(2.2, 0)
+    createGeometry: () => new THREE.IcosahedronGeometry(1.75, 0)
   },
   TorusKnot: {
     color: 0xfde047,
     accentHex: '#eab308',
-    createGeometry: () => new THREE.TorusKnotGeometry(1.5, 0.45, 64, 8)
+    createGeometry: () => new THREE.TorusKnotGeometry(1.15, 0.35, 64, 8)
   }
 };
 
@@ -45,12 +45,12 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
 
     try {
       const width = container.clientWidth || 340;
-      const height = container.clientHeight || 170;
+      const height = container.clientHeight || 175;
 
       // Create scene, camera, renderer with safe FOV and distance
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(62, width / height, 0.1, 1000);
-      camera.position.z = 6.4;
+      const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+      camera.position.z = 7.0;
 
       renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -109,21 +109,21 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
       lines.forEach((line) => {
         line.material = lineMaterial;
         line.rotation.set(0, 0, 0.6);
-        line.scale.set(1.14, 1.14, 1.14);
+        line.scale.set(1.10, 1.10, 1.10);
         scene.add(line);
       });
 
       // Background floating clones
       const mesh1 = mesh.clone();
-      mesh1.position.set(5.5, 1.8, -3);
+      mesh1.position.set(4.4, 1.5, -2.5);
       mesh1.rotation.set(1, 1, 0);
-      mesh1.scale.set(0.48, 0.48, 0.48);
+      mesh1.scale.set(0.40, 0.40, 0.40);
       scene.add(mesh1);
 
       const mesh2 = mesh.clone();
-      mesh2.position.set(-5.5, -1.8, -3);
+      mesh2.position.set(-4.4, -1.5, -2.5);
       mesh2.rotation.set(2, -1, 2);
-      mesh2.scale.set(0.48, 0.48, 0.48);
+      mesh2.scale.set(0.40, 0.40, 0.40);
       scene.add(mesh2);
 
       // Lights
@@ -230,7 +230,8 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
         style={{
           position: 'relative',
           width: '100%',
-          height: '140px',
+          height: '100%',
+          minHeight: '175px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -263,7 +264,8 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
       style={{
         position: 'relative',
         width: '100%',
-        height: '140px',
+        height: '100%',
+        minHeight: '175px',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
