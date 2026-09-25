@@ -58,14 +58,13 @@
 /* ========================================================= */
 .titleH1 {
   font-family: var(--main-font, 'Reforma 1918', var(--font-calluna), Georgia, serif);
-  font-size: clamp(3.0rem, 5.4vw, 5.4rem);
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.02;
   text-transform: uppercase;
   color: var(--color-white);
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .titleRow {
@@ -73,8 +72,22 @@
   align-items: center;
 }
 
-.titleRow2 {
-  padding-left: 0.45rem;
+/* VEDIKA: Dominant, noticeably bigger */
+.titleRowVedika {
+  font-size: clamp(3.8rem, 6.4vw, 6.6rem);
+  letter-spacing: -0.01em;
+}
+
+/* AI TUTOR: Proportionally smaller than Vedika with distinct word gap */
+.titleRowAiTutor {
+  font-size: clamp(2.35rem, 3.8vw, 3.9rem);
+  letter-spacing: 0.02em;
+  padding-left: 0.2rem;
+}
+
+.wordGap {
+  display: inline-block;
+  width: clamp(0.7rem, 1.25vw, 1.35rem);
 }
 
 .titleChartsCont {
@@ -88,47 +101,33 @@
   transform: translate3d(0, 0, 0);
   background: linear-gradient(
     90deg,
-    #ffffff 0%,
-    var(--color-lab-physics, #00c2ff) 16%,
-    var(--color-lab-math, #a855f7) 36%,
-    var(--color-lab-chemistry, #00f298) 56%,
-    var(--color-lab-biology, #ff9900) 76%,
-    var(--color-lab-physics, #00c2ff) 92%,
-    #ffffff 100%
+    #00c2ff 0%,
+    #a855f7 26%,
+    #00f298 52%,
+    #ff9900 76%,
+    #00c2ff 100%
   );
-  background-size: 300% 100%;
+  background-size: 260% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 35px rgba(0, 194, 255, 0.4));
-  animation: multiColorFlow 7s linear infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.42)) drop-shadow(0 0 38px rgba(168, 85, 247, 0.32));
+  animation: royalShimmerFlow 8s ease-in-out infinite;
 }
 
-@keyframes multiColorFlow {
+@keyframes royalShimmerFlow {
   0% {
     background-position: 0% 50%;
-    filter: drop-shadow(0 0 30px rgba(0, 194, 255, 0.5));
-  }
-  25% {
-    background-position: 75% 50%;
-    filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.55));
+    filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.45)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.28));
   }
   50% {
-    background-position: 150% 50%;
-    filter: drop-shadow(0 0 32px rgba(0, 242, 152, 0.5));
-  }
-  75% {
-    background-position: 225% 50%;
-    filter: drop-shadow(0 0 32px rgba(255, 153, 0, 0.5));
+    background-position: 100% 50%;
+    filter: drop-shadow(0 0 26px rgba(168, 85, 247, 0.50)) drop-shadow(0 0 42px rgba(0, 242, 152, 0.28));
   }
   100% {
-    background-position: 300% 50%;
-    filter: drop-shadow(0 0 30px rgba(0, 194, 255, 0.5));
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.45)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.28));
   }
-}
-
-#ai {
-  margin-right: 0.45rem;
 }
 
 /* 3. Simple Font: Vollkorn for Subline & Descriptions */
@@ -230,21 +229,21 @@
 /* Glowing 4-Lab Colors Aura Backplate */
 .portalAuraGlow {
   position: absolute;
-  top: 50%;
+  top: 52%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 70%;
-  height: 94%;
+  width: 82%;
+  height: 102%;
   border-radius: 50%;
   background: radial-gradient(
-    ellipse 50% 68% at 50% 50%,
-    rgba(168, 85, 247, 0.20) 0%,
-    rgba(0, 194, 255, 0.16) 32%,
+    ellipse 52% 70% at 50% 50%,
+    rgba(168, 85, 247, 0.22) 0%,
+    rgba(0, 194, 255, 0.18) 32%,
     rgba(0, 242, 152, 0.12) 55%,
     rgba(255, 153, 0, 0.10) 75%,
     transparent 100%
   );
-  filter: blur(52px);
+  filter: blur(56px);
   pointer-events: none;
   z-index: 1;
   animation: portalPulse 5s ease-in-out infinite alternate;
@@ -261,28 +260,29 @@
   }
 }
 
-/* 3D Particle Swarm in stage behind the mascot */
+/* 3D Particle Swarm in stage behind the mascot (expanded footprint) */
 .stageParticlesWrapper {
   position: absolute;
-  inset: -14%;
+  inset: -22%;
   z-index: 2;
   pointer-events: none;
   overflow: visible;
 }
 
-/* Central Mascot Container: Perfectly holds both layered human & bot images */
+/* Central Mascot Container: Placed slightly lower as requested */
 .mascotContainer {
   position: absolute;
-  top: 50%;
+  top: 54%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  height: 95%;
+  transform: translate(-50%, -46%);
+  height: 94%;
   aspect-ratio: 0.7467;
   z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  will-change: transform;
 }
 
 /* Base Layer: Inner Vedika Bot aligned underneath */
@@ -357,45 +357,27 @@
 /* ========================================================= */
 .idleHint {
   position: absolute;
-  bottom: 1.25rem;
+  bottom: 0.95rem;
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  background: rgba(10, 16, 32, 0.88);
-  border: 1px solid rgba(0, 194, 255, 0.35);
+  gap: 0.45rem;
+  background: rgba(10, 16, 32, 0.85);
+  border: 1px solid rgba(0, 194, 255, 0.28);
   border-radius: 9999px;
-  padding: 0.45rem 1.25rem;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 194, 255, 0.2);
-  pointer-events: auto;
-  cursor: pointer;
+  padding: 0.30rem 0.95rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 194, 255, 0.18);
+  pointer-events: none;
   z-index: 15;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  color: inherit;
-  font: inherit;
-  text-decoration: none;
-}
-
-.idleHint:hover {
-  transform: translateX(-50%) scale(1.03);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 194, 255, 0.35);
-}
-
-.idleHintLocked {
-  border-color: rgba(255, 153, 0, 0.4);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 153, 0, 0.2);
-}
-
-.idleHintLocked .idleHintIcon {
-  color: #ff9900;
 }
 
 .idleHintActive {
-  border-color: rgba(0, 242, 152, 0.4);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 242, 152, 0.25);
+  border-color: rgba(0, 242, 152, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 242, 152, 0.2);
 }
 
 .idleHintActive .idleHintIcon {
@@ -404,88 +386,17 @@
 
 .idleHintIcon {
   color: var(--color-lab-physics, #00c2ff);
-  animation: pulseGlow 2s infinite ease-in-out;
+  animation: pulseGlow 2.5s infinite ease-in-out;
   flex-shrink: 0;
 }
 
 .hintQuoteText {
   font-family: var(--font-thinoo), var(--font-space), sans-serif;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  color: #f1f5f9;
+  letter-spacing: 0.03em;
+  color: #e2e8f0;
   white-space: nowrap;
-}
-
-/* Mini Audio Equalizer Wave inside bottom badge */
-.eqMini {
-  display: flex;
-  align-items: center;
-  gap: 2.5px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.eqMiniBar {
-  width: 2.5px;
-  height: 100%;
-  background: var(--color-lab-physics, #00c2ff);
-  border-radius: 2px;
-  animation: eqMiniBounce 0.8s infinite ease-in-out alternate;
-}
-
-.eqMiniBar:nth-child(1) {
-  animation-delay: 0.1s;
-  height: 55%;
-}
-.eqMiniBar:nth-child(2) {
-  animation-delay: 0.3s;
-  height: 100%;
-}
-.eqMiniBar:nth-child(3) {
-  animation-delay: 0.15s;
-  height: 75%;
-}
-
-@keyframes eqMiniBounce {
-  0% {
-    transform: scaleY(0.3);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-.speakingTimer {
-  font-family: monospace;
-  font-size: 0.72rem;
-  color: #94a3b8;
-  margin-left: 0.25rem;
-}
-
-.audioReplayBtn {
-  font-family: var(--font-thinoo), monospace, sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: #00c2ff;
-  background: rgba(0, 194, 255, 0.12);
-  border: 1px solid rgba(0, 194, 255, 0.28);
-  padding: 0.15rem 0.55rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 0.4rem;
-  transition: all 0.2s ease;
-}
-
-.idleHint:hover .audioReplayBtn {
-  background: rgba(0, 194, 255, 0.25);
-  border-color: rgba(0, 194, 255, 0.5);
-  color: #ffffff;
 }
 
 @keyframes pulseGlow {

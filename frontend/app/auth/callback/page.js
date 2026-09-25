@@ -17,6 +17,46 @@ export default function AuthCallback() {
       try {
         const frappeUrl = (process.env.NEXT_PUBLIC_FRAPPE_URL || process.env.FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
         
+        // Check for Google OAuth authorization code from direct redirect
+        const code = searchParams.get('code');
+        if (code) {
+          setStatus('Exchanging authorization code with Google...');
+          const redirectUri = `${window.location.origin}/auth/callback`;
+          const exchangeRes = await fetch('/api/auth/google/callback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, redirect_uri: redirectUri })
+          });
+
+          const data = await exchangeRes.json();
+          if (!exchangeRes.ok || !data.user) {
+            throw new Error(data.error || 'Google authentication failed');
+          }
+
+          const userProfile = data.user;
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('jwt', data.token);
+          }
+          localStorage.setItem('frappe_user', JSON.stringify(userProfile));
+
+          // Synchronize course progress
+          try {
+            const progressRes = await fetch(`/api/progress?email=${encodeURIComponent(userProfile.email)}`);
+            if (progressRes.ok) {
+              const progressData = await progressRes.json();
+              localStorage.setItem(`completed_lessons_${userProfile.email}`, JSON.stringify(progressData.completed || {}));
+            }
+          } catch (e) {}
+
+          const isAdmin = userProfile.role === 'Administrator';
+          setStatus(`Welcome ${userProfile.name}! Redirecting to workspace...`);
+          setTimeout(() => {
+            router.replace(isAdmin ? '/admin' : '/prev-home-page');
+          }, 600);
+          return;
+        }
+
         // Retrieve sid from search parameters if present (passed via redirect URL parameter)
         let sid = searchParams.get('sid');
         if (sid) {

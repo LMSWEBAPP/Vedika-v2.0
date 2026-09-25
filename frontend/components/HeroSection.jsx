@@ -54,7 +54,6 @@ const initialHeroState = {
   cursorInStage: false,
   stageCursorPos: { x: 0, y: 0 },
   revealUnlocked: false,
-  dialogueSec: 0,
 };
 
 function heroReducer(state, action) {
@@ -69,15 +68,10 @@ function heroReducer(state, action) {
       return { ...state, cursorInStage: true };
     case 'CURSOR_LEAVE':
       return { ...state, cursorInStage: false };
-    case 'SET_DIALOGUE_SEC':
-      if (Math.floor(state.dialogueSec) === Math.floor(action.payload)) {
-        return state;
-      }
-      return { ...state, dialogueSec: action.payload };
     case 'UNLOCK_REVEAL':
-      return { ...state, revealUnlocked: true, dialogueSec: 3.65 };
+      return { ...state, revealUnlocked: true };
     case 'RESTART_SPEECH':
-      return { ...state, revealUnlocked: false, dialogueSec: 0 };
+      return { ...state, revealUnlocked: false };
     default:
       return state;
   }
@@ -85,7 +79,7 @@ function heroReducer(state, action) {
 
 export default function HeroSection() {
   const [state, dispatch] = useReducer(heroReducer, initialHeroState);
-  const { mounted, imagesLoaded, cursorInStage, stageCursorPos, revealUnlocked, dialogueSec } = state;
+  const { mounted, imagesLoaded, cursorInStage, stageCursorPos, revealUnlocked } = state;
 
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -97,12 +91,12 @@ export default function HeroSection() {
   const speechTimeRef = useRef(0);
   const speechStartTimeRef = useRef(null);
 
-  // Locked particle transform coordinates
+  // Locked particle transform coordinates (scaled up for bigger, more majestic ring)
   const LOCKED_PARTICLES = {
     posX: 6,
-    posY: 15,
+    posY: 13,
     posZ: -31,
-    scale: 1,
+    scale: 1.25,
     rotX: 115,
     rotY: 5,
     rotZ: -40,
@@ -155,18 +149,14 @@ export default function HeroSection() {
     dispatch({ type: 'MOUNT' });
   }, []);
 
-  // GSAP Title and Elements Animation matching the reference specification
+  // GSAP Cinematic Title and Elements Animation
   useEffect(() => {
     if (!mounted) return;
 
     try {
       gsap.registerPlugin(CustomEase);
-      const customEaseIn = CustomEase.create('custom-ease-in', '0.52, 0.00, 0.48, 1.00');
-      const fourtyFrames = 1.3333333;
-      const fiftyFrames = 1.66666;
-      const twoFrames = 0.666666;
-      const fourFrames = 0.133333;
-      const sixFrames = 0.2;
+      const cinemaEase = CustomEase.create('cinemaEase', '0.16, 1, 0.3, 1');
+      const cinemaSoft = CustomEase.create('cinemaSoft', '0.25, 0.1, 0.25, 1');
 
       const ve = document.querySelector('#ve span');
       const di = document.querySelector('#di span');
@@ -180,32 +170,84 @@ export default function HeroSection() {
 
       const timeline = gsap.timeline();
 
+      // 1. Eyebrow "MEET YOUR PERSONAL" glides down with tracking expansion
       if (titleLead) {
-        timeline.fromTo(titleLead, { y: '-0.5rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, 0);
+        timeline.fromTo(
+          titleLead,
+          { y: -16, autoAlpha: 0, letterSpacing: '0.32em' },
+          { y: 0, autoAlpha: 1, letterSpacing: '0.22em', duration: 1.15, ease: cinemaEase },
+          0
+        );
       }
+
+      // 2. Cinematic convergence for VEDIKA (dominant, larger syllables)
       if (ve) {
-        timeline.fromTo(ve, { x: '2.7rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, 0);
+        timeline.fromTo(
+          ve,
+          { x: -50, y: 16, scale: 0.88, autoAlpha: 0, filter: 'blur(12px)' },
+          { x: 0, y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.45, ease: cinemaEase },
+          0.06
+        );
       }
       if (di) {
-        timeline.fromTo(di, { x: '-2.0rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
+        timeline.fromTo(
+          di,
+          { y: -28, scale: 0.9, autoAlpha: 0, filter: 'blur(12px)' },
+          { y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.4, ease: cinemaEase },
+          0.14
+        );
       }
       if (ka) {
-        timeline.fromTo(ka, { x: '2.1rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(
+          ka,
+          { x: 50, y: 16, scale: 0.88, autoAlpha: 0, filter: 'blur(12px)' },
+          { x: 0, y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.45, ease: cinemaEase },
+          0.22
+        );
       }
+
+      // 3. Cinematic convergence for AI TUTOR (smoothly arrives with regal presence)
       if (ai) {
-        timeline.fromTo(ai, { x: '-2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(
+          ai,
+          { x: -38, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
+          { x: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.35, ease: cinemaEase },
+          0.30
+        );
       }
       if (tu) {
-        timeline.fromTo(tu, { x: '2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
+        timeline.fromTo(
+          tu,
+          { y: 24, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
+          { y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.35, ease: cinemaEase },
+          0.38
+        );
       }
       if (tor) {
-        timeline.fromTo(tor, { x: '-3.2rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(
+          tor,
+          { x: 42, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
+          { x: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.4, ease: cinemaEase },
+          0.44
+        );
       }
+
+      // 4. Subline and Description glide in
       if (titleSubline) {
-        timeline.fromTo(titleSubline, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(
+          titleSubline,
+          { y: 18, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 1.1, ease: cinemaSoft },
+          0.55
+        );
       }
       if (desc) {
-        timeline.fromTo(desc, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, sixFrames);
+        timeline.fromTo(
+          desc,
+          { y: 18, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 1.1, ease: cinemaSoft },
+          0.70
+        );
       }
     } catch (err) {
       console.warn('GSAP animation error:', err);
@@ -284,9 +326,7 @@ export default function HeroSection() {
       const elapsedSpeechSec = (timestamp - speechStartTimeRef.current) / 1000;
       speechTimeRef.current = elapsedSpeechSec;
 
-      if (elapsedSpeechSec < SPEECH_DURATION) {
-        dispatch({ type: 'SET_DIALOGUE_SEC', payload: elapsedSpeechSec });
-      } else if (!revealUnlockedRef.current) {
+      if (elapsedSpeechSec >= SPEECH_DURATION && !revealUnlockedRef.current) {
         revealUnlockedRef.current = true;
         dispatch({ type: 'UNLOCK_REVEAL' });
       }
@@ -513,15 +553,16 @@ export default function HeroSection() {
           <div className={styles.titleBlock}>
             <span className={styles.titleLead}>MEET YOUR PERSONAL</span>
             <h1 className={styles.titleH1}>
-              {/* Line 1: VEDIKA - converging syllables */}
-              <div className={styles.titleRow} id="titleRow1">
+              {/* Line 1: VEDIKA - noticeably bigger */}
+              <div className={`${styles.titleRow} ${styles.titleRowVedika}`} id="titleRow1">
                 <div className={styles.titleChartsCont} id="ve"><span>Ve</span></div>
                 <div className={styles.titleChartsCont} id="di"><span>di</span></div>
                 <div className={styles.titleChartsCont} id="ka"><span>ka</span></div>
               </div>
-              {/* Line 2: AI TUTOR - converging syllables */}
-              <div className={`${styles.titleRow} ${styles.titleRow2}`} id="titleRow2">
+              {/* Line 2: AI TUTOR - smaller with distinct gap between AI and TUTOR */}
+              <div className={`${styles.titleRow} ${styles.titleRowAiTutor}`} id="titleRow2">
                 <div className={styles.titleChartsCont} id="ai"><span>AI</span></div>
+                <span className={styles.wordGap} aria-hidden="true">&nbsp;</span>
                 <div className={styles.titleChartsCont} id="tu"><span>Tu</span></div>
                 <div className={styles.titleChartsCont} id="tor"><span>tor</span></div>
               </div>
@@ -561,8 +602,8 @@ export default function HeroSection() {
             {/* Heavy Multi-Shell Particle Rings with Golden Disco Dust Effect */}
             <div className={styles.stageParticlesWrapper}>
               <ParticlesBackground
-                count={13000}
-                opacity={0.92}
+                count={8500}
+                opacity={0.94}
                 {...LOCKED_PARTICLES}
               />
             </div>
@@ -607,41 +648,17 @@ export default function HeroSection() {
               <div className={styles.pointerCore}></div>
             </div>
 
-            {/* Interactive Reveal Hint Badge with Kid's Speaking Dialogue & Replay */}
+            {/* Interactive Reveal Hint Badge: Smaller, clean dialogue without audio widget */}
             <div
-              onClick={playKidVoice}
-              className={`${styles.idleHint} ${!revealUnlocked ? styles.idleHintLocked : styles.idleHintActive}`}
+              className={`${styles.idleHint} ${revealUnlocked ? styles.idleHintActive : ''}`}
               style={{ opacity: cursorInStage ? 0 : 1 }}
-              role="button"
-              tabIndex={0}
-              title="Click to hear Vedika's voice!"
             >
-              {!revealUnlocked ? (
-                <div className={styles.eqMini} title="Speaking dialogue...">
-                  <span className={styles.eqMiniBar}></span>
-                  <span className={styles.eqMiniBar}></span>
-                  <span className={styles.eqMiniBar}></span>
-                </div>
-              ) : (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.idleHintIcon}>
-                  <path d="M12 0L14.4 9.6L24 12L14.4 14.4L12 24L9.6 14.4L0 12L9.6 9.6L12 0Z" fill="currentColor"/>
-                </svg>
-              )}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.idleHintIcon}>
+                <path d="M12 0L14.4 9.6L24 12L14.4 14.4L12 24L9.6 14.4L0 12L9.6 9.6L12 0Z" fill="currentColor"/>
+              </svg>
               <span className={styles.hintQuoteText}>
                 &ldquo;Curious who’s behind my smile? Hover to reveal!&rdquo;
               </span>
-              {!revealUnlocked ? (
-                <span className={styles.speakingTimer}>
-                  speaking ({Math.max(1, Math.ceil(3.65 - dialogueSec))}s)
-                </span>
-              ) : (
-                <span className={styles.audioReplayBtn}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                  Hear voice
-                </span>
-              )}
             </div>
           </div>
         </div>

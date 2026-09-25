@@ -97,22 +97,10 @@
   color: #ffffff;
 }
 
-/* Active Link Glow Indicator (Light blue glowing capsule pill centered under active link) */
+/* Active Link Styling (Clean active link without underline bar) */
 .activeNavLink {
-  color: #ffffff !important;
+  color: #38bdf8 !important;
   font-weight: 600;
-}
-
-.activeGlowIndicator {
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 22px;
-  height: 3px;
-  background: #38bdf8;
-  border-radius: 999px;
-  box-shadow: 0 0 10px #38bdf8, 0 0 18px #38bdf8;
 }
 
 /* Dropdown Menu (e.g. Courses, Resources) */
@@ -204,32 +192,6 @@
   display: flex;
   align-items: center;
   gap: 0.9rem;
-}
-
-.searchBtn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(18, 24, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(12px);
-}
-
-.searchBtn:hover {
-  color: #ffffff;
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(28, 36, 60, 0.9);
-  transform: scale(1.04);
-}
-
-.searchIcon {
-  stroke-width: 2.2;
 }
 
 /* Gradient Get Started Pill Button */

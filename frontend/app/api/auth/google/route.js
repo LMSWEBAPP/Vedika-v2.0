@@ -13,33 +13,16 @@ export async function GET(request) {
       backendUrl = 'https://vedika-v2-0.onrender.com';
     }
 
-    // 1. Attempt to fetch authorize URL directly from Frappe backend
-    try {
-      const frappeRes = await fetch(
-        `${backendUrl}/api/method/lms.lms.api.get_google_auth_url?redirect_to=${encodeURIComponent(redirectTo)}`,
-        { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' }
-      );
-      if (frappeRes.ok) {
-        const data = await frappeRes.json();
-        if (data.message && typeof data.message === 'string' && data.message.startsWith('https://')) {
-          return NextResponse.json({ url: data.message });
-        }
-      }
-    } catch (e) {
-      console.warn('[API/Auth/Google] Frappe get_google_auth_url request failed:', e.message);
-    }
-
-    // 2. Resilient fallback using environment credentials if Frappe is cold-starting
+    // Resilient direct Google OAuth using registered callback endpoint
     const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (clientId) {
-      const frappeRedirectUri = `${backendUrl}/api/method/frappe.integrations.oauth2_logins.login_via_google`;
+      const callbackRedirectUri = `${parsedOrigin}/auth/callback`;
       const stateObj = {
-        site: backendUrl,
-        token: crypto.randomBytes(16).toString('hex'),
+        site: parsedOrigin,
         redirect_to: redirectTo
       };
       const state = Buffer.from(JSON.stringify(stateObj)).toString('base64');
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(frappeRedirectUri)}&response_type=code&scope=${encodeURIComponent('openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email')}&state=${encodeURIComponent(state)}`;
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(callbackRedirectUri)}&response_type=code&scope=${encodeURIComponent('openid profile email')}&state=${encodeURIComponent(state)}&prompt=select_account`;
       
       return NextResponse.json({ url: googleAuthUrl });
     }

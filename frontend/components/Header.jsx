@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import styles from './Header.module.css';
 import {
-  Search, ArrowRight, ChevronDown, BookOpen, Award, FileText,
+  ArrowRight, ChevronDown, BookOpen, Award, FileText,
   FolderOpen, Menu, X, Brain, FlaskConical, Briefcase, BarChart3,
   Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles
 } from 'lucide-react';
@@ -170,7 +170,6 @@ export default function Header() {
             onClick={() => router.push('/')}
           >
             <span>Home</span>
-            {pathname === '/' && <span className={styles.activeGlowIndicator} />}
           </button>
 
           {/* 2. Dashboard */}
@@ -180,7 +179,6 @@ export default function Header() {
             onClick={() => router.push('/prev-home-page')}
           >
             <span>Dashboard</span>
-            {pathname === '/prev-home-page' && <span className={styles.activeGlowIndicator} />}
           </button>
 
           {/* 3. Courses (with Submenu) */}
@@ -196,7 +194,6 @@ export default function Header() {
             >
               <span>Courses</span>
               <ChevronDown size={13} style={{ opacity: 0.7, transform: coursesDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              {isCoursesActive && <span className={styles.activeGlowIndicator} />}
             </button>
 
             {coursesDropdownOpen && (
@@ -236,7 +233,6 @@ export default function Header() {
             >
               <span>Vedika AI</span>
               <ChevronDown size={13} style={{ opacity: 0.7, transform: aiDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              {isAiActive && <span className={styles.activeGlowIndicator} />}
             </button>
 
             {aiDropdownOpen && (
@@ -276,7 +272,6 @@ export default function Header() {
             >
               <span>Labs</span>
               <ChevronDown size={13} style={{ opacity: 0.7, transform: labsDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              {isLabsActive && <span className={styles.activeGlowIndicator} />}
             </button>
 
             {labsDropdownOpen && (
@@ -310,7 +305,6 @@ export default function Header() {
             onClick={() => router.push('/jobs')}
           >
             <span>Jobs</span>
-            {pathname.startsWith('/jobs') && <span className={styles.activeGlowIndicator} />}
           </button>
 
           {/* 7. Progress */}
@@ -320,21 +314,11 @@ export default function Header() {
             onClick={() => router.push('/progress')}
           >
             <span>Progress</span>
-            {pathname.startsWith('/progress') && <span className={styles.activeGlowIndicator} />}
           </button>
         </nav>
 
         {/* Right Action Items */}
         <div className={styles.rightActions}>
-          <button
-            type="button"
-            className={styles.searchBtn}
-            aria-label="Search courses and topics"
-            onClick={() => router.push('/courses')}
-            title="Search Courses"
-          >
-            <Search size={16} className={styles.searchIcon} />
-          </button>
 
           {/* User state toggle: Logged In Capsule vs Guest "Get Started" */}
           {user ? (
