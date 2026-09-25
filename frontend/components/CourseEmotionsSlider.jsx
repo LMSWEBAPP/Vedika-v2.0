@@ -112,6 +112,7 @@ export default function CourseEmotionsSlider({
             }}
           >
             {items.map((c, idx) => {
+              if (!c) return null;
               const isActive = idx === activeIdx;
               const shapeName = SHAPE_NAMES[idx % SHAPE_NAMES.length];
 
@@ -121,7 +122,7 @@ export default function CourseEmotionsSlider({
               if (d < -N / 2) d += N;
 
               const totalLessons = c.totalLessons || c.lessonsCount || (c.lessons ? c.lessons.length : 0);
-              const isEnrolled = enrolledCourseIds.includes(c.id);
+              const isEnrolled = Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id);
               const isCategory = mode === 'categories' || c.category === 'Category';
 
               // Fallback duration and level
@@ -136,7 +137,8 @@ export default function CourseEmotionsSlider({
                   : (c.title?.toLowerCase().includes('intermediate') ? 'Intermediate' : 'Beginner'));
 
               // Visible if within display range
-              const isVisible = Math.abs(d) <= 3;
+              const isVisible = Math.abs(d) <= 2;
+              const render3D = Math.abs(d) <= 1;
 
               return (
                 <div
@@ -163,12 +165,18 @@ export default function CourseEmotionsSlider({
                       <span>{level}</span>
                     </div>
 
-                    {/* Cursor Interactive 3D Geometry Canvas (No static image!) */}
+                    {/* Cursor Interactive 3D Geometry Canvas (mounted only on active/adjacent cards to conserve WebGL contexts) */}
                     <div className="emotions-slider-item__image">
-                      <CourseInteractiveCanvas
-                        shapeName={shapeName}
-                        isSelected={isActive}
-                      />
+                      {render3D ? (
+                        <CourseInteractiveCanvas
+                          shapeName={shapeName}
+                          isSelected={isActive}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Content Section */}

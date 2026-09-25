@@ -102,12 +102,15 @@ export default function LayoutWrapper({ children }) {
     setLoading(false);
   }, [pathname, router]);
 
+  const isHomePage = pathname === '/';
+  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments' || pathname === '/courses';
+
   useEffect(() => {
     // Configure layout background dynamically matching theme
     const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
-    document.body.style.backgroundColor = theme === 'dark' ? '#07080F' : '#F9FAFB';
-  }, []);
+    document.body.style.backgroundColor = isHomePage ? '#02050c' : (theme === 'dark' ? '#090B14' : '#F4F7FB');
+  }, [isHomePage]);
 
   if (loading) {
     return (
@@ -161,9 +164,6 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
-  const isHomePage = pathname === '/';
-  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments' || pathname === '/courses';
-
   return (
     <div style={{
       display: 'flex',
@@ -174,19 +174,26 @@ export default function LayoutWrapper({ children }) {
       background: isHomePage ? '#02050c' : 'var(--bg)',
       color: isHomePage ? '#f8fafc' : 'var(--text)',
       width: '100%',
+      position: 'relative',
       overflow: isFixedPage && !isHomePage ? 'hidden' : 'visible'
     }}>
       {/* Present Navbar displayed consistently on every page */}
       <Header />
       <main style={{
-        flex: 1,
+        position: isFixedPage && !isHomePage ? 'fixed' : 'relative',
+        top: isFixedPage && !isHomePage ? 72 : 'auto',
+        bottom: isFixedPage && !isHomePage ? 0 : 'auto',
+        left: isFixedPage && !isHomePage ? 0 : 'auto',
+        right: isFixedPage && !isHomePage ? 0 : 'auto',
         width: '100%',
         boxSizing: 'border-box',
         overflowY: isFixedPage && !isHomePage ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isFixedPage && !isHomePage ? '100vh' : 'auto',
-        maxHeight: isFixedPage && !isHomePage ? '100vh' : 'none',
-        paddingTop: isHomePage ? 0 : '72px'
+        height: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'auto',
+        maxHeight: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'none',
+        minHeight: !isFixedPage ? 'calc(100vh - 72px)' : 'auto',
+        paddingTop: isHomePage ? 0 : (isFixedPage ? 0 : '72px'),
+        background: isHomePage ? '#02050c' : 'var(--bg)'
       }}>
         {children}
       </main>

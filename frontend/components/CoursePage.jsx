@@ -417,6 +417,7 @@ export default function CoursePage() {
   const categoryDeckItems = useMemo(() => {
     const map = new Map();
     courses.forEach((c) => {
+      if (!c) return;
       let locallyDeleted = [];
       try { locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String); } catch (e) { }
       if (locallyDeleted.includes(String(c.id))) return;
@@ -431,9 +432,9 @@ export default function CoursePage() {
     const list = [];
     let idx = 0;
     map.forEach((catCourses, catName) => {
-      const totalLessons = catCourses.reduce((sum, c) => sum + (c.lessonsCount || (c.lessons ? c.lessons.length : 0)), 0);
-      const instructors = new Set(catCourses.map(c => c.instructor).filter(Boolean));
-      const thumb = catCourses.find(c => c.image)?.image || getSubjectArtwork(catName);
+      const totalLessons = catCourses.reduce((sum, c) => sum + ((c && (c.lessonsCount || (c.lessons ? c.lessons.length : 0))) || 0), 0);
+      const instructors = new Set(catCourses.map(c => c?.instructor).filter(Boolean));
+      const thumb = catCourses.find(c => c?.image)?.image || getSubjectArtwork(catName);
 
       list.push({
         id: `cat-${catName}`,
@@ -455,10 +456,11 @@ export default function CoursePage() {
   const allCategories = useMemo(() => {
     const set = new Set();
     courses.forEach(c => {
+      if (!c) return;
       let locallyDeleted = [];
       try { locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String); } catch (e) { }
       if (locallyDeleted.includes(String(c.id))) return;
-      if (c.category) set.add(c.category.trim());
+      if (c.category) set.add(String(c.category).trim());
     });
     return ['All', ...Array.from(set)];
   }, [courses]);
@@ -689,7 +691,7 @@ export default function CoursePage() {
     const modules = details.modules || [];
 
     // Compile all lessons in this course
-    const courseLessons = modules.flatMap(m => m.lessons.map(l => ({ ...l, module: m })));
+    const courseLessons = modules.flatMap(m => ((m && m.lessons) ? m.lessons : []).map(l => ({ ...l, module: m })));
     const total = courseLessons.length;
     const done = courseLessons.filter(l => completed[l.id]).length;
     const progressPercent = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -1256,11 +1258,12 @@ export default function CoursePage() {
           // If student has selected a specific category: show that category's courses carousel with breadcrumbs
           if (activeDrilldownCategory) {
             const categoryCourses = courses.filter(c => {
+              if (!c) return false;
               let locallyDeleted = [];
               try { locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String); } catch (e) { }
               if (locallyDeleted.includes(String(c.id))) return false;
 
-              return (c.category || 'General').trim().toLowerCase() === activeDrilldownCategory.trim().toLowerCase();
+              return (c.category || 'General').trim().toLowerCase() === (activeDrilldownCategory || '').trim().toLowerCase();
             });
 
             if (categoryCourses.length === 0) {

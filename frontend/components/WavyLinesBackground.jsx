@@ -50,19 +50,19 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         strokeDashoffset: totalLen
       });
 
-      // Very slow and smooth wave revealing motion (48s)
+      // Smooth wave revealing motion (increased speed ~22s)
       const tw1 = gsap.to(clone, {
-        duration: 48,
-        delay: i * 0.12,
+        duration: 22,
+        delay: i * 0.06,
         repeat: -1,
         strokeDashoffset: totalLen * 3,
         ease: 'power1.inOut'
       });
       tweens.push(tw1);
 
-      // Very slow continuous flow (65s)
+      // Continuous fluid wave flow (increased speed ~28s)
       const tw2 = gsap.to(p, {
-        duration: 65,
+        duration: 28,
         repeat: -1,
         strokeDashoffset: totalLen * 0.4,
         ease: 'none'

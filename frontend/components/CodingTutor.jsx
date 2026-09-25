@@ -2271,8 +2271,20 @@ export default function CodingTutor() {
                   <div key={msg.id || mi} id={`msg-${mi}`} style={{ marginBottom: 20 }}>
                     {/* User Bubble */}
                     {msg.role === 'user' && (
-                      <div style={{ display: 'flex', gap: rGap, justifyContent: 'flex-end', maxWidth: msgMaxW, marginLeft: 'auto', alignItems: 'flex-start' }}>
-                        <div style={{ textAlign: 'right' }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        maxWidth: msgMaxW,
+                        marginLeft: 'auto'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          maxWidth: bubbleMaxW
+                        }}>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.45)',
                             backdropFilter: 'blur(16px)',
@@ -2283,7 +2295,8 @@ export default function CodingTutor() {
                             color: '#F8FAFC',
                             fontSize: 14,
                             lineHeight: 1.65,
-                            maxWidth: bubbleMaxW,
+                            width: 'fit-content',
+                            maxWidth: '100%',
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
                             textAlign: 'left',
@@ -2301,9 +2314,11 @@ export default function CodingTutor() {
                               </div>
                             )}
                           </div>
-                          <div style={{ fontSize: 10, color: T.dim, marginTop: 4 }}>{msg.mode} &middot; {msg.length}</div>
+                          <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>{msg.mode} &middot; {msg.length}</div>
                         </div>
-                        <UserBlobAvatar isTyping={false} isAiLoading={false} size={54} />
+                        <div style={{ flexShrink: 0, marginTop: -2 }}>
+                          <UserBlobAvatar isTyping={false} isAiLoading={false} size={48} themeColor="cyan" />
+                        </div>
                       </div>
                     )}
 
@@ -2701,26 +2716,6 @@ export default function CodingTutor() {
             transition: 'width 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
-          {/* Interactive Jelly Blob Mascot Companion perched right above text box with tight gap */}
-          <div
-            style={{
-              pointerEvents: 'auto',
-              marginBottom: 4,
-              marginRight: isMobile ? 12 : 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45))'
-            }}
-          >
-            <UserBlobAvatar
-              isTyping={isTyping}
-              isAiLoading={loading || Boolean(streamingText)}
-              isJustSent={isJustSent}
-              size={isMobile ? 64 : 76}
-            />
-          </div>
-
           {/* Omnibar input row with toggle button + omnibar */}
           <div
             style={{
