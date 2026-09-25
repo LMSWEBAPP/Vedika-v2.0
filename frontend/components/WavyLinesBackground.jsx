@@ -15,17 +15,17 @@ const DEFAULT_WAVE_CONFIG = {
     opacity: 0.7,
   },
   wave2: {
-    bottom: 32,
-    right: -51,
-    width: 100,
-    height: 95,
+    bottom: 33,
+    right: -38,
+    width: 140,
+    height: 140,
     rot: -27,
-    scale: 0.9,
-    blur: 2.1,
-    opacity: 0.75,
+    scale: 0.5,
+    blur: 3.8,
+    opacity: 0.45,
   },
   global: {
-    speedMult: 0.7,
+    speedMult: 1.1,
     sway: 2,
   },
 };
@@ -36,7 +36,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const [waveConfig, setWaveConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_wavy_bg_config_v3');
+        const saved = localStorage.getItem('vedika_wavy_bg_config_v4');
         if (saved) {
           const parsed = JSON.parse(saved);
           return {
@@ -113,7 +113,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
         }
       };
       try {
-        localStorage.setItem('vedika_wavy_bg_config_v3', JSON.stringify(next));
+        localStorage.setItem('vedika_wavy_bg_config_v4', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -130,7 +130,7 @@ export default function WavyLinesBackground({ opacity = 1.0, className = '' }) {
   const resetConfig = () => {
     setWaveConfig(DEFAULT_WAVE_CONFIG);
     try {
-      localStorage.setItem('vedika_wavy_bg_config_v3', JSON.stringify(DEFAULT_WAVE_CONFIG));
+      localStorage.setItem('vedika_wavy_bg_config_v4', JSON.stringify(DEFAULT_WAVE_CONFIG));
     } catch (e) {}
   };
 

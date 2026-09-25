@@ -102,14 +102,14 @@ export default function HeroSection() {
     rotZ: -26,
     ringDensity: 1.0,
     dustIntensity: 0.75,
-    ringRotationSpeed: 0.22,
-    speed: 0.59,
+    ringRotationSpeed: 0.1,
+    speed: 0.37,
   };
 
   const [particlesConfig, setParticlesConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_hero_particles_config_v6');
+        const saved = localStorage.getItem('vedika_hero_particles_config_v7');
         if (saved) return { ...DEFAULT_PARTICLES, ...JSON.parse(saved) };
       } catch (e) {}
     }
@@ -123,7 +123,7 @@ export default function HeroSection() {
     setParticlesConfig(prev => {
       const next = { ...prev, [key]: Number(value) };
       try {
-        localStorage.setItem('vedika_hero_particles_config_v6', JSON.stringify(next));
+        localStorage.setItem('vedika_hero_particles_config_v7', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -140,7 +140,7 @@ export default function HeroSection() {
   const resetConfig = () => {
     setParticlesConfig(DEFAULT_PARTICLES);
     try {
-      localStorage.setItem('vedika_hero_particles_config_v6', JSON.stringify(DEFAULT_PARTICLES));
+      localStorage.setItem('vedika_hero_particles_config_v7', JSON.stringify(DEFAULT_PARTICLES));
     } catch (e) {}
   };
 

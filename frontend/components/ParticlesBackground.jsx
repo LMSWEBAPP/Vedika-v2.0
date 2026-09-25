@@ -7,7 +7,7 @@ export class ParticlesSwarm {
   constructor(canvas, count = 13000, initialTransform) {
     this.count = count;
     this.canvas = canvas;
-    this.speedMult = initialTransform?.speed ?? 0.59;
+    this.speedMult = initialTransform?.speed ?? 0.37;
 
     const width = canvas.clientWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth);
     const height = canvas.clientHeight || (canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight);
@@ -77,8 +77,8 @@ export class ParticlesSwarm {
       this.mesh.setColorAt(i, this.color.setHex(isDisco ? 0xffd700 : 0x00c2ff));
     }
 
-    this.speedMult = initialTransform?.speed ?? 0.59;
-    this.ringRotationSpeed = initialTransform?.ringRotationSpeed ?? 0.22;
+    this.speedMult = initialTransform?.speed ?? 0.37;
+    this.ringRotationSpeed = initialTransform?.ringRotationSpeed ?? 0.1;
     this.ringDensity = initialTransform?.ringDensity ?? 1.0;
     this.dustIntensity = initialTransform?.dustIntensity ?? 0.75;
     this.simTime = 0;
@@ -96,8 +96,8 @@ export class ParticlesSwarm {
       rotZ: -26,
       ringDensity: 1.0,
       dustIntensity: 0.75,
-      speed: 0.59,
-      ringRotationSpeed: 0.22,
+      speed: 0.37,
+      ringRotationSpeed: 0.1,
     };
     this.updateTransform(initialTransform || defaultTransform);
 
@@ -351,8 +351,8 @@ export default function ParticlesBackground({
   rotZ = -26,
   ringDensity = 1.0,
   dustIntensity = 0.75,
-  ringRotationSpeed = 0.22,
-  speed = 0.59,
+  ringRotationSpeed = 0.1,
+  speed = 0.37,
   className,
   style,
 }) {
