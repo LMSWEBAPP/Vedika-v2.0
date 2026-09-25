@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Terminal, X, Minus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { warmupPyodide } from '@/hooks/usePyodide';
@@ -49,9 +50,14 @@ export default function PracticePlaygroundModal({
   onCodeChange = null,
 }) {
   const [isClosing, setIsClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const windowRef = React.useRef(null);
   const backdropRef = React.useRef(null);
   const rafRef = React.useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Pre-warm Pyodide environment in background so sandbox opens instantly
   useEffect(() => {
@@ -290,11 +296,12 @@ export default function PracticePlaygroundModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className={`practice-modal-backdrop ${isClosing ? 'closing' : ''}`}
+      style={{ zIndex: 99999999 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -354,6 +361,7 @@ export default function PracticePlaygroundModal({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

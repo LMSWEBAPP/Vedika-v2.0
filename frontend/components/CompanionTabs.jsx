@@ -10,28 +10,28 @@ export const TABS = [
     label: 'Ask Vedika',
     subtitle: 'AI Explanation',
     Icon: Bot,
-    color: T.purple || '#8B5CF6'
+    color: '#A855F7' // Vedika AI Purple
   },
   {
     id: 'notes',
     label: 'Personal Notes',
     subtitle: 'Timestamped',
     Icon: BookMarked,
-    color: '#EC4899'
+    color: '#00D4FF' // Vedika Labs Physics Cyan
   },
   {
     id: 'qa',
     label: 'Lesson Q&A',
     subtitle: 'Ask Video',
     Icon: MessageSquare,
-    color: T.accent || '#3B82F6'
+    color: '#10B981' // Vedika AI Viva Green / Emerald
   },
   {
     id: 'quiz',
     label: 'Practice Quiz',
     subtitle: 'AI Test',
     Icon: Award,
-    color: T.green || '#10B981'
+    color: '#F59E0B' // Vedika AI Puzzle / Labs Biology Amber
   }
 ];
 
@@ -41,9 +41,10 @@ export default function CompanionTabs({
   notesCount = 0,
   qaCount = 0,
   vertical = false,
+  isExpanded = false,
   onCollapse
 }) {
-  // VERTICAL COLUMN MODE: Shown in the 10% tab bar
+  // VERTICAL COLUMN MODE: Shown beside the lesson player / drawer
   if (vertical) {
     return (
       <div style={{
@@ -54,13 +55,15 @@ export default function CompanionTabs({
         height: '100%',
         justifyContent: 'center', // Vertically centered so no empty gap below
         alignItems: 'center',
-        padding: '6px 2px',
-        boxSizing: 'border-box'
+        padding: '6px 0',
+        boxSizing: 'border-box',
+        position: 'relative'
       }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const { Icon } = tab;
           const count = tab.id === 'notes' ? notesCount : tab.id === 'qa' ? qaCount : 0;
+          const isMerged = isActive && isExpanded;
 
           return (
             <button
@@ -75,21 +78,26 @@ export default function CompanionTabs({
                 justifyContent: 'center',
                 gap: 5,
                 padding: '12px 6px',
-                borderRadius: 12,
-                border: isActive ? `1px solid ${tab.color}80` : '1px solid transparent',
-                background: isActive ? `${tab.color}22` : 'transparent',
-                boxShadow: isActive ? `0 4px 18px ${tab.color}25` : 'none',
+                borderRadius: isMerged ? '0 16px 16px 0' : 12,
+                borderTop: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderRight: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderBottom: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderLeft: isMerged ? `3px solid ${T.s1}` : (isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent'),
+                background: isActive ? (isMerged ? T.s1 : `${tab.color}18`) : 'transparent',
+                boxShadow: 'none', // NO GLOW on selected tab
                 color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                width: '100%',
+                width: isMerged ? 'calc(100% + 3px)' : '100%',
+                marginLeft: isMerged ? -3 : 0,
                 boxSizing: 'border-box',
-                position: 'relative'
+                position: 'relative',
+                zIndex: isActive ? 10 : 1
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = `${tab.color}12`;
-                  e.currentTarget.style.borderColor = `${tab.color}35`;
+                  e.currentTarget.style.background = `${tab.color}15`;
+                  e.currentTarget.style.borderColor = `${tab.color}40`;
                   e.currentTarget.style.color = '#FFFFFF';
                 }
               }}
@@ -101,8 +109,38 @@ export default function CompanionTabs({
                 }
               }}
             >
+              {isMerged && (
+                <>
+                  {/* Top concave fillet corner curve blending into panel */}
+                  <span style={{
+                    position: 'absolute',
+                    top: -10,
+                    left: 0,
+                    width: 10,
+                    height: 10,
+                    borderBottomRightRadius: 10,
+                    boxShadow: `3px 3px 0 2px ${T.s1}`,
+                    borderRight: `1.5px solid ${tab.color}`,
+                    borderBottom: `1.5px solid ${tab.color}`,
+                    pointerEvents: 'none'
+                  }} />
+                  {/* Bottom concave fillet corner curve blending into panel */}
+                  <span style={{
+                    position: 'absolute',
+                    bottom: -10,
+                    left: 0,
+                    width: 10,
+                    height: 10,
+                    borderTopRightRadius: 10,
+                    boxShadow: `3px -3px 0 2px ${T.s1}`,
+                    borderRight: `1.5px solid ${tab.color}`,
+                    borderTop: `1.5px solid ${tab.color}`,
+                    pointerEvents: 'none'
+                  }} />
+                </>
+              )}
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={20} style={{ color: isActive ? tab.color : 'inherit', filter: isActive ? `drop-shadow(0 0 6px ${tab.color}80)` : 'none', transition: 'all 0.2s' }} />
+                <Icon size={20} style={{ color: isActive ? tab.color : 'inherit', filter: 'none', transition: 'color 0.2s' }} />
                 {count > 0 && (
                   <span style={{
                     position: 'absolute',
@@ -184,8 +222,9 @@ export default function CompanionTabs({
                 gap: 4,
                 padding: '7px 4px',
                 borderRadius: 8,
-                border: isActive ? `1px solid ${tab.color}50` : '1px solid transparent',
+                border: isActive ? `1.5px solid ${tab.color}` : '1px solid transparent',
                 background: isActive ? `${tab.color}15` : 'transparent',
+                boxShadow: 'none',
                 color: isActive ? (T.text || '#FFF') : (T.muted || '#94A3B8'),
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',

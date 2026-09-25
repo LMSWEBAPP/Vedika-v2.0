@@ -25,6 +25,8 @@
   --color-blue: #3b82f6;
 
   padding-inline: 48px;
+  padding-top: 36px;
+  padding-bottom: 20px;
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -34,8 +36,11 @@
 
 .emotions-slider__track-wrapper {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  margin-top: 0;
 }
 
 .emotions-slider__track {
@@ -78,10 +83,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
+  width: calc(100% - 32px);
   position: absolute;
   top: 50%;
-  left: 0;
+  left: 16px;
   transform: translateY(-50%);
   z-index: 20;
   pointer-events: none;
@@ -100,7 +105,7 @@
   color: #fff;
   pointer-events: auto;
   cursor: pointer;
-  transition: all 0.25s ease-out;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
   backdrop-filter: blur(8px);
 }
 
@@ -108,8 +113,8 @@
   color: var(--color-blue);
   border-color: var(--color-blue);
   background: rgba(15, 23, 42, 0.98);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transform: scale(1.08);
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .slider-nav__item.disabled {
@@ -179,7 +184,12 @@
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(14px);
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.emotions-slider-item:hover,
+.emotions-slider__slide:hover .emotions-slider-item {
+  transform: none !important;
 }
 
 .active-slide .emotions-slider-item {
@@ -326,9 +336,9 @@
 }
 
 .emotions-slider-item__btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
-  filter: brightness(1.1);
+  transform: none !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+  filter: brightness(1.08);
 }
 
 .emotions-slider-item__btn-icon {

@@ -811,23 +811,38 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             </div>
           </div>
 
-          {/* Middle: Active Companion Tab Panel (Opens in between video and tabs, taking 40% width) */}
-          {isExpanded && (
-            <div style={{
-              flex: 1,
-              transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: 14,
-              border: `1px solid ${T.border}`,
-              background: T.s1,
-              padding: '14px',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              minWidth: 0,
-              height: '100%',
-              boxSizing: 'border-box'
-            }}>
+          {/* Right Section: Seamless Merged Drawer Panel + 4 Tabs Column */}
+          <div style={{
+            flex: isExpanded ? '0 0 calc(50% - 6px)' : '0 0 calc(10% - 6px)',
+            width: isExpanded ? 'calc(50% - 6px)' : 'calc(10% - 6px)',
+            maxWidth: isExpanded ? 'calc(50% - 6px)' : 'calc(10% - 6px)',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            height: '100%',
+            minWidth: 0,
+            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative'
+          }}>
+            {/* Opening Companion Tab Drawer Panel */}
+            {isExpanded && (
+              <div style={{
+                flex: 1,
+                minWidth: 0,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: '16px 0 0 16px',
+                border: `1.5px solid ${(TABS.find(t => t.id === activeCompanionTab) || TABS[0]).color}`,
+                background: T.s1,
+                padding: '14px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)',
+                overflow: 'hidden',
+                boxSizing: 'border-box',
+                position: 'relative',
+                zIndex: 1
+              }}>
               {/* Panel Header */}
               {(() => {
                 const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
@@ -1386,30 +1401,31 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             </div>
           )}
 
-          {/* Far Right: 4 Companion Tabs (Always 10% width, vertically centered, unselected boxes removed) */}
+          {/* 4 Companion Tabs (Floating beside panel, background box removed, merging with panel when selected) */}
           <div style={{
-            flex: '0 0 calc(10% - 6px)',
-            width: 'calc(10% - 6px)',
-            maxWidth: 'calc(10% - 6px)',
+            width: isExpanded ? '92px' : '100%',
+            flex: isExpanded ? '0 0 92px' : 1,
+            maxWidth: isExpanded ? '92px' : '100%',
             flexShrink: 0,
-            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            borderRadius: 14,
-            border: `1px solid ${T.border}`,
-            background: T.s1,
-            padding: '8px 4px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-            overflow: 'hidden',
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            padding: '6px 0',
+            overflow: 'visible',
             minWidth: 0,
             height: '100%',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            position: 'relative',
+            zIndex: 2
           }}>
             <CompanionTabs
               vertical={true}
               activeTab={isExpanded ? activeCompanionTab : null}
+              isExpanded={isExpanded}
               onSelectTab={(tabId) => {
                 if (isExpanded && activeCompanionTab === tabId) {
                   setIsExpanded(false);
@@ -1422,6 +1438,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
               qaCount={chatHistory.length}
             />
           </div>
+        </div>
         </div>
       </div>
 

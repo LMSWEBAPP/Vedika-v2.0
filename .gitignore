@@ -87,3 +87,5 @@ docs/
 # AI Agent logs & context
 .gemini/
 brain/
+graphify-out/
+.agents/

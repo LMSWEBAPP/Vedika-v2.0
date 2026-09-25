@@ -219,7 +219,13 @@ export default function Header() {
             <button
               type="button"
               className={`${styles.navLink} ${isCoursesActive ? styles.activeNavLink : ''}`}
-              onClick={() => router.push('/courses')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('selected_course_id');
+                  window.dispatchEvent(new CustomEvent('reset_courses_view'));
+                }
+                router.push('/courses');
+              }}
             >
               <span>Courses</span>
               <ChevronDown size={13} style={{ opacity: 0.7, transform: coursesDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -235,6 +241,10 @@ export default function Header() {
                     className={styles.dropdownItem}
                     onClick={() => {
                       setCoursesDropdownOpen(false);
+                      if (item.path === '/courses' && typeof window !== 'undefined') {
+                        localStorage.removeItem('selected_course_id');
+                        window.dispatchEvent(new CustomEvent('reset_courses_view'));
+                      }
                       router.push(item.path);
                     }}
                   >
@@ -456,7 +466,14 @@ export default function Header() {
       <button
         type="button"
         className={`${styles.mobileNavLink} ${pathname.startsWith('/courses') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/courses'); }}
+        onClick={() => {
+          setMobileMenuOpen(false);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('selected_course_id');
+            window.dispatchEvent(new CustomEvent('reset_courses_view'));
+          }
+          router.push('/courses');
+        }}
       >
         <span>Courses</span>
         <BookOpen size={16} />

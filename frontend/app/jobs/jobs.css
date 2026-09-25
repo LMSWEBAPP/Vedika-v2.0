@@ -1,0 +1,68 @@
+/* ── jobs.css ── */
+/* Authentic Curved Border Beam that Curves Smoothly along the 14px Rounded Corners */
+
+.animated-job-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  transform: none !important;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.animated-job-card:hover {
+  transform: none !important;
+}
+
+/* Outer Masked Wrapper matching the card's 14px curvature */
+.animated-curved-border-wrap {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 2px; /* 2px border beam */
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.animated-job-card:hover .animated-curved-border-wrap,
+.animated-job-card.is-selected .animated-curved-border-wrap {
+  opacity: 1;
+}
+
+/* Continuous 360° rotating light beam that sweeps across the rounded corners */
+.animated-curved-border-wrap::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent 0deg,
+    transparent 200deg,
+    rgba(56, 189, 248, 0.2) 260deg,
+    rgba(56, 189, 248, 0.8) 320deg,
+    #38bdf8 345deg,
+    #93c5fd 360deg
+  );
+  animation: rotateCurvedBeam 2.6s linear infinite;
+}
+
+@keyframes rotateCurvedBeam {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -118,57 +118,6 @@ function CourseDeckWidget({
       width: '100%',
       gap: 6
     }}>
-      {/* Sleek inline Back button & Category info when drilled inside a category */}
-      {activeDrilldownCategory && (
-        <div style={{
-          width: '100%',
-          maxWidth: 1200,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '0 4px',
-          marginBottom: 2
-        }}>
-          <button
-            onClick={onBackToCategories}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: T.s2,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-              padding: '5px 14px',
-              borderRadius: 8,
-              fontSize: 12.5,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
-          >
-            <ArrowLeft size={14} /> Back
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 13, color: T.muted }}>
-              Categories <span style={{ opacity: 0.5 }}>›</span> <strong style={{ color: T.text }}>{activeDrilldownCategory}</strong>
-            </span>
-            <span style={{
-              fontSize: 11,
-              background: `${T.purple}18`,
-              color: T.purple,
-              padding: '2px 8px',
-              borderRadius: 10,
-              fontWeight: 700
-            }}>
-              {items.length} {items.length === 1 ? 'Course' : 'Courses'}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Course Emotions 3D Geometric Interactive Slider */}
       <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
         <CourseEmotionsSlider
@@ -337,16 +286,6 @@ export default function CoursePage() {
         setCourses(published);
         setEnrolledCourseIds(enrollments || []);
 
-        // Restore UX memory of last viewed course on mount
-        if (typeof window !== 'undefined') {
-          const lastCourseId = localStorage.getItem('selected_course_id');
-          if (lastCourseId) {
-            const found = published.find(c => String(c.id) === String(lastCourseId));
-            if (found) {
-              handleSelectCourse(found);
-            }
-          }
-        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -355,6 +294,27 @@ export default function CoursePage() {
     }
 
     loadData();
+
+    // Listen for reset courses view event (e.g. from navbar clicks)
+    const handleResetCoursesView = () => {
+      setSelectedCourse(null);
+      setActiveDrilldownCategory(null);
+      setSelectedCategory('All');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('selected_course_id');
+      }
+    };
+    window.addEventListener('reset_courses_view', handleResetCoursesView);
+
+    // Browser back/forward navigation support
+    const handlePopState = () => {
+      setSelectedCourse(null);
+      setActiveDrilldownCategory(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('selected_course_id');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
 
     // Listen for cross-tab or cross-component course updates
     const handleCoursesUpdated = () => {
@@ -394,6 +354,8 @@ export default function CoursePage() {
     }
 
     return () => {
+      window.removeEventListener('reset_courses_view', handleResetCoursesView);
+      window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('courses_updated', handleCoursesUpdated);
       window.removeEventListener('storage', handleCoursesUpdated);
       window.removeEventListener('focus', handleCoursesUpdated);
@@ -404,6 +366,9 @@ export default function CoursePage() {
     setSelectedCourse(course);
     if (typeof window !== 'undefined' && course) {
       localStorage.setItem('selected_course_id', course.id);
+      try {
+        window.history.pushState({ inCourse: true, courseId: course.id }, '', '/courses');
+      } catch (e) {}
     }
     setDetailsLoading(true);
     try {
@@ -912,6 +877,37 @@ export default function CoursePage() {
 
         {/* 100% Width Category Pills Carousel */}
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 8, marginBottom: 12, position: 'relative' }}>
+          {activeDrilldownCategory && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveDrilldownCategory(null);
+                setSelectedCategory('All');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: T.s2,
+                border: `1px solid ${T.accent}`,
+                color: T.accent,
+                padding: '6px 14px',
+                borderRadius: 20,
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = `${T.accent}20`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = T.s2; }}
+              title="Back to all categories"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+          )}
+
           {canScrollCategories && (
             <button
               onClick={() => handleScrollCategories('left')}
