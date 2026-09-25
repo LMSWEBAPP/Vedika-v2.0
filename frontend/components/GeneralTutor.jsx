@@ -922,7 +922,9 @@ export default function GeneralTutor() {
     if (!currentSessionId) setCurrentSessionId(sid);
 
     const intent = classifyIntent(raw);
-    const userMsg = { id: Date.now().toString(36), role: 'user', content: raw, mode, length, documents: [...sessionDocs] };
+    const blobMoods = ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'];
+    const blobMood = blobMoods[Math.floor(Math.random() * blobMoods.length)];
+    const userMsg = { id: Date.now().toString(36), role: 'user', content: raw, mode, length, documents: [...sessionDocs], blobMood };
     const msgsWithUser = [...messages, userMsg];
     setSessionDocs([]);
 
@@ -1294,24 +1296,27 @@ export default function GeneralTutor() {
             data-left-sidebar="true"
             style={{
               position: 'fixed',
-              top: 20,
-              bottom: 20,
+              bottom: 84,
               left: 20,
+              top: 'auto',
+              height: 'auto',
+              maxHeight: 'calc(100vh - 120px)',
               width: isMobile ? 'calc(100vw - 40px)' : (leftNavView === 'history' ? 340 : 260),
-              background: 'rgba(10, 18, 38, 0.85)',
+              background: 'rgba(10, 18, 38, 0.94)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(56, 189, 248, 0.28)',
-              borderRadius: 24,
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75), 0 0 32px rgba(56, 189, 248, 0.18)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              borderRadius: 20,
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 24px rgba(56, 189, 248, 0.2)',
               zIndex: 1100,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              padding: '16px 14px',
+              justifyContent: 'flex-start',
+              gap: 12,
+              padding: '14px 12px',
               animation: 'slideInLeftDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
               transition: 'width 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-              overflow: 'hidden'
+              overflowY: 'auto'
             }}
           >
             {leftNavView === 'menu' ? (
@@ -1937,7 +1942,7 @@ export default function GeneralTutor() {
                       <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>{msg.mode} &middot; {msg.length}</div>
                     </div>
                     <div style={{ flexShrink: 0, marginTop: -4 }}>
-                      <UserBlobAvatar isTyping={false} isAiLoading={false} size={44} />
+                      <UserBlobAvatar isTyping={false} isAiLoading={false} size={44} mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]} />
                     </div>
                   </div>
                 </div>
@@ -2173,14 +2178,14 @@ export default function GeneralTutor() {
                                 gap: 5,
                                 padding: '6px 12px',
                                 borderRadius: 16,
-                                background: isActive ? s.color : (loading ? 'rgba(255,255,255,0.05)' : `${s.color}12`),
-                                border: isActive ? `1px solid ${s.color}` : `1px solid ${s.color}40`,
-                                color: isActive ? '#fff' : s.color,
+                                background: isActive ? s.color : (loading ? '#0f172a' : '#050814'),
+                                border: isActive ? `1px solid ${s.color}` : `1px solid ${s.color}65`,
+                                color: isActive ? '#fff' : (s.color === '#64748B' ? '#e2e8f0' : s.color),
                                 fontSize: 11,
                                 fontWeight: 600,
                                 cursor: loading ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.15s',
-                                boxShadow: isActive ? `0 2px 8px ${s.color}40` : 'none'
+                                boxShadow: isActive ? `0 2px 10px ${s.color}50` : '0 2px 8px rgba(0,0,0,0.7)'
                               }}
                             >
                               {loading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <s.Icon size={12} />}

@@ -500,16 +500,20 @@
 
 /* 2. PHYSICS LAB: Planetary Core, Quantum Gyro & Satellite Orbits */
 .live-phys-core {
-  transform-origin: 87.5px 96px;
-  animation: rotatePlanetSlow 36s linear infinite, physCoreGlowPulse 4.5s ease-in-out infinite alternate;
+  animation: physCoreGlowPulse 4.5s ease-in-out infinite alternate;
 }
 
-@keyframes rotatePlanetSlow {
+.live-phys-planet-spin {
+  transform-origin: 0px 0px;
+  animation: spinPlanetInPlace 32s linear infinite;
+}
+
+@keyframes spinPlanetInPlace {
   from {
-    transform: translate(87.5px, 96px) rotate(0deg);
+    transform: rotate(0deg);
   }
   to {
-    transform: translate(87.5px, 96px) rotate(360deg);
+    transform: rotate(360deg);
   }
 }
 

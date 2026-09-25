@@ -424,16 +424,18 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
 
         {/* CENTRAL 3D GLOWING PLANETARY CORE / ATOM (Option 9 Hero) */}
         <g className="live-phys-core" transform="translate(87.5, 96)" filter="url(#physCoreGlow)">
-          {/* Atmospheric Glow Ring */}
-          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="3" />
-          {/* Solid 3D Volumetric Core Sphere */}
-          <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
-          {/* Planetary Latitudinal Atmospheric Bands */}
-          <ellipse cx="0" cy="-6" rx="25" ry="7" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.1" strokeDasharray="6 3" />
-          <ellipse cx="0" cy="7" rx="24.5" ry="6.5" fill="none" stroke="rgba(56, 189, 248, 0.28)" strokeWidth="1.1" strokeDasharray="7 4" />
-          {/* Hot Specular Core Highlight */}
-          <ellipse cx="-8" cy="-8" rx="7" ry="5" fill="#FFFFFF" opacity="0.65" transform="rotate(-20 -8 -8)" />
-          <circle cx="-10" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
+          <g className="live-phys-planet-spin">
+            {/* Atmospheric Glow Ring */}
+            <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="3" />
+            {/* Solid 3D Volumetric Core Sphere */}
+            <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
+            {/* Planetary Latitudinal Atmospheric Bands */}
+            <ellipse cx="0" cy="-6" rx="25" ry="7" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.1" strokeDasharray="6 3" />
+            <ellipse cx="0" cy="7" rx="24.5" ry="6.5" fill="none" stroke="rgba(56, 189, 248, 0.28)" strokeWidth="1.1" strokeDasharray="7 4" />
+            {/* Hot Specular Core Highlight */}
+            <ellipse cx="-8" cy="-8" rx="7" ry="5" fill="#FFFFFF" opacity="0.65" transform="rotate(-20 -8 -8)" />
+            <circle cx="-10" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
+          </g>
         </g>
 
         {/* 1. 3D QUANTUM GYROSCOPE RINGS (Top-Left Flank, Zero Overlap) */}

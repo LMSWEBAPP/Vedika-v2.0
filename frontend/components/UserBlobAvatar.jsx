@@ -52,11 +52,13 @@ export default function UserBlobAvatar({
   size = 72,
   themeColor = 'violet',
   initialMood = 'neutral',
+  mood,
   className = '',
   style = {}
 }) {
-  const [baseMood, setBaseMood] = useState(initialMood);
-  const [activeMood, setActiveMood] = useState(initialMood);
+  const effectiveInitialMood = mood || initialMood;
+  const [baseMood, setBaseMood] = useState(effectiveInitialMood);
+  const [activeMood, setActiveMood] = useState(effectiveInitialMood);
   const [activeGaze, setActiveGaze] = useState({ x: 0, y: 0 });
   const [activeSparkle, setActiveSparkle] = useState(false);
   const [activeNod, setActiveNod] = useState(false);
@@ -76,6 +78,14 @@ export default function UserBlobAvatar({
   const inactivityTimerRef = useRef(null);
   const idleIntervalRef = useRef(null);
   const aiReadingIntervalRef = useRef(null);
+
+  // Sync if mood prop changes
+  useEffect(() => {
+    if (mood && mood !== baseMood) {
+      setBaseMood(mood);
+      setActiveMood(mood);
+    }
+  }, [mood, baseMood]);
 
   // Show a mini temporary reaction bubble
   const showTip = useCallback((text) => {
@@ -103,7 +113,7 @@ export default function UserBlobAvatar({
     };
   }, [isAiLoading]);
 
-  // Main environment & 3-second inactivity state machine
+  // Main environment & inactivity state machine
   useEffect(() => {
     // Clear any ongoing idle loop
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
@@ -167,43 +177,64 @@ export default function UserBlobAvatar({
       return;
     }
 
-    // Default resting state before 3s of inactivity kicks in
+    // Default resting state before inactivity kicks in
     setActiveMood(baseMood);
     setActiveGaze({ x: 0, y: 0 });
     setActiveNod(false);
     setActiveMouth(undefined);
     setActiveSparkle(false);
 
-    // Start 3-second inactivity timer
+    // Staggered inactivity timer with random phase offset so multiple avatars never blink or shift in lockstep
+    const randomDelay = 2200 + Math.random() * 2200;
     inactivityTimerRef.current = setTimeout(() => {
       setIsIdle(true);
-      idleCycleIndex.current = 0;
 
-      // Apply first subtle idle expression
-      const first = SUBTLE_IDLE_CYCLE[0];
-      setActiveMood(first.mood);
-      setActiveGaze(first.gaze);
-      setActiveSparkle(first.sparkle);
-      setBlinkCount((b) => b + 1);
+      // If a distinct personality mood was assigned, preserve that expression and subtly shift gaze & blink
+      if (effectiveInitialMood && effectiveInitialMood !== 'neutral') {
+        const gazeOffsets = [
+          { x: 4, y: -2 },
+          { x: -5, y: 3 },
+          { x: 0, y: -4 },
+          { x: 3, y: 2 },
+          { x: 0, y: 0 }
+        ];
+        let gIdx = Math.floor(Math.random() * gazeOffsets.length);
+        setActiveGaze(gazeOffsets[gIdx]);
+        setBlinkCount((b) => b + 1);
 
-      // Start gentle cycling every 3.2s
-      idleIntervalRef.current = setInterval(() => {
-        idleCycleIndex.current = (idleCycleIndex.current + 1) % SUBTLE_IDLE_CYCLE.length;
+        const cycleInterval = 2800 + Math.random() * 1400;
+        idleIntervalRef.current = setInterval(() => {
+          gIdx = (gIdx + 1) % gazeOffsets.length;
+          setActiveGaze(gazeOffsets[gIdx]);
+          setBlinkCount((b) => b + 1);
+        }, cycleInterval);
+      } else {
+        idleCycleIndex.current = Math.floor(Math.random() * SUBTLE_IDLE_CYCLE.length);
         const current = SUBTLE_IDLE_CYCLE[idleCycleIndex.current];
         setActiveMood(current.mood);
         setActiveGaze(current.gaze);
         setActiveSparkle(current.sparkle);
-        if (current.blink) {
-          setBlinkCount((b) => b + 1);
-        }
-      }, 3200);
-    }, 3000); // Exactly 3 seconds of inactivity
+        setBlinkCount((b) => b + 1);
+
+        const cycleInterval = 3000 + Math.random() * 1200;
+        idleIntervalRef.current = setInterval(() => {
+          idleCycleIndex.current = (idleCycleIndex.current + 1) % SUBTLE_IDLE_CYCLE.length;
+          const curr = SUBTLE_IDLE_CYCLE[idleCycleIndex.current];
+          setActiveMood(curr.mood);
+          setActiveGaze(curr.gaze);
+          setActiveSparkle(curr.sparkle);
+          if (curr.blink) {
+            setBlinkCount((b) => b + 1);
+          }
+        }, cycleInterval);
+      }
+    }, randomDelay);
 
     return () => {
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
       if (idleIntervalRef.current) clearInterval(idleIntervalRef.current);
     };
-  }, [isTyping, isAiLoading, isJustSent, isHovered, isOverpoked, baseMood, showTip]);
+  }, [isTyping, isAiLoading, isJustSent, isHovered, isOverpoked, baseMood, effectiveInitialMood, showTip]);
 
   // Handle single poke (click)
   const handlePoke = useCallback(() => {
