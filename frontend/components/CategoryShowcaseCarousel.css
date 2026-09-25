@@ -36,8 +36,8 @@
 }
 
 .showcase-card.is-active {
-  border-color: rgba(124, 58, 237, 0.6);
-  box-shadow: 0 16px 40px rgba(124, 58, 237, 0.35), 0 0 20px rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
   cursor: default;
 }
 

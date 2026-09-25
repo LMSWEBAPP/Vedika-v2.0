@@ -114,6 +114,17 @@ export default function GeneralTutor() {
       color: '#D8B4FE',
       border: 'rgba(192, 132, 252, 0.45)',
       bg: 'rgba(192, 132, 252, 0.12)'
+    },
+    {
+      id: 'waves',
+      name: 'Cyber Waves',
+      shortLabel: 'Waves',
+      emoji: '🌊',
+      desc: 'Cybernetic Neon Waves · Slow Flowing Ribbon',
+      gradient: 'linear-gradient(135deg, #14B1AB 0%, #F9D56E 50%, #E8505B 100%)',
+      color: '#14B1AB',
+      border: 'rgba(20, 177, 171, 0.45)',
+      bg: 'rgba(20, 177, 171, 0.12)'
     }
   ], []);
 
@@ -124,7 +135,7 @@ export default function GeneralTutor() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vedika_tutor_bg_theme');
-      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel') {
+      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel' || saved === 'waves') {
         setBgTheme(saved);
       }
     }

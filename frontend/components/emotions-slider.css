@@ -183,8 +183,8 @@
 }
 
 .active-slide .emotions-slider-item {
-  border-color: rgba(96, 165, 250, 0.65);
-  box-shadow: 0 0 28px rgba(59, 130, 246, 0.25), 0 16px 40px rgba(0, 0, 0, 0.6);
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
 }
 
 .emotions-slider-item__badge {
@@ -217,7 +217,7 @@
   width: 100%;
   height: 175px;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+  background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 

@@ -75,13 +75,13 @@
 
 /* VEDIKA: Dominant, noticeably bigger */
 .titleRowVedika {
-  font-size: clamp(3.8rem, 6.4vw, 6.6rem);
+  font-size: clamp(4.3rem, 7.5vw, 7.8rem);
   letter-spacing: -0.01em;
 }
 
 /* AI TUTOR: Proportionally smaller than Vedika with distinct word gap */
 .titleRowAiTutor {
-  font-size: clamp(2.35rem, 3.8vw, 3.9rem);
+  font-size: clamp(2.75rem, 4.5vw, 4.7rem);
   letter-spacing: 0.02em;
   padding-left: 0.2rem;
 }
@@ -98,6 +98,8 @@
 
 .titleChartsCont span {
   display: inline-block;
+  opacity: 0;
+  visibility: hidden;
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   background: linear-gradient(

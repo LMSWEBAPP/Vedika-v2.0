@@ -218,7 +218,7 @@
   opacity: 1;
   transform: translateY(-2px);
   border-color: rgba(var(--card-rgb), 0.5);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 18px rgba(var(--card-rgb), 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   background: linear-gradient(180deg, rgba(var(--card-rgb), 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
 }
 
@@ -263,9 +263,8 @@
   border: 1.5px solid var(--card-accent);
   background: linear-gradient(160deg, rgba(var(--card-rgb), 0.16) 0%, rgba(15, 23, 42, 0.88) 100%);
   box-shadow: 
-    0 0 35px rgba(var(--card-rgb), 0.35),
-    0 16px 40px rgba(0, 0, 0, 0.55),
-    inset 0 0 20px rgba(var(--card-rgb), 0.10);
+    0 16px 40px rgba(0, 0, 0, 0.65),
+    inset 0 0 14px rgba(var(--card-rgb), 0.08);
   cursor: default;
   padding: 16px 20px;
 }

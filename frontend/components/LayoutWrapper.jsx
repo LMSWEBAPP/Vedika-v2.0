@@ -162,7 +162,7 @@ export default function LayoutWrapper({ children }) {
   }
 
   const isHomePage = pathname === '/';
-  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments';
+  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments' || pathname === '/courses';
 
   return (
     <div style={{
@@ -181,10 +181,11 @@ export default function LayoutWrapper({ children }) {
       <main style={{
         flex: 1,
         width: '100%',
+        boxSizing: 'border-box',
         overflowY: isFixedPage && !isHomePage ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'auto',
-        maxHeight: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'none',
+        height: isFixedPage && !isHomePage ? '100vh' : 'auto',
+        maxHeight: isFixedPage && !isHomePage ? '100vh' : 'none',
         paddingTop: isHomePage ? 0 : '72px'
       }}>
         {children}

@@ -14,22 +14,22 @@ const SHAPE_CONFIGS = {
   Tetrahedron: {
     color: 0xffb6c1,
     accentHex: '#ec4899',
-    createGeometry: () => new THREE.TetrahedronGeometry(3.4, 0)
+    createGeometry: () => new THREE.TetrahedronGeometry(2.3, 0)
   },
   Octahedron: {
     color: 0xb2d8d8,
     accentHex: '#06b6d4',
-    createGeometry: () => new THREE.OctahedronGeometry(3.2, 0)
+    createGeometry: () => new THREE.OctahedronGeometry(2.2, 0)
   },
   Icosahedron: {
     color: 0xc9a0dc,
     accentHex: '#a855f7',
-    createGeometry: () => new THREE.IcosahedronGeometry(3.2, 0)
+    createGeometry: () => new THREE.IcosahedronGeometry(2.2, 0)
   },
   TorusKnot: {
     color: 0xfde047,
     accentHex: '#eab308',
-    createGeometry: () => new THREE.TorusKnotGeometry(2.2, 0.7, 64, 8)
+    createGeometry: () => new THREE.TorusKnotGeometry(1.5, 0.45, 64, 8)
   }
 };
 
@@ -43,10 +43,10 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
     const width = container.clientWidth || 340;
     const height = container.clientHeight || 170;
 
-    // Create scene, camera, renderer
+    // Create scene, camera, renderer with safe FOV and distance
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.z = 5.2;
+    const camera = new THREE.PerspectiveCamera(62, width / height, 0.1, 1000);
+    camera.position.z = 6.4;
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -103,21 +103,21 @@ export default function CourseInteractiveCanvas({ shapeName = 'Tetrahedron', isS
     lines.forEach((line) => {
       line.material = lineMaterial;
       line.rotation.set(0, 0, 0.6);
-      line.scale.set(1.22, 1.22, 1.22);
+      line.scale.set(1.14, 1.14, 1.14);
       scene.add(line);
     });
 
     // Background floating clones
     const mesh1 = mesh.clone();
-    mesh1.position.set(8, 3, -4);
+    mesh1.position.set(5.5, 1.8, -3);
     mesh1.rotation.set(1, 1, 0);
-    mesh1.scale.set(0.65, 0.65, 0.65);
+    mesh1.scale.set(0.48, 0.48, 0.48);
     scene.add(mesh1);
 
     const mesh2 = mesh.clone();
-    mesh2.position.set(-8, -3, -4);
+    mesh2.position.set(-5.5, -1.8, -3);
     mesh2.rotation.set(2, -1, 2);
-    mesh2.scale.set(0.65, 0.65, 0.65);
+    mesh2.scale.set(0.48, 0.48, 0.48);
     scene.add(mesh2);
 
     // Lights

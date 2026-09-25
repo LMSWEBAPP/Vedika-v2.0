@@ -319,53 +319,49 @@ function CourseDeckWidget({
       width: '100%',
       gap: isMobile ? 16 : 20
     }}>
-      {/* Top Breadcrumb & Return Bar when inside a category */}
+      {/* Sleek inline Back Button + Category Info Beside It (saving vertical space) */}
       {activeDrilldownCategory && (
         <div style={{
           width: '100%',
-          maxWidth: 1120,
+          maxWidth: 1400,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 18px',
-          background: T.s2,
-          border: `1px solid ${T.border}`,
-          borderRadius: 14,
-          flexWrap: 'wrap',
-          gap: 10
+          gap: 12,
+          padding: '0 4px',
+          marginBottom: -4
         }}>
           <button
             onClick={onBackToCategories}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 8,
-              background: `${T.accent}14`,
-              border: `1px solid ${T.accent}40`,
-              color: T.accent,
-              padding: '6px 14px',
+              gap: 6,
+              background: T.s2,
+              border: `1px solid ${T.border}`,
+              color: T.text,
+              padding: '5px 14px',
               borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
+              fontSize: 12.5,
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = `${T.accent}24`}
-            onMouseLeave={(e) => e.currentTarget.style.background = `${T.accent}14`}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
           >
-            <ArrowLeft size={16} /> Back to All Categories
+            <ArrowLeft size={14} /> Back
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 13, color: T.muted }}>
               Categories <span style={{ opacity: 0.5 }}>›</span> <strong style={{ color: T.text }}>{activeDrilldownCategory}</strong>
             </span>
             <span style={{
-              fontSize: 11.5,
+              fontSize: 11,
               background: `${T.purple}18`,
               color: T.purple,
-              padding: '3px 10px',
-              borderRadius: 12,
+              padding: '2px 8px',
+              borderRadius: 10,
               fontWeight: 700
             }}>
               {items.length} {items.length === 1 ? 'Course' : 'Courses'}
@@ -476,6 +472,21 @@ export default function CoursePage() {
       behavior: 'smooth'
     });
   };
+
+  const [canScrollCategories, setCanScrollCategories] = useState(false);
+
+  const checkCategoriesScroll = useCallback(() => {
+    if (categoriesContainerRef.current) {
+      const { scrollWidth, clientWidth } = categoriesContainerRef.current;
+      setCanScrollCategories(scrollWidth > clientWidth + 4);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkCategoriesScroll();
+    window.addEventListener('resize', checkCategoriesScroll);
+    return () => window.removeEventListener('resize', checkCategoriesScroll);
+  }, [allCategories, checkCategoriesScroll]);
 
   const handleScrollCategories = (dir) => {
     if (!categoriesContainerRef.current) return;
@@ -1003,8 +1014,8 @@ export default function CoursePage() {
       display: 'flex',
       flexDirection: 'column',
       width: '100%',
-      height: 'calc(100vh - 64px)',
-      maxHeight: 'calc(100vh - 64px)',
+      height: '100%',
+      maxHeight: '100%',
       overflowY: 'hidden',
       overflowX: 'hidden',
       background: T.bg,
@@ -1028,7 +1039,7 @@ export default function CoursePage() {
           justifyContent: 'space-between',
           gap: 12,
           flexWrap: 'wrap',
-          marginBottom: 10
+          marginBottom: 8
         }}>
           {/* Real-Time Course Search Bar */}
           <div style={{ position: 'relative', width: isMobile ? '100%' : 300, flexShrink: 0 }}>
@@ -1098,28 +1109,30 @@ export default function CoursePage() {
         </div>
 
         {/* 100% Width Category Pills Carousel */}
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 8, marginBottom: 24, position: 'relative' }}>
-          <button
-            onClick={() => handleScrollCategories('left')}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: T.s2,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
-          >
-            <ChevronLeft size={16} />
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 8, marginBottom: 12, position: 'relative' }}>
+          {canScrollCategories && (
+            <button
+              onClick={() => handleScrollCategories('left')}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: T.s2,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
 
           <div
             ref={categoriesContainerRef}
@@ -1165,27 +1178,29 @@ export default function CoursePage() {
             })}
           </div>
 
-          <button
-            onClick={() => handleScrollCategories('right')}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: T.s2,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
-          >
-            <ChevronRight size={16} />
-          </button>
+          {canScrollCategories && (
+            <button
+              onClick={() => handleScrollCategories('right')}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: T.s2,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
         </div>
 
         {/* Dynamic Category / Course Carousel Drilldown Presentation */}

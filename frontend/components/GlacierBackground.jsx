@@ -2,17 +2,16 @@
 
 import React from 'react';
 import FeralUIFlowCanvas, { PRESETS } from './FeralUIFlowCanvas';
+import WavyLinesBackground from './WavyLinesBackground';
 
 /**
- * GlacierBackground - FeralUI Gradient Flow Background for Ask Vedika
+ * GlacierBackground - FeralUI Gradient Flow & Wavy Lines Background for Ask Vedika & Code with Vedika
  * 
- * Supports all 3 live flowing presets (Fluid. ALWAYS IN MOTION):
- * - 'aurora': FeralUI Aurora Palette (Frost Mint #EAFFF4, Emerald #4BE8A0, Teal #2E7A6A, Cyan #2E6E80, Midnight #16224D)
- * - 'glacier': FeralUI Glacier Palette (Deep Hanada #183F60, Inked Lapis #277EA3, Clear Hanada #65BED0, Sky Haze #B9E3DF, Pale Matcha #EAF4E6)
- * - 'pastel': FeralUI Opal Palette (Pearl White #F6F9FF, Ice Cyan #9BE0E8, Wisteria Lavender #C4B5F7, Sakura Blush Pink #F8B8D9)
- * 
- * All run the 60 FPS real-time WebGL/2D fluid engine with authentic FeralUI grain overlay.
- * Zero black fade/vignette overlays - 100% radiant and luminous.
+ * Supports:
+ * - 'aurora': FeralUI Aurora Palette
+ * - 'glacier': FeralUI Glacier Palette
+ * - 'pastel': FeralUI Opal Palette
+ * - 'waves': Cybernetic Slow Flowing Neon Wavy Lines Animation
  */
 const GlacierBackground = React.memo(function GlacierBackground({
   variant = 'aurora',
@@ -20,6 +19,10 @@ const GlacierBackground = React.memo(function GlacierBackground({
   style = {},
   className = ''
 }) {
+  if (variant === 'waves') {
+    return <WavyLinesBackground opacity={opacity} className={className} />;
+  }
+
   const activeVariant = PRESETS[variant] ? variant : 'aurora';
   const baseBg = PRESETS[activeVariant]?.baseColor || '#232E4A';
 

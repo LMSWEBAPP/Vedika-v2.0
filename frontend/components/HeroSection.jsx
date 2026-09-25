@@ -96,7 +96,7 @@ export default function HeroSection() {
     posX: 0,
     posY: -1,
     posZ: -31,
-    scale: 1.06,
+    scale: 1.25,
     rotX: 115,
     rotY: 5,
     rotZ: -40,
@@ -178,22 +178,22 @@ export default function HeroSection() {
         timeline.fromTo(titleLead, { y: '-0.5rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, 0);
       }
       if (ve) {
-        timeline.fromTo(ve, { x: '3.6rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, 0);
+        timeline.fromTo(ve, { x: '3.6rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, 0);
       }
       if (di) {
-        timeline.fromTo(di, { x: '-2.6rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
+        timeline.fromTo(di, { x: '-2.6rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, fourFrames);
       }
       if (ka) {
-        timeline.fromTo(ka, { x: '2.8rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(ka, { x: '2.8rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
       if (ai) {
-        timeline.fromTo(ai, { x: '-2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(ai, { x: '-2.5rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
       if (tu) {
-        timeline.fromTo(tu, { x: '2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
+        timeline.fromTo(tu, { x: '2.5rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, fourFrames);
       }
       if (tor) {
-        timeline.fromTo(tor, { x: '-3.2rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
+        timeline.fromTo(tor, { x: '-3.2rem', autoAlpha: 0 }, { x: '0rem', autoAlpha: 1, duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
       if (titleSubline) {
         timeline.fromTo(titleSubline, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, twoFrames);

@@ -305,14 +305,14 @@ export default function VedikaParticleBot({
           const b = data[idx + 2];
           const a = data[idx + 3];
 
-          if (a < 30) continue;
+          if (a < 45) continue;
 
           const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
           const maxC = Math.max(r, g, b);
           const minC = Math.min(r, g, b);
           const alphaNorm = a / 255;
 
-          if (luminance < 10 && maxC < 16) continue;
+          if (luminance < 14 && maxC < 20) continue;
           if (maxC - minC <= 10 && maxC >= 195 && a < 220) continue;
 
           let pSize;
@@ -418,27 +418,13 @@ export default function VedikaParticleBot({
           spawnX = robotX + t.relX + (Math.random() - 0.5) * 16;
           spawnY = robotY + t.relY + (Math.random() - 0.5) * 16;
         } else {
-          // Non-inline (e.g. Vedika AI page): particles coming from out of viewport
-          // MUST strictly originate from the right-side area outlined by the red box
-          const minSpawnX = rect.left > 100 ? (rect.left - 10) : (canvasWidth * 0.48);
-          const maxSpawnX = canvasWidth;
-          const spawnDir = Math.random();
-
-          spawnZ = (Math.random() - 0.5) * 20;
-
-          if (spawnDir < 0.65) {
-            // 65%: from beyond the RIGHT viewport edge
-            spawnX = maxSpawnX + 25 + Math.random() * 260;
-            spawnY = Math.max(0, rect.top - 60) + Math.random() * (rect.height + 140);
-          } else if (spawnDir < 0.82) {
-            // 17%: from above the TOP viewport edge (within the red box horizontal span)
-            spawnX = minSpawnX + 15 + Math.random() * (maxSpawnX - minSpawnX - 25);
-            spawnY = -40 - Math.random() * 180;
-          } else {
-            // 18%: from below the BOTTOM viewport edge (within the red box horizontal span)
-            spawnX = minSpawnX + 15 + Math.random() * (maxSpawnX - minSpawnX - 25);
-            spawnY = canvasHeight + 40 + Math.random() * 180;
-          }
+          // Non-inline (e.g. Vedika AI page): particles assemble organically from a smooth radial cloud
+          // No rectangular edges, straight boundary lines, or visible box cuts
+          const spawnAngle = Math.random() * Math.PI * 2;
+          const spawnDist = 160 + Math.random() * 320;
+          spawnX = (robotX + targetWidth / 2) + Math.cos(spawnAngle) * spawnDist;
+          spawnY = (robotY + targetHeight / 2) + Math.sin(spawnAngle) * spawnDist;
+          spawnZ = -20 - Math.random() * 60;
         }
 
         const angle = Math.random() * Math.PI * 2;
@@ -774,14 +760,27 @@ export default function VedikaParticleBot({
         const maxSize = isHighIntensity ? 3.8 : 3.4;
         const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 1.0)));
 
-        // Clip out of screen or crossing into the left column (outside red box)
-        const leftLimit = inline ? -30 : (rect.left > 100 ? (rect.left - 15) : 0);
-        if (renderX < leftLimit || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
+        // Soft edge fade near left boundary instead of sharp rectangular clipping
+        let edgeFade = 1;
+        const leftLimit = inline ? -30 : (rect.left > 100 ? (rect.left - 20) : 0);
+        if (renderX < leftLimit) {
+          edgeFade = Math.max(0, 1 - (leftLimit - renderX) / 50);
+        }
+        if (edgeFade <= 0 || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
           continue;
         }
 
+        // Smooth assembly fade-in as particles travel from spawn toward target
+        let assembleFade = 1;
+        if (!p.hasEntered) {
+          const dx = (robotX + p.relX) - p.x;
+          const dy = (robotY + p.relY) - p.y;
+          const dist2D = Math.sqrt(dx * dx + dy * dy);
+          assembleFade = Math.min(1, Math.max(0, 1 - dist2D / 260));
+        }
+
         // Apply globalFade so particles dissolve to 0 alpha as they disperse!
-        const finalAlpha = Math.max(0, p.baseAlpha * globalFade);
+        const finalAlpha = Math.max(0, p.baseAlpha * globalFade * edgeFade * assembleFade);
         if (finalAlpha <= 0.01) continue;
 
         // Highlight particle when lifted forward in Z or excited in Physics & Chemistry
