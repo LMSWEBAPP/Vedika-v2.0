@@ -1,12 +1,14 @@
 .heroSection {
   position: relative;
-  min-height: calc(100vh - 80px);
-  padding: 4.5rem 3rem 2rem 3rem;
+  height: 100%;
+  width: 100%;
+  padding: 1rem 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .container {
@@ -58,7 +60,7 @@
 /* PAIRED HORIZONTAL ANIMATION: SYLLABLE CHARTS CONTAINERS    */
 /* ========================================================= */
 .titleH1 {
-  font-family: var(--main-font, 'Reforma 1918', var(--font-calluna), Georgia, serif);
+  font-family: var(--font-royal), 'Cinzel', 'Playfair Display', Georgia, serif;
   font-weight: 800;
   line-height: 1.02;
   text-transform: uppercase;
@@ -104,33 +106,15 @@
   transform: translate3d(0, 0, 0);
   background: linear-gradient(
     135deg,
-    #00c2ff 0%,
-    #a855f7 26%,
-    #00f298 52%,
-    #ff9900 76%,
-    #00c2ff 100%
+    #ffffff 0%,
+    #f1f5f9 35%,
+    #cbd5e1 70%,
+    #94a3b8 100%
   );
-  background-size: 260% 260%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
-  animation: royalShimmerFlow 8s ease-in-out infinite;
-}
-
-@keyframes royalShimmerFlow {
-  0% {
-    background-position: 0% 0%;
-    filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
-  }
-  50% {
-    background-position: 100% 100%;
-    filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.46)) drop-shadow(0 0 38px rgba(0, 242, 152, 0.26));
-  }
-  100% {
-    background-position: 0% 0%;
-    filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
-  }
+  filter: drop-shadow(0 2px 14px rgba(255, 255, 255, 0.22));
 }
 
 /* 3. Simple Font: Vollkorn for Subline & Descriptions */
@@ -266,7 +250,7 @@
 /* 3D Particle Swarm in stage behind the mascot */
 .stageParticlesWrapper {
   position: absolute;
-  inset: -12% -14% -8% -14%;
+  inset: -10%;
   z-index: 2;
   pointer-events: none;
   overflow: visible;
@@ -275,9 +259,9 @@
 /* Central Mascot Container: Centered with the particle rings */
 .mascotContainer {
   position: absolute;
-  top: 52%;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -48%);
+  transform: translate(-50%, -50%);
   height: 94%;
   aspect-ratio: 0.7467;
   z-index: 5;

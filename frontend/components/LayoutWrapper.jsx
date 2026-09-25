@@ -164,35 +164,37 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
+  const isViewportLocked = isFixedPage || isHomePage;
+
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: isFixedPage && !isHomePage ? '100vh' : 'auto',
+      height: isViewportLocked ? '100vh' : 'auto',
       minHeight: '100vh',
-      maxHeight: isFixedPage && !isHomePage ? '100vh' : 'none',
+      maxHeight: isViewportLocked ? '100vh' : 'none',
       background: isHomePage ? '#02050c' : 'var(--bg)',
       color: isHomePage ? '#f8fafc' : 'var(--text)',
       width: '100%',
       position: 'relative',
-      overflow: isFixedPage && !isHomePage ? 'hidden' : 'visible'
+      overflow: isViewportLocked ? 'hidden' : 'visible'
     }}>
       {/* Present Navbar displayed consistently on every page */}
       <Header />
       <main style={{
-        position: isFixedPage && !isHomePage ? 'fixed' : 'relative',
-        top: isFixedPage && !isHomePage ? 72 : 'auto',
-        bottom: isFixedPage && !isHomePage ? 0 : 'auto',
-        left: isFixedPage && !isHomePage ? 0 : 'auto',
-        right: isFixedPage && !isHomePage ? 0 : 'auto',
+        position: isViewportLocked ? 'fixed' : 'relative',
+        top: isViewportLocked ? 64 : 'auto',
+        bottom: isViewportLocked ? 0 : 'auto',
+        left: isViewportLocked ? 0 : 'auto',
+        right: isViewportLocked ? 0 : 'auto',
         width: '100%',
         boxSizing: 'border-box',
-        overflowY: isFixedPage && !isHomePage ? 'hidden' : 'auto',
+        overflowY: isViewportLocked ? 'hidden' : 'auto',
         overflowX: 'hidden',
-        height: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'auto',
-        maxHeight: isFixedPage && !isHomePage ? 'calc(100vh - 72px)' : 'none',
-        minHeight: !isFixedPage ? 'calc(100vh - 72px)' : 'auto',
-        paddingTop: isHomePage ? 0 : (isFixedPage ? 0 : '72px'),
+        height: isViewportLocked ? 'calc(100vh - 64px)' : 'auto',
+        maxHeight: isViewportLocked ? 'calc(100vh - 64px)' : 'none',
+        minHeight: !isViewportLocked ? 'calc(100vh - 64px)' : 'auto',
+        paddingTop: isViewportLocked ? 0 : '64px',
         background: isHomePage ? '#02050c' : 'var(--bg)'
       }}>
         {children}

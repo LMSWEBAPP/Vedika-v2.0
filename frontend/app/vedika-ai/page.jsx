@@ -20,12 +20,7 @@ const CARDS = [
     accentRgb: '168, 85, 247',
     accentGlow: 'rgba(168, 85, 247, 0.45)',
     accentGlowSoft: 'rgba(168, 85, 247, 0.22)',
-    botImage: '/vedika-bot-ask.png',
-    quotes: [
-      { text: 'Curious Minds GROW HERE <3', top: '12%', right: '10%' },
-      { text: 'ASK EXPLORE LEARN <3', bottom: '14%', right: '14%' }
-    ],
-    doodles: ['lightbulb', 'book', 'sparkles']
+    botImage: '/vedika-bot-ask.png'
   },
   {
     id: 'code',
@@ -40,11 +35,7 @@ const CARDS = [
     accentRgb: '59, 130, 246',
     accentGlow: 'rgba(59, 130, 246, 0.45)',
     accentGlowSoft: 'rgba(59, 130, 246, 0.22)',
-    botImage: '/vedika-bot-code.png',
-    quotes: [
-      { text: 'BUILD DEBUG LEARN <3', top: '14%', right: '10%' }
-    ],
-    doodles: ['codeWindow', 'checklist', 'sparkles']
+    botImage: '/vedika-bot-code.png'
   },
   {
     id: 'puzzle',
@@ -59,11 +50,7 @@ const CARDS = [
     accentRgb: '245, 158, 11',
     accentGlow: 'rgba(245, 158, 11, 0.45)',
     accentGlowSoft: 'rgba(245, 158, 11, 0.22)',
-    botImage: '/vedika-bot-puzzle.png',
-    quotes: [
-      { text: 'PRACTICE SOLVE IMPROVE <3', top: '14%', right: '10%' }
-    ],
-    doodles: ['puzzle', 'ideaList', 'sparkles']
+    botImage: '/vedika-bot-puzzle.png'
   },
   {
     id: 'viva',
@@ -78,11 +65,7 @@ const CARDS = [
     accentRgb: '16, 185, 129',
     accentGlow: 'rgba(16, 185, 129, 0.45)',
     accentGlowSoft: 'rgba(16, 185, 129, 0.22)',
-    botImage: '/vedika-bot-viva.png',
-    quotes: [
-      { text: 'PREPARE PRACTICE GET CONFIDENT <3', top: '14%', right: '8%' }
-    ],
-    doodles: ['speech', 'gradCap', 'checklist']
+    botImage: '/vedika-bot-viva.png'
   }
 ];
 
@@ -407,134 +390,6 @@ export default function VedikaAIHub() {
           <div className="vedika-ai-shimmer-glow-bg" />
           <div className="vedika-ai-shimmer-glow-radial" />
           <div className="vedika-ai-shimmer-glow-pulse" />
-
-          {/* Thematic Floating Neon Quotes & Doodles */}
-          <div className="vedika-ai-doodles-layer">
-            {activeCard.quotes.map((q, qIdx) => (
-              <div
-                key={`${activeCard.id}-q-${qIdx}`}
-                className="vedika-ai-quote-pill"
-                style={{
-                  top: q.top || 'auto',
-                  bottom: q.bottom || 'auto',
-                  left: q.left || 'auto',
-                  right: q.right || 'auto'
-                }}
-              >
-                <span>{q.text}</span>
-              </div>
-            ))}
-
-            {/* Neon Decorative Doodles matching the mockup images */}
-            {activeCard.id === 'ask' && (
-              <>
-                {/* Lightbulb doodle above bot */}
-                <div className="vedika-neon-doodle" style={{ top: '16%', left: '26%' }}>
-                  <svg width="38" height="46" viewBox="0 0 38 46" fill="none">
-                    <path d="M19 6V2M6 19H2M36 19H32M8 8L5 5M30 8L33 5" stroke={activeCard.accent} strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="19" cy="22" r="11" stroke={activeCard.accent} strokeWidth="2.2"/>
-                    <path d="M15 33H23M16 37H22M17 41H21" stroke={activeCard.accent} strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                {/* Open book doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '32%', left: '12%' }}>
-                  <svg width="44" height="34" viewBox="0 0 44 34" fill="none">
-                    <path d="M22 6C16 3 8 3 3 6V28C8 25 16 25 22 28C28 25 36 25 41 28V6C36 3 28 3 22 6Z" stroke={activeCard.accent} strokeWidth="2.2" strokeLinejoin="round"/>
-                    <path d="M22 6V28M8 12H16M8 17H14M28 12H36M28 17H34" stroke={activeCard.accent} strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                {/* Twinkle stars */}
-                <div className="vedika-neon-doodle" style={{ top: '24%', right: '28%' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 0L14 9L23 12L14 15L12 24L10 15L1 12L10 9L12 0Z" fill={activeCard.accent} />
-                  </svg>
-                </div>
-                <div className="vedika-neon-doodle" style={{ bottom: '28%', left: '16%' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 0L14 9L23 12L14 15L12 24L10 15L1 12L10 9L12 0Z" fill={activeCard.accent} />
-                  </svg>
-                </div>
-              </>
-            )}
-
-            {activeCard.id === 'code' && (
-              <>
-                {/* Code window doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '16%', left: '20%' }}>
-                  <svg width="52" height="38" viewBox="0 0 52 38" fill="none">
-                    <rect x="2" y="2" width="48" height="34" rx="6" stroke={activeCard.accent} strokeWidth="2.2"/>
-                    <path d="M15 15L9 20L15 25M37 15L43 20L37 25M28 12L24 27" stroke={activeCard.accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                {/* Checklist doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '38%', left: '10%' }}>
-                  <svg width="34" height="42" viewBox="0 0 34 42" fill="none">
-                    <rect x="2" y="2" width="30" height="38" rx="4" stroke={activeCard.accent} strokeWidth="2"/>
-                    <path d="M7 12L10 15L15 10M18 12H27M7 22L10 25L15 20M18 22H27M7 32L10 35L15 30M18 32H27" stroke={activeCard.accent} strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                {/* Star */}
-                <div className="vedika-neon-doodle" style={{ top: '20%', right: '26%' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 0L14 9L23 12L14 15L12 24L10 15L1 12L10 9L12 0Z" fill={activeCard.accent} />
-                  </svg>
-                </div>
-              </>
-            )}
-
-            {activeCard.id === 'puzzle' && (
-              <>
-                {/* Puzzle piece doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '20%', left: '14%' }}>
-                  <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-                    <path d="M14 6H20C21.5 3 24.5 3 26 6H32C34.2 6 36 7.8 36 10V16C39 17.5 39 20.5 36 22V28C36 30.2 34.2 32 32 32H26C24.5 35 21.5 35 20 32H14C11.8 32 10 30.2 10 28V22C7 20.5 7 17.5 10 16V10C10 7.8 11.8 6 14 6Z" stroke={activeCard.accent} strokeWidth="2.2" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                {/* Checklist & bulb doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '22%', right: '22%' }}>
-                  <svg width="36" height="46" viewBox="0 0 36 46" fill="none">
-                    <rect x="2" y="2" width="32" height="42" rx="5" stroke={activeCard.accent} strokeWidth="2"/>
-                    <circle cx="18" cy="14" r="5" stroke={activeCard.accent} strokeWidth="1.8"/>
-                    <path d="M15 21H21M8 29L11 32L16 27M19 29H28M8 37L11 40L16 35M19 37H28" stroke={activeCard.accent} strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div className="vedika-neon-doodle" style={{ bottom: '26%', left: '18%' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 0L14 9L23 12L14 15L12 24L10 15L1 12L10 9L12 0Z" fill={activeCard.accent} />
-                  </svg>
-                </div>
-              </>
-            )}
-
-            {activeCard.id === 'viva' && (
-              <>
-                {/* Speech bubble doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '18%', left: '16%' }}>
-                  <svg width="44" height="38" viewBox="0 0 44 38" fill="none">
-                    <path d="M6 6H38C40.2 6 42 7.8 42 10V26C42 28.2 40.2 30 38 30H18L10 36V30H6C3.8 30 2 28.2 2 26V10C2 7.8 3.8 6 6 6Z" stroke={activeCard.accent} strokeWidth="2.2" strokeLinejoin="round"/>
-                    <circle cx="14" cy="18" r="2.2" fill={activeCard.accent} />
-                    <circle cx="22" cy="18" r="2.2" fill={activeCard.accent} />
-                    <circle cx="30" cy="18" r="2.2" fill={activeCard.accent} />
-                  </svg>
-                </div>
-                {/* Graduation cap doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '16%', right: '22%' }}>
-                  <svg width="46" height="36" viewBox="0 0 46 36" fill="none">
-                    <path d="M23 4L42 12L23 20L4 12L23 4Z" stroke={activeCard.accent} strokeWidth="2.2" strokeLinejoin="round"/>
-                    <path d="M10 15V24C10 24 16 30 23 30C30 30 36 24 36 24V15" stroke={activeCard.accent} strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M39 13.5V26" stroke={activeCard.accent} strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                {/* Checklist card doodle */}
-                <div className="vedika-neon-doodle" style={{ top: '38%', right: '16%' }}>
-                  <svg width="34" height="42" viewBox="0 0 34 42" fill="none">
-                    <rect x="2" y="2" width="30" height="38" rx="4" stroke={activeCard.accent} strokeWidth="2"/>
-                    <path d="M7 12L10 15L15 10M18 12H27M7 22L10 25L15 20M18 22H27M7 32L10 35L15 30M18 32H27" stroke={activeCard.accent} strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-              </>
-            )}
-          </div>
 
           {/* Interactive Particle Bot Canvas */}
           <div className="vedika-ai-bot-wrapper">

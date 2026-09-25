@@ -1889,50 +1889,56 @@ export default function GeneralTutor() {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  alignItems: 'flex-start',
-                  gap: 8,
-                  maxWidth: msgMaxW,
-                  marginLeft: 'auto'
+                  width: '100%',
+                  marginBottom: 16
                 }}>
                   <div style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-end',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    width: 'fit-content',
                     maxWidth: bubbleMaxW
                   }}>
                     <div style={{
-                      background: 'rgba(30, 41, 59, 0.45)',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '16px 16px 4px 16px',
-                      padding: '12px 18px',
-                      color: '#F8FAFC',
-                      fontSize: 14,
-                      lineHeight: 1.65,
-                      width: 'fit-content',
-                      maxWidth: '100%',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      textAlign: 'left',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      width: 'fit-content'
                     }}>
-                      {msg.content}
-                      {msg.documents && msg.documents.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
-                          {msg.documents.map(doc => (
-                            <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.muted }}>
-                              <span>📄</span>
-                              <span style={{ fontWeight: 500, color: T.text }}>{doc.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <div style={{
+                        background: 'rgba(30, 41, 59, 0.55)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: '16px 16px 4px 16px',
+                        padding: '12px 18px',
+                        color: '#F8FAFC',
+                        fontSize: 14,
+                        lineHeight: 1.65,
+                        width: 'fit-content',
+                        maxWidth: '100%',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        textAlign: 'left',
+                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)'
+                      }}>
+                        {msg.content}
+                        {msg.documents && msg.documents.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+                            {msg.documents.map(doc => (
+                              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.muted }}>
+                                <span>📄</span>
+                                <span style={{ fontWeight: 500, color: T.text }}>{doc.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>{msg.mode} &middot; {msg.length}</div>
                     </div>
-                    <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>{msg.mode} &middot; {msg.length}</div>
-                  </div>
-                  <div style={{ flexShrink: 0, marginTop: -2 }}>
-                    <UserBlobAvatar isTyping={false} isAiLoading={false} size={48} />
+                    <div style={{ flexShrink: 0, marginTop: -4 }}>
+                      <UserBlobAvatar isTyping={false} isAiLoading={false} size={44} />
+                    </div>
                   </div>
                 </div>
               )}

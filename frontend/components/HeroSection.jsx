@@ -94,7 +94,7 @@ export default function HeroSection() {
   // Locked particle transform coordinates (medium-sized rings centered squarely behind the kid mascot)
   const LOCKED_PARTICLES = {
     posX: 0,
-    posY: -1,
+    posY: 0,
     posZ: -31,
     scale: 1.25,
     rotX: 115,
