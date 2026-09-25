@@ -77,15 +77,20 @@ export class ParticlesSwarm {
       this.mesh.setColorAt(i, this.color.setHex(isDisco ? 0xffd700 : 0x00c2ff));
     }
 
+    this.ringDensity = initialTransform?.ringDensity ?? 1.0;
+    this.dustIntensity = initialTransform?.dustIntensity ?? 1.0;
+
     // Default transform
     const defaultTransform = {
-      posX: 6,
-      posY: 15,
-      posZ: -31,
-      scale: 1,
+      posX: 8.5,
+      posY: 1.5,
+      posZ: -34,
+      scale: 0.9,
       rotX: 115,
-      rotY: 5,
-      rotZ: -40,
+      rotY: -5,
+      rotZ: -26,
+      ringDensity: 1.0,
+      dustIntensity: 1.0,
     };
     this.updateTransform(initialTransform || defaultTransform);
 
@@ -99,17 +104,29 @@ export class ParticlesSwarm {
 
   updateTransform(t) {
     if (!this.swarmGroup) return;
-    const px = t?.posX ?? 6;
-    const py = t?.posY ?? 15;
-    const pz = t?.posZ ?? -31;
-    const s = t?.scale ?? 1.0;
+    const px = t?.posX ?? 8.5;
+    const py = t?.posY ?? 1.5;
+    const pz = t?.posZ ?? -34;
+    const s = t?.scale ?? 0.9;
     const rx = ((t?.rotX ?? 115) * Math.PI) / 180;
-    const ry = ((t?.rotY ?? 5) * Math.PI) / 180;
-    const rz = ((t?.rotZ ?? -40) * Math.PI) / 180;
+    const ry = ((t?.rotY ?? -5) * Math.PI) / 180;
+    const rz = ((t?.rotZ ?? -26) * Math.PI) / 180;
 
     this.swarmGroup.position.set(px, py, pz);
     this.swarmGroup.scale.set(s, s, s);
     this.swarmGroup.rotation.set(rx, ry, rz);
+
+    if (t?.ringDensity !== undefined) {
+      this.ringDensity = Math.max(0.1, Number(t.ringDensity));
+      if (this.mesh) {
+        const clampedDensity = Math.max(0.1, Math.min(2.0, this.ringDensity));
+        this.mesh.count = Math.min(this.count, Math.max(1000, Math.round(this.count * Math.min(1.0, clampedDensity))));
+        this.mesh.instanceMatrix.needsUpdate = true;
+      }
+    }
+    if (t?.dustIntensity !== undefined) {
+      this.dustIntensity = Math.max(0.05, Number(t.dustIntensity));
+    }
   }
 
   onResize() {
@@ -151,7 +168,8 @@ export class ParticlesSwarm {
 
       // Heavy multi-shell concentric rings
       const shell = lane % 3;
-      const tube = s * (0.045 + 0.02 * h) * (0.88 + shell * 0.32);
+      const densitySqrt = Math.sqrt(Math.max(0.3, this.ringDensity));
+      const tube = s * (0.045 + 0.02 * h) * (0.88 + shell * 0.32) * densitySqrt;
       const dr = s * (0.17 + 0.03 * r) * (0.85 + shell * 0.28);
 
       const dataMask = Math.min(1, Math.floor(lane / 12));
@@ -196,10 +214,12 @@ export class ParticlesSwarm {
       let discoScatterX = 0;
       let discoScatterY = 0;
       let discoScatterZ = 0;
+      const dustMult = Math.max(0.05, this.dustIntensity);
       if (isDisco) {
-        discoScatterX = Math.sin(phase + time * 1.4) * 2.5;
-        discoScatterY = Math.cos(phase * 1.3 + time * 1.1) * 2.5;
-        discoScatterZ = Math.sin(phase * 0.8 + time * 1.8) * 3.0;
+        const scatterScale = Math.min(1.8, Math.max(0.4, Math.sqrt(dustMult)));
+        discoScatterX = Math.sin(phase + time * 1.4) * (2.5 * scatterScale);
+        discoScatterY = Math.cos(phase * 1.3 + time * 1.1) * (2.5 * scatterScale);
+        discoScatterZ = Math.sin(phase * 0.8 + time * 1.8) * (3.0 * scatterScale);
       }
 
       const x = ex * energyMask + dx * dataMask + discoScatterX;
@@ -215,13 +235,13 @@ export class ParticlesSwarm {
       let light;
 
       if (isDisco) {
-        // GOLDEN DISCO DUST EFFECT
+        // GOLDEN DISCO DUST EFFECT - dynamically boosted by dustIntensity
         const discoTwinkle = Math.sin(time * 7.5 + phase * 2.5);
         const sparkle = Math.pow(Math.max(0, discoTwinkle), 4.5);
 
         hue = 0.118 + 0.015 * Math.sin(phase + time);
         sat = 0.98;
-        light = 0.52 + 0.42 * sparkle;
+        light = (0.50 + 0.45 * sparkle) * Math.min(1.3, 0.45 + 0.55 * Math.sqrt(dustMult));
       } else {
         // 4 LAB THEME COLORS
         const labCategory = lane % 4;
@@ -254,7 +274,9 @@ export class ParticlesSwarm {
       if (isDisco) {
         const discoTwinkle = Math.sin(time * 7.5 + phase * 2.5);
         const sparkle = Math.pow(Math.max(0, discoTwinkle), 4.5);
-        currentScale *= 0.85 + 0.95 * sparkle;
+        currentScale *= (0.85 + 0.95 * sparkle) * dustMult;
+      } else {
+        currentScale *= Math.max(0.2, this.ringDensity);
       }
       this.dummy.scale.set(currentScale, currentScale, currentScale);
 
@@ -303,13 +325,15 @@ function canvasParentHeight(canvas) {
 export default function ParticlesBackground({
   count = 13000,
   opacity = 0.92,
-  posX = 15,
-  posY = 5,
+  posX = 8.5,
+  posY = 1.5,
   posZ = -34,
-  scale = 1.74,
+  scale = 0.9,
   rotX = 115,
   rotY = -5,
   rotZ = -26,
+  ringDensity = 1.0,
+  dustIntensity = 1.0,
   className,
   style,
 }) {
@@ -328,6 +352,8 @@ export default function ParticlesBackground({
       rotX,
       rotY,
       rotZ,
+      ringDensity,
+      dustIntensity,
     });
     swarmRef.current = swarm;
 
@@ -347,9 +373,11 @@ export default function ParticlesBackground({
         rotX,
         rotY,
         rotZ,
+        ringDensity,
+        dustIntensity,
       });
     }
-  }, [posX, posY, posZ, scale, rotX, rotY, rotZ]);
+  }, [posX, posY, posZ, scale, rotX, rotY, rotZ, ringDensity, dustIntensity]);
 
   return (
     <canvas

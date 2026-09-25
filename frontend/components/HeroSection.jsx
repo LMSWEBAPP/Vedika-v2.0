@@ -93,20 +93,22 @@ export default function HeroSection() {
 
   // User-tuned particle transform coordinates (centered squarely around the kid mascot)
   const DEFAULT_PARTICLES = {
-    posX: 15,
-    posY: 5,
+    posX: 8.5,
+    posY: 1.5,
     posZ: -34,
-    scale: 1.74,
+    scale: 0.9,
     rotX: 115,
     rotY: -5,
     rotZ: -26,
+    ringDensity: 1.0,
+    dustIntensity: 1.0,
   };
 
   const [particlesConfig, setParticlesConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_hero_particles_config_v2');
-        if (saved) return JSON.parse(saved);
+        const saved = localStorage.getItem('vedika_hero_particles_config_v3');
+        if (saved) return { ...DEFAULT_PARTICLES, ...JSON.parse(saved) };
       } catch (e) {}
     }
     return DEFAULT_PARTICLES;
@@ -119,7 +121,7 @@ export default function HeroSection() {
     setParticlesConfig(prev => {
       const next = { ...prev, [key]: Number(value) };
       try {
-        localStorage.setItem('vedika_hero_particles_config_v2', JSON.stringify(next));
+        localStorage.setItem('vedika_hero_particles_config_v3', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -136,7 +138,7 @@ export default function HeroSection() {
   const resetConfig = () => {
     setParticlesConfig(DEFAULT_PARTICLES);
     try {
-      localStorage.setItem('vedika_hero_particles_config_v2', JSON.stringify(DEFAULT_PARTICLES));
+      localStorage.setItem('vedika_hero_particles_config_v3', JSON.stringify(DEFAULT_PARTICLES));
     } catch (e) {}
   };
 
@@ -717,32 +719,65 @@ export default function HeroSection() {
 
             {/* Sliders list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 11.5 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#38BDF8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: -2 }}>
+                Orientation & Transform
+              </div>
               {[
-                { key: 'posX', label: 'Position X (Horizontal)', min: -80, max: 80, step: 0.5 },
-                { key: 'posY', label: 'Position Y (Vertical)', min: -80, max: 80, step: 0.5 },
-                { key: 'posZ', label: 'Position Z (Depth)', min: -120, max: 80, step: 1 },
-                { key: 'scale', label: 'Ring Scale', min: 0.4, max: 2.8, step: 0.02 },
-                { key: 'rotX', label: 'Tilt X (Pitch)', min: -180, max: 180, step: 1 },
-                { key: 'rotY', label: 'Tilt Y (Yaw)', min: -180, max: 180, step: 1 },
-                { key: 'rotZ', label: 'Roll Z (Roll)', min: -180, max: 180, step: 1 },
-              ].map(({ key, label, min, max, step }) => (
+                { key: 'posX', label: 'Position X (Horizontal)', min: -80, max: 80, step: 0.5, color: '#38BDF8' },
+                { key: 'posY', label: 'Position Y (Vertical)', min: -80, max: 80, step: 0.5, color: '#38BDF8' },
+                { key: 'posZ', label: 'Position Z (Depth)', min: -120, max: 80, step: 1, color: '#38BDF8' },
+                { key: 'scale', label: 'Ring Scale', min: 0.4, max: 2.8, step: 0.02, color: '#38BDF8' },
+                { key: 'rotX', label: 'Tilt X (Pitch)', min: -180, max: 180, step: 1, color: '#38BDF8' },
+                { key: 'rotY', label: 'Tilt Y (Yaw)', min: -180, max: 180, step: 1, color: '#38BDF8' },
+                { key: 'rotZ', label: 'Roll Z (Roll)', min: -180, max: 180, step: 1, color: '#38BDF8' },
+              ].map(({ key, label, min, max, step, color }) => (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
                     <span>{label}</span>
-                    <span style={{ color: '#38BDF8', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{particlesConfig[key]}</span>
+                    <span style={{ color: color, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{particlesConfig[key] ?? DEFAULT_PARTICLES[key]}</span>
                   </div>
                   <input
                     type="range"
                     min={min}
                     max={max}
                     step={step}
-                    value={particlesConfig[key]}
+                    value={particlesConfig[key] ?? DEFAULT_PARTICLES[key]}
                     onChange={(e) => handleParticleChange(key, e.target.value)}
                     style={{
                       width: '100%',
-                      accentColor: '#38BDF8',
+                      accentColor: color,
                       cursor: 'pointer',
                       height: 4
+                    }}
+                  />
+                </div>
+              ))}
+
+              {/* Rings & Dust FX controls */}
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#FACC15', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4, marginBottom: -2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
+                Density & Golden Dust FX
+              </div>
+              {[
+                { key: 'ringDensity', label: 'Ring Density (Thickness & Particles)', min: 0.2, max: 2.5, step: 0.05, color: '#38BDF8' },
+                { key: 'dustIntensity', label: 'Golden Dust Intensity (Sparkle & Size)', min: 0.1, max: 3.0, step: 0.05, color: '#FACC15' },
+              ].map(({ key, label, min, max, step, color }) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
+                    <span style={{ color: '#E2E8F0', fontWeight: 600 }}>{label}</span>
+                    <span style={{ color: color, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{particlesConfig[key] ?? DEFAULT_PARTICLES[key]}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={particlesConfig[key] ?? DEFAULT_PARTICLES[key]}
+                    onChange={(e) => handleParticleChange(key, e.target.value)}
+                    style={{
+                      width: '100%',
+                      accentColor: color,
+                      cursor: 'pointer',
+                      height: 5
                     }}
                   />
                 </div>

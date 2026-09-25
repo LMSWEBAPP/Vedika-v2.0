@@ -2,7 +2,7 @@
 
 import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Brain, Code, Zap, GraduationCap, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Brain, Code, Zap, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
 import './vedika-ai.css';
 
@@ -237,15 +237,10 @@ export default function VedikaAIHub() {
                 <ArrowLeft size={15} />
                 <span>Back to Dashboard</span>
               </button>
-
-              <div className="vedika-ai-brand-pill">
-                <Sparkles size={12} style={{ color: activeCard.accent }} />
-                <span>VEDIKA AI TUTOR</span>
-              </div>
             </div>
 
             <h1 className="vedika-ai-main-title">
-              VEDIKA AI <span className="vedika-ai-title-gradient">ASSISTANT HUB</span>
+              <span className="vedika-ai-title-gradient">Assistant Hub</span>
             </h1>
             <div className="vedika-ai-subtitle-wrap">
               <p className="vedika-ai-subtitle">Learn. Build. Grow.</p>
