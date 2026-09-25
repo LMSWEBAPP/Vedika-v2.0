@@ -7,7 +7,7 @@ export class ParticlesSwarm {
   constructor(canvas, count = 13000, initialTransform) {
     this.count = count;
     this.canvas = canvas;
-    this.speedMult = 0.85;
+    this.speedMult = initialTransform?.speed ?? 0.42;
 
     const width = canvas.clientWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth);
     const height = canvas.clientHeight || (canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight);
@@ -77,8 +77,9 @@ export class ParticlesSwarm {
       this.mesh.setColorAt(i, this.color.setHex(isDisco ? 0xffd700 : 0x00c2ff));
     }
 
+    this.speedMult = initialTransform?.speed ?? 0.42;
     this.ringDensity = initialTransform?.ringDensity ?? 1.0;
-    this.dustIntensity = initialTransform?.dustIntensity ?? 1.0;
+    this.dustIntensity = initialTransform?.dustIntensity ?? 0.75;
 
     // Default transform
     const defaultTransform = {
@@ -90,7 +91,8 @@ export class ParticlesSwarm {
       rotY: -5,
       rotZ: -26,
       ringDensity: 1.0,
-      dustIntensity: 1.0,
+      dustIntensity: 0.75,
+      speed: 0.42,
     };
     this.updateTransform(initialTransform || defaultTransform);
 
@@ -116,6 +118,9 @@ export class ParticlesSwarm {
     this.swarmGroup.scale.set(s, s, s);
     this.swarmGroup.rotation.set(rx, ry, rz);
 
+    if (t?.speed !== undefined) {
+      this.speedMult = Number(t.speed);
+    }
     if (t?.ringDensity !== undefined) {
       this.ringDensity = Math.max(0.1, Number(t.ringDensity));
       if (this.mesh) {
@@ -333,7 +338,8 @@ export default function ParticlesBackground({
   rotY = -5,
   rotZ = -26,
   ringDensity = 1.0,
-  dustIntensity = 1.0,
+  dustIntensity = 0.75,
+  speed = 0.42,
   className,
   style,
 }) {
@@ -354,6 +360,7 @@ export default function ParticlesBackground({
       rotZ,
       ringDensity,
       dustIntensity,
+      speed,
     });
     swarmRef.current = swarm;
 
@@ -375,9 +382,10 @@ export default function ParticlesBackground({
         rotZ,
         ringDensity,
         dustIntensity,
+        speed,
       });
     }
-  }, [posX, posY, posZ, scale, rotX, rotY, rotZ, ringDensity, dustIntensity]);
+  }, [posX, posY, posZ, scale, rotX, rotY, rotZ, ringDensity, dustIntensity, speed]);
 
   return (
     <canvas

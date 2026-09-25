@@ -101,13 +101,14 @@ export default function HeroSection() {
     rotY: -5,
     rotZ: -26,
     ringDensity: 1.0,
-    dustIntensity: 1.0,
+    dustIntensity: 0.75,
+    speed: 0.42,
   };
 
   const [particlesConfig, setParticlesConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_hero_particles_config_v3');
+        const saved = localStorage.getItem('vedika_hero_particles_config_v4');
         if (saved) return { ...DEFAULT_PARTICLES, ...JSON.parse(saved) };
       } catch (e) {}
     }
@@ -121,7 +122,7 @@ export default function HeroSection() {
     setParticlesConfig(prev => {
       const next = { ...prev, [key]: Number(value) };
       try {
-        localStorage.setItem('vedika_hero_particles_config_v3', JSON.stringify(next));
+        localStorage.setItem('vedika_hero_particles_config_v4', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -138,7 +139,7 @@ export default function HeroSection() {
   const resetConfig = () => {
     setParticlesConfig(DEFAULT_PARTICLES);
     try {
-      localStorage.setItem('vedika_hero_particles_config_v3', JSON.stringify(DEFAULT_PARTICLES));
+      localStorage.setItem('vedika_hero_particles_config_v4', JSON.stringify(DEFAULT_PARTICLES));
     } catch (e) {}
   };
 
@@ -755,11 +756,12 @@ export default function HeroSection() {
 
               {/* Rings & Dust FX controls */}
               <div style={{ fontSize: 10.5, fontWeight: 700, color: '#FACC15', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4, marginBottom: -2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
-                Density & Golden Dust FX
+                Density, Dust & Speed FX
               </div>
               {[
                 { key: 'ringDensity', label: 'Ring Density (Thickness & Particles)', min: 0.2, max: 2.5, step: 0.05, color: '#38BDF8' },
                 { key: 'dustIntensity', label: 'Golden Dust Intensity (Sparkle & Size)', min: 0.1, max: 3.0, step: 0.05, color: '#FACC15' },
+                { key: 'speed', label: 'Orbit Rotation Speed', min: 0.05, max: 1.5, step: 0.02, color: '#C084FC' },
               ].map(({ key, label, min, max, step, color }) => (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
