@@ -181,7 +181,7 @@
 .stageFrame {
   position: relative;
   width: 100%;
-  max-width: 580px;
+  max-width: 610px;
   aspect-ratio: 1.328 / 1;
   overflow: visible;
   cursor: crosshair;
@@ -198,7 +198,7 @@
 /* Space backdrop: Clean Earth Horizon with smooth edge feathering into deep space */
 .spaceBackdrop {
   position: absolute;
-  inset: -4% -6% -2% -6%;
+  inset: -5% -8% -3% -8%;
   z-index: 0;
   pointer-events: none;
   opacity: 1;
@@ -233,8 +233,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 72%;
-  height: 88%;
+  width: 78%;
+  height: 94%;
   border-radius: 50%;
   background: radial-gradient(
     ellipse 52% 70% at 50% 50%,
@@ -244,7 +244,7 @@
     rgba(255, 153, 0, 0.10) 75%,
     transparent 100%
   );
-  filter: blur(48px);
+  filter: blur(52px);
   pointer-events: none;
   z-index: 1;
   animation: portalPulse 5s ease-in-out infinite alternate;
@@ -264,7 +264,7 @@
 /* 3D Particle Swarm in stage behind the mascot */
 .stageParticlesWrapper {
   position: absolute;
-  inset: -4%;
+  inset: -12% -14% -8% -14%;
   z-index: 2;
   pointer-events: none;
   overflow: visible;

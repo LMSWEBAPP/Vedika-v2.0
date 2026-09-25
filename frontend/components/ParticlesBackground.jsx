@@ -37,7 +37,7 @@ export class ParticlesSwarm {
     this.target = new THREE.Vector3();
 
     // Sharp tetrahedron geometry for crystalline quantum and disco stardust
-    this.geometry = new THREE.TetrahedronGeometry(0.32);
+    this.geometry = new THREE.TetrahedronGeometry(0.34);
     this.material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -126,8 +126,8 @@ export class ParticlesSwarm {
     this.animationFrameId = requestAnimationFrame(this.animate);
     const time = this.clock.getElapsedTime() * this.speedMult;
 
-    // Mathematical simulation: expanded to 16 concentric lanes for balanced, perfectly framed rings
-    const s = 44;
+    // Mathematical simulation: expanded to 16 concentric lanes for medium-sized, majestic rings
+    const s = 50;
     const v = 0.8;
     const h = 1.0;
     const r = 0.8;

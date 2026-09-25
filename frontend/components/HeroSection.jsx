@@ -91,12 +91,12 @@ export default function HeroSection() {
   const speechTimeRef = useRef(0);
   const speechStartTimeRef = useRef(null);
 
-  // Locked particle transform coordinates (centered squarely behind the kid mascot)
+  // Locked particle transform coordinates (medium-sized rings centered squarely behind the kid mascot)
   const LOCKED_PARTICLES = {
     posX: 0,
-    posY: -2,
+    posY: -1,
     posZ: -31,
-    scale: 0.98,
+    scale: 1.06,
     rotX: 115,
     rotY: 5,
     rotZ: -40,
@@ -554,7 +554,7 @@ export default function HeroSection() {
             {/* Heavy Multi-Shell Particle Rings with Golden Disco Dust Effect */}
             <div className={styles.stageParticlesWrapper}>
               <ParticlesBackground
-                count={8500}
+                count={9500}
                 opacity={0.94}
                 {...LOCKED_PARTICLES}
               />
