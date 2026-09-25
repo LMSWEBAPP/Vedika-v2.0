@@ -33,7 +33,8 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       const err = params.get('error');
       if (err === 'oauth_failed') {
-        setError('Google sign-in was unsuccessful. Please verify that the redirect URI is configured in Google Cloud Console.');
+        const msg = params.get('msg');
+        setError(msg ? `Google sign-in error: ${msg}` : 'Google sign-in was unsuccessful. Please verify that the redirect URI is configured in Google Cloud Console.');
       } else if (err === 'invalid_token') {
         setError('Invalid login token. Please sign in again.');
       } else if (err === 'server_error') {

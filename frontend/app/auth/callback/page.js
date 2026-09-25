@@ -52,7 +52,7 @@ export default function AuthCallback() {
           const isAdmin = userProfile.role === 'Administrator';
           setStatus(`Welcome ${userProfile.name}! Redirecting to workspace...`);
           setTimeout(() => {
-            router.replace(isAdmin ? '/admin' : '/prev-home-page');
+            router.replace(isAdmin ? '/admin' : '/');
           }, 600);
           return;
         }
@@ -157,10 +157,10 @@ export default function AuthCallback() {
         }, 800);
         
       } catch (err) {
-        console.error("Callback authentication error:", err);
-        setError(err.message || 'Verification failed. Please try again.');
+        const errMsg = err.message || 'Verification failed. Please try again.';
+        setError(errMsg);
         setTimeout(() => {
-          router.replace('/login?error=oauth_failed');
+          router.replace(`/login?error=oauth_failed&msg=${encodeURIComponent(errMsg)}`);
         }, 3000);
       }
     }

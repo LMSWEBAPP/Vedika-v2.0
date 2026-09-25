@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { getGoogleOAuthConfig } from '@/lib/google-auth-config';
 
 export async function GET(request) {
   try {
@@ -13,8 +13,8 @@ export async function GET(request) {
       backendUrl = 'https://vedika-v2-0.onrender.com';
     }
 
-    // Resilient direct Google OAuth using registered callback endpoint
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    // Dynamic Google OAuth configuration loader
+    const { clientId } = await getGoogleOAuthConfig();
     if (clientId) {
       const callbackRedirectUri = `${parsedOrigin}/auth/callback`;
       const stateObj = {

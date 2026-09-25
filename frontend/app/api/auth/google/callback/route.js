@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import mysql from 'mysql2/promise';
+import { getGoogleOAuthConfig, getGoogleClientSecretFallback } from '@/lib/google-auth-config';
 
 export async function POST(request) {
   try {
@@ -9,24 +10,37 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const { clientId, clientSecret } = await getGoogleOAuthConfig();
     const redirectUri = redirect_uri || 'https://vedika-v20c.vercel.app/auth/callback';
 
-    // Exchange code for token directly with Google OAuth endpoint
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      })
-    });
+    // Helper to exchange authorization code for access token with Google
+    async function exchangeToken(secret) {
+      return await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: secret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code'
+        })
+      });
+    }
 
-    const tokenData = await tokenRes.json();
+    let tokenRes = await exchangeToken(clientSecret);
+    let tokenData = await tokenRes.json();
+
+    // Resilient auto-fallback: If configured secret is rejected by Google, query database for fallback secret
+    if (!tokenRes.ok && (tokenData.error === 'invalid_client' || (tokenData.error_description || '').includes('client secret') || (tokenData.error || '').includes('client secret'))) {
+      console.warn('[Google OAuth] Configured secret was rejected by Google. Retrying with database secret fallback...');
+      const fallbackSecret = await getGoogleClientSecretFallback();
+      if (fallbackSecret && fallbackSecret !== clientSecret) {
+        tokenRes = await exchangeToken(fallbackSecret);
+        tokenData = await tokenRes.json();
+      }
+    }
+
     if (!tokenRes.ok || !tokenData.access_token) {
       console.error('[Google OAuth Error]', tokenData);
       return NextResponse.json({ 
