@@ -296,10 +296,14 @@
   }
 }
 
-/* 3D Particle Swarm in stage behind the mascot */
+/* 3D Particle Swarm in stage behind the mascot (widened to prevent clipping at high scales) */
 .stageParticlesWrapper {
   position: absolute;
-  inset: -10%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260%;
+  height: 220%;
   z-index: 2;
   pointer-events: none;
   overflow: visible;

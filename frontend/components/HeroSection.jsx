@@ -91,21 +91,21 @@ export default function HeroSection() {
   const speechTimeRef = useRef(0);
   const speechStartTimeRef = useRef(null);
 
-  // Default particle transform coordinates (centered squarely around the kid mascot)
+  // User-tuned particle transform coordinates (centered squarely around the kid mascot)
   const DEFAULT_PARTICLES = {
-    posX: 38,
-    posY: 13.5,
-    posZ: -31,
-    scale: 1.32,
+    posX: 15,
+    posY: 5,
+    posZ: -34,
+    scale: 1.74,
     rotX: 115,
-    rotY: 5,
-    rotZ: -40,
+    rotY: -5,
+    rotZ: -26,
   };
 
   const [particlesConfig, setParticlesConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('vedika_hero_particles_config');
+        const saved = localStorage.getItem('vedika_hero_particles_config_v2');
         if (saved) return JSON.parse(saved);
       } catch (e) {}
     }
@@ -119,7 +119,7 @@ export default function HeroSection() {
     setParticlesConfig(prev => {
       const next = { ...prev, [key]: Number(value) };
       try {
-        localStorage.setItem('vedika_hero_particles_config', JSON.stringify(next));
+        localStorage.setItem('vedika_hero_particles_config_v2', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
@@ -136,7 +136,7 @@ export default function HeroSection() {
   const resetConfig = () => {
     setParticlesConfig(DEFAULT_PARTICLES);
     try {
-      localStorage.setItem('vedika_hero_particles_config', JSON.stringify(DEFAULT_PARTICLES));
+      localStorage.setItem('vedika_hero_particles_config_v2', JSON.stringify(DEFAULT_PARTICLES));
     } catch (e) {}
   };
 
