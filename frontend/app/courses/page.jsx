@@ -18,6 +18,15 @@ class CoursesErrorBoundary extends Component {
     console.error('[Courses ErrorBoundary caught error]:', error, errorInfo);
   }
 
+  handleReset = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('selected_course_id');
+      } catch (e) {}
+    }
+    this.setState({ hasError: false, error: null });
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -43,32 +52,49 @@ class CoursesErrorBoundary extends Component {
           }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
             <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text)' }}>
-              Course Explorer Refresh
+              Course Explorer
             </h3>
             <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 20px 0', lineHeight: 1.6 }}>
-              The course explorer encountered an unexpected state. Click below to reload the course modules cleanly.
+              The course explorer encountered an unexpected state. Click below to load your courses cleanly.
             </p>
-            <button
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('selected_course_id');
-                  window.location.reload();
-                }
-              }}
-              style={{
-                background: 'var(--accent)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 24px',
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'opacity 0.2s'
-              }}
-            >
-              Reload Courses
-            </button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button
+                onClick={this.handleReset}
+                style={{
+                  background: 'var(--accent)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 24px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                View All Courses
+              </button>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('selected_course_id');
+                    window.location.reload();
+                  }
+                }}
+                style={{
+                  background: 'var(--s2)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  padding: '10px 20px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Reload Page
+              </button>
+            </div>
           </div>
         </div>
       );

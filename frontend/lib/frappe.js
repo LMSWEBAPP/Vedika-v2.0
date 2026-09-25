@@ -15,10 +15,97 @@ export function sanitizeTitle(title) {
 
 // Default demo courses fallback
 const DEFAULT_COURSES = [
-  { id: '1', title: 'Python Programming', instructor: 'Administrator', category: 'Professionals', enrolled: 37, status: 'Published', date: 'Jan 11, 2023' },
-  { id: '2', title: 'Data Structures & Algorithms', instructor: 'John Samoh', category: 'Collaborate', enrolled: 25, status: 'Published', date: 'Jan 11, 2023' },
-  { id: '3', title: 'Advanced Machine Learning', instructor: 'John Smiths', category: 'Collaborate', enrolled: 12, status: 'Published', date: 'Jan 11, 2023' },
-  { id: '4', title: 'Web Development with Next.js', instructor: 'John Sarith', category: 'Collaborate', enrolled: 18, status: 'Draft', date: 'Jan 11, 2023' },
+  {
+    id: "class-10-biology-2",
+    name: "class-10-biology-2",
+    title: "CLASS 10 Biology",
+    instructor: "Administrator",
+    category: "Personal Development",
+    enrolled: 25,
+    lessonsCount: 3,
+    status: "Published",
+    description: "CLASS 10 Biology course introduction.",
+    image: null,
+    date: "Jul 1, 2026"
+  },
+  {
+    id: "python-3",
+    name: "python-3",
+    title: "python",
+    instructor: "Administrator",
+    category: "Web Development",
+    enrolled: 25,
+    lessonsCount: 0,
+    status: "Published",
+    description: "python course introduction.",
+    image: null,
+    date: "Jun 27, 2026"
+  },
+  {
+    id: "10-hour-full-financial-education-course",
+    name: "10-hour-full-financial-education-course",
+    title: "10 Hour Full Financial Education Course",
+    instructor: "Administrator",
+    category: "Web Development",
+    enrolled: 25,
+    lessonsCount: 28,
+    status: "Published",
+    description: "Your comprehensive guide to financial freedom.",
+    image: null,
+    date: "Jun 27, 2026"
+  },
+  {
+    id: "financial-literacy-full-course",
+    name: "financial-literacy-full-course",
+    title: "Financial Literacy (Full Course)",
+    instructor: "Administrator",
+    category: "Web Development",
+    enrolled: 25,
+    lessonsCount: 15,
+    status: "Published",
+    description: "Master the fundamentals of personal finance.",
+    image: null,
+    date: "Jun 26, 2026"
+  },
+  {
+    id: "learn-python-full-course-for-beginners-tutorial",
+    name: "learn-python-full-course-for-beginners-tutorial",
+    title: "Learn Python - Full Course for Beginners [Tutorial]",
+    instructor: "Administrator",
+    category: "Web Development",
+    enrolled: 25,
+    lessonsCount: 34,
+    status: "Published",
+    description: "Master Python from scratch! A complete beginner-friendly tutorial covering basics, data structures, and OOP logic.",
+    image: null,
+    date: "Jun 18, 2026"
+  },
+  {
+    id: "sql-tutorial-full-database-course-for-beginners",
+    name: "sql-tutorial-full-database-course-for-beginners",
+    title: "SQL Tutorial - Full Database Course for Beginners",
+    instructor: "Administrator",
+    category: "Web Development",
+    enrolled: 25,
+    lessonsCount: 24,
+    status: "Published",
+    description: "Learn the fundamentals of SQL and relational databases in this comprehensive, beginner-friendly course.",
+    image: null,
+    date: "Jun 17, 2026"
+  },
+  {
+    id: "a-guide-to-frappe-learning",
+    name: "a-guide-to-frappe-learning",
+    title: "A guide to Python Learning",
+    instructor: "Administrator",
+    category: "Business",
+    enrolled: 25,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Learn the basics of Frappe Learning and how to get started with your very first course.",
+    image: "/assets/lms/images/course_card.jpeg",
+    date: "Jun 17, 2026"
+  }
 ];
 
 // Client-side cache for optimized loading

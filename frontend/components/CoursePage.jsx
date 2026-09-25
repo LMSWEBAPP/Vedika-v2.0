@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   CheckCircle, Circle, Clock, Play, GraduationCap, ChevronRight, ChevronLeft, ArrowLeft, Users, Tag, BookOpen, Terminal, X, Award, Search, Grid, Layers
 } from 'lucide-react';
@@ -55,7 +55,7 @@ function CourseDeckWidget({
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [coursePage, setCoursePage] = useState(1);
-  const COURSES_PER_PAGE = 3;
+  const COURSES_PER_PAGE = 6;
 
   useEffect(() => {
     setActiveIdx(0);
@@ -238,7 +238,7 @@ function CourseDeckWidget({
             onMouseEnter={(e) => e.currentTarget.style.background = `${T.accent}24`}
             onMouseLeave={(e) => e.currentTarget.style.background = `${T.accent}14`}
           >
-            <ArrowLeft size={16} /> Back to All Categories
+            <ArrowLeft size={16} /> Back to All Courses
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1374,7 +1374,7 @@ export default function CoursePage() {
                     onClick={() => { setActiveDrilldownCategory(null); setSelectedCategory('All'); }}
                     style={{ background: T.accent, color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    ← Back to All Categories
+                    ← Back to All Courses
                   </button>
                 </div>
               );
@@ -1399,14 +1399,22 @@ export default function CoursePage() {
             );
           }
 
-          // Initial Landing: Show Category Carousel (grouped categories with ZimCarousel3D)
-          if (categoryDeckItems.length === 0) {
+          // Initial Landing & All Courses: Display all published courses directly
+          const allVisibleCourses = courses.filter(c => {
+            if (!c) return false;
+            let locallyDeleted = [];
+            try { locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String); } catch (e) { }
+            if (locallyDeleted.includes(String(c.id))) return false;
+            return true;
+          });
+
+          if (allVisibleCourses.length === 0) {
             return (
               <div style={{ background: T.s1, border: `1px solid ${T.border}`, borderRadius: 16, padding: '48px 20px', textAlign: 'center', marginBottom: 24 }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
-                <h3 style={{ color: T.text, fontSize: 16, fontWeight: 600, margin: '0 0 6px 0' }}>No categories available</h3>
+                <h3 style={{ color: T.text, fontSize: 16, fontWeight: 600, margin: '0 0 6px 0' }}>No courses available</h3>
                 <p style={{ color: T.muted, fontSize: 13, maxWidth: 360, margin: '0 auto 16px auto' }}>
-                  There are currently no published courses or categories to display.
+                  There are currently no published courses to display.
                 </p>
               </div>
             );
@@ -1415,12 +1423,8 @@ export default function CoursePage() {
           return (
             <div>
               <CourseDeckWidget
-                mode="categories"
-                items={categoryDeckItems}
-                onSelectCategory={(catName) => {
-                  setActiveDrilldownCategory(catName);
-                  setSelectedCategory(catName);
-                }}
+                mode="courses"
+                items={allVisibleCourses}
                 handleSelectCourse={handleSelectCourse}
                 handleEnrollFromCard={handleEnrollFromCard}
                 enrolledCourseIds={enrolledCourseIds}
