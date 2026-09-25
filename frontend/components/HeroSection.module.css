@@ -14,9 +14,9 @@
   width: 100%;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1.25fr;
+  grid-template-columns: 1fr 1.15fr;
   align-items: center;
-  gap: 3rem;
+  gap: 4rem;
 }
 
 /* ========================================================= */
@@ -26,8 +26,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 580px;
-  z-index: 5;
+  max-width: 540px;
+  z-index: 10;
+  position: relative;
 }
 
 .titleBlock {
@@ -100,33 +101,33 @@
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   background: linear-gradient(
-    90deg,
+    135deg,
     #00c2ff 0%,
     #a855f7 26%,
     #00f298 52%,
     #ff9900 76%,
     #00c2ff 100%
   );
-  background-size: 260% 100%;
+  background-size: 260% 260%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.42)) drop-shadow(0 0 38px rgba(168, 85, 247, 0.32));
+  filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
   animation: royalShimmerFlow 8s ease-in-out infinite;
 }
 
 @keyframes royalShimmerFlow {
   0% {
-    background-position: 0% 50%;
-    filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.45)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.28));
+    background-position: 0% 0%;
+    filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
   }
   50% {
-    background-position: 100% 50%;
-    filter: drop-shadow(0 0 26px rgba(168, 85, 247, 0.50)) drop-shadow(0 0 42px rgba(0, 242, 152, 0.28));
+    background-position: 100% 100%;
+    filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.46)) drop-shadow(0 0 38px rgba(0, 242, 152, 0.26));
   }
   100% {
-    background-position: 0% 50%;
-    filter: drop-shadow(0 0 20px rgba(0, 194, 255, 0.45)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.28));
+    background-position: 0% 0%;
+    filter: drop-shadow(0 0 18px rgba(0, 194, 255, 0.40)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.26));
   }
 }
 
@@ -180,7 +181,7 @@
 .stageFrame {
   position: relative;
   width: 100%;
-  max-width: 700px;
+  max-width: 580px;
   aspect-ratio: 1.328 / 1;
   overflow: visible;
   cursor: crosshair;
@@ -197,7 +198,7 @@
 /* Space backdrop: Clean Earth Horizon with smooth edge feathering into deep space */
 .spaceBackdrop {
   position: absolute;
-  inset: -6% -10% -4% -10%;
+  inset: -4% -6% -2% -6%;
   z-index: 0;
   pointer-events: none;
   opacity: 1;
@@ -229,11 +230,11 @@
 /* Glowing 4-Lab Colors Aura Backplate */
 .portalAuraGlow {
   position: absolute;
-  top: 52%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 82%;
-  height: 102%;
+  width: 72%;
+  height: 88%;
   border-radius: 50%;
   background: radial-gradient(
     ellipse 52% 70% at 50% 50%,
@@ -243,7 +244,7 @@
     rgba(255, 153, 0, 0.10) 75%,
     transparent 100%
   );
-  filter: blur(56px);
+  filter: blur(48px);
   pointer-events: none;
   z-index: 1;
   animation: portalPulse 5s ease-in-out infinite alternate;
@@ -260,21 +261,21 @@
   }
 }
 
-/* 3D Particle Swarm in stage behind the mascot (expanded footprint) */
+/* 3D Particle Swarm in stage behind the mascot */
 .stageParticlesWrapper {
   position: absolute;
-  inset: -22%;
+  inset: -4%;
   z-index: 2;
   pointer-events: none;
   overflow: visible;
 }
 
-/* Central Mascot Container: Placed slightly lower as requested */
+/* Central Mascot Container: Centered with the particle rings */
 .mascotContainer {
   position: absolute;
-  top: 54%;
+  top: 52%;
   left: 50%;
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -48%);
   height: 94%;
   aspect-ratio: 0.7467;
   z-index: 5;

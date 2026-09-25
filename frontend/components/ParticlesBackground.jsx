@@ -36,8 +36,8 @@ export class ParticlesSwarm {
     this.color = new THREE.Color();
     this.target = new THREE.Vector3();
 
-    // Sharp tetrahedron geometry for crystalline quantum and disco stardust (larger sparkle profile)
-    this.geometry = new THREE.TetrahedronGeometry(0.38);
+    // Sharp tetrahedron geometry for crystalline quantum and disco stardust
+    this.geometry = new THREE.TetrahedronGeometry(0.32);
     this.material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -126,8 +126,8 @@ export class ParticlesSwarm {
     this.animationFrameId = requestAnimationFrame(this.animate);
     const time = this.clock.getElapsedTime() * this.speedMult;
 
-    // Mathematical simulation: expanded to 16 concentric lanes for heavy, dense rings (expanded radius)
-    const s = 58;
+    // Mathematical simulation: expanded to 16 concentric lanes for balanced, perfectly framed rings
+    const s = 44;
     const v = 0.8;
     const h = 1.0;
     const r = 0.8;
@@ -166,11 +166,8 @@ export class ParticlesSwarm {
       const c2 = Math.cos(a * 2.0);
       const s2 = Math.sin(a * 2.0);
 
-      const top = 0.5 * (sa + Math.abs(sa));
-      const bottom = 0.5 * (-sa + Math.abs(sa));
-
       const cx = s * (1.15 * ca + 0.08 * c2);
-      const cy = s * (0.42 * top - 0.28 * bottom + 0.03 * s2);
+      const cy = s * (0.35 * sa + 0.03 * s2);
       const cz = s * 0.72 * sa;
 
       const lu = (lane + 0.5) / TOTAL_LANES;
@@ -192,7 +189,7 @@ export class ParticlesSwarm {
       const dn = Math.sin(ds);
 
       const dx = cx + ca * dr + ca * tube * 0.5 * dc;
-      const dy = cy + s * 0.16 + dr * 0.35 * dn;
+      const dy = cy + dr * 0.35 * dn;
       const dz = cz + sa * dr + sa * tube * 0.5 * dc;
 
       // Micro-flutter for golden disco dust floating around the heavy rings

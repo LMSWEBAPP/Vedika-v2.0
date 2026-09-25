@@ -91,12 +91,12 @@ export default function HeroSection() {
   const speechTimeRef = useRef(0);
   const speechStartTimeRef = useRef(null);
 
-  // Locked particle transform coordinates (scaled up for bigger, more majestic ring)
+  // Locked particle transform coordinates (centered squarely behind the kid mascot)
   const LOCKED_PARTICLES = {
-    posX: 6,
-    posY: 13,
+    posX: 0,
+    posY: -2,
     posZ: -31,
-    scale: 1.25,
+    scale: 0.98,
     rotX: 115,
     rotY: 5,
     rotZ: -40,
@@ -149,14 +149,18 @@ export default function HeroSection() {
     dispatch({ type: 'MOUNT' });
   }, []);
 
-  // GSAP Cinematic Title and Elements Animation
+  // GSAP Title and Elements Animation matching the reference specification exactly
   useEffect(() => {
     if (!mounted) return;
 
     try {
       gsap.registerPlugin(CustomEase);
-      const cinemaEase = CustomEase.create('cinemaEase', '0.16, 1, 0.3, 1');
-      const cinemaSoft = CustomEase.create('cinemaSoft', '0.25, 0.1, 0.25, 1');
+      const customEaseIn = CustomEase.create('custom-ease-in', '0.52, 0.00, 0.48, 1.00');
+      const fourtyFrames = 1.3333333;
+      const fiftyFrames = 1.66666;
+      const twoFrames = 0.666666;
+      const fourFrames = 0.133333;
+      const sixFrames = 0.2;
 
       const ve = document.querySelector('#ve span');
       const di = document.querySelector('#di span');
@@ -170,84 +174,32 @@ export default function HeroSection() {
 
       const timeline = gsap.timeline();
 
-      // 1. Eyebrow "MEET YOUR PERSONAL" glides down with tracking expansion
       if (titleLead) {
-        timeline.fromTo(
-          titleLead,
-          { y: -16, autoAlpha: 0, letterSpacing: '0.32em' },
-          { y: 0, autoAlpha: 1, letterSpacing: '0.22em', duration: 1.15, ease: cinemaEase },
-          0
-        );
+        timeline.fromTo(titleLead, { y: '-0.5rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, 0);
       }
-
-      // 2. Cinematic convergence for VEDIKA (dominant, larger syllables)
       if (ve) {
-        timeline.fromTo(
-          ve,
-          { x: -50, y: 16, scale: 0.88, autoAlpha: 0, filter: 'blur(12px)' },
-          { x: 0, y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.45, ease: cinemaEase },
-          0.06
-        );
+        timeline.fromTo(ve, { x: '3.6rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, 0);
       }
       if (di) {
-        timeline.fromTo(
-          di,
-          { y: -28, scale: 0.9, autoAlpha: 0, filter: 'blur(12px)' },
-          { y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.4, ease: cinemaEase },
-          0.14
-        );
+        timeline.fromTo(di, { x: '-2.6rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
       }
       if (ka) {
-        timeline.fromTo(
-          ka,
-          { x: 50, y: 16, scale: 0.88, autoAlpha: 0, filter: 'blur(12px)' },
-          { x: 0, y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.45, ease: cinemaEase },
-          0.22
-        );
+        timeline.fromTo(ka, { x: '2.8rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
-
-      // 3. Cinematic convergence for AI TUTOR (smoothly arrives with regal presence)
       if (ai) {
-        timeline.fromTo(
-          ai,
-          { x: -38, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
-          { x: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.35, ease: cinemaEase },
-          0.30
-        );
+        timeline.fromTo(ai, { x: '-2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
       if (tu) {
-        timeline.fromTo(
-          tu,
-          { y: 24, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
-          { y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.35, ease: cinemaEase },
-          0.38
-        );
+        timeline.fromTo(tu, { x: '2.5rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, fourFrames);
       }
       if (tor) {
-        timeline.fromTo(
-          tor,
-          { x: 42, scale: 0.86, autoAlpha: 0, filter: 'blur(10px)' },
-          { x: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.4, ease: cinemaEase },
-          0.44
-        );
+        timeline.fromTo(tor, { x: '-3.2rem' }, { x: '0rem', duration: fiftyFrames, ease: customEaseIn }, twoFrames);
       }
-
-      // 4. Subline and Description glide in
       if (titleSubline) {
-        timeline.fromTo(
-          titleSubline,
-          { y: 18, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 1.1, ease: cinemaSoft },
-          0.55
-        );
+        timeline.fromTo(titleSubline, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, twoFrames);
       }
       if (desc) {
-        timeline.fromTo(
-          desc,
-          { y: 18, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 1.1, ease: cinemaSoft },
-          0.70
-        );
+        timeline.fromTo(desc, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, sixFrames);
       }
     } catch (err) {
       console.warn('GSAP animation error:', err);
