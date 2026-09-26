@@ -1063,7 +1063,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-quiz.png?v=9"
+              src="/vedika-bot-quiz.png?v=12"
               colorMode="golden"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}
@@ -1132,7 +1132,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-assignment.png?v=11"
+              src="/vedika-bot-assignment.png?v=12"
               colorMode="cosmic-purple"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}

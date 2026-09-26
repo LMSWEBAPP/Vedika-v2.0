@@ -232,7 +232,7 @@ export default function VedikaParticleBot({
         : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v9`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -325,73 +325,80 @@ export default function VedikaParticleBot({
           if (colorMode === 'cosmic-purple') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-            if ((luminance > 175 && saturation < 0.26) || luminance > 215) {
-              // Crisp pure white (Paper sheets, helmet shell, book pages)
+            if ((luminance > 170 && saturation < 0.26) || luminance > 215) {
+              // PURE SOLID WHITE for paper sheets, helmet shell, book pages
               baseR = 255;
               baseG = 255;
               baseB = 255;
-              baseAlpha = Math.min(1, Math.max(0.96, alphaNorm * 0.99));
-              pSize = (1.10 + Math.random() * 0.16) * sizeFactor;
-            } else if (luminance < 160 && ((b > 40 && b > g + 10) || (r > 30 && b > 50))) {
-              // Deep vivid violet/indigo for Assignment title, bullet points, text lines, icon
-              baseR = 115;
-              baseG = 38;
-              baseB = 210;
-              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
-              pSize = (1.08 + Math.random() * 0.16) * sizeFactor;
+              baseAlpha = 1.0;
+              pSize = 2.05 * sizeFactor;
+            } else if (luminance < 155 && ((b > 35 && b > g + 8) || (r > 25 && b > 40) || luminance < 65)) {
+              // Deep high-contrast indigo-black text ('Assignment', bullet points, lines)
+              baseR = 25;
+              baseG = 10;
+              baseB = 60;
+              baseAlpha = 1.0;
+              pSize = 2.00 * sizeFactor;
             } else if ((b > 115 && b > g + 20) || saturation > 0.18) {
               // Radiant electric purple (Eyes, smile, star logo, laptop, books, pens, bubble)
               baseR = Math.min(255, Math.round(r * 1.25));
               baseG = Math.min(255, Math.round(g * 1.05));
               baseB = Math.min(255, Math.round(b * 1.28));
-              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
-              pSize = (1.12 + Math.random() * 0.18) * sizeFactor;
+              baseAlpha = 1.0;
+              pSize = 1.95 * sizeFactor;
             } else if (luminance > 75) {
               // Soft lilac / shaded white contours
               baseR = Math.min(255, Math.round(r * 1.05));
               baseG = Math.min(255, Math.round(g * 1.05));
               baseB = Math.min(255, Math.round(b * 1.10));
-              baseAlpha = Math.min(0.92, Math.max(0.78, alphaNorm * 0.90));
-              pSize = (1.02 + Math.random() * 0.15) * sizeFactor;
+              baseAlpha = Math.min(0.96, Math.max(0.85, alphaNorm * 0.95));
+              pSize = 1.85 * sizeFactor;
             } else {
               // Deep purple shadow contours
               baseR = Math.max(30, Math.round(r * 0.9));
               baseG = Math.max(15, Math.round(g * 0.8));
               baseB = Math.max(60, Math.round(b * 1.0));
-              baseAlpha = Math.min(0.75, Math.max(0.55, alphaNorm * 0.75));
-              pSize = (0.95 + Math.random() * 0.15) * sizeFactor;
+              baseAlpha = Math.min(0.85, Math.max(0.65, alphaNorm * 0.85));
+              pSize = 1.70 * sizeFactor;
             }
           } else if (colorMode === 'golden') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-            if ((luminance > 170 && saturation < 0.28) || luminance > 215) {
-              // Crisp pure white (MCQ paper sheet, robot helmet highlights, sparkles, page edges)
+            if ((luminance > 175 && saturation < 0.28) || luminance > 215) {
+              // PURE SOLID WHITE for paper & helmet highlights
               baseR = 255;
               baseG = 255;
               baseB = 255;
-              baseAlpha = Math.min(1, Math.max(0.96, alphaNorm * 0.99));
-              pSize = (1.25 + Math.random() * 0.25) * sizeFactor;
-            } else if (saturation > 0.16 || maxC > 140) {
-              // Radiant amber gold (MCQ questions '?', option circles A/B/C/D, pencil, glowing eyes, smile)
-              baseR = 251;
-              baseG = 191;
-              baseB = 36;
-              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
-              pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 65) {
-              // Warm rich gold midtone (Robot body, arm holding paper, book covers)
-              baseR = 228;
-              baseG = 152;
+              baseAlpha = 1.0;
+              pSize = 2.05 * sizeFactor;
+            } else if (luminance < 115 && (saturation < 0.35 || luminance < 60)) {
+              // Solid dark ink for 'Quiz' title, 'A', 'B', 'C', 'D' text, question lines
+              baseR = 16;
+              baseG = 16;
               baseB = 22;
-              baseAlpha = Math.min(0.94, Math.max(0.82, alphaNorm * 0.92));
-              pSize = (1.15 + Math.random() * 0.20) * sizeFactor;
+              baseAlpha = 1.0;
+              pSize = 2.00 * sizeFactor;
+            } else if (saturation > 0.22 || maxC > 140) {
+              // Radiant amber gold (Badge, option A selected ring, eyes, smile, star)
+              baseR = Math.min(255, Math.round(r * 1.25));
+              baseG = Math.min(255, Math.round(g * 1.15));
+              baseB = Math.min(255, Math.round(b * 1.05));
+              baseAlpha = 1.0;
+              pSize = 1.95 * sizeFactor;
+            } else if (luminance > 70) {
+              // Warm gold midtone (Robot body, arm, book covers)
+              baseR = 225;
+              baseG = 150;
+              baseB = 25;
+              baseAlpha = Math.min(0.96, Math.max(0.85, alphaNorm * 0.95));
+              pSize = 1.85 * sizeFactor;
             } else {
-              // Deep bronze gold (Contours, creases, book shadows)
-              baseR = 185;
-              baseG = 110;
-              baseB = 12;
-              baseAlpha = Math.min(0.80, Math.max(0.60, alphaNorm * 0.78));
-              pSize = (1.00 + Math.random() * 0.18) * sizeFactor;
+              // Deep bronze gold
+              baseR = 175;
+              baseG = 105;
+              baseB = 15;
+              baseAlpha = Math.min(0.85, Math.max(0.65, alphaNorm * 0.85));
+              pSize = 1.70 * sizeFactor;
             }
           } else if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
@@ -453,8 +460,9 @@ export default function VedikaParticleBot({
           const isAccent = (saturation > 0.16 && maxC > 40) || (b > 115 && b > r + 15);
           const accentRatio = isAccent ? Math.min(1, Math.max(0.45, saturation * 1.4)) : 0;
 
-          const relX = (x + (Math.random() - 0.5) * 0.35) * scaleX;
-          const relY = (y + (Math.random() - 0.5) * 0.35) * scaleY;
+          const jitter = (colorMode === 'golden' || colorMode === 'cosmic-purple') ? 0 : 0.35;
+          const relX = (x + (Math.random() - 0.5) * jitter) * scaleX;
+          const relY = (y + (Math.random() - 0.5) * jitter) * scaleY;
           const pColor = `rgba(${baseR}, ${baseG}, ${baseB}, ${baseAlpha.toFixed(2)})`;
 
           targets.push({
@@ -914,7 +922,7 @@ export default function VedikaParticleBot({
     const step = particleStep !== null && particleStep !== undefined
       ? particleStep
       : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
-    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
+    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v9`;
     if (TARGET_CACHE.has(cacheKey)) {
       onImageReady();
     } else {
