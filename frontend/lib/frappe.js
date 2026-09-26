@@ -2143,6 +2143,87 @@ export async function deleteAssignment(id) {
 
 // --- LMS Assignment Submission API ---
 
+const DEFAULT_ASSIGNMENT_SUBMISSIONS = [
+  {
+    id: 'sub-fibonacci-1',
+    assignment: 'assign-python-fibonacci',
+    assignment_title: 'Implementing Fibonacci Sequence Generator',
+    type: 'Text',
+    member: 'alex.student@apex.edu',
+    member_name: 'Alex Rivera',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.',
+    answer: `def fibonacci(n):
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    
+    fib_series = [0, 1]
+    for i in range(2, n):
+        next_val = fib_series[-1] + fib_series[-2]
+        fib_series.append(next_val)
+    return fib_series`,
+    course: '1',
+    lesson: 'l2',
+    timestamp: '2026-09-26T14:30:00.000Z'
+  },
+  {
+    id: 'sub-fibonacci-2',
+    assignment: 'assign-python-fibonacci',
+    assignment_title: 'Implementing Fibonacci Sequence Generator',
+    type: 'Text',
+    member: 'priya.sharma@globaleng.edu',
+    member_name: 'Priya Sharma',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.',
+    answer: `def fibonacci(n):
+    # Generates fibonacci list up to n elements
+    res = []
+    a, b = 0, 1
+    for _ in range(n):
+        res.append(a)
+        a, b = b, a + b
+    return res`,
+    course: '1',
+    lesson: 'l2',
+    timestamp: '2026-09-26T15:10:00.000Z'
+  },
+  {
+    id: 'sub-sorting-1',
+    assignment: 'assign-dsa-sorting',
+    assignment_title: 'Custom Merge Sort Complexity Analysis',
+    type: 'Text',
+    member: 'rahul.v@apex.edu',
+    member_name: 'Rahul Verma',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Compare the computational complexity and space requirements of Merge Sort and In-place Quicksort. Submit a report explaining edge cases.',
+    answer: `Merge Sort vs Quicksort Complexity Analysis:
+
+1. Time Complexity:
+- Merge Sort: Always O(N log N) in best, average, and worst cases because it consistently divides arrays in half and requires O(N) merge steps.
+- Quicksort: Average case O(N log N), but worst-case degrades to O(N^2) if the pivot chosen is consistently the extreme element (e.g. already sorted array without randomized pivot).
+
+2. Space Complexity:
+- Merge Sort: O(N) auxiliary space required for temporary merge buffers.
+- Quicksort: O(log N) stack space for recursive calls, operates in-place.
+
+3. Stability:
+- Merge Sort is stable (preserves relative order of duplicate elements).
+- Standard Quicksort is unstable due to far-distance swaps.
+
+4. Edge Cases:
+- Empty array: handled in base case len <= 1.
+- Duplicate values: Merge sort handles duplicates stably without performance penalty.`,
+    course: '2',
+    lesson: '2_m1',
+    timestamp: '2026-09-26T16:45:00.000Z'
+  }
+];
+
 export async function getAssignmentSubmissions() {
   if (FRAPPE_URL) {
     try {
@@ -2150,24 +2231,42 @@ export async function getAssignmentSubmissions() {
         fields: JSON.stringify(["name", "assignment", "assignment_title", "type", "member", "member_name", "evaluator", "assignment_attachment", "answer", "status", "question", "comments", "course", "lesson"]),
         limit_page_length: 100
       });
-      return (res || []).map(s => {
-        const extra = getStoredAiEval(s.name) || {};
-        return {
-          id: s.name,
-          ...s,
-          score: extra.score !== undefined ? extra.score : s.score,
-          ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
-        };
-      });
+      if (res && res.length > 0) {
+        return res.map(s => {
+          const extra = getStoredAiEval(s.name) || {};
+          return {
+            id: s.name,
+            ...s,
+            score: extra.score !== undefined ? extra.score : s.score,
+            ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
+          };
+        });
+      }
     } catch (e) {
-      console.error("Failed to fetch assignment submissions.", e);
+      console.warn("Notice: Failed to fetch assignment submissions from Frappe REST API. Falling back to local state.", e.message || e);
     }
   }
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('assignment_submissions');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(s => {
+            const extra = getStoredAiEval(s.id || s.name) || {};
+            return {
+              ...s,
+              score: extra.score !== undefined ? extra.score : s.score,
+              ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
+            };
+          });
+        }
+      } catch (e) {}
+    }
+    localStorage.setItem('assignment_submissions', JSON.stringify(DEFAULT_ASSIGNMENT_SUBMISSIONS));
+    return DEFAULT_ASSIGNMENT_SUBMISSIONS;
   }
-  return [];
+  return DEFAULT_ASSIGNMENT_SUBMISSIONS;
 }
 
 export async function submitAssignmentResponse(subData) {

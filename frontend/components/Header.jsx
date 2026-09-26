@@ -6,7 +6,7 @@ import styles from './Header.module.css';
 import {
   ArrowRight, ChevronDown, BookOpen, Award, FileText,
   FolderOpen, Menu, X, Brain, FlaskConical, Briefcase, BarChart3,
-  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles
+  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles, ShieldCheck
 } from 'lucide-react';
 
 export default function Header() {
@@ -383,6 +383,34 @@ export default function Header() {
                     <UserIcon size={15} color="#818cf8" />
                     <span className={styles.dropdownItemLabel}>My Profile</span>
                   </button>
+
+                  {(user?.role === 'Administrator' || user?.role === 'super_admin' || user?.is_super_admin) && (
+                    <button
+                      type="button"
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        router.push('/admin');
+                      }}
+                    >
+                      <LayoutDashboard size={15} color="#38bdf8" />
+                      <span className={styles.dropdownItemLabel}>Admin Portal</span>
+                    </button>
+                  )}
+
+                  {(user?.role === 'super_admin' || user?.is_super_admin) && (
+                    <button
+                      type="button"
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        router.push('/super-admin');
+                      }}
+                    >
+                      <ShieldCheck size={15} color="#a855f7" />
+                      <span className={styles.dropdownItemLabel}>Super Admin Console</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={styles.dropdownItem}
