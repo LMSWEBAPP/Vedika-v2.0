@@ -228,7 +228,7 @@ export default function VedikaParticleBot({
       const isMobile = window.innerWidth < 768;
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v6`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v7`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -323,20 +323,19 @@ export default function VedikaParticleBot({
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
             if (saturation > 0.14 && maxC > 40) {
-              // Saturated vibrant elements (glowing purple eyes, smile, pen, accent colors)
+              // Saturated vibrant elements (golden MCQs/eyes/pencil OR purple plank/pen/eyes)
               const boost = 1.25;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 0.98));
+              baseAlpha = Math.min(1, Math.max(0.94, alphaNorm * 0.98));
               pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 150) {
-              // Crisp highlights (white helmet shell, paper lines)
-              const boost = 1.08;
-              baseR = Math.min(255, Math.round(r * boost));
-              baseG = Math.min(255, Math.round(g * boost));
-              baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 0.98));
+            } else if (luminance > 165) {
+              // Pure crisp white highlights (MCQ sheet paper, assignment notebook pages, helmet shell)
+              baseR = 255;
+              baseG = 255;
+              baseB = 255;
+              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.98));
               pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
             } else if (luminance > 60) {
               // Midtones
