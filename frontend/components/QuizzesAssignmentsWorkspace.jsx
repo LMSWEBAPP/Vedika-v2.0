@@ -442,82 +442,6 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           overflow: hidden;
         }
 
-        /* Multi-layered Shimmer Glow Aura behind Assignment Bot (Electric Purple) */
-        .assignment-bot-glow-bg {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 480px;
-          height: 480px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(168, 85, 247, 0.16) 0%,
-            rgba(126, 34, 206, 0.05) 42%,
-            transparent 72%
-          );
-          filter: blur(44px);
-          pointer-events: none;
-          z-index: 0;
-          animation: assignmentShimmerPulse 4.5s ease-in-out infinite;
-        }
-
-        .assignment-bot-glow-radial {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 340px;
-          height: 340px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(192, 132, 252, 0.18) 0%,
-            rgba(168, 85, 247, 0.06) 50%,
-            transparent 75%
-          );
-          filter: blur(32px);
-          pointer-events: none;
-          z-index: 0;
-          animation: assignmentShimmerRotate 10s linear infinite;
-        }
-
-        .assignment-bot-glow-pulse {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 220px;
-          height: 220px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(192, 132, 252, 0.15) 0%,
-            rgba(168, 85, 247, 0.06) 45%,
-            transparent 70%
-          );
-          filter: blur(22px);
-          pointer-events: none;
-          z-index: 0;
-          animation: assignmentShimmerPulse 3.2s ease-in-out infinite alternate;
-        }
-
-        @keyframes assignmentShimmerPulse {
-          0%, 100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.75;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.12);
-            opacity: 0.98;
-          }
-        }
-
-        @keyframes assignmentShimmerRotate {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
 
         /* DEFAULT STATE: QUIZZES ACTIVE */
         .box1-content {
@@ -1196,12 +1120,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         {/* BOX 2 SIDE: SMALLER PANEL - ASSIGNMENT BOT PARTICLE ANIMATION  */}
         {/* ============================================================== */}
         <div className="box2-side">
-          {/* Multi-layered Shimmer Glow Aura behind Assignment Bot (Electric Purple) */}
-          <div className="assignment-bot-glow-bg" />
-          <div className="assignment-bot-glow-radial" />
-          <div className="assignment-bot-glow-pulse" />
-
-          {/* Interactive Particle Bot Canvas */}
+          {/* Interactive Particle Bot Canvas (Cosmic Purple & White Ultra-Crisp Micro-Particles) */}
           <div style={{
             position: 'relative',
             width: '100%',
@@ -1213,12 +1132,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-assignment.png?v=8"
-              colorMode="vibrant"
+              src="/vedika-bot-assignment.png?v=11"
+              colorMode="cosmic-purple"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}
               inline={true}
-              intensity={0.82}
+              particleStep={isMobile ? 3 : 2}
             />
           </div>
 

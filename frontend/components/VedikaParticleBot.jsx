@@ -229,7 +229,7 @@ export default function VedikaParticleBot({
       const isMobile = window.innerWidth < 768;
       const step = particleStep !== null && particleStep !== undefined
         ? particleStep
-        : (colorMode === 'golden' ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
+        : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
       const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
@@ -322,7 +322,46 @@ export default function VedikaParticleBot({
           let pSize;
           let baseR, baseG, baseB, baseAlpha;
 
-          if (colorMode === 'golden') {
+          if (colorMode === 'cosmic-purple') {
+            const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+
+            if ((luminance > 175 && saturation < 0.26) || luminance > 215) {
+              // Crisp pure white (Paper sheets, helmet shell, book pages)
+              baseR = 255;
+              baseG = 255;
+              baseB = 255;
+              baseAlpha = Math.min(1, Math.max(0.96, alphaNorm * 0.99));
+              pSize = (1.10 + Math.random() * 0.16) * sizeFactor;
+            } else if (luminance < 160 && ((b > 40 && b > g + 10) || (r > 30 && b > 50))) {
+              // Deep vivid violet/indigo for Assignment title, bullet points, text lines, icon
+              baseR = 115;
+              baseG = 38;
+              baseB = 210;
+              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
+              pSize = (1.08 + Math.random() * 0.16) * sizeFactor;
+            } else if ((b > 115 && b > g + 20) || saturation > 0.18) {
+              // Radiant electric purple (Eyes, smile, star logo, laptop, books, pens, bubble)
+              baseR = Math.min(255, Math.round(r * 1.25));
+              baseG = Math.min(255, Math.round(g * 1.05));
+              baseB = Math.min(255, Math.round(b * 1.28));
+              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
+              pSize = (1.12 + Math.random() * 0.18) * sizeFactor;
+            } else if (luminance > 75) {
+              // Soft lilac / shaded white contours
+              baseR = Math.min(255, Math.round(r * 1.05));
+              baseG = Math.min(255, Math.round(g * 1.05));
+              baseB = Math.min(255, Math.round(b * 1.10));
+              baseAlpha = Math.min(0.92, Math.max(0.78, alphaNorm * 0.90));
+              pSize = (1.02 + Math.random() * 0.15) * sizeFactor;
+            } else {
+              // Deep purple shadow contours
+              baseR = Math.max(30, Math.round(r * 0.9));
+              baseG = Math.max(15, Math.round(g * 0.8));
+              baseB = Math.max(60, Math.round(b * 1.0));
+              baseAlpha = Math.min(0.75, Math.max(0.55, alphaNorm * 0.75));
+              pSize = (0.95 + Math.random() * 0.15) * sizeFactor;
+            }
+          } else if (colorMode === 'golden') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
             if ((luminance > 170 && saturation < 0.28) || luminance > 215) {
@@ -874,7 +913,7 @@ export default function VedikaParticleBot({
     const isMobile = window.innerWidth < 768;
     const step = particleStep !== null && particleStep !== undefined
       ? particleStep
-      : (colorMode === 'golden' ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
+      : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
     const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
     if (TARGET_CACHE.has(cacheKey)) {
       onImageReady();
