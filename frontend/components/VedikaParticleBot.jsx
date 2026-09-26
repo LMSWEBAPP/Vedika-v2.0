@@ -228,7 +228,7 @@ export default function VedikaParticleBot({
       const isMobile = window.innerWidth < 768;
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v3`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v5`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -322,31 +322,24 @@ export default function VedikaParticleBot({
           if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
+            // Lift darker midtones and boost brightness for radiant, luminous visibility
+            const boost = saturation > 0.14 ? 1.26 : 1.16;
+            baseR = Math.min(255, Math.round(Math.pow(r / 255, 0.84) * 255 * boost + 12));
+            baseG = Math.min(255, Math.round(Math.pow(g / 255, 0.84) * 255 * boost + 10));
+            baseB = Math.min(255, Math.round(Math.pow(b / 255, 0.84) * 255 * boost + 16));
+
             if (saturation > 0.16 && maxC > 40) {
-              const boost = 1.18;
-              baseR = Math.min(255, Math.round(r * boost));
-              baseG = Math.min(255, Math.round(g * boost));
-              baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.78, alphaNorm * 0.92)) * currentInt;
-              pSize = (1.18 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 160) {
-              baseR = r;
-              baseG = g;
-              baseB = b;
-              baseAlpha = Math.min(0.86, (0.74 + ((luminance - 160) / 95) * 0.10) * alphaNorm) * currentInt;
+              baseAlpha = Math.min(1, Math.max(0.90, alphaNorm * 0.98));
               pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
+            } else if (luminance > 160) {
+              baseAlpha = Math.min(1, Math.max(0.94, (0.86 + ((luminance - 160) / 95) * 0.14) * alphaNorm));
+              pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
             } else if (luminance > 75) {
-              baseR = r;
-              baseG = g;
-              baseB = b;
-              baseAlpha = Math.min(0.80, alphaNorm * 0.86) * currentInt;
-              pSize = (1.05 + Math.random() * 0.20) * sizeFactor;
+              baseAlpha = Math.min(0.96, Math.max(0.86, alphaNorm * 0.92));
+              pSize = (1.08 + Math.random() * 0.20) * sizeFactor;
             } else {
-              baseR = r;
-              baseG = g;
-              baseB = b;
-              baseAlpha = Math.min(0.72, alphaNorm * 0.80) * currentInt;
-              pSize = (0.95 + Math.random() * 0.20) * sizeFactor;
+              baseAlpha = Math.min(0.92, Math.max(0.80, alphaNorm * 0.88));
+              pSize = (0.98 + Math.random() * 0.20) * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -800,7 +793,7 @@ export default function VedikaParticleBot({
           const bGlow = Math.round(p.baseB + (255 - p.baseB) * liftRatio * 0.7);
           ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${finalAlpha.toFixed(2)})`;
         } else {
-          ctx.fillStyle = `rgba(${p.baseR}, ${p.baseG}, ${p.baseB}, ${finalAlpha.toFixed(2)})`;
+          ctx.fillStyle = `rgba(${p.baseR}, ${p.baseG}, ${p.baseB}, ${Math.min(1, finalAlpha * 1.15).toFixed(2)})`;
         }
 
         ctx.fillRect(renderX, renderY, renderSize, renderSize);

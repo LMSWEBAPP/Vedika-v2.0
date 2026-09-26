@@ -772,15 +772,6 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 </linearGradient>
               </defs>
 
-              {/* Ambient Arch on Left matching Image 1 */}
-              <path
-                d="M -20 860 L -20 380 C -20 200, 220 200, 220 380 L 220 860"
-                fill="none"
-                stroke="rgba(168, 85, 247, 0.28)"
-                strokeWidth="2.5"
-                filter="drop-shadow(0 0 14px rgba(168, 85, 247, 0.45))"
-              />
-
               {/* Sweeping Purple Flow Wave 1 */}
               <path
                 d="M -100 640 C 260 540, 580 700, 940 570 C 1180 480, 1360 530, 1600 560"
@@ -795,18 +786,6 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 fill="none"
                 stroke="url(#purpleWave2)"
                 strokeWidth="1.5"
-              />
-
-              {/* Electric Purple Upper Orbit Arc */}
-              <ellipse
-                cx="340"
-                cy="260"
-                rx="460"
-                ry="180"
-                fill="none"
-                stroke="rgba(168, 85, 247, 0.15)"
-                strokeWidth="1.2"
-                strokeDasharray="6 6"
               />
 
               {/* Purple Sparkle Stars matching Image 1 */}
@@ -1315,7 +1294,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-assignment.png?v=1"
+              src="/vedika-bot-assignment.png?v=3"
               colorMode="vibrant"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}
