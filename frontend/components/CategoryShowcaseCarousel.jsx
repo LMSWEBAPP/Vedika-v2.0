@@ -12,7 +12,8 @@ export default function CategoryShowcaseCarousel({
   items = [],
   activeCategory = null,
   onSelectCategory,
-  itemTypeLabel = 'Items'
+  itemTypeLabel = 'Items',
+  theme = 'gold'
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -33,20 +34,20 @@ export default function CategoryShowcaseCarousel({
   const currentItem = items[activeIdx] || items[0];
 
   return (
-    <div className="showcase-carousel-container">
-      {/* Title Badge */}
+    <div className={`showcase-carousel-container ${theme === 'gold' ? 'theme-gold' : ''}`}>
+      {/* Title Badge matching reference design */}
       <div style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 8,
-        background: 'rgba(124, 58, 237, 0.12)',
-        border: '1px solid rgba(124, 58, 237, 0.3)',
-        color: '#A78BFA',
+        background: theme === 'gold' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(124, 58, 237, 0.12)',
+        border: theme === 'gold' ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(124, 58, 237, 0.3)',
+        color: theme === 'gold' ? '#FDE68A' : '#A78BFA',
         padding: '5px 14px',
         borderRadius: 20,
         fontSize: 12,
         fontWeight: 700,
-        letterSpacing: '0.04em',
+        letterSpacing: '0.06em',
         textTransform: 'uppercase',
         marginBottom: 16
       }}>
@@ -64,6 +65,11 @@ export default function CategoryShowcaseCarousel({
               className="showcase-nav-btn showcase-nav-prev"
               onClick={handlePrev}
               aria-label="Previous category"
+              style={theme === 'gold' ? {
+                background: 'rgba(12, 16, 24, 0.9)',
+                borderColor: 'rgba(245, 158, 11, 0.35)',
+                color: '#FDE68A'
+              } : {}}
             >
               <ChevronLeft size={20} />
             </button>
@@ -71,6 +77,11 @@ export default function CategoryShowcaseCarousel({
               className="showcase-nav-btn showcase-nav-next"
               onClick={handleNext}
               aria-label="Next category"
+              style={theme === 'gold' ? {
+                background: 'rgba(12, 16, 24, 0.9)',
+                borderColor: 'rgba(245, 158, 11, 0.35)',
+                color: '#FDE68A'
+              } : {}}
             >
               <ChevronRight size={20} />
             </button>
@@ -97,11 +108,18 @@ export default function CategoryShowcaseCarousel({
           return (
             <div
               key={item.category || idx}
-              className={`showcase-card ${isCenter ? 'is-active' : ''}`}
+              className={`showcase-card ${isCenter ? 'is-active' : ''} ${theme === 'gold' ? 'theme-gold' : ''}`}
               style={{
                 transform: `translateX(${translateX}px) scale(${scale}) rotateY(${rotateY}deg)`,
                 zIndex,
-                opacity
+                opacity,
+                ...(theme === 'gold' ? {
+                  background: '#0C0E14',
+                  borderColor: isCenter ? 'rgba(251, 191, 36, 0.75)' : 'rgba(245, 158, 11, 0.22)',
+                  boxShadow: isCenter
+                    ? '0 18px 44px rgba(0, 0, 0, 0.85), 0 0 24px rgba(245, 158, 11, 0.2)'
+                    : '0 10px 30px rgba(0, 0, 0, 0.5)'
+                } : {})
               }}
               onClick={() => {
                 if (isCenter) {
@@ -118,15 +136,24 @@ export default function CategoryShowcaseCarousel({
                   className="showcase-card-img"
                   loading="eager"
                 />
-                <div className="showcase-card-badge">
+                <div
+                  className="showcase-card-badge"
+                  style={theme === 'gold' ? {
+                    background: 'rgba(0, 0, 0, 0.78)',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    color: '#FFFBEB'
+                  } : {}}
+                >
                   {item.count} {item.count === 1 ? itemTypeLabel.slice(0, -1) : itemTypeLabel}
                 </div>
               </div>
 
-              <div className="showcase-card-body">
+              <div className="showcase-card-body" style={theme === 'gold' ? {
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0.82) 100%)'
+              } : {}}>
                 <div>
                   <h4 className="showcase-card-title">{item.category}</h4>
-                  <div className="showcase-card-subtitle">
+                  <div className="showcase-card-subtitle" style={theme === 'gold' ? { color: '#94A3B8' } : {}}>
                     {item.coursesCount || 1} {(item.coursesCount || 1) === 1 ? 'Course' : 'Courses'}
                   </div>
                 </div>
@@ -138,26 +165,28 @@ export default function CategoryShowcaseCarousel({
                       onSelectCategory && onSelectCategory(item.category);
                     }}
                     style={{
-                      background: 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
-                      color: '#fff',
+                      background: theme === 'gold'
+                        ? 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%)'
+                        : 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
+                      color: theme === 'gold' ? '#000000' : '#fff',
                       border: 'none',
-                      borderRadius: 10,
-                      padding: '8px 14px',
-                      fontSize: 12.5,
-                      fontWeight: 700,
+                      borderRadius: 12,
+                      padding: '9px 18px',
+                      fontSize: 13,
+                      fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 6,
-                      marginTop: 8,
-                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.35)',
-                      transition: 'transform 0.15s ease'
+                      marginTop: 10,
+                      boxShadow: 'none',
+                      transform: 'none',
+                      transition: 'none'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                   >
-                    Explore {item.category} <ArrowRight size={14} />
+                    <span>Explore {item.category}</span>
+                    <ArrowRight size={14} color={theme === 'gold' ? '#000000' : '#FFFFFF'} />
                   </button>
                 )}
               </div>
@@ -175,6 +204,9 @@ export default function CategoryShowcaseCarousel({
               className={`showcase-dot ${activeIdx === idx ? 'is-active' : ''}`}
               onClick={() => setActiveIdx(idx)}
               aria-label={`Go to slide ${idx + 1}`}
+              style={theme === 'gold' && activeIdx === idx ? {
+                background: '#F59E0B'
+              } : {}}
             />
           ))}
         </div>

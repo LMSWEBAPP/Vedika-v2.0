@@ -157,3 +157,13 @@
   border-radius: 12px;
   background: var(--purple, #7C3AED);
 }
+
+.showcase-carousel-container.theme-gold .showcase-dot.is-active {
+  background: #F59E0B !important;
+}
+
+.showcase-carousel-container.theme-gold .showcase-nav-btn:hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  color: #FFFFFF !important;
+}
