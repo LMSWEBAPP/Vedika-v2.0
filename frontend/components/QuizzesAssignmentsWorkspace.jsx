@@ -65,6 +65,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
   const [assignmentSuccessMsg, setAssignmentSuccessMsg] = useState('');
 
+
   // Read current user
   useEffect(() => {
     const stored = localStorage.getItem('frappe_user');
@@ -1028,18 +1029,18 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 480,
-            height: isMobile ? 320 : 440,
+            maxWidth: 500,
+            height: isMobile ? 300 : 390,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-quiz.png"
+              src="/vedika-bot-quiz.png?v=2"
               colorMode="vibrant"
-              width={480}
-              height={440}
+              width={isMobile ? 360 : 500}
+              height={isMobile ? 280 : 380}
               inline={true}
               themeRgb="245, 158, 11"
               intensity={1.05}
