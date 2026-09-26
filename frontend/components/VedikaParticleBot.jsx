@@ -244,10 +244,10 @@ export default function VedikaParticleBot({
       const aspect = naturalW / naturalH;
 
       if (inline) {
-        targetHeight = Math.max(10, Math.floor((height || 250) * 0.90));
+        targetHeight = Math.max(10, Math.floor((height || 250) * 0.95));
         targetWidth = Math.max(10, Math.floor(targetHeight * aspect));
-        if (targetWidth > (width || 220) * 0.95) {
-          targetWidth = Math.max(10, Math.floor((width || 220) * 0.95));
+        if (targetWidth > (width || 220) * 0.98) {
+          targetWidth = Math.max(10, Math.floor((width || 220) * 0.98));
           targetHeight = Math.max(10, Math.floor(targetWidth / aspect));
         }
       } else {
@@ -293,9 +293,10 @@ export default function VedikaParticleBot({
 
       const scaleX = targetWidth / sampleW;
       const scaleY = targetHeight / sampleH;
-      const step = inline ? 2 : (isMobile ? 4 : 3);
+      const step = isMobile ? 4 : 3;
       const targets = [];
       const sizeFactor = inline ? 0.96 : 1.0;
+      const currentInt = intensityRef.current || 1.0;
 
       for (let y = 0; y < sampleH; y += step) {
         for (let x = 0; x < sampleW; x += step) {
@@ -322,30 +323,30 @@ export default function VedikaParticleBot({
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
             if (saturation > 0.16 && maxC > 40) {
-              const boost = 1.35;
+              const boost = 1.18;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 1.2));
-              pSize = (1.68 + Math.random() * 0.35) * sizeFactor;
+              baseAlpha = Math.min(1, Math.max(0.78, alphaNorm * 0.92)) * currentInt;
+              pSize = (1.18 + Math.random() * 0.25) * sizeFactor;
             } else if (luminance > 160) {
-              baseR = 255;
-              baseG = 255;
-              baseB = 255;
-              baseAlpha = Math.min(1, Math.max(0.96, (0.92 + ((luminance - 160) / 95) * 0.08) * alphaNorm * 1.15));
-              pSize = (1.75 + Math.random() * 0.30) * sizeFactor;
-            } else if (luminance > 75) {
-              baseR = Math.min(255, Math.round(r * 1.10));
-              baseG = Math.min(255, Math.round(g * 1.10));
-              baseB = Math.min(255, Math.round(b * 1.16));
-              baseAlpha = Math.min(1, Math.max(0.90, alphaNorm * 1.1));
-              pSize = (1.45 + Math.random() * 0.25) * sizeFactor;
-            } else {
-              baseR = Math.round(r * 1.05);
-              baseG = Math.round(g * 1.05);
-              baseB = Math.round(b * 1.10);
-              baseAlpha = Math.min(1, Math.max(0.82, alphaNorm * 1.05));
+              baseR = r;
+              baseG = g;
+              baseB = b;
+              baseAlpha = Math.min(0.86, (0.74 + ((luminance - 160) / 95) * 0.10) * alphaNorm) * currentInt;
               pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
+            } else if (luminance > 75) {
+              baseR = r;
+              baseG = g;
+              baseB = b;
+              baseAlpha = Math.min(0.80, alphaNorm * 0.86) * currentInt;
+              pSize = (1.05 + Math.random() * 0.20) * sizeFactor;
+            } else {
+              baseR = r;
+              baseG = g;
+              baseB = b;
+              baseAlpha = Math.min(0.72, alphaNorm * 0.80) * currentInt;
+              pSize = (0.95 + Math.random() * 0.20) * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -756,9 +757,9 @@ export default function VedikaParticleBot({
         const scale = Math.min(1.8, Math.max(0.2, rawScale));
         const renderX = centerX + (p.x - centerX) * scale;
         const renderY = centerY + (p.y - centerY) * scale;
-        const baseSize = inline ? (isHighIntensity ? 1.22 : 1.1) : 0.8;
-        const maxSize = isHighIntensity ? 3.8 : 3.4;
-        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 1.0)));
+        const baseSize = 0.8;
+        const maxSize = isHighIntensity ? 3.4 : 3.0;
+        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.05 : 0.95)));
 
         // Soft edge fade near left boundary instead of sharp rectangular clipping
         let edgeFade = 1;

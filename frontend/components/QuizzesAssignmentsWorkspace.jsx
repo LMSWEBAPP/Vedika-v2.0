@@ -507,8 +507,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         /* DEFAULT STATE: QUIZZES ACTIVE */
         .box1-content {
           background: transparent !important;
-          flex: 7 !important;
-          max-width: 68% !important;
+          flex: 5.5 !important;
+          max-width: 56% !important;
           display: flex;
           flex-direction: column;
           opacity: 1 !important;
@@ -525,11 +525,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         .box1-side {
           background: transparent !important;
           border-left: none !important;
-          flex: 3 !important;
-          max-width: 32% !important;
+          flex: 4.5 !important;
+          max-width: 48% !important;
           opacity: 1 !important;
           min-width: 0;
-          padding: 16px 20px 20px 10px;
+          padding: ${isMobile ? '10px' : '16px 24px 20px 0'};
           pointer-events: auto !important;
           display: flex;
           flex-direction: column;
@@ -1029,21 +1029,20 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 500,
-            height: isMobile ? 300 : 390,
+            maxWidth: 640,
+            height: isMobile ? 320 : 490,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-quiz.png?v=2"
+              src="/vedika-bot-quiz.png?v=4"
               colorMode="vibrant"
-              width={isMobile ? 360 : 500}
-              height={isMobile ? 280 : 380}
+              width={isMobile ? 360 : 640}
+              height={isMobile ? 280 : 480}
               inline={true}
-              themeRgb="245, 158, 11"
-              intensity={1.05}
+              intensity={0.82}
             />
           </div>
 
