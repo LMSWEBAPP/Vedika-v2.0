@@ -232,7 +232,7 @@ export default function VedikaParticleBot({
         : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v9`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v10`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -402,36 +402,37 @@ export default function VedikaParticleBot({
             }
           } else if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+            const isCyanAccent = (b > 140 && g > 140 && b > r + 30);
 
-            if (saturation > 0.14 && maxC > 40) {
-              // Saturated vibrant elements (golden MCQs/eyes/pencil OR purple plank/pen/eyes)
+            if (((luminance > 150 && saturation < 0.26) || luminance > 215) && !isCyanAccent) {
+              // PURE SOLID WHITE (matching quiz and courses page: helmet shell, collared dress shirt, socks, cuffs)
+              baseR = 255;
+              baseG = 255;
+              baseB = 255;
+              baseAlpha = 1.0;
+              pSize = 2.05 * sizeFactor;
+            } else if (saturation > 0.16 && maxC > 40) {
+              // Saturated vibrant elements (cyan eyes/smile, tie stripes, badge, pocket square)
               const boost = 1.25;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
-              baseAlpha = Math.min(1, Math.max(0.94, alphaNorm * 0.98));
-              pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 165) {
-              // Pure crisp white highlights (MCQ sheet paper, assignment notebook pages, helmet shell)
-              baseR = 255;
-              baseG = 255;
-              baseB = 255;
-              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.98));
-              pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
+              baseAlpha = 1.0;
+              pSize = 1.95 * sizeFactor;
             } else if (luminance > 60) {
-              // Midtones
+              // Midtones (visor glass, suit lapels, shorts)
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.90, Math.max(0.75, alphaNorm * 0.88));
-              pSize = (1.05 + Math.random() * 0.20) * sizeFactor;
+              baseAlpha = Math.min(0.92, Math.max(0.78, alphaNorm * 0.90));
+              pSize = 1.65 * sizeFactor;
             } else {
               // Deep shadows and dark outlines - keep dark and subtle so edges stay sharp
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.65, alphaNorm * 0.70);
-              pSize = (0.90 + Math.random() * 0.15) * sizeFactor;
+              baseAlpha = Math.min(0.75, alphaNorm * 0.80);
+              pSize = 1.50 * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -460,7 +461,7 @@ export default function VedikaParticleBot({
           const isAccent = (saturation > 0.16 && maxC > 40) || (b > 115 && b > r + 15);
           const accentRatio = isAccent ? Math.min(1, Math.max(0.45, saturation * 1.4)) : 0;
 
-          const jitter = (colorMode === 'golden' || colorMode === 'cosmic-purple') ? 0 : 0.35;
+          const jitter = (colorMode === 'golden' || colorMode === 'cosmic-purple' || colorMode === 'vibrant') ? 0 : 0.35;
           const relX = (x + (Math.random() - 0.5) * jitter) * scaleX;
           const relY = (y + (Math.random() - 0.5) * jitter) * scaleY;
           const pColor = `rgba(${baseR}, ${baseG}, ${baseB}, ${baseAlpha.toFixed(2)})`;
@@ -922,7 +923,7 @@ export default function VedikaParticleBot({
     const step = particleStep !== null && particleStep !== undefined
       ? particleStep
       : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
-    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v9`;
+    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v10`;
     if (TARGET_CACHE.has(cacheKey)) {
       onImageReady();
     } else {
