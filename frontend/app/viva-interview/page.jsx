@@ -15,6 +15,7 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import { getJwtToken } from '@/lib/jwtCache';
 import { useRouter } from 'next/navigation';
 import MathEquationRenderer from '@/components/labs/MathEquationRenderer';
+import VedikaParticleBot from '@/components/VedikaParticleBot';
 
 // Lazy loader for 4.7MB static questions pool to eliminate initial thread freeze and boost load speed
 let _cachedAptitudeData = null;
@@ -3258,7 +3259,7 @@ export default function VivaInterviewPage() {
           <span>Academic Viva Examiner</span>
         </div>
 
-        {/* Middle: Bot Avatar in School Dress (No glow, clean shadow) */}
+        {/* Middle: Interactive Particle Bot (Academic Viva Examiner) */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -3266,24 +3267,17 @@ export default function VivaInterviewPage() {
           justifyContent: 'center',
           position: 'relative',
           width: '100%',
-          margin: '10px 0'
+          margin: '10px 0',
+          zIndex: 2
         }}>
-          {/* Bot Avatar Image in School Uniform Dress */}
-          <img
+          <VedikaParticleBot
             src="/vedika-bot-school.png"
-            alt="Vedika Bot in School Uniform Dress"
-            style={{
-              width: 190,
-              maxWidth: '82%',
-              height: 'auto',
-              position: 'relative',
-              zIndex: 2,
-              animation: 'botFloatBounce 3.2s ease-in-out infinite',
-              filter: 'drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45))'
-            }}
+            width={220}
+            height={295}
+            inline={true}
+            colorMode="vibrant"
+            particleStep={2}
           />
-
-
         </div>
 
         {/* Bottom: Switch to Technical Interview Button */}
@@ -3376,7 +3370,7 @@ export default function VivaInterviewPage() {
           <span>Technical Interviewer</span>
         </div>
 
-        {/* Middle: Bot Avatar in Suit (No glow, clean shadow) */}
+        {/* Middle: Interactive Particle Bot (Technical Interviewer) */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -3384,24 +3378,17 @@ export default function VivaInterviewPage() {
           justifyContent: 'center',
           position: 'relative',
           width: '100%',
-          margin: '10px 0'
+          margin: '10px 0',
+          zIndex: 2
         }}>
-          {/* Bot Avatar Image in Suit (Transparent Standing Bot) */}
-          <img
+          <VedikaParticleBot
             src="/vedika-bot-suit.png"
-            alt="Vedika Bot in Suit"
-            style={{
-              width: 190,
-              maxWidth: '82%',
-              height: 'auto',
-              position: 'relative',
-              zIndex: 2,
-              animation: 'botFloatBounce 3.2s ease-in-out infinite',
-              filter: 'drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45))'
-            }}
+            width={220}
+            height={295}
+            inline={true}
+            colorMode="vibrant"
+            particleStep={2}
           />
-
-
         </div>
 
         {/* Bottom: Switch to Academic Viva Button */}
