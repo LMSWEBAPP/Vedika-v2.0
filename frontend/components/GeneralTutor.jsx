@@ -1508,49 +1508,6 @@ export default function GeneralTutor() {
                     </button>
                   </div>
                 </div>
-
-                {/* Bottom: User Profile Capsule matching reference image */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 16,
-                    background: 'rgba(15, 23, 42, 0.65)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  onClick={() => { router.push('/profile'); setShowLeftNav(false); }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#38BDF8'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.65)'; }}
-                >
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    color: '#FFFFFF',
-                    flexShrink: 0
-                  }}>
-                    {userInitials}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {userName}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#94A3B8' }}>
-                      Free Plan
-                    </div>
-                  </div>
-                  <ChevronRight size={14} color="#94A3B8" />
-                </div>
               </>
             ) : (
               /* History Subview inside the Floating Glassmorphic Sidebar */

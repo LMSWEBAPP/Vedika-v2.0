@@ -205,7 +205,7 @@ export const MathLabArt = memo(function MathLabArt() {
         <HoloPedestal accentColor="#A855F7" accentRgb={accentRgb} filterId="purplePedestalGlow" />
 
         {/* 1. 3D SCULPTED METALLIC PI (Top-Left Flank, Zero Overlap) */}
-        <g className="live-math-pi-3d" transform="translate(16, 20)" filter="url(#purplePedestalGlow)">
+        <g className="live-math-pi-3d" filter="url(#purplePedestalGlow)">
           <path
             d="M 3 6 Q 13 5 24 6 C 24 8 22 9 19 9 L 8 9 L 8 22 C 8 25 5 26 5 22 L 6 9 L 3 9 Z M 15 9 L 15 22 C 15 25 19 25 21 21 L 21 19 C 19 21 17 21 17 19 L 17 9 Z"
             fill="#3B0764"
@@ -220,19 +220,28 @@ export const MathLabArt = memo(function MathLabArt() {
           <circle cx="19" cy="9" r="1.2" fill="#FFFFFF" />
         </g>
 
-        {/* 2. 3D TRANSLUCENT ISOMETRIC CUBE (Top-Right Flank, Zero Overlap) */}
-        <g className="live-math-cube-3d" transform="translate(136, 44)">
-          <polygon points="11,0 22,6 11,12 0,6" fill="rgba(233, 213, 255, 0.45)" stroke="#FFFFFF" strokeWidth="0.9" />
-          <polygon points="0,6 11,12 11,23 0,17" fill="rgba(168, 85, 247, 0.5)" stroke="#C084FC" strokeWidth="0.9" />
-          <polygon points="11,12 22,6 22,17 11,23" fill="rgba(126, 34, 206, 0.4)" stroke="#C084FC" strokeWidth="0.9" />
-          <circle cx="11" cy="0" r="1.5" fill="#FFFFFF" />
-          <circle cx="22" cy="6" r="1.3" fill="#E9D5FF" />
-          <circle cx="0" cy="6" r="1.3" fill="#E9D5FF" />
-          <circle cx="11" cy="12" r="1.6" fill="#FFFFFF" />
-          <circle cx="11" cy="23" r="1.4" fill="#C084FC" />
+        {/* 2. 3D TRANSLUCENT ISOMETRIC CUBE (Mid-Left Flank, Zero Overlap) */}
+        <g className="live-math-cube-3d">
+          <polygon points="10,0 20,5 10,10 0,5" fill="rgba(233, 213, 255, 0.45)" stroke="#FFFFFF" strokeWidth="0.8" />
+          <polygon points="0,5 10,10 10,20 0,15" fill="rgba(168, 85, 247, 0.5)" stroke="#C084FC" strokeWidth="0.8" />
+          <polygon points="10,10 20,5 20,15 10,20" fill="rgba(126, 34, 206, 0.4)" stroke="#C084FC" strokeWidth="0.8" />
+          <circle cx="10" cy="0" r="1.3" fill="#FFFFFF" />
+          <circle cx="20" cy="5" r="1.1" fill="#E9D5FF" />
+          <circle cx="0" cy="5" r="1.1" fill="#E9D5FF" />
+          <circle cx="10" cy="10" r="1.4" fill="#FFFFFF" />
         </g>
 
-        {/* 3. 3D CALCULUS INTEGRAL SYMBOL (Upper Right Flank) */}
+        {/* 3. 3D WIREFRAME TETRAHEDRON PYRAMID (Bottom-Left Flank, Zero Overlap) */}
+        <g className="live-math-tetra-3d">
+          <polygon points="10,0 20,16 0,16" fill="rgba(168, 85, 247, 0.25)" stroke="#C084FC" strokeWidth="0.9" />
+          <polygon points="10,0 10,16 0,16" fill="rgba(233, 213, 255, 0.35)" stroke="#FFFFFF" strokeWidth="0.8" />
+          <line x1="10" y1="0" x2="10" y2="16" stroke="#FFFFFF" strokeWidth="0.9" />
+          <circle cx="10" cy="0" r="1.6" fill="#FFFFFF" />
+          <circle cx="20" cy="16" r="1.3" fill="#C084FC" />
+          <circle cx="0" cy="16" r="1.3" fill="#C084FC" />
+        </g>
+
+        {/* 4. 3D CALCULUS INTEGRAL SYMBOL (Upper-Right Flank, Zero Overlap) */}
         <g className="live-math-integral-3d" filter="url(#purplePedestalGlow)">
           <path
             d="M 13 4 C 9 4 7 6 7 9 C 7 12 9 14 9 17 L 9 26 C 9 29 7 31 7 34 C 7 37 9 39 13 39 C 15 39 16 38 16 36 C 16 34 14 33 13 33 C 12 33 11 31 11 29 L 11 14 C 11 12 13 10 13 7 C 13 5 12 4 10 4 Z"
@@ -242,17 +251,15 @@ export const MathLabArt = memo(function MathLabArt() {
           />
         </g>
 
-        {/* 4. 3D WIREFRAME TETRAHEDRON PYRAMID (Bottom-Left Flank, Zero Overlap) */}
-        <g className="live-math-tetra-3d" transform="translate(18, 134)">
-          <polygon points="10,0 20,16 0,16" fill="rgba(168, 85, 247, 0.25)" stroke="#C084FC" strokeWidth="0.9" />
-          <polygon points="10,0 10,16 0,16" fill="rgba(233, 213, 255, 0.35)" stroke="#FFFFFF" strokeWidth="0.8" />
-          <line x1="10" y1="0" x2="10" y2="16" stroke="#FFFFFF" strokeWidth="0.9" />
-          <circle cx="10" cy="0" r="1.6" fill="#FFFFFF" />
-          <circle cx="20" cy="16" r="1.3" fill="#C084FC" />
-          <circle cx="0" cy="16" r="1.3" fill="#C084FC" />
+        {/* 5. 3D RHOMBIC FACET (Mid-Right Flank, Zero Overlap) */}
+        <g className="live-math-rhombus-3d">
+          <polygon points="8,0 16,7 8,14 0,7" fill="rgba(233, 213, 255, 0.45)" stroke="#FFFFFF" strokeWidth="0.8" />
+          <polygon points="8,14 16,7 8,20 0,13" fill="rgba(168, 85, 247, 0.55)" stroke="#C084FC" strokeWidth="0.8" />
+          <circle cx="8" cy="0" r="1.2" fill="#FFFFFF" />
+          <circle cx="8" cy="14" r="1.3" fill="#FFFFFF" />
         </g>
 
-        {/* 5. 3D METALLIC INFINITY LOOP (Bottom-Right Flank) */}
+        {/* 6. 3D METALLIC INFINITY LOOP (Bottom-Right Flank, Zero Overlap) */}
         <g className="live-math-infinity-3d" filter="url(#purplePedestalGlow)">
           <path
             d="M 7 10 C 3 6, 3 14, 7 10 C 11 6, 15 6, 19 10 C 23 14, 23 6, 19 10 C 15 14, 11 14, 7 10 Z"
@@ -265,8 +272,8 @@ export const MathLabArt = memo(function MathLabArt() {
           <circle cx="19" cy="10" r="1.3" fill="#FFFFFF" />
         </g>
 
-        {/* 6. GOLDEN RATIO LOGARITHMIC SPIRAL */}
-        <g className="live-math-spiral">
+        {/* 7. GOLDEN RATIO SPIRAL (Subtle Background Watermark) */}
+        <g className="live-math-spiral" opacity="0.35">
           <path
             d="M 87.5 98 C 87.5 92, 93 88, 96 88 C 102 88, 106 94, 106 98 C 106 106, 96 112, 87.5 112 C 74 112, 68 100, 68 88 C 68 70, 84 62, 98 62"
             fill="none"
@@ -329,19 +336,6 @@ export const MathLabArt = memo(function MathLabArt() {
           <circle cx="133" cy="98" r="2.2" fill="#E9D5FF" />
           <circle cx="87.5" cy="108" r="3.2" fill="#FFFFFF" filter="url(#purplePedestalGlow)" />
         </g>
-
-        {/* Orbiting Satellite Micro-Polyhedra (Option 9 Style) */}
-        <g className="live-satellite-poly-1" transform="translate(24, 62)">
-          <polygon points="10,0 20,6 10,12 0,6" fill="rgba(233, 213, 255, 0.45)" stroke="#FFFFFF" strokeWidth="0.8" />
-          <polygon points="0,6 10,12 10,22 0,16" fill="rgba(168, 85, 247, 0.55)" stroke="#C084FC" strokeWidth="0.8" />
-          <polygon points="10,12 20,6 20,16 10,22" fill="rgba(126, 34, 206, 0.4)" stroke="#A855F7" strokeWidth="0.8" />
-        </g>
-
-        <g className="live-satellite-poly-2" transform="translate(136, 126)">
-          <polygon points="8,0 16,5 8,10 0,5" fill="rgba(233, 213, 255, 0.5)" stroke="#FFFFFF" strokeWidth="0.7" />
-          <polygon points="0,5 8,10 8,18 0,13" fill="rgba(168, 85, 247, 0.6)" stroke="#C084FC" strokeWidth="0.7" />
-          <polygon points="8,10 16,5 16,13 8,18" fill="rgba(126, 34, 206, 0.45)" stroke="#A855F7" strokeWidth="0.7" />
-        </g>
       </svg>
     </div>
   );
@@ -380,13 +374,13 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           </linearGradient>
 
           {/* 3D Planetary Core Radial Gradient */}
-          <radialGradient id="physSphereGrad" cx="35%" cy="32%" r="68%">
+          <radialGradient id="physSphereGrad" cx="30%" cy="28%" r="72%">
             <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="20%" stopColor="#E0F2FE" />
-            <stop offset="45%" stopColor="#38BDF8" />
-            <stop offset="75%" stopColor="#0284C7" />
-            <stop offset="95%" stopColor="#075985" />
-            <stop offset="100%" stopColor="#082F49" />
+            <stop offset="16%" stopColor="#E0F2FE" />
+            <stop offset="38%" stopColor="#38BDF8" />
+            <stop offset="65%" stopColor="#0284C7" />
+            <stop offset="85%" stopColor="#034870" />
+            <stop offset="100%" stopColor="#021626" />
           </radialGradient>
 
           {/* 3D Satellite Sphere Gradient */}
@@ -399,21 +393,22 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
 
           {/* Saturnian Ring Gradients */}
           <linearGradient id="saturnRingGradBack" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(0, 212, 255, 0.25)" />
-            <stop offset="50%" stopColor="rgba(56, 189, 248, 0.55)" />
-            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.25)" />
+            <stop offset="0%" stopColor="rgba(0, 212, 255, 0.2)" />
+            <stop offset="30%" stopColor="rgba(56, 189, 248, 0.65)" />
+            <stop offset="70%" stopColor="rgba(2, 132, 199, 0.45)" />
+            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.15)" />
           </linearGradient>
 
           <linearGradient id="saturnRingGradFront" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(186, 230, 253, 0.85)" />
-            <stop offset="40%" stopColor="rgba(0, 212, 255, 0.95)" />
-            <stop offset="75%" stopColor="rgba(56, 189, 248, 0.85)" />
-            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.7)" />
+            <stop offset="0%" stopColor="rgba(224, 242, 254, 0.95)" />
+            <stop offset="35%" stopColor="rgba(0, 212, 255, 1)" />
+            <stop offset="70%" stopColor="rgba(56, 189, 248, 0.9)" />
+            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.75)" />
           </linearGradient>
 
           {/* Spherical Clip Path for True 3D Rotating Atmosphere Surface */}
           <clipPath id="physPlanetClip">
-            <circle cx="0" cy="0" r="26" />
+            <circle cx="0" cy="0" r="28" />
           </clipPath>
 
           <filter id="cyanPedestalGlow" x="-30%" y="-30%" width="160%" height="160%">
@@ -437,8 +432,8 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           <ellipse
             cx="0"
             cy="0"
-            rx="56"
-            ry="19"
+            rx="58"
+            ry="20"
             transform="rotate(-28)"
             fill="none"
             stroke="rgba(0, 212, 255, 0.45)"
@@ -449,7 +444,7 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           <ellipse
             cx="0"
             cy="0"
-            rx="52"
+            rx="54"
             ry="18"
             transform="rotate(38)"
             fill="none"
@@ -458,59 +453,84 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
             strokeDasharray="5 4"
           />
 
-          {/* Rear Orbiting Satellite (Distant, Smaller, Behind Core) */}
+          {/* Rear Orbiting Satellite (Distant, Behind Core) */}
           <g className="live-satellite-rear">
-            <circle cx="-38" cy="-14" r="3.2" fill="url(#satelliteGrad)" opacity="0.75" />
+            <circle cx="-42" cy="-14" r="3.2" fill="url(#satelliteGrad)" opacity="0.8" />
           </g>
         </g>
 
         {/* CENTRAL 3D VOLUMETRIC ROTATING PLANET WITH SATURNIAN RINGS */}
         <g className="live-phys-planet-group" filter="url(#physCoreGlow)">
           {/* 1. Rear Saturnian Ring Arc (Behind the Planet Sphere) */}
-          <g transform="rotate(-6)">
-            <ellipse cx="0" cy="0" rx="58" ry="16" fill="none" stroke="url(#saturnRingGradBack)" strokeWidth="6" opacity="0.6" />
-            <ellipse cx="0" cy="0" rx="61" ry="17.2" fill="none" stroke="rgba(0, 212, 255, 0.45)" strokeWidth="1" strokeDasharray="4 3" />
+          <g transform="rotate(-12)">
+            {/* Outer ring */}
+            <ellipse cx="0" cy="0" rx="66" ry="18" fill="none" stroke="url(#saturnRingGradBack)" strokeWidth="4.5" opacity="0.65" />
+            {/* Cassini gap line */}
+            <ellipse cx="0" cy="0" rx="63" ry="17.2" fill="none" stroke="rgba(2, 6, 23, 0.9)" strokeWidth="1" />
+            {/* Inner dense ring */}
+            <ellipse cx="0" cy="0" rx="57" ry="15.5" fill="none" stroke="url(#saturnRingGradBack)" strokeWidth="5.5" opacity="0.8" />
+            {/* Outer dust lane */}
+            <ellipse cx="0" cy="0" rx="69" ry="19" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="0.8" strokeDasharray="3 3" />
           </g>
 
           {/* 2. Base 3D Sphere */}
-          <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
+          <circle cx="0" cy="0" r="28" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.45)" strokeWidth="0.8" />
 
           {/* 3. True 3D Rotating Atmosphere Surface (Clipped inside sphere) */}
           <g clipPath="url(#physPlanetClip)">
             {/* Seamless Horizontally Drifting Atmospheric Storm Bands */}
             <g className="live-phys-planet-bands">
-              <path d="M -70 -16 C -35 -14, 0 -18, 35 -14 C 70 -18, 105 -14, 140 -18" fill="none" stroke="rgba(255, 255, 255, 0.38)" strokeWidth="3" />
-              <path d="M -70 -8 C -35 -6, 0 -10, 35 -6 C 70 -10, 105 -6, 140 -10" fill="none" stroke="rgba(186, 230, 253, 0.3)" strokeWidth="2.5" />
-              <path d="M -70 2 C -35 4, 0 0, 35 4 C 70 0, 105 4, 140 0" fill="none" stroke="rgba(14, 165, 233, 0.45)" strokeWidth="4" />
+              {/* North Temperate Jet Stream */}
+              <path d="M -70 -19 C -35 -16, 0 -22, 35 -16 C 70 -22, 105 -16, 140 -22" fill="none" stroke="rgba(224, 242, 254, 0.45)" strokeWidth="2.5" />
+              {/* North Tropical Current */}
+              <path d="M -70 -10 C -35 -7, 0 -13, 35 -7 C 70 -13, 105 -7, 140 -13" fill="none" stroke="rgba(56, 189, 248, 0.4)" strokeWidth="3" />
+              {/* Equatorial High-Velocity Ribbon */}
+              <path d="M -70 -1 C -35 2, 0 -3, 35 2 C 70 -3, 105 2, 140 -3" fill="none" stroke="rgba(255, 255, 255, 0.55)" strokeWidth="3.5" />
+              <path d="M -70 5 C -35 8, 0 3, 35 8 C 70 3, 105 8, 140 3" fill="none" stroke="rgba(14, 165, 233, 0.5)" strokeWidth="4" />
+              {/* South Tropical Current */}
+              <path d="M -70 14 C -35 11, 0 17, 35 11 C 70 17, 105 11, 140 17" fill="none" stroke="rgba(186, 230, 253, 0.35)" strokeWidth="3" />
+              {/* South Polar Stream */}
+              <path d="M -70 21 C -35 23, 0 19, 35 23 C 70 19, 105 23, 140 19" fill="none" stroke="rgba(56, 189, 248, 0.3)" strokeWidth="2" />
               
-              {/* Azure Great Storm Vortex (Cycles seamlessly across planet globe) */}
-              <ellipse cx="14" cy="2" rx="7.5" ry="4" fill="rgba(2, 132, 199, 0.85)" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="0.8" />
-              <circle cx="15" cy="2" r="1.5" fill="#FFFFFF" />
-              <ellipse cx="84" cy="2" rx="7.5" ry="4" fill="rgba(2, 132, 199, 0.85)" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="0.8" />
-              <circle cx="85" cy="2" r="1.5" fill="#FFFFFF" />
+              {/* Azure Great Storm Vortex 1 (Cycles seamlessly across planet globe) */}
+              <ellipse cx="14" cy="5" rx="8" ry="4.5" fill="rgba(2, 132, 199, 0.95)" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+              <circle cx="15.5" cy="5" r="2" fill="#FFFFFF" />
+              <ellipse cx="84" cy="5" rx="8" ry="4.5" fill="rgba(2, 132, 199, 0.95)" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+              <circle cx="85.5" cy="5" r="2" fill="#FFFFFF" />
 
-              <path d="M -70 12 C -35 14, 0 10, 35 14 C 70 10, 105 14, 140 10" fill="none" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="3" />
+              {/* Secondary High-Latitude White Storm Eye */}
+              <ellipse cx="-18" cy="-10" rx="4.5" ry="2.5" fill="rgba(255, 255, 255, 0.7)" />
+              <ellipse cx="52" cy="-10" rx="4.5" ry="2.5" fill="rgba(255, 255, 255, 0.7)" />
             </g>
 
-            {/* 3D Directional Terminator / Shadow Mask */}
-            <path d="M 0 -26 A 26 26 0 0 1 26 0 A 26 26 0 0 1 0 26 C 14 26, 22 13, 22 0 C 22 -13, 14 -26, 0 -26 Z" fill="rgba(2, 6, 23, 0.72)" />
+            {/* Glowing North & South Polar Auroral Crowns */}
+            <ellipse cx="0" cy="-24" rx="14" ry="4" fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.8" />
+            <ellipse cx="0" cy="24" rx="14" ry="4" fill="none" stroke="rgba(0, 212, 255, 0.85)" strokeWidth="1.2" opacity="0.75" />
+
+            {/* 3D Directional Planetary Shadow Terminator Mask */}
+            <path d="M 0 -28 A 28 28 0 0 1 28 0 A 28 28 0 0 1 0 28 C 16 28, 24 14, 24 0 C 24 -14, 16 -28, 0 -28 Z" fill="rgba(2, 6, 23, 0.74)" />
             
             {/* Ring Shadow cast across planet equator */}
-            <path d="M -26 -1 C -10 5, 10 3, 26 -3" stroke="rgba(2, 6, 23, 0.75)" strokeWidth="2.8" fill="none" />
+            <path d="M -28 -3 C -10 4, 10 2, 28 -5" stroke="rgba(2, 6, 23, 0.8)" strokeWidth="3.2" fill="none" />
           </g>
 
           {/* 4. Fixed Specular Light Highlight (Stays directional while planet spins) */}
-          <ellipse cx="-9" cy="-8" rx="7" ry="4.5" fill="#FFFFFF" opacity="0.75" transform="rotate(-20 -9 -8)" />
-          <circle cx="-11" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
+          <ellipse cx="-11" cy="-10" rx="8" ry="5" fill="#FFFFFF" opacity="0.8" transform="rotate(-22 -11 -10)" />
+          <circle cx="-13" cy="-12" r="2.6" fill="#FFFFFF" opacity="0.95" />
 
           {/* 5. Atmospheric Rayleigh Scattering Glow Limb */}
-          <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(56, 189, 248, 0.7)" strokeWidth="1.6" />
-          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.35)" strokeWidth="3" />
+          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(56, 189, 248, 0.75)" strokeWidth="1.8" />
+          <circle cx="0" cy="0" r="30.5" fill="none" stroke="rgba(0, 212, 255, 0.35)" strokeWidth="3" />
 
           {/* 6. Front Saturnian Ring Arc (Cuts across front of the Planet Sphere) */}
-          <g transform="rotate(-6)">
-            <path d="M -58 0 C -40 24, 40 24, 58 0" fill="none" stroke="url(#saturnRingGradFront)" strokeWidth="6" opacity="0.95" />
-            <path d="M -52 1 C -36 21, 36 21, 52 1" fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.85" />
+          <g transform="rotate(-12)">
+            {/* Inner dense ring front */}
+            <path d="M -57 0 C -39 24, 39 24, 57 0" fill="none" stroke="url(#saturnRingGradFront)" strokeWidth="5.5" opacity="0.98" />
+            <path d="M -52 1 C -35 22, 35 22, 52 1" fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.9" />
+            {/* Cassini division gap */}
+            <path d="M -63 0 C -43 26, 43 26, 63 0" fill="none" stroke="rgba(2, 6, 23, 0.85)" strokeWidth="1" />
+            {/* Outer ring front */}
+            <path d="M -66 0 C -45 28, 45 28, 66 0" fill="none" stroke="url(#saturnRingGradFront)" strokeWidth="4.5" opacity="0.85" />
           </g>
         </g>
 

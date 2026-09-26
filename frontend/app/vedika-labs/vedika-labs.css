@@ -473,9 +473,9 @@
 }
 
 @keyframes mathPiLevitate {
-  0% { transform: translate(16px, 20px) rotate(0deg); }
-  50% { transform: translate(16px, 16px) rotate(3deg); }
-  100% { transform: translate(16px, 20px) rotate(0deg); }
+  0% { transform: translate(16px, 22px) rotate(0deg); }
+  50% { transform: translate(16px, 18px) rotate(3deg); }
+  100% { transform: translate(16px, 22px) rotate(0deg); }
 }
 
 .live-math-cube-3d {
@@ -483,9 +483,9 @@
 }
 
 @keyframes mathCubeFloat {
-  0% { transform: translate(136px, 44px) rotate(0deg); }
-  50% { transform: translate(134px, 40px) rotate(-4deg); }
-  100% { transform: translate(136px, 44px) rotate(0deg); }
+  0% { transform: translate(14px, 82px) rotate(0deg); }
+  50% { transform: translate(14px, 78px) rotate(-4deg); }
+  100% { transform: translate(14px, 82px) rotate(0deg); }
 }
 
 .live-math-tetra-3d {
@@ -493,9 +493,9 @@
 }
 
 @keyframes mathTetraFloat {
-  0% { transform: translate(18px, 134px) scale(1); }
-  50% { transform: translate(19px, 130px) scale(1.04); }
-  100% { transform: translate(18px, 134px) scale(1); }
+  0% { transform: translate(18px, 142px) scale(1); }
+  50% { transform: translate(19px, 138px) scale(1.04); }
+  100% { transform: translate(18px, 142px) scale(1); }
 }
 
 .live-math-integral-3d {
@@ -503,9 +503,19 @@
 }
 
 @keyframes mathIntegralFloat {
-  0% { transform: translate(142px, 22px) rotate(0deg); }
-  50% { transform: translate(143px, 18px) rotate(-3deg); }
-  100% { transform: translate(142px, 22px) rotate(0deg); }
+  0% { transform: translate(140px, 22px) rotate(0deg); }
+  50% { transform: translate(140px, 18px) rotate(-3deg); }
+  100% { transform: translate(140px, 22px) rotate(0deg); }
+}
+
+.live-math-rhombus-3d {
+  animation: mathRhombusFloat 4.4s ease-in-out infinite alternate;
+}
+
+@keyframes mathRhombusFloat {
+  0% { transform: translate(142px, 84px) scale(1); }
+  50% { transform: translate(141px, 80px) scale(1.05); }
+  100% { transform: translate(142px, 84px) scale(1); }
 }
 
 .live-math-infinity-3d {
@@ -513,9 +523,9 @@
 }
 
 @keyframes mathInfinityFloat {
-  0% { transform: translate(136px, 140px) scale(1) rotate(0deg); }
-  50% { transform: translate(138px, 136px) scale(1.06) rotate(4deg); }
-  100% { transform: translate(136px, 140px) scale(1) rotate(0deg); }
+  0% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
+  50% { transform: translate(137px, 138px) scale(1.06) rotate(4deg); }
+  100% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
 }
 
 .live-math-spiral {
@@ -551,7 +561,7 @@
 }
 
 .live-phys-planet-bands {
-  animation: planetSurfaceDrift 14s linear infinite;
+  animation: planetSurfaceDrift 3.2s linear infinite;
 }
 
 @keyframes planetSurfaceDrift {
@@ -616,16 +626,16 @@
 }
 
 .live-satellite-front-1 {
-  animation: satRevolve1 6s ease-in-out infinite alternate;
+  animation: satRevolve1 3s ease-in-out infinite alternate;
 }
 .live-satellite-front-2 {
-  animation: satRevolve2 7.5s ease-in-out infinite alternate;
+  animation: satRevolve2 3.6s ease-in-out infinite alternate;
 }
 .live-satellite-front-3 {
-  animation: satRevolve3 5.5s ease-in-out infinite alternate;
+  animation: satRevolve3 2.6s ease-in-out infinite alternate;
 }
 .live-satellite-rear {
-  animation: satRevolveRear 8s ease-in-out infinite alternate;
+  animation: satRevolveRear 3.8s ease-in-out infinite alternate;
 }
 
 @keyframes satRevolve1 {
