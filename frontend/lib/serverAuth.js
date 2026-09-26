@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyJwt, isAdminUser } from '@/lib/auth';
+import { verifyJwt, isAdminUser, isSuperAdminUser } from '@/lib/auth';
 
 /**
  * Centralized server-side authentication and authorization helper.
@@ -9,9 +9,10 @@ import { verifyJwt, isAdminUser } from '@/lib/auth';
  * @param {Object} options
  * @param {boolean} options.requireAuth Fail with 401 if unauthenticated (default: true)
  * @param {boolean} options.requireAdmin Fail with 403 if user is not Administrator (default: false)
- * @returns {Promise<{ authenticated: boolean, isAdmin: boolean, user: Object|null, response: NextResponse|null }>}
+ * @param {boolean} options.requireSuperAdmin Fail with 403 if user is not Super Administrator (default: false)
+ * @returns {Promise<{ authenticated: boolean, isAdmin: boolean, isSuperAdmin: boolean, user: Object|null, response: NextResponse|null }>}
  */
-export async function authenticateRequest(request, { requireAuth = true, requireAdmin = false } = {}) {
+export async function authenticateRequest(request, { requireAuth = true, requireAdmin = false, requireSuperAdmin = false } = {}) {
   try {
     let token = null;
 
@@ -24,7 +25,7 @@ export async function authenticateRequest(request, { requireAuth = true, require
     // 2. Check cookies if token not provided in header
     if (!token) {
       const cookieHeader = request.headers.get('cookie') || '';
-      const jwtMatch = cookieHeader.match(/(?:jwt|token)=([^;]+)/);
+      const jwtMatch = cookieHeader.match(/(?:super_admin_jwt|jwt|token)=([^;]+)/);
       if (jwtMatch) {
         token = jwtMatch[1];
       }
@@ -84,23 +85,40 @@ export async function authenticateRequest(request, { requireAuth = true, require
       return {
         authenticated: false,
         isAdmin: false,
+        isSuperAdmin: false,
         user: null,
         response: null
       };
     }
 
-    const isAdmin = isAdminUser(payload);
+    const isSuperAdmin = isSuperAdminUser(payload);
+    const isAdmin = isAdminUser(payload) || isSuperAdmin;
     const user = {
       user_id: payload.user_id || payload.email || 'user',
       email: payload.email || payload.user_id || '',
-      role: payload.role || (isAdmin ? 'Administrator' : 'Student'),
-      tenant_id: payload.tenant_id || 'default'
+      role: payload.role || (isSuperAdmin ? 'super_admin' : isAdmin ? 'Administrator' : 'Student'),
+      tenant_id: payload.tenant_id || payload.organization_id || 'default',
+      organization_id: payload.organization_id || payload.tenant_id || 'default'
     };
+
+    if (requireSuperAdmin && !isSuperAdmin) {
+      return {
+        authenticated: true,
+        isAdmin,
+        isSuperAdmin: false,
+        user,
+        response: NextResponse.json(
+          { error: 'Forbidden: Super Administrator privileges required.' },
+          { status: 403 }
+        )
+      };
+    }
 
     if (requireAdmin && !isAdmin) {
       return {
         authenticated: true,
         isAdmin: false,
+        isSuperAdmin: false,
         user,
         response: NextResponse.json(
           { error: 'Forbidden: Administrator privileges required.' },
@@ -112,6 +130,7 @@ export async function authenticateRequest(request, { requireAuth = true, require
     return {
       authenticated: true,
       isAdmin,
+      isSuperAdmin,
       user,
       response: null
     };
@@ -120,6 +139,7 @@ export async function authenticateRequest(request, { requireAuth = true, require
     return {
       authenticated: false,
       isAdmin: false,
+      isSuperAdmin: false,
       user: null,
       response: NextResponse.json(
         { error: 'Internal authentication validation failure.' },

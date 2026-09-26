@@ -110,8 +110,30 @@ export function isAdminUser(userOrPayload) {
     role === 'administrator' ||
     role === 'admin' ||
     role === 'system manager' ||
+    role === 'super_admin' ||
+    role === 'superadmin' ||
     userId === 'administrator' ||
     userId === 'admin@lms.com' ||
     email === 'admin@lms.com'
   );
 }
+
+/**
+ * Determines whether a user payload or object represents a Platform Super Administrator.
+ */
+export function isSuperAdminUser(userOrPayload) {
+  if (!userOrPayload) return false;
+  const role = (userOrPayload.role || '').toLowerCase();
+  const userId = (userOrPayload.user_id || userOrPayload.username || '').toLowerCase();
+  const email = (userOrPayload.email || '').toLowerCase();
+  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'superadmin@vedika.ai').toLowerCase();
+
+  return (
+    role === 'super_admin' ||
+    role === 'superadmin' ||
+    Boolean(userOrPayload.is_super_admin) ||
+    userId === 'superadmin' ||
+    email === superAdminEmail
+  );
+}
+
