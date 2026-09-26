@@ -34,15 +34,15 @@ export default function CategoryShowcaseCarousel({
   const currentItem = items[activeIdx] || items[0];
 
   return (
-    <div className={`showcase-carousel-container ${theme === 'gold' ? 'theme-gold' : ''}`}>
+    <div className={`showcase-carousel-container ${theme === 'gold' ? 'theme-gold' : theme === 'purple' ? 'theme-purple' : ''}`}>
       {/* Title Badge matching reference design */}
       <div style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 8,
-        background: theme === 'gold' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(124, 58, 237, 0.12)',
-        border: theme === 'gold' ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(124, 58, 237, 0.3)',
-        color: theme === 'gold' ? '#FDE68A' : '#A78BFA',
+        background: theme === 'gold' ? 'rgba(245, 158, 11, 0.12)' : theme === 'purple' ? 'rgba(168, 85, 247, 0.14)' : 'rgba(124, 58, 237, 0.12)',
+        border: theme === 'gold' ? '1px solid rgba(245, 158, 11, 0.35)' : theme === 'purple' ? '1px solid rgba(168, 85, 247, 0.35)' : '1px solid rgba(124, 58, 237, 0.3)',
+        color: theme === 'gold' ? '#FDE68A' : theme === 'purple' ? '#E9D5FF' : '#A78BFA',
         padding: '5px 14px',
         borderRadius: 20,
         fontSize: 12,
@@ -69,6 +69,10 @@ export default function CategoryShowcaseCarousel({
                 background: 'rgba(12, 16, 24, 0.9)',
                 borderColor: 'rgba(245, 158, 11, 0.35)',
                 color: '#FDE68A'
+              } : theme === 'purple' ? {
+                background: 'rgba(14, 10, 24, 0.9)',
+                borderColor: 'rgba(168, 85, 247, 0.35)',
+                color: '#E9D5FF'
               } : {}}
             >
               <ChevronLeft size={20} />
@@ -81,6 +85,10 @@ export default function CategoryShowcaseCarousel({
                 background: 'rgba(12, 16, 24, 0.9)',
                 borderColor: 'rgba(245, 158, 11, 0.35)',
                 color: '#FDE68A'
+              } : theme === 'purple' ? {
+                background: 'rgba(14, 10, 24, 0.9)',
+                borderColor: 'rgba(168, 85, 247, 0.35)',
+                color: '#E9D5FF'
               } : {}}
             >
               <ChevronRight size={20} />
@@ -108,7 +116,7 @@ export default function CategoryShowcaseCarousel({
           return (
             <div
               key={item.category || idx}
-              className={`showcase-card ${isCenter ? 'is-active' : ''} ${theme === 'gold' ? 'theme-gold' : ''}`}
+              className={`showcase-card ${isCenter ? 'is-active' : ''} ${theme === 'gold' ? 'theme-gold' : theme === 'purple' ? 'theme-purple' : ''}`}
               style={{
                 transform: `translateX(${translateX}px) scale(${scale}) rotateY(${rotateY}deg)`,
                 zIndex,
@@ -118,6 +126,12 @@ export default function CategoryShowcaseCarousel({
                   borderColor: isCenter ? 'rgba(251, 191, 36, 0.75)' : 'rgba(245, 158, 11, 0.22)',
                   boxShadow: isCenter
                     ? '0 18px 44px rgba(0, 0, 0, 0.85), 0 0 24px rgba(245, 158, 11, 0.2)'
+                    : '0 10px 30px rgba(0, 0, 0, 0.5)'
+                } : theme === 'purple' ? {
+                  background: '#0C0818',
+                  borderColor: isCenter ? 'rgba(192, 132, 252, 0.8)' : 'rgba(168, 85, 247, 0.25)',
+                  boxShadow: isCenter
+                    ? '0 18px 44px rgba(0, 0, 0, 0.85), 0 0 24px rgba(168, 85, 247, 0.3)'
                     : '0 10px 30px rgba(0, 0, 0, 0.5)'
                 } : {})
               }}
@@ -142,6 +156,10 @@ export default function CategoryShowcaseCarousel({
                     background: 'rgba(0, 0, 0, 0.78)',
                     border: '1px solid rgba(245, 158, 11, 0.35)',
                     color: '#FFFBEB'
+                  } : theme === 'purple' ? {
+                    background: 'rgba(10, 6, 20, 0.82)',
+                    border: '1px solid rgba(168, 85, 247, 0.35)',
+                    color: '#F5EEFF'
                   } : {}}
                 >
                   {item.count} {item.count === 1 ? itemTypeLabel.slice(0, -1) : itemTypeLabel}
@@ -150,10 +168,12 @@ export default function CategoryShowcaseCarousel({
 
               <div className="showcase-card-body" style={theme === 'gold' ? {
                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0.82) 100%)'
+              } : theme === 'purple' ? {
+                background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.03) 0%, rgba(12, 8, 24, 0.95) 100%)'
               } : {}}>
                 <div>
                   <h4 className="showcase-card-title">{item.category}</h4>
-                  <div className="showcase-card-subtitle" style={theme === 'gold' ? { color: '#94A3B8' } : {}}>
+                  <div className="showcase-card-subtitle" style={(theme === 'gold' || theme === 'purple') ? { color: '#94A3B8' } : {}}>
                     {item.coursesCount || 1} {(item.coursesCount || 1) === 1 ? 'Course' : 'Courses'}
                   </div>
                 </div>
@@ -167,8 +187,10 @@ export default function CategoryShowcaseCarousel({
                     style={{
                       background: theme === 'gold'
                         ? 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%)'
+                        : theme === 'purple'
+                        ? 'linear-gradient(135deg, #C084FC 0%, #A855F7 50%, #7C3AED 100%)'
                         : 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
-                      color: theme === 'gold' ? '#000000' : '#fff',
+                      color: theme === 'gold' ? '#000000' : '#FFFFFF',
                       border: 'none',
                       borderRadius: 12,
                       padding: '9px 18px',
@@ -206,6 +228,8 @@ export default function CategoryShowcaseCarousel({
               aria-label={`Go to slide ${idx + 1}`}
               style={theme === 'gold' && activeIdx === idx ? {
                 background: '#F59E0B'
+              } : theme === 'purple' && activeIdx === idx ? {
+                background: '#C084FC'
               } : {}}
             />
           ))}

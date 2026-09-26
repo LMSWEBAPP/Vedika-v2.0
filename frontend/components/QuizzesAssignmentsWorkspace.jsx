@@ -261,7 +261,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
       category: cat,
       count: val.assignments.length,
       coursesCount: val.courseIds.size,
-      artwork: getSubjectArtwork(cat),
+      artwork: cat.toLowerCase() === 'general' ? '/assignment-general-desk.jpg' : getSubjectArtwork(cat),
       assignments: val.assignments
     }));
   }, [assignments, courses]);
@@ -504,6 +504,97 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
+        /* Seamless Cosmic Purple Ambient Background */
+        .assignments-ambient-bg {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          background: 
+            radial-gradient(ellipse 65% 60% at 20% 50%, rgba(168, 85, 247, 0.22) 0%, rgba(126, 34, 206, 0.06) 45%, transparent 75%),
+            radial-gradient(circle 380px at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 62%),
+            radial-gradient(circle 280px at 55% 15%, rgba(192, 132, 252, 0.08) 0%, transparent 55%),
+            #090714;
+          overflow: hidden;
+        }
+
+        /* Multi-layered Shimmer Glow Aura behind Assignment Bot (Electric Purple) */
+        .assignment-bot-glow-bg {
+          position: absolute;
+          top: 48%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 480px;
+          height: 480px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(168, 85, 247, 0.32) 0%,
+            rgba(126, 34, 206, 0.12) 42%,
+            transparent 72%
+          );
+          filter: blur(44px);
+          pointer-events: none;
+          z-index: 0;
+          animation: assignmentShimmerPulse 4.5s ease-in-out infinite;
+        }
+
+        .assignment-bot-glow-radial {
+          position: absolute;
+          top: 48%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 340px;
+          height: 340px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(192, 132, 252, 0.35) 0%,
+            rgba(168, 85, 247, 0.12) 50%,
+            transparent 75%
+          );
+          filter: blur(28px);
+          pointer-events: none;
+          z-index: 0;
+          animation: assignmentShimmerRotate 10s linear infinite;
+        }
+
+        .assignment-bot-glow-pulse {
+          position: absolute;
+          top: 48%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 220px;
+          height: 220px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.25) 0%,
+            rgba(192, 132, 252, 0.28) 45%,
+            transparent 70%
+          );
+          filter: blur(18px);
+          pointer-events: none;
+          z-index: 0;
+          animation: assignmentShimmerPulse 3.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes assignmentShimmerPulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.75;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.12);
+            opacity: 0.98;
+          }
+        }
+
+        @keyframes assignmentShimmerRotate {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
         /* DEFAULT STATE: QUIZZES ACTIVE */
         .box1-content {
           background: transparent !important;
@@ -543,8 +634,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
 
         /* COLLAPSED ASSIGNMENTS IN DEFAULT STATE */
         .box2-side {
-          background: linear-gradient(180deg, rgba(10, 24, 44, 0.94) 0%, rgba(7, 13, 24, 0.98) 100%);
+          background: transparent !important;
           border-right: none !important;
+          border-left: none !important;
           flex: 0 0 0% !important;
           max-width: 0px !important;
           width: 0px !important;
@@ -559,7 +651,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         .box2-content {
-          background: #070B14;
+          background: transparent !important;
+          border-right: none !important;
+          border-left: none !important;
           flex: 0 0 0% !important;
           max-width: 0px !important;
           width: 0px !important;
@@ -577,6 +671,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         /* RIGHT-OPEN STATE: ASSIGNMENTS ACTIVE */
+        .box-container.right-open {
+          background: #090714 !important;
+        }
+
         .box-container.right-open .box1-content,
         .box-container.right-open .box1-side {
           flex: 0 0 0% !important;
@@ -590,25 +688,42 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         .box-container.right-open .box2-side {
-          flex: 3 !important;
-          max-width: 26% !important;
+          flex: 4.5 !important;
+          max-width: 48% !important;
+          background: transparent !important;
+          border-right: none !important;
+          border-left: none !important;
           opacity: 1 !important;
-          padding: 22px 20px !important;
-          border-right: 1px solid rgba(14, 165, 233, 0.2) !important;
+          min-width: 0 !important;
+          padding: ${isMobile ? '10px' : '16px 0 20px 24px'} !important;
           pointer-events: auto !important;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: space-between;
-          box-sizing: border-box;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          box-sizing: border-box !important;
+          position: relative !important;
+          z-index: 1 !important;
+          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
         .box-container.right-open .box2-content {
-          flex: 7 !important;
-          max-width: 74% !important;
+          flex: 5.5 !important;
+          max-width: 56% !important;
+          background: transparent !important;
+          border-right: none !important;
+          border-left: none !important;
           opacity: 1 !important;
-          padding: ${isMobile ? '14px 12px' : '18px 36px 16px 36px'} !important;
+          min-width: 0 !important;
+          padding: ${isMobile ? '14px 12px' : '22px 44px 18px 36px'} !important;
           pointer-events: auto !important;
+          display: flex !important;
+          flex-direction: column !important;
+          box-sizing: border-box !important;
+          position: relative !important;
+          z-index: 1 !important;
+          overflow-y: auto !important;
+          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
         @keyframes botFloatBounce {
@@ -627,81 +742,170 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
       `}</style>
 
       <div className={`box-container ${isAssignmentsOpen ? 'right-open' : ''}`}>
-        {/* Seamless Cosmic Black & Warm Gold Ambient Backdrop */}
-        <div className="quizzes-ambient-bg">
-          <svg
-            viewBox="0 0 1440 900"
-            preserveAspectRatio="none"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'none',
-              zIndex: 0
-            }}
-          >
-            <defs>
-              <linearGradient id="goldWave1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="rgba(245, 158, 11, 0)" />
-                <stop offset="25%" stopColor="rgba(245, 158, 11, 0.28)" />
-                <stop offset="60%" stopColor="rgba(251, 191, 36, 0.22)" />
-                <stop offset="100%" stopColor="rgba(217, 119, 6, 0)" />
-              </linearGradient>
-              <linearGradient id="goldWave2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="rgba(251, 191, 36, 0)" />
-                <stop offset="40%" stopColor="rgba(245, 158, 11, 0.16)" />
-                <stop offset="80%" stopColor="rgba(251, 191, 36, 0.1)" />
-                <stop offset="100%" stopColor="rgba(217, 119, 6, 0)" />
-              </linearGradient>
-            </defs>
+        {/* Ambient Backdrop: Cosmic Purple when Assignments active, Cosmic Gold when Quizzes active */}
+        {isAssignmentsOpen ? (
+          <div className="assignments-ambient-bg">
+            <svg
+              viewBox="0 0 1440 900"
+              preserveAspectRatio="none"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 0
+              }}
+            >
+              <defs>
+                <linearGradient id="purpleWave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(168, 85, 247, 0)" />
+                  <stop offset="25%" stopColor="rgba(192, 132, 252, 0.32)" />
+                  <stop offset="60%" stopColor="rgba(168, 85, 247, 0.25)" />
+                  <stop offset="100%" stopColor="rgba(126, 34, 206, 0)" />
+                </linearGradient>
+                <linearGradient id="purpleWave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(192, 132, 252, 0)" />
+                  <stop offset="40%" stopColor="rgba(168, 85, 247, 0.2)" />
+                  <stop offset="80%" stopColor="rgba(147, 51, 234, 0.14)" />
+                  <stop offset="100%" stopColor="rgba(126, 34, 206, 0)" />
+                </linearGradient>
+              </defs>
 
-            {/* Sweeping Golden Flow Wave 1 */}
-            <path
-              d="M -100 680 C 220 580, 480 720, 840 590 C 1100 490, 1320 540, 1600 580"
-              fill="none"
-              stroke="url(#goldWave1)"
-              strokeWidth="2"
-            />
+              {/* Ambient Arch on Left matching Image 1 */}
+              <path
+                d="M -20 860 L -20 380 C -20 200, 220 200, 220 380 L 220 860"
+                fill="none"
+                stroke="rgba(168, 85, 247, 0.28)"
+                strokeWidth="2.5"
+                filter="drop-shadow(0 0 14px rgba(168, 85, 247, 0.45))"
+              />
 
-            {/* Sweeping Golden Flow Wave 2 */}
-            <path
-              d="M -80 740 C 260 660, 560 780, 920 670 C 1220 580, 1420 630, 1680 660"
-              fill="none"
-              stroke="url(#goldWave2)"
-              strokeWidth="1.5"
-            />
+              {/* Sweeping Purple Flow Wave 1 */}
+              <path
+                d="M -100 640 C 260 540, 580 700, 940 570 C 1180 480, 1360 530, 1600 560"
+                fill="none"
+                stroke="url(#purpleWave1)"
+                strokeWidth="2"
+              />
 
-            {/* Golden Upper Orbit Arc behind bot */}
-            <ellipse
-              cx="1100"
-              cy="260"
-              rx="460"
-              ry="180"
-              fill="none"
-              stroke="rgba(245, 158, 11, 0.15)"
-              strokeWidth="1.2"
-              strokeDasharray="6 6"
-            />
+              {/* Sweeping Purple Flow Wave 2 */}
+              <path
+                d="M -80 720 C 220 620, 520 760, 880 650 C 1180 560, 1400 610, 1680 640"
+                fill="none"
+                stroke="url(#purpleWave2)"
+                strokeWidth="1.5"
+              />
 
-            {/* Scattered 4-Point Golden Sparkle Stars matching the reference image */}
-            <g transform="translate(80, 110)">
-              <path d="M 0 -10 Q 0 0, -10 0 Q 0 0, 0 10 Q 0 0, 10 0 Q 0 0, 0 -10 Z" fill="#FDE68A" opacity="0.85" />
-            </g>
-            <g transform="translate(480, 140)">
-              <path d="M 0 -8 Q 0 0, -8 0 Q 0 0, 0 8 Q 0 0, 8 0 Q 0 0, 0 -8 Z" fill="#FDE68A" opacity="0.9" />
-            </g>
-            <g transform="translate(780, 110)">
-              <path d="M 0 -9 Q 0 0, -9 0 Q 0 0, 0 9 Q 0 0, 9 0 Q 0 0, 0 -9 Z" fill="#FDE68A" opacity="0.9" />
-            </g>
-            <g transform="translate(980, 130)">
-              <path d="M 0 -7 Q 0 0, -7 0 Q 0 0, 0 7 Q 0 0, 7 0 Q 0 0, 0 -7 Z" fill="#FCD34D" opacity="0.75" />
-            </g>
-            <g transform="translate(180, 480)">
-              <path d="M 0 -7 Q 0 0, -7 0 Q 0 0, 0 7 Q 0 0, 7 0 Q 0 0, 0 -7 Z" fill="#FDE68A" opacity="0.75" />
-            </g>
-          </svg>
-        </div>
+              {/* Electric Purple Upper Orbit Arc */}
+              <ellipse
+                cx="340"
+                cy="260"
+                rx="460"
+                ry="180"
+                fill="none"
+                stroke="rgba(168, 85, 247, 0.15)"
+                strokeWidth="1.2"
+                strokeDasharray="6 6"
+              />
+
+              {/* Purple Sparkle Stars matching Image 1 */}
+              <g transform="translate(100, 180)">
+                <path d="M 0 -10 Q 0 0, -10 0 Q 0 0, 0 10 Q 0 0, 10 0 Q 0 0, 0 -10 Z" fill="#E9D5FF" opacity="0.9" />
+              </g>
+              <g transform="translate(240, 570)">
+                <path d="M 0 -8 Q 0 0, -8 0 Q 0 0, 0 8 Q 0 0, 8 0 Q 0 0, 0 -8 Z" fill="#C084FC" opacity="0.85" />
+              </g>
+              <g transform="translate(560, 150)">
+                <path d="M 0 -9 Q 0 0, -9 0 Q 0 0, 0 9 Q 0 0, 9 0 Q 0 0, 0 -9 Z" fill="#E9D5FF" opacity="0.9" />
+              </g>
+              <g transform="translate(740, 260)">
+                <path d="M 0 -7 Q 0 0, -7 0 Q 0 0, 0 7 Q 0 0, 7 0 Q 0 0, 0 -7 Z" fill="#D8B4FE" opacity="0.8" />
+              </g>
+              <g transform="translate(1060, 320)">
+                <path d="M 0 -8 Q 0 0, -8 0 Q 0 0, 0 8 Q 0 0, 8 0 Q 0 0, 0 -8 Z" fill="#C084FC" opacity="0.85" />
+              </g>
+              <g transform="translate(1320, 290)">
+                <path d="M 0 -10 Q 0 0, -10 0 Q 0 0, 0 10 Q 0 0, 10 0 Q 0 0, 0 -10 Z" fill="#E9D5FF" opacity="0.8" />
+              </g>
+            </svg>
+          </div>
+        ) : (
+          <div className="quizzes-ambient-bg">
+            <svg
+              viewBox="0 0 1440 900"
+              preserveAspectRatio="none"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 0
+              }}
+            >
+              <defs>
+                <linearGradient id="goldWave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(245, 158, 11, 0)" />
+                  <stop offset="25%" stopColor="rgba(245, 158, 11, 0.28)" />
+                  <stop offset="60%" stopColor="rgba(251, 191, 36, 0.22)" />
+                  <stop offset="100%" stopColor="rgba(217, 119, 6, 0)" />
+                </linearGradient>
+                <linearGradient id="goldWave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(251, 191, 36, 0)" />
+                  <stop offset="40%" stopColor="rgba(245, 158, 11, 0.16)" />
+                  <stop offset="80%" stopColor="rgba(251, 191, 36, 0.1)" />
+                  <stop offset="100%" stopColor="rgba(217, 119, 6, 0)" />
+                </linearGradient>
+              </defs>
+
+              {/* Sweeping Golden Flow Wave 1 */}
+              <path
+                d="M -100 680 C 220 580, 480 720, 840 590 C 1100 490, 1320 540, 1600 580"
+                fill="none"
+                stroke="url(#goldWave1)"
+                strokeWidth="2"
+              />
+
+              {/* Sweeping Golden Flow Wave 2 */}
+              <path
+                d="M -80 740 C 260 660, 560 780, 920 670 C 1220 580, 1420 630, 1680 660"
+                fill="none"
+                stroke="url(#goldWave2)"
+                strokeWidth="1.5"
+              />
+
+              {/* Golden Upper Orbit Arc behind bot */}
+              <ellipse
+                cx="1100"
+                cy="260"
+                rx="460"
+                ry="180"
+                fill="none"
+                stroke="rgba(245, 158, 11, 0.15)"
+                strokeWidth="1.2"
+                strokeDasharray="6 6"
+              />
+
+              {/* Scattered 4-Point Golden Sparkle Stars matching the reference image */}
+              <g transform="translate(80, 110)">
+                <path d="M 0 -10 Q 0 0, -10 0 Q 0 0, 0 10 Q 0 0, 10 0 Q 0 0, 0 -10 Z" fill="#FDE68A" opacity="0.85" />
+              </g>
+              <g transform="translate(480, 140)">
+                <path d="M 0 -8 Q 0 0, -8 0 Q 0 0, 0 8 Q 0 0, 8 0 Q 0 0, 0 -8 Z" fill="#FDE68A" opacity="0.9" />
+              </g>
+              <g transform="translate(780, 110)">
+                <path d="M 0 -9 Q 0 0, -9 0 Q 0 0, 0 9 Q 0 0, 9 0 Q 0 0, 0 -9 Z" fill="#FDE68A" opacity="0.9" />
+              </g>
+              <g transform="translate(980, 130)">
+                <path d="M 0 -7 Q 0 0, -7 0 Q 0 0, 0 7 Q 0 0, 7 0 Q 0 0, 0 -7 Z" fill="#FCD34D" opacity="0.75" />
+              </g>
+              <g transform="translate(180, 480)">
+                <path d="M 0 -7 Q 0 0, -7 0 Q 0 0, 0 7 Q 0 0, 7 0 Q 0 0, 0 -7 Z" fill="#FDE68A" opacity="0.75" />
+              </g>
+            </svg>
+          </div>
+        )}
         {/* ============================================================== */}
         {/* BOX 1 CONTENT: LARGER PANEL (FLEX: 7) - QUIZZES                */}
         {/* ============================================================== */}
@@ -1091,78 +1295,81 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         </div>
 
         {/* ============================================================== */}
-        {/* BOX 2 SIDE: SMALLER PANEL (FLEX: 3) - ASSIGNMENTS OVERVIEW     */}
+        {/* BOX 2 SIDE: SMALLER PANEL - ASSIGNMENT BOT PARTICLE ANIMATION  */}
         {/* ============================================================== */}
-        <div className="box2-side" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 28,
-          padding: '36px 22px'
-        }}>
-          {/* Middle: Clean Hub Icon */}
+        <div className="box2-side">
+          {/* Multi-layered Shimmer Glow Aura behind Assignment Bot (Electric Purple) */}
+          <div className="assignment-bot-glow-bg" />
+          <div className="assignment-bot-glow-radial" />
+          <div className="assignment-bot-glow-pulse" />
+
+          {/* Interactive Particle Bot Canvas */}
           <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 640,
+            height: isMobile ? 320 : 490,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            textAlign: 'center',
-            padding: '12px 16px'
+            zIndex: 2
           }}>
-            <div style={{
-              width: 80,
-              height: 80,
-              borderRadius: 22,
-              background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(37, 99, 235, 0.12) 100%)',
-              border: '1.5px solid rgba(14, 165, 233, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 16
-            }}>
-              <FileText size={38} color="#7DD3FC" />
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
-              Assignments
-            </h3>
-            <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
-              Practical Tasks & Projects
-            </span>
+            <VedikaParticleBot
+              src="/vedika-bot-assignment.png?v=1"
+              colorMode="vibrant"
+              width={isMobile ? 360 : 640}
+              height={isMobile ? 280 : 480}
+              inline={true}
+              intensity={0.82}
+            />
           </div>
 
-          {/* Switch to Quizzes Button */}
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+          {/* Mode Switch Pill */}
+          <div style={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: 8,
+            zIndex: 3
+          }}>
             <button
               type="button"
               onClick={() => setActiveTab('quizzes')}
               style={{
-                width: '100%',
-                maxWidth: 270,
-                padding: '12px 18px',
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: 8,
+                padding: '9px 18px',
+                borderRadius: 9999,
+                background: 'rgba(168, 85, 247, 0.1)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                color: '#E9D5FF',
+                fontWeight: 700,
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+                transition: 'none',
                 boxShadow: 'none',
-                transform: 'none',
-                transition: 'none'
+                transform: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
+                e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.6)';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                e.currentTarget.style.color = '#E9D5FF';
               }}
             >
-              <span>← Quizzes Mode</span>
+              <ArrowLeft size={14} color="#C084FC" />
+              <span>Quizzes Mode</span>
             </button>
           </div>
         </div>
 
         {/* ============================================================== */}
-        {/* BOX 2 CONTENT: LARGER PANEL (FLEX: 7) - ASSIGNMENTS            */}
+        {/* BOX 2 CONTENT: LARGER PANEL - ASSIGNMENTS                      */}
         {/* ============================================================== */}
         <div className="box2-content">
           {/* STAGE 1: ASSIGNMENTS CATEGORY CAROUSEL */}
@@ -1179,21 +1386,33 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
               <div style={{ marginBottom: 16 }}>
                 <h1 style={{
                   color: '#FFFFFF',
-                  fontSize: isMobile ? 22 : 28,
-                  fontWeight: 800,
+                  fontSize: isMobile ? 24 : 32,
+                  fontWeight: 850,
                   margin: 0,
-                  letterSpacing: '-0.03em'
+                  letterSpacing: '-0.03em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10
                 }}>
-                  Subject Assignments
+                  <span>Course</span>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #FAF5FF 0%, #E9D5FF 30%, #C084FC 70%, #A855F7 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 2px 14px rgba(168, 85, 247, 0.5))'
+                  }}>
+                    Assignments
+                  </span>
                 </h1>
-                <p style={{ color: '#94A3B8', fontSize: 13.5, margin: '6px 0 0' }}>
-                  Choose a course track to access written exercises and project evaluations.
+                <p style={{ color: '#94A3B8', fontSize: 13.5, margin: '8px 0 0', fontWeight: 500 }}>
+                  Select a subject domain to view and submit your assignments.
                 </p>
               </div>
 
               <CategoryShowcaseCarousel
                 items={assignmentCategoryShowcaseItems}
                 itemTypeLabel="Assignments"
+                theme="purple"
                 onSelectCategory={(cat) => {
                   setSelectedAssignmentCategory(cat);
                   setAssignmentPage(1);
@@ -1219,8 +1438,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   gap: 10,
                   marginBottom: 16,
                   padding: '10px 16px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(168, 85, 247, 0.04)',
+                  border: '1px solid rgba(168, 85, 247, 0.16)',
                   borderRadius: 12,
                   flexWrap: isMobile ? 'wrap' : 'nowrap'
                 }}>
@@ -1238,8 +1457,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         alignItems: 'center',
                         gap: 6,
                         background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        color: '#94A3B8',
+                        border: '1px solid rgba(168, 85, 247, 0.25)',
+                        color: '#E9D5FF',
                         padding: '6px 12px',
                         borderRadius: 8,
                         fontSize: 12.5,
@@ -1256,8 +1475,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                     </h2>
                     <span style={{
                       fontSize: 11.5,
-                      background: 'rgba(14, 165, 233, 0.15)',
-                      color: '#7DD3FC',
+                      background: 'rgba(168, 85, 247, 0.15)',
+                      border: '1px solid rgba(168, 85, 247, 0.35)',
+                      color: '#E9D5FF',
                       padding: '2px 8px',
                       borderRadius: 12,
                       fontWeight: 600
@@ -1274,8 +1494,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       onChange={(e) => setAssignmentCourseFilter(e.target.value)}
                       style={{
                         padding: '6px 10px',
-                        background: 'rgba(15, 23, 42, 0.8)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(14, 10, 24, 0.85)',
+                        border: '1px solid rgba(168, 85, 247, 0.25)',
                         borderRadius: 8,
                         color: '#FFFFFF',
                         fontSize: 12,
@@ -1295,8 +1515,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       onChange={(e) => setAssignmentChapterFilter(e.target.value)}
                       style={{
                         padding: '6px 10px',
-                        background: 'rgba(15, 23, 42, 0.8)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(14, 10, 24, 0.85)',
+                        border: '1px solid rgba(168, 85, 247, 0.25)',
                         borderRadius: 8,
                         color: '#FFFFFF',
                         fontSize: 12,
@@ -1312,7 +1532,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
 
                     {/* Search Input */}
                     <div style={{ position: 'relative', width: isMobile ? '100%' : 180 }}>
-                      <Search size={14} color="#64748B" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }} />
+                      <Search size={14} color="#C084FC" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }} />
                       <input
                         type="text"
                         placeholder="Search assignments..."
@@ -1321,8 +1541,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         style={{
                           width: '100%',
                           padding: '6px 10px 6px 28px',
-                          background: 'rgba(15, 23, 42, 0.8)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          background: 'rgba(14, 10, 24, 0.85)',
+                          border: '1px solid rgba(168, 85, 247, 0.25)',
                           borderRadius: 8,
                           color: '#FFFFFF',
                           fontSize: 12,
@@ -1337,11 +1557,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 {/* Cards Grid */}
                 {loading ? (
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 220 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(14, 165, 233, 0.3)', borderTopColor: '#0EA5E9', animation: 'spin 1s linear infinite' }} />
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(168, 85, 247, 0.3)', borderTopColor: '#A855F7', animation: 'spin 1s linear infinite' }} />
                   </div>
                 ) : filteredAssignments.length === 0 ? (
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '36px 20px', textAlign: 'center' }}>
-                    <FileText size={36} color="#64748B" style={{ marginBottom: 12 }} />
+                  <div style={{ background: 'rgba(12, 8, 24, 0.75)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: 14, padding: '36px 20px', textAlign: 'center' }}>
+                    <FileText size={36} color="#A855F7" style={{ marginBottom: 12 }} />
                     <h4 style={{ color: '#FFFFFF', fontSize: 15, margin: '0 0 6px 0' }}>No Assignments Found</h4>
                     <p style={{ color: '#94A3B8', fontSize: 12.5, margin: 0 }}>No assignments found matching your filter selections.</p>
                   </div>
@@ -1358,24 +1578,24 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         <div
                           key={ass.id}
                           style={{
-                            background: 'rgba(15, 23, 42, 0.7)',
-                            border: '1px solid rgba(14, 165, 233, 0.2)',
+                            background: '#0C0818',
+                            border: '1px solid rgba(168, 85, 247, 0.25)',
                             borderRadius: 14,
                             padding: 16,
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
                             height: 240,
-                            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)'
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
                           }}
                         >
                           <div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                               <span style={{
                                 fontSize: 9.5,
-                                background: 'rgba(14, 165, 233, 0.15)',
-                                border: '1px solid rgba(14, 165, 233, 0.3)',
-                                color: '#7DD3FC',
+                                background: 'rgba(168, 85, 247, 0.12)',
+                                border: '1px solid rgba(168, 85, 247, 0.28)',
+                                color: '#E9D5FF',
                                 padding: '2px 8px',
                                 borderRadius: 4,
                                 fontWeight: 600,
@@ -1389,8 +1609,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                               {ass.chapter && (
                                 <span style={{
                                   fontSize: 9.5,
-                                  background: 'rgba(168, 85, 247, 0.12)',
-                                  color: '#C4B5FD',
+                                  background: 'rgba(192, 132, 252, 0.1)',
+                                  border: '1px solid rgba(192, 132, 252, 0.25)',
+                                  color: '#D8B4FE',
                                   padding: '2px 8px',
                                   borderRadius: 4
                                 }}>
@@ -1415,17 +1636,17 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
 
                             <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: '#94A3B8', marginBottom: 8 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Clock size={12} />
+                                <Clock size={12} color="#A855F7" />
                                 <span>{ass.type || 'Written Task'}</span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <FileText size={12} />
+                                <FileText size={12} color="#A855F7" />
                                 <span>{ass.questions?.length || 1} Prompts</span>
                               </div>
                             </div>
 
                             <div style={{ fontSize: 11, color: '#94A3B8' }}>
-                              Min Response: <strong style={{ color: '#E2E8F0' }}>{ass.min_char_count || 20} chars</strong>
+                              Min Response: <strong style={{ color: '#E9D5FF' }}>{ass.min_char_count || 20} chars</strong>
                             </div>
                           </div>
 
@@ -1443,7 +1664,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                                   <CheckCircle size={13} /> Graded: {aStatus.score}/{aStatus.max_score}
                                 </span>
                               ) : aStatus.status.startsWith('Submitted') ? (
-                                <span style={{ fontSize: 11, color: '#38BDF8', fontWeight: 600 }}>
+                                <span style={{ fontSize: 11, color: '#C084FC', fontWeight: 600 }}>
                                   Submitted (Review)
                                 </span>
                               ) : (
@@ -1456,17 +1677,22 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                             <button
                               onClick={() => handleOpenAssignmentPrompt(ass)}
                               style={{
-                                background: aStatus.status !== 'Not Submitted' ? 'rgba(255, 255, 255, 0.06)' : '#0EA5E9',
+                                background: aStatus.status !== 'Not Submitted'
+                                  ? 'rgba(255, 255, 255, 0.06)'
+                                  : 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
                                 color: '#FFFFFF',
                                 border: aStatus.status !== 'Not Submitted' ? '1px solid rgba(255, 255, 255, 0.15)' : 'none',
-                                padding: '6px 12px',
+                                padding: '6px 14px',
                                 borderRadius: 8,
                                 fontSize: 11.5,
-                                fontWeight: 700,
+                                fontWeight: 750,
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 4
+                                gap: 4,
+                                boxShadow: 'none',
+                                transform: 'none',
+                                transition: 'none'
                               }}
                             >
                               <span>{aStatus.status !== 'Not Submitted' ? 'View Work' : 'Solve'}</span>
@@ -1698,12 +1924,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           padding: 16
         }}>
           <div style={{
-            background: '#0F172A',
-            border: '1px solid rgba(14, 165, 233, 0.3)',
+            background: '#0D0819',
+            border: '1px solid rgba(168, 85, 247, 0.35)',
             borderRadius: 16,
             width: '100%',
             maxWidth: 640,
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.7)',
             maxHeight: '88vh',
             display: 'flex',
             flexDirection: 'column'
@@ -1719,7 +1945,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 <h2 style={{ margin: 0, color: '#FFFFFF', fontSize: 16, fontWeight: 700 }}>
                   {selectedAssignment.title}
                 </h2>
-                <span style={{ fontSize: 11.5, color: '#38BDF8' }}>
+                <span style={{ fontSize: 11.5, color: '#C084FC' }}>
                   {getCourseName(selectedAssignment.course)} • {selectedAssignment.type || 'Text Submission'}
                 </span>
               </div>
@@ -1751,9 +1977,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   <button
                     onClick={() => setIsViewingAssignmentPrompt(false)}
                     style={{
-                      background: '#0EA5E9', color: '#FFFFFF', border: 'none',
+                      background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)', color: '#FFFFFF', border: 'none',
                       padding: '8px 18px', borderRadius: 8, fontSize: 12.5,
-                      fontWeight: 600, cursor: 'pointer'
+                      fontWeight: 600, cursor: 'pointer',
+                      boxShadow: 'none', transform: 'none', transition: 'none'
                     }}
                   >
                     Done
@@ -1774,10 +2001,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                             borderRadius: 6,
                             fontSize: 11.5,
                             fontWeight: 600,
-                            background: activeAssignmentQIdx === qIdx ? '#0EA5E9' : 'rgba(255, 255, 255, 0.05)',
+                            background: activeAssignmentQIdx === qIdx ? 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)' : 'rgba(255, 255, 255, 0.05)',
                             color: '#FFFFFF',
                             border: 'none',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            boxShadow: 'none', transform: 'none', transition: 'none'
                           }}
                         >
                           Prompt {qIdx + 1}
@@ -1790,11 +2018,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   <div style={{
                     padding: 14,
                     borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(168, 85, 247, 0.06)',
+                    border: '1px solid rgba(168, 85, 247, 0.2)',
                     marginBottom: 14
                   }}>
-                    <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#38BDF8', fontWeight: 700, display: 'block', marginBottom: 4 }}>
+                    <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#C084FC', fontWeight: 700, display: 'block', marginBottom: 4 }}>
                       Task Instruction
                     </span>
                     <p style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.5 }}>
@@ -1821,8 +2049,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         width: '100%',
                         padding: 12,
                         borderRadius: 10,
-                        background: 'rgba(15, 23, 42, 0.9)',
-                        border: '1.5px solid rgba(14, 165, 233, 0.3)',
+                        background: 'rgba(12, 8, 22, 0.95)',
+                        border: '1.5px solid rgba(168, 85, 247, 0.35)',
                         color: '#FFFFFF',
                         fontSize: 13,
                         outline: 'none',
@@ -1847,7 +2075,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         padding: '7px 16px',
                         borderRadius: 8,
                         fontSize: 12,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        boxShadow: 'none', transform: 'none', transition: 'none'
                       }}
                     >
                       Cancel
@@ -1856,7 +2085,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       type="submit"
                       disabled={submittingAssignment}
                       style={{
-                        background: 'linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)',
+                        background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
                         color: '#FFFFFF',
                         border: 'none',
                         padding: '7px 18px',
@@ -1866,7 +2095,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         cursor: submittingAssignment ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6
+                        gap: 6,
+                        boxShadow: 'none', transform: 'none', transition: 'none'
                       }}
                     >
                       <Send size={13} />
