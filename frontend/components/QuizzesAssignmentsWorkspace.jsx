@@ -833,28 +833,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '32px 22px'
+          justifyContent: 'center',
+          gap: 28,
+          padding: '36px 22px'
         }}>
-          {/* Top Status */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '7px 16px',
-            borderRadius: 9999,
-            background: 'rgba(124, 58, 237, 0.12)',
-            border: '1px solid rgba(124, 58, 237, 0.3)',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            color: '#C4B5FD',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#A855F7' }} />
-            <span>Domain Quizzes</span>
-          </div>
-
           {/* Middle: Clean Hub Icon */}
           <div style={{
             display: 'flex',
@@ -862,31 +844,30 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            padding: '24px 16px'
+            padding: '12px 16px'
           }}>
             <div style={{
-              width: 76,
-              height: 76,
+              width: 80,
+              height: 80,
               borderRadius: 22,
               background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(99, 102, 241, 0.12) 100%)',
               border: '1.5px solid rgba(124, 58, 237, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(124, 58, 237, 0.25)',
-              marginBottom: 14
+              marginBottom: 16
             }}>
-              <Award size={36} color="#C4B5FD" />
+              <Award size={38} color="#C4B5FD" />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
               Quizzes
             </h3>
-            <span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>
-              Interactive Assessments
+            <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
+              Interactive Assessments & Tests
             </span>
           </div>
 
-          {/* Bottom: Switch to Assignments Button */}
+          {/* Switch to Assignments Button */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
             <button
               type="button"
@@ -906,16 +887,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                boxShadow: '0 8px 20px rgba(14, 165, 233, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 10px 24px rgba(14, 165, 233, 0.55)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(14, 165, 233, 0.4)';
+                boxShadow: 'none',
+                transform: 'none',
+                transition: 'none'
               }}
             >
               <span>Assignments Mode →</span>
@@ -930,28 +904,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '32px 22px'
+          justifyContent: 'center',
+          gap: 28,
+          padding: '36px 22px'
         }}>
-          {/* Top Status */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '7px 16px',
-            borderRadius: 9999,
-            background: 'rgba(14, 165, 233, 0.12)',
-            border: '1px solid rgba(14, 165, 233, 0.3)',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            color: '#38BDF8',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38BDF8' }} />
-            <span>Assignment Workbench</span>
-          </div>
-
           {/* Middle: Clean Hub Icon */}
           <div style={{
             display: 'flex',
@@ -959,31 +915,30 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            padding: '24px 16px'
+            padding: '12px 16px'
           }}>
             <div style={{
-              width: 76,
-              height: 76,
+              width: 80,
+              height: 80,
               borderRadius: 22,
               background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(37, 99, 235, 0.12) 100%)',
               border: '1.5px solid rgba(14, 165, 233, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(14, 165, 233, 0.25)',
-              marginBottom: 14
+              marginBottom: 16
             }}>
-              <FileText size={36} color="#7DD3FC" />
+              <FileText size={38} color="#7DD3FC" />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
               Assignments
             </h3>
-            <span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>
+            <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
               Practical Tasks & Projects
             </span>
           </div>
 
-          {/* Bottom: Switch to Quizzes Button */}
+          {/* Switch to Quizzes Button */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
             <button
               type="button"
@@ -1003,16 +958,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                boxShadow: '0 8px 20px rgba(124, 58, 237, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 10px 24px rgba(124, 58, 237, 0.55)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(124, 58, 237, 0.4)';
+                boxShadow: 'none',
+                transform: 'none',
+                transition: 'none'
               }}
             >
               <span>← Quizzes Mode</span>

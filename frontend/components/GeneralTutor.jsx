@@ -2289,8 +2289,10 @@ export default function GeneralTutor() {
             style={{
               position: 'absolute',
               bottom: isMobile ? 96 : 112,
-              left: '50%',
-              transform: 'translateX(-50%)',
+              left: 0,
+              right: 0,
+              margin: '0 auto',
+              width: 'fit-content',
               background: 'rgba(15, 23, 42, 0.75)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
@@ -2305,18 +2307,16 @@ export default function GeneralTutor() {
               gap: 6,
               cursor: 'pointer',
               zIndex: 32,
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-              transition: 'all 0.15s ease'
+              boxShadow: 'none',
+              transition: 'none'
             }}
             onMouseEnter={e => {
               e.currentTarget.style.color = '#FFFFFF';
               e.currentTarget.style.borderColor = '#A855F7';
-              e.currentTarget.style.transform = 'translateX(-50%) translateY(-2px)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.color = '#CBD5E1';
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.14)';
-              e.currentTarget.style.transform = 'translateX(-50%) translateY(0)';
             }}
           >
             <ChevronDown size={14} color="#A855F7" />
@@ -2360,7 +2360,7 @@ export default function GeneralTutor() {
                 return !prev;
               });
             }}
-            title={showLeftNav ? "Close Menu (Esc / Ctrl+B)" : "Open Navigation (Ctrl+B)"}
+            title={showLeftNav ? "Close navigation (Ctrl+B)" : "Open navigation (Ctrl+B)"}
             aria-label="Toggle Navigation Menu"
             style={{
               pointerEvents: 'auto',
@@ -2371,9 +2371,7 @@ export default function GeneralTutor() {
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
               border: showLeftNav ? '1px solid rgba(168, 85, 247, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
-              boxShadow: showLeftNav
-                ? '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.3)'
-                : '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.05)',
+              boxShadow: 'none',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -2381,38 +2379,18 @@ export default function GeneralTutor() {
               color: showLeftNav ? '#FFFFFF' : '#94A3B8',
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
               position: 'relative'
             }}
             onMouseEnter={e => {
               e.currentTarget.style.color = '#FFFFFF';
               e.currentTarget.style.borderColor = '#A855F7';
-              e.currentTarget.style.transform = 'scale(1.06)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
               e.currentTarget.style.borderColor = showLeftNav ? 'rgba(168, 85, 247, 0.7)' : 'rgba(255, 255, 255, 0.16)';
-              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             <PanelLeft size={isMobile ? 16 : 18} />
-            {!isMobile && (
-              <span style={{
-                position: 'absolute',
-                bottom: -6,
-                background: 'rgba(10, 15, 28, 0.95)',
-                border: '1px solid rgba(168, 85, 247, 0.4)',
-                borderRadius: 4,
-                fontSize: 8,
-                fontWeight: 800,
-                color: '#C084FC',
-                padding: '0 4px',
-                lineHeight: '12px',
-                letterSpacing: '0.04em'
-              }}>
-                ^B
-              </span>
-            )}
           </button>
 
           {/* Full Creative Omnibar - Always active by default */}
@@ -2760,11 +2738,9 @@ export default function GeneralTutor() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      boxShadow: loading ? 'none' : '0 4px 16px rgba(168, 85, 247, 0.45)',
-                      transition: 'all 0.2s ease'
+                      boxShadow: 'none',
+                      transition: 'none'
                     }}
-                    onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'scale(1.05)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                   >
                     {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}
                   </button>

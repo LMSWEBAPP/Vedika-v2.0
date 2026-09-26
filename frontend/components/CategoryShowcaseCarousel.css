@@ -77,7 +77,7 @@
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  justifyContent: space-between;
+  justify-content: space-between;
   flex: 1;
   background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.4) 100%);
 }
@@ -115,8 +115,8 @@
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: none;
+  box-shadow: none;
 }
 
 .showcase-nav-btn:hover {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JellyBlobMascot } from 'feral-blob';
 
-/**
+/*
  * Available poke cycle moods:
  * Idle (neutral), Curious, Happy, Surprised, Love, Shy, Sleepy, Wave, Hmm, Side eye
  */
@@ -18,19 +18,26 @@ const POKE_MOODS = [
   'sideEye'
 ];
 
-/**
- * Subtle micro-expressions for the 3-second inactivity cycle.
- * Designed to look organic, gentle, and alive without jarring transitions.
+/*
+ * Complete list of all distinct blob companion expressions available
  */
-const SUBTLE_IDLE_CYCLE = [
-  { mood: 'happy', gaze: { x: 0, y: -4 }, sparkle: false, blink: true },
-  { mood: 'curious', gaze: { x: 8, y: 6 }, sparkle: false, blink: false },
-  { mood: 'hmm', gaze: { x: -8, y: -6 }, sparkle: false, blink: false },
-  { mood: 'shy', gaze: { x: -6, y: 6 }, sparkle: false, blink: true },
-  { mood: 'sideEye', gaze: { x: 10, y: -2 }, sparkle: false, blink: false },
-  { mood: 'neutral', gaze: { x: 0, y: 0 }, sparkle: false, blink: true },
-  { mood: 'happy', gaze: { x: 4, y: -2 }, sparkle: true, blink: true }
+export const ALL_BLOB_EXPRESSIONS = [
+  { mood: 'happy', label: 'Happy', desc: 'Joyful smile with smiling arc eyes', gaze: { x: 0, y: -4 }, sparkle: true, blink: true },
+  { mood: 'curious', label: 'Curious', desc: 'Inquisitive arched brow looking around with oval mouth', gaze: { x: 8, y: 4 }, sparkle: false, blink: false },
+  { mood: 'surprised', label: 'Surprised', desc: 'Wide round ring eyes and open mouth in wonder', gaze: { x: 0, y: -6 }, sparkle: true, blink: true },
+  { mood: 'love', label: 'Love', desc: 'Heart-shaped eyes and affectionate sweet smile', gaze: { x: 0, y: 0 }, sparkle: true, blink: false },
+  { mood: 'sideEye', label: 'Side Eye', desc: 'Playful side glance with a sly little smirk', gaze: { x: 12, y: -2 }, sparkle: false, blink: false },
+  { mood: 'hmm', label: 'Hmm / Thinking', desc: 'Squinted thinking brow pondering thoughtfully', gaze: { x: -8, y: -6 }, sparkle: false, blink: false },
+  { mood: 'shy', label: 'Shy / Blushing', desc: 'Cute pink blush cheek marks and bashful downward glance', gaze: { x: -6, y: 6 }, sparkle: false, blink: true },
+  { mood: 'wave', label: 'Wave / Friendly', desc: 'Friendly waving nub hand greeting the student', gaze: { x: 4, y: -4 }, sparkle: true, blink: false },
+  { mood: 'sleepy', label: 'Sleepy', desc: 'Relaxed heavy eyelids dozing in peaceful rest', gaze: { x: 0, y: 4 }, sparkle: false, blink: false },
+  { mood: 'neutral', label: 'Neutral / Calm', desc: 'Calm resting face with natural soft gentle blinking', gaze: { x: 0, y: 0 }, sparkle: false, blink: true }
 ];
+
+/**
+ * Subtle micro-expressions for the inactivity cycle.
+ */
+const SUBTLE_IDLE_CYCLE = ALL_BLOB_EXPRESSIONS;
 
 /**
  * UserBlobAvatar - Emotive Violet Jelly Blob Mascot Companion
@@ -43,7 +50,7 @@ const SUBTLE_IDLE_CYCLE = [
  *   - User sends message: waves happily with celebrate sparkle burst
  *   - User hover: cheerful smile eyes, gentle lift, violet glow
  *   - User click/poke: jelly squash physics, cycles playful emotions & reaction speech tips
- *   - Inactivity after 3s: smoothly cycles through subtle micro-expressions every 3.2s
+ *   - Continuous expression cycle: independently changes expression every 2 seconds
  */
 export default function UserBlobAvatar({
   isTyping = false,
@@ -69,10 +76,10 @@ export default function UserBlobAvatar({
   const [blinkCount, setBlinkCount] = useState(0);
   const [isOverpoked, setIsOverpoked] = useState(false);
   const [reactionTip, setReactionTip] = useState(null);
-  const [isIdle, setIsIdle] = useState(false);
+  const [isIdle, setIsIdle] = useState(true);
 
   const pokeCycleIndex = useRef(0);
-  const idleCycleIndex = useRef(0);
+  const idleCycleIndex = useRef(Math.floor(Math.random() * ALL_BLOB_EXPRESSIONS.length));
   const resetTimerRef = useRef(null);
   const tipTimerRef = useRef(null);
   const inactivityTimerRef = useRef(null);
@@ -113,7 +120,7 @@ export default function UserBlobAvatar({
     };
   }, [isAiLoading]);
 
-  // Main environment & inactivity state machine
+  // Main environment & continuous 2-second independent expression state machine
   useEffect(() => {
     // Clear any ongoing idle loop
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
@@ -177,64 +184,36 @@ export default function UserBlobAvatar({
       return;
     }
 
-    // Default resting state before inactivity kicks in
-    setActiveMood(baseMood);
-    setActiveGaze({ x: 0, y: 0 });
-    setActiveNod(false);
-    setActiveMouth(undefined);
-    setActiveSparkle(false);
+    // Continuous 2-second independent expression cycle:
+    // Staggered initial offset (0 to 1200ms) so multiple avatars never jump in lockstep
+    setIsIdle(true);
+    const initialDelay = Math.random() * 1200;
 
-    // Staggered inactivity timer with random phase offset so multiple avatars never blink or shift in lockstep
-    const randomDelay = 2200 + Math.random() * 2200;
     inactivityTimerRef.current = setTimeout(() => {
-      setIsIdle(true);
+      // Step to the next expression
+      idleCycleIndex.current = (idleCycleIndex.current + 1) % ALL_BLOB_EXPRESSIONS.length;
+      const next = ALL_BLOB_EXPRESSIONS[idleCycleIndex.current];
+      setActiveMood(next.mood);
+      setActiveGaze(next.gaze);
+      setActiveSparkle(next.sparkle);
+      if (next.blink) setBlinkCount((b) => b + 1);
 
-      // If a distinct personality mood was assigned, preserve that expression and subtly shift gaze & blink
-      if (effectiveInitialMood && effectiveInitialMood !== 'neutral') {
-        const gazeOffsets = [
-          { x: 4, y: -2 },
-          { x: -5, y: 3 },
-          { x: 0, y: -4 },
-          { x: 3, y: 2 },
-          { x: 0, y: 0 }
-        ];
-        let gIdx = Math.floor(Math.random() * gazeOffsets.length);
-        setActiveGaze(gazeOffsets[gIdx]);
-        setBlinkCount((b) => b + 1);
-
-        const cycleInterval = 2800 + Math.random() * 1400;
-        idleIntervalRef.current = setInterval(() => {
-          gIdx = (gIdx + 1) % gazeOffsets.length;
-          setActiveGaze(gazeOffsets[gIdx]);
-          setBlinkCount((b) => b + 1);
-        }, cycleInterval);
-      } else {
-        idleCycleIndex.current = Math.floor(Math.random() * SUBTLE_IDLE_CYCLE.length);
-        const current = SUBTLE_IDLE_CYCLE[idleCycleIndex.current];
+      // Continuously cycle every 2 seconds independently
+      idleIntervalRef.current = setInterval(() => {
+        idleCycleIndex.current = (idleCycleIndex.current + 1) % ALL_BLOB_EXPRESSIONS.length;
+        const current = ALL_BLOB_EXPRESSIONS[idleCycleIndex.current];
         setActiveMood(current.mood);
         setActiveGaze(current.gaze);
         setActiveSparkle(current.sparkle);
-        setBlinkCount((b) => b + 1);
-
-        const cycleInterval = 3000 + Math.random() * 1200;
-        idleIntervalRef.current = setInterval(() => {
-          idleCycleIndex.current = (idleCycleIndex.current + 1) % SUBTLE_IDLE_CYCLE.length;
-          const curr = SUBTLE_IDLE_CYCLE[idleCycleIndex.current];
-          setActiveMood(curr.mood);
-          setActiveGaze(curr.gaze);
-          setActiveSparkle(curr.sparkle);
-          if (curr.blink) {
-            setBlinkCount((b) => b + 1);
-          }
-        }, cycleInterval);
-      }
-    }, randomDelay);
+        if (current.blink) setBlinkCount((b) => b + 1);
+      }, 2000);
+    }, initialDelay);
 
     return () => {
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
       if (idleIntervalRef.current) clearInterval(idleIntervalRef.current);
     };
-  }, [isTyping, isAiLoading, isJustSent, isHovered, isOverpoked, baseMood, effectiveInitialMood, showTip]);
+  }, [isTyping, isAiLoading, isJustSent, isHovered, isOverpoked, showTip]);
 
   // Handle single poke (click)
   const handlePoke = useCallback(() => {

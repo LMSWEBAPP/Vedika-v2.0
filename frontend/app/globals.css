@@ -152,3 +152,64 @@ body, button, input, textarea, select {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
+
+/* =========================================================================
+   GLOBAL BUTTON RESET: No transforms, transitions, or glow effects
+   ========================================================================= */
+button,
+button:hover,
+button:active,
+button:focus,
+button:focus-visible,
+[type="button"],
+[type="button"]:hover,
+[type="button"]:active,
+[type="button"]:focus,
+[type="submit"],
+[type="submit"]:hover,
+[type="submit"]:active,
+[type="submit"]:focus,
+[type="reset"],
+[type="reset"]:hover,
+[type="reset"]:active,
+[type="reset"]:focus,
+.btn,
+.btn:hover,
+.btn:active,
+.btn:focus,
+[role="button"],
+[role="button"]:hover,
+[role="button"]:active,
+[role="button"]:focus {
+  transition: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+button:not(.carousel-nav-arrow):not(.showcase-nav-btn),
+button:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
+button:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
+[type="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn),
+[type="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
+[type="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
+[type="submit"],
+[type="submit"]:hover,
+[type="submit"]:active,
+.btn:not(.carousel-nav-arrow):not(.showcase-nav-btn),
+.btn:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
+.btn:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
+[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn),
+[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
+[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):active {
+  transform: none !important;
+}
+
+.carousel-nav-arrow,
+.carousel-nav-arrow:hover,
+.carousel-nav-arrow:active,
+.showcase-nav-btn,
+.showcase-nav-btn:hover,
+.showcase-nav-btn:active {
+  transform: translateY(-50%) !important;
+}

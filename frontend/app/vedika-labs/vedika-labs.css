@@ -111,22 +111,22 @@
   letter-spacing: -0.01em;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 22px rgba(var(--active-color-rgb), 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  transition: none;
 }
 
 .vedika-labs-explore-cta-btn:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 8px 28px rgba(var(--active-color-rgb), 0.65);
-  filter: brightness(1.1);
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 .vedika-labs-explore-cta-btn .cta-arrow {
-  transition: transform 0.25s ease;
+  transition: none;
 }
 
 .vedika-labs-explore-cta-btn:hover .cta-arrow {
-  transform: translateX(4px);
+  transform: none;
 }
 
 
@@ -498,34 +498,80 @@
   100% { transform: translate(18px, 134px) scale(1); }
 }
 
+.live-math-integral-3d {
+  animation: mathIntegralFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes mathIntegralFloat {
+  0% { transform: translate(142px, 22px) rotate(0deg); }
+  50% { transform: translate(143px, 18px) rotate(-3deg); }
+  100% { transform: translate(142px, 22px) rotate(0deg); }
+}
+
+.live-math-infinity-3d {
+  animation: mathInfinityFloat 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes mathInfinityFloat {
+  0% { transform: translate(136px, 140px) scale(1) rotate(0deg); }
+  50% { transform: translate(138px, 136px) scale(1.06) rotate(4deg); }
+  100% { transform: translate(136px, 140px) scale(1) rotate(0deg); }
+}
+
+.live-math-spiral {
+  transform-origin: 87.5px 98px;
+  animation: mathSpiralRotate 28s linear infinite;
+}
+
+@keyframes mathSpiralRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* 2. PHYSICS LAB: Planetary Core, Quantum Gyro & Satellite Orbits */
 .live-phys-core {
   animation: physCoreGlowPulse 4.5s ease-in-out infinite alternate;
 }
 
-.live-phys-planet-spin {
+.live-phys-planet-group {
   transform-origin: 0px 0px;
-  animation: spinPlanetInPlace 32s linear infinite;
+  animation: planetCelestialFloat 6s ease-in-out infinite alternate;
 }
 
-@keyframes spinPlanetInPlace {
-  from {
-    transform: rotate(0deg);
+@keyframes planetCelestialFloat {
+  0% {
+    transform: translate(87.5px, 96px) rotate(-16deg);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    transform: translate(87.5px, 91px) rotate(-13deg);
+  }
+  100% {
+    transform: translate(87.5px, 96px) rotate(-16deg);
+  }
+}
+
+.live-phys-planet-bands {
+  animation: planetSurfaceDrift 14s linear infinite;
+}
+
+@keyframes planetSurfaceDrift {
+  0% {
+    transform: translateX(-70px);
+  }
+  100% {
+    transform: translateX(0px);
   }
 }
 
 @keyframes physCoreGlowPulse {
   0% {
-    filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.75));
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
   }
   50% {
-    filter: drop-shadow(0 0 22px rgba(0, 212, 255, 0.95));
+    filter: drop-shadow(0 0 18px rgba(0, 212, 255, 0.85));
   }
   100% {
-    filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.75));
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
   }
 }
 
@@ -715,8 +761,8 @@
   box-shadow: none;
   outline: none;
   pointer-events: auto;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+  transition: none;
+  filter: none;
 }
 
 .carousel-nav-arrow.left {
@@ -730,12 +776,12 @@
 .carousel-nav-arrow:hover {
   background: transparent;
   color: var(--active-color, #38BDF8);
-  filter: drop-shadow(0 0 14px var(--active-glow, rgba(56, 189, 248, 0.85)));
-  transform: translateY(-50%) scale(1.2);
+  filter: none;
+  transform: translateY(-50%);
 }
 
 .carousel-nav-arrow:active {
-  transform: translateY(-50%) scale(0.96);
+  transform: translateY(-50%);
 }
 
 /* =========================================================================

@@ -96,8 +96,8 @@
   cursor: pointer;
   outline: none;
   backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: none;
+  box-shadow: none;
   user-select: none;
   flex-shrink: 0;
 }
@@ -106,8 +106,8 @@
   background: rgba(var(--active-accent-rgb), 0.2);
   border-color: var(--active-accent);
   color: #FFFFFF;
-  transform: translateX(-3px);
-  box-shadow: 0 0 16px var(--active-accent-glow);
+  transform: none;
+  box-shadow: none;
 }
 
 .vedika-ai-brand-pill {
@@ -159,15 +159,6 @@
   font-weight: 500;
   color: #94A3B8;
   letter-spacing: 0.01em;
-}
-
-.vedika-ai-subtitle-glow-bar {
-  width: 44px;
-  height: 2.5px;
-  border-radius: 9999px;
-  background: var(--active-accent);
-  box-shadow: 0 0 10px var(--active-accent);
-  transition: all 0.5s ease;
 }
 
 /* =========================================================================
@@ -292,30 +283,9 @@
 .vedika-ai-card-top-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   width: 100%;
-}
-
-.vedika-ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  max-width: calc(100% - 65px);
-  padding: 3px 10px;
-  border-radius: 9999px;
-  background: rgba(var(--active-accent-rgb), 0.14);
-  border: 1px solid rgba(var(--active-accent-rgb), 0.35);
-  color: var(--active-accent);
-  font-size: 0.70rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-sizing: border-box;
 }
 
 .vedika-ai-card-index-indicator {
@@ -347,8 +317,8 @@
   align-items: center;
   justify-content: center;
   background: rgba(var(--card-rgb), 0.22);
-  border: 1px solid rgba(var(--card-rgb), 0.5);
-  box-shadow: 0 0 16px rgba(var(--card-rgb), 0.35);
+  border: 1px solid rgba(var(--card-rgb), 0.4);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -396,23 +366,23 @@
   letter-spacing: -0.01em;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 18px var(--active-accent-glow);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+  transition: none;
 }
 
 .vedika-ai-launch-btn:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 26px var(--active-accent-glow);
-  filter: brightness(1.1);
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 .vedika-ai-launch-btn:active {
-  transform: translateY(0) scale(0.99);
+  transform: none;
 }
 
 .vedika-ai-launch-btn.entering {
   opacity: 0.92;
-  box-shadow: 0 0 28px var(--active-accent-glow);
+  box-shadow: none;
   pointer-events: none;
 }
 
@@ -452,15 +422,15 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: none;
 }
 
 .vedika-ai-nav-arrow:hover {
   background: rgba(var(--active-accent-rgb), 0.22);
   border-color: var(--active-accent);
   color: #FFFFFF;
-  box-shadow: 0 0 14px var(--active-accent-glow);
-  transform: scale(1.08);
+  box-shadow: none;
+  transform: none;
 }
 
 .vedika-ai-dots-wrap {
@@ -477,7 +447,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: none;
 }
 
 .vedika-ai-nav-dot:hover {
@@ -487,7 +457,7 @@
 .vedika-ai-nav-dot.active {
   width: 26px;
   background: var(--active-accent);
-  box-shadow: 0 0 14px var(--active-accent-glow);
+  box-shadow: none;
 }
 
 /* =========================================================================

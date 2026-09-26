@@ -109,17 +109,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.8)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
-  transition: transform 0.2s ease;
-}
-
-.logoWrap:hover .starIcon {
-  transform: scale(1.08) rotate(6deg);
 }
 
 .brandTexts {
   display: flex;
   flex-direction: column;
+  line-height: 1;
+}
+
+.brandTextsOneLine {
+  display: flex;
+  align-items: center;
   line-height: 1;
 }
 
@@ -129,6 +129,15 @@
   font-size: 1.15rem;
   letter-spacing: 0.14em;
   color: #ffffff;
+}
+
+.brandTitleOneLine {
+  font-family: var(--font-space), -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: 1.15rem;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  white-space: nowrap;
 }
 
 .brandSubtitle {
@@ -144,7 +153,7 @@
 .navMenu {
   display: flex;
   align-items: center;
-  gap: 1.4rem;
+  gap: 2rem;
 }
 
 .navItemWrapper {
@@ -281,13 +290,15 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.45);
-  transition: all 0.25s ease;
+  box-shadow: none;
+  transform: none;
+  transition: none;
 }
 
 .getStartedBtn:hover {
-  box-shadow: 0 0 28px rgba(168, 85, 247, 0.65);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+  box-shadow: none;
+  transform: none;
 }
 
 /* User Profile Capsule */

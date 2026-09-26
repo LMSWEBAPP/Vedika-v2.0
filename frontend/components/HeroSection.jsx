@@ -9,32 +9,34 @@ import { CustomEase } from 'gsap/CustomEase';
 
 // Maps speech timeline to smooth phoneme transitions matching the audio
 const PHONEME_SCHEDULE = [
-  // "Curious" (0.0s - 1.1s)
-  { start: 0.00, end: 0.20, fromFrame: 0, toFrame: 0 }, // Rest
-  { start: 0.20, end: 0.50, fromFrame: 0, toFrame: 2 }, // "Cyu-" (Round Oh)
-  { start: 0.50, end: 0.80, fromFrame: 2, toFrame: 3 }, // "-ri-" (Wide Ee)
-  { start: 0.80, end: 1.10, fromFrame: 3, toFrame: 1 }, // "-ous" (Open Ah)
+  // "Curious" (0.0s - 0.95s)
+  { start: 0.00, end: 0.12, fromFrame: 0, toFrame: 0 }, // Rest
+  { start: 0.12, end: 0.40, fromFrame: 0, toFrame: 2 }, // "Cyu-" (Round Oh)
+  { start: 0.40, end: 0.68, fromFrame: 2, toFrame: 3 }, // "-ri-" (Wide Ee)
+  { start: 0.68, end: 0.95, fromFrame: 3, toFrame: 1 }, // "-ous" (Open Ah)
 
-  // "who's behind" (1.1s - 2.05s)
-  { start: 1.10, end: 1.40, fromFrame: 1, toFrame: 2 }, // "who's" (Round Oh)
-  { start: 1.40, end: 1.70, fromFrame: 2, toFrame: 4 }, // "be-" (Closed Mm)
-  { start: 1.70, end: 2.05, fromFrame: 4, toFrame: 1 }, // "-hind" (Open Ah)
+  // "who's behind" (0.95s - 1.85s)
+  { start: 0.95, end: 1.25, fromFrame: 1, toFrame: 2 }, // "who's" (Round Oh)
+  { start: 1.25, end: 1.55, fromFrame: 2, toFrame: 4 }, // "be-" (Closed Mm)
+  { start: 1.55, end: 1.85, fromFrame: 4, toFrame: 1 }, // "-hind" (Open Ah)
 
-  // "my smile?" (2.05s - 2.85s)
-  { start: 2.05, end: 2.35, fromFrame: 1, toFrame: 4 }, // "my" (Closed Mm)
-  { start: 2.35, end: 2.85, fromFrame: 4, toFrame: 3 }, // "smile?" (Wide Ee)
+  // "my smile?" (1.85s - 2.75s)
+  { start: 1.85, end: 2.15, fromFrame: 1, toFrame: 4 }, // "my" (Closed Mm)
+  { start: 2.15, end: 2.75, fromFrame: 4, toFrame: 3 }, // "smile?" (Wide Ee)
 
-  // Natural brief breath pause (2.85s - 3.05s)
-  { start: 2.85, end: 3.05, fromFrame: 3, toFrame: 0 }, // Pause
+  // Natural brief breath pause (2.75s - 2.95s)
+  { start: 2.75, end: 2.95, fromFrame: 3, toFrame: 0 }, // Pause
 
-  // "Hover to reveal!" (3.05s - 3.65s)
-  { start: 3.05, end: 3.25, fromFrame: 0, toFrame: 1 }, // "Ho-" (Open Ah)
-  { start: 3.25, end: 3.45, fromFrame: 1, toFrame: 2 }, // "to" (Round Oh)
-  { start: 3.45, end: 3.65, fromFrame: 2, toFrame: 5 }, // "reveal!" (Accent Smile)
+  // "Hover to reveal!" (2.95s - 4.75s)
+  { start: 2.95, end: 3.35, fromFrame: 0, toFrame: 1 }, // "Ho-" (Open Ah)
+  { start: 3.35, end: 3.75, fromFrame: 1, toFrame: 2 }, // "-ver" (Round Oh)
+  { start: 3.75, end: 4.10, fromFrame: 2, toFrame: 1 }, // "to" (Open Ah)
+  { start: 4.10, end: 4.55, fromFrame: 1, toFrame: 5 }, // "re-veal!" (Accent Smile)
+  { start: 4.55, end: 4.75, fromFrame: 5, toFrame: 0 }, // Settle into warm smile/rest
 ];
 
 function getMouthBlend(t) {
-  if (t <= 0 || t >= 3.65) return { fromFrame: 0, toFrame: 0, weight: 0 };
+  if (t <= 0 || t >= 4.75) return { fromFrame: 0, toFrame: 0, weight: 0 };
 
   for (const seg of PHONEME_SCHEDULE) {
     if (t >= seg.start && t < seg.end) {
@@ -284,7 +286,7 @@ export default function HeroSection() {
     handleResize();
     window.addEventListener('resize', handleResize);
 
-    const SPEECH_DURATION = 3.65;
+    const SPEECH_DURATION = 4.75;
 
     const renderLoop = (timestamp) => {
       timeRef.current += 0.04;
@@ -296,7 +298,8 @@ export default function HeroSection() {
       const elapsedSpeechSec = (timestamp - speechStartTimeRef.current) / 1000;
       speechTimeRef.current = elapsedSpeechSec;
 
-      if (elapsedSpeechSec >= SPEECH_DURATION && !revealUnlockedRef.current) {
+      const isAudioActive = audioRef.current && !audioRef.current.ended && !audioRef.current.paused;
+      if ((elapsedSpeechSec >= SPEECH_DURATION || (audioRef.current && audioRef.current.ended)) && !revealUnlockedRef.current) {
         revealUnlockedRef.current = true;
         dispatch({ type: 'UNLOCK_REVEAL' });
       }
@@ -310,7 +313,7 @@ export default function HeroSection() {
 
       // 1. Draw top human student layer
       // During speech, perform silky-smooth continuous alpha-blended morphing between visemes
-      const isTalking = elapsedSpeechSec < SPEECH_DURATION;
+      const isTalking = (isAudioActive || elapsedSpeechSec < SPEECH_DURATION) && elapsedSpeechSec < 5.0;
       if (isTalking && spriteSheetRef.current) {
         const { fromFrame, toFrame, weight } = getMouthBlend(elapsedSpeechSec);
         const frameW = 448;
@@ -654,19 +657,16 @@ export default function HeroSection() {
               color: '#38BDF8',
               fontSize: 12.5,
               fontWeight: 700,
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.25)',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              boxShadow: 'none',
+              transform: 'none',
+              transition: 'none',
+              cursor: 'pointer'
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.borderColor = '#38BDF8';
-              e.currentTarget.style.boxShadow = '0 14px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.4)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.45)';
-              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.25)';
             }}
           >
             <span style={{ fontSize: 15 }}>🪐</span>
@@ -710,7 +710,7 @@ export default function HeroSection() {
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,
-                  transition: 'all 0.15s'
+                  transition: 'none'
                 }}
                 onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
@@ -806,8 +806,8 @@ export default function HeroSection() {
                   fontSize: 11.5,
                   fontWeight: 700,
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 4px 14px rgba(56, 189, 248, 0.35)'
+                  transition: 'none',
+                  boxShadow: 'none'
                 }}
               >
                 {copiedToast ? '✓ Copied!' : '📋 Copy Values'}
@@ -824,7 +824,8 @@ export default function HeroSection() {
                   fontSize: 11.5,
                   fontWeight: 600,
                   cursor: 'pointer',
-                  transition: 'all 0.15s'
+                  transition: 'none',
+                  boxShadow: 'none'
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}

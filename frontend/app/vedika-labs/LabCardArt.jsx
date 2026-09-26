@@ -232,7 +232,17 @@ export const MathLabArt = memo(function MathLabArt() {
           <circle cx="11" cy="23" r="1.4" fill="#C084FC" />
         </g>
 
-        {/* 3. 3D WIREFRAME TETRAHEDRON PYRAMID (Bottom-Left Flank, Zero Overlap) */}
+        {/* 3. 3D CALCULUS INTEGRAL SYMBOL (Upper Right Flank) */}
+        <g className="live-math-integral-3d" filter="url(#purplePedestalGlow)">
+          <path
+            d="M 13 4 C 9 4 7 6 7 9 C 7 12 9 14 9 17 L 9 26 C 9 29 7 31 7 34 C 7 37 9 39 13 39 C 15 39 16 38 16 36 C 16 34 14 33 13 33 C 12 33 11 31 11 29 L 11 14 C 11 12 13 10 13 7 C 13 5 12 4 10 4 Z"
+            fill="url(#piMetal3D)"
+            stroke="#FFFFFF"
+            strokeWidth="0.7"
+          />
+        </g>
+
+        {/* 4. 3D WIREFRAME TETRAHEDRON PYRAMID (Bottom-Left Flank, Zero Overlap) */}
         <g className="live-math-tetra-3d" transform="translate(18, 134)">
           <polygon points="10,0 20,16 0,16" fill="rgba(168, 85, 247, 0.25)" stroke="#C084FC" strokeWidth="0.9" />
           <polygon points="10,0 10,16 0,16" fill="rgba(233, 213, 255, 0.35)" stroke="#FFFFFF" strokeWidth="0.8" />
@@ -240,6 +250,30 @@ export const MathLabArt = memo(function MathLabArt() {
           <circle cx="10" cy="0" r="1.6" fill="#FFFFFF" />
           <circle cx="20" cy="16" r="1.3" fill="#C084FC" />
           <circle cx="0" cy="16" r="1.3" fill="#C084FC" />
+        </g>
+
+        {/* 5. 3D METALLIC INFINITY LOOP (Bottom-Right Flank) */}
+        <g className="live-math-infinity-3d" filter="url(#purplePedestalGlow)">
+          <path
+            d="M 7 10 C 3 6, 3 14, 7 10 C 11 6, 15 6, 19 10 C 23 14, 23 6, 19 10 C 15 14, 11 14, 7 10 Z"
+            fill="none"
+            stroke="url(#piMetal3D)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <circle cx="7" cy="10" r="1.3" fill="#FFFFFF" />
+          <circle cx="19" cy="10" r="1.3" fill="#FFFFFF" />
+        </g>
+
+        {/* 6. GOLDEN RATIO LOGARITHMIC SPIRAL */}
+        <g className="live-math-spiral">
+          <path
+            d="M 87.5 98 C 87.5 92, 93 88, 96 88 C 102 88, 106 94, 106 98 C 106 106, 96 112, 87.5 112 C 74 112, 68 100, 68 88 C 68 70, 84 62, 98 62"
+            fill="none"
+            stroke="rgba(233, 213, 255, 0.55)"
+            strokeWidth="1.2"
+            strokeDasharray="4 3"
+          />
         </g>
 
         {/* GRAND 3D HOLOGRAPHIC OCTAHEDRON (Option 9 Central Focal Subject) */}
@@ -363,6 +397,25 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
             <stop offset="100%" stopColor="#0369A1" />
           </radialGradient>
 
+          {/* Saturnian Ring Gradients */}
+          <linearGradient id="saturnRingGradBack" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(0, 212, 255, 0.25)" />
+            <stop offset="50%" stopColor="rgba(56, 189, 248, 0.55)" />
+            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.25)" />
+          </linearGradient>
+
+          <linearGradient id="saturnRingGradFront" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(186, 230, 253, 0.85)" />
+            <stop offset="40%" stopColor="rgba(0, 212, 255, 0.95)" />
+            <stop offset="75%" stopColor="rgba(56, 189, 248, 0.85)" />
+            <stop offset="100%" stopColor="rgba(2, 132, 199, 0.7)" />
+          </linearGradient>
+
+          {/* Spherical Clip Path for True 3D Rotating Atmosphere Surface */}
+          <clipPath id="physPlanetClip">
+            <circle cx="0" cy="0" r="26" />
+          </clipPath>
+
           <filter id="cyanPedestalGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#00D4FF" floodOpacity="0.9" />
           </filter>
@@ -404,17 +457,6 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
             strokeWidth="1.2"
             strokeDasharray="5 4"
           />
-          {/* Ring 3 (Steep Tilted +75 deg) */}
-          <ellipse
-            cx="0"
-            cy="0"
-            rx="46"
-            ry="15"
-            transform="rotate(75)"
-            fill="none"
-            stroke="rgba(0, 212, 255, 0.3)"
-            strokeWidth="1"
-          />
 
           {/* Rear Orbiting Satellite (Distant, Smaller, Behind Core) */}
           <g className="live-satellite-rear">
@@ -422,19 +464,53 @@ export const PhysicsLabArt = memo(function PhysicsLabArt() {
           </g>
         </g>
 
-        {/* CENTRAL 3D GLOWING PLANETARY CORE / ATOM (Option 9 Hero) */}
-        <g className="live-phys-core" transform="translate(87.5, 96)" filter="url(#physCoreGlow)">
-          <g className="live-phys-planet-spin">
-            {/* Atmospheric Glow Ring */}
-            <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="3" />
-            {/* Solid 3D Volumetric Core Sphere */}
-            <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
-            {/* Planetary Latitudinal Atmospheric Bands */}
-            <ellipse cx="0" cy="-6" rx="25" ry="7" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.1" strokeDasharray="6 3" />
-            <ellipse cx="0" cy="7" rx="24.5" ry="6.5" fill="none" stroke="rgba(56, 189, 248, 0.28)" strokeWidth="1.1" strokeDasharray="7 4" />
-            {/* Hot Specular Core Highlight */}
-            <ellipse cx="-8" cy="-8" rx="7" ry="5" fill="#FFFFFF" opacity="0.65" transform="rotate(-20 -8 -8)" />
-            <circle cx="-10" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
+        {/* CENTRAL 3D VOLUMETRIC ROTATING PLANET WITH SATURNIAN RINGS */}
+        <g className="live-phys-planet-group" filter="url(#physCoreGlow)">
+          {/* 1. Rear Saturnian Ring Arc (Behind the Planet Sphere) */}
+          <g transform="rotate(-6)">
+            <ellipse cx="0" cy="0" rx="58" ry="16" fill="none" stroke="url(#saturnRingGradBack)" strokeWidth="6" opacity="0.6" />
+            <ellipse cx="0" cy="0" rx="61" ry="17.2" fill="none" stroke="rgba(0, 212, 255, 0.45)" strokeWidth="1" strokeDasharray="4 3" />
+          </g>
+
+          {/* 2. Base 3D Sphere */}
+          <circle cx="0" cy="0" r="26" fill="url(#physSphereGrad)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="0.8" />
+
+          {/* 3. True 3D Rotating Atmosphere Surface (Clipped inside sphere) */}
+          <g clipPath="url(#physPlanetClip)">
+            {/* Seamless Horizontally Drifting Atmospheric Storm Bands */}
+            <g className="live-phys-planet-bands">
+              <path d="M -70 -16 C -35 -14, 0 -18, 35 -14 C 70 -18, 105 -14, 140 -18" fill="none" stroke="rgba(255, 255, 255, 0.38)" strokeWidth="3" />
+              <path d="M -70 -8 C -35 -6, 0 -10, 35 -6 C 70 -10, 105 -6, 140 -10" fill="none" stroke="rgba(186, 230, 253, 0.3)" strokeWidth="2.5" />
+              <path d="M -70 2 C -35 4, 0 0, 35 4 C 70 0, 105 4, 140 0" fill="none" stroke="rgba(14, 165, 233, 0.45)" strokeWidth="4" />
+              
+              {/* Azure Great Storm Vortex (Cycles seamlessly across planet globe) */}
+              <ellipse cx="14" cy="2" rx="7.5" ry="4" fill="rgba(2, 132, 199, 0.85)" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="0.8" />
+              <circle cx="15" cy="2" r="1.5" fill="#FFFFFF" />
+              <ellipse cx="84" cy="2" rx="7.5" ry="4" fill="rgba(2, 132, 199, 0.85)" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="0.8" />
+              <circle cx="85" cy="2" r="1.5" fill="#FFFFFF" />
+
+              <path d="M -70 12 C -35 14, 0 10, 35 14 C 70 10, 105 14, 140 10" fill="none" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="3" />
+            </g>
+
+            {/* 3D Directional Terminator / Shadow Mask */}
+            <path d="M 0 -26 A 26 26 0 0 1 26 0 A 26 26 0 0 1 0 26 C 14 26, 22 13, 22 0 C 22 -13, 14 -26, 0 -26 Z" fill="rgba(2, 6, 23, 0.72)" />
+            
+            {/* Ring Shadow cast across planet equator */}
+            <path d="M -26 -1 C -10 5, 10 3, 26 -3" stroke="rgba(2, 6, 23, 0.75)" strokeWidth="2.8" fill="none" />
+          </g>
+
+          {/* 4. Fixed Specular Light Highlight (Stays directional while planet spins) */}
+          <ellipse cx="-9" cy="-8" rx="7" ry="4.5" fill="#FFFFFF" opacity="0.75" transform="rotate(-20 -9 -8)" />
+          <circle cx="-11" cy="-10" r="2.2" fill="#FFFFFF" opacity="0.95" />
+
+          {/* 5. Atmospheric Rayleigh Scattering Glow Limb */}
+          <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(56, 189, 248, 0.7)" strokeWidth="1.6" />
+          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(0, 212, 255, 0.35)" strokeWidth="3" />
+
+          {/* 6. Front Saturnian Ring Arc (Cuts across front of the Planet Sphere) */}
+          <g transform="rotate(-6)">
+            <path d="M -58 0 C -40 24, 40 24, 58 0" fill="none" stroke="url(#saturnRingGradFront)" strokeWidth="6" opacity="0.95" />
+            <path d="M -52 1 C -36 21, 36 21, 52 1" fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.85" />
           </g>
         </g>
 

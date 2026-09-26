@@ -184,33 +184,21 @@ export default function Header() {
               </defs>
             </svg>
           </div>
-          <div className={styles.brandTexts}>
-            <span className={styles.brandTitle}>VEDIKA</span>
-            <span className={styles.brandSubtitle}>AI TUTOR</span>
+          <div className={isAskVedika ? styles.brandTextsOneLine : styles.brandTexts}>
+            {isAskVedika ? (
+              <span className={styles.brandTitleOneLine}>VEDIKA AI</span>
+            ) : (
+              <>
+                <span className={styles.brandTitle}>VEDIKA</span>
+                <span className={styles.brandSubtitle}>AI TUTOR</span>
+              </>
+            )}
           </div>
         </button>
 
         {/* Center Desktop Navigation Links */}
         <nav className={styles.navMenu} aria-label="Main navigation">
-          {/* 1. Home */}
-          <button
-            type="button"
-            className={`${styles.navLink} ${pathname === '/' ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/')}
-          >
-            <span>Home</span>
-          </button>
-
-          {/* 2. Dashboard */}
-          <button
-            type="button"
-            className={`${styles.navLink} ${pathname === '/prev-home-page' ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/prev-home-page')}
-          >
-            <span>Dashboard</span>
-          </button>
-
-          {/* 3. Courses (with Submenu) */}
+          {/* Courses (with Submenu) */}
           <div
             className={styles.navItemWrapper}
             onMouseEnter={handleCoursesMouseEnter}
@@ -379,25 +367,11 @@ export default function Header() {
 
               {profileDropdownOpen && (
                 <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto', transform: 'none', width: 220 }}>
-                  <div style={{ padding: '6px 10px 4px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
-                      {user?.name || user?.full_name || 'Student'}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                  <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ fontSize: 11.5, color: '#94A3B8', fontWeight: 500, wordBreak: 'break-all' }}>
                       {user?.email || 'student@vedika.ai'}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setProfileDropdownOpen(false);
-                      router.push('/prev-home-page');
-                    }}
-                  >
-                    <LayoutDashboard size={15} color="#38bdf8" />
-                    <span className={styles.dropdownItemLabel}>Dashboard</span>
-                  </button>
                   <button
                     type="button"
                     className={styles.dropdownItem}
@@ -447,22 +421,6 @@ export default function Header() {
 
   const mobileDrawerContent = mobileMenuOpen && (
     <div className={styles.mobileDrawer}>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname === '/' ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/'); }}
-      >
-        <span>Home</span>
-        <HomeIcon size={16} />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname === '/prev-home-page' ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/prev-home-page'); }}
-      >
-        <span>Dashboard</span>
-        <LayoutDashboard size={16} />
-      </button>
       <button
         type="button"
         className={`${styles.mobileNavLink} ${pathname.startsWith('/courses') ? styles.mobileNavActive : ''}`}
