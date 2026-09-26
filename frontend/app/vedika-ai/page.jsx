@@ -276,6 +276,10 @@ export default function VedikaAIHub() {
                   {isActive ? (
                     <div className="vedika-ai-card-expanded-content">
                       <div className="vedika-ai-card-top-row">
+                        <div className="vedika-ai-badge">
+                          <Icon size={13} style={{ color: card.accent }} />
+                          <span>{card.badge}</span>
+                        </div>
                         <span className="vedika-ai-card-index-indicator">0{idx + 1} / 0{cards.length}</span>
                       </div>
 

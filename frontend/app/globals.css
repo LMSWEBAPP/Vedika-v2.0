@@ -176,11 +176,7 @@ button:focus-visible,
 .btn,
 .btn:hover,
 .btn:active,
-.btn:focus,
-[role="button"],
-[role="button"]:hover,
-[role="button"]:active,
-[role="button"]:focus {
+.btn:focus {
   transition: none !important;
   box-shadow: none !important;
   filter: none !important;
@@ -198,10 +194,7 @@ button:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
 [type="submit"]:active,
 .btn:not(.carousel-nav-arrow):not(.showcase-nav-btn),
 .btn:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
-.btn:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
-[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn),
-[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):hover,
-[role="button"]:not(.carousel-nav-arrow):not(.showcase-nav-btn):active {
+.btn:not(.carousel-nav-arrow):not(.showcase-nav-btn):active {
   transform: none !important;
 }
 
