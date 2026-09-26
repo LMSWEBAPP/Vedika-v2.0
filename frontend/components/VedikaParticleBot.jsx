@@ -125,7 +125,8 @@ export default function VedikaParticleBot({
   className = '',
   inline = false,
   themeRgb = null,
-  intensity = 1.0
+  intensity = 1.0,
+  particleStep = null
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -226,9 +227,12 @@ export default function VedikaParticleBot({
     function sampleFromImage(sourceImg) {
       updateCanvasSize();
       const isMobile = window.innerWidth < 768;
+      const step = particleStep !== null && particleStep !== undefined
+        ? particleStep
+        : (colorMode === 'golden' ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v7`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -293,7 +297,6 @@ export default function VedikaParticleBot({
 
       const scaleX = targetWidth / sampleW;
       const scaleY = targetHeight / sampleH;
-      const step = isMobile ? 4 : 3;
       const targets = [];
       const sizeFactor = inline ? 0.96 : 1.0;
       const currentInt = intensityRef.current || 1.0;
@@ -319,7 +322,39 @@ export default function VedikaParticleBot({
           let pSize;
           let baseR, baseG, baseB, baseAlpha;
 
-          if (colorMode === 'vibrant') {
+          if (colorMode === 'golden') {
+            const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+
+            if ((luminance > 170 && saturation < 0.28) || luminance > 215) {
+              // Crisp pure white (MCQ paper sheet, robot helmet highlights, sparkles, page edges)
+              baseR = 255;
+              baseG = 255;
+              baseB = 255;
+              baseAlpha = Math.min(1, Math.max(0.96, alphaNorm * 0.99));
+              pSize = (1.25 + Math.random() * 0.25) * sizeFactor;
+            } else if (saturation > 0.16 || maxC > 140) {
+              // Radiant amber gold (MCQ questions '?', option circles A/B/C/D, pencil, glowing eyes, smile)
+              baseR = 251;
+              baseG = 191;
+              baseB = 36;
+              baseAlpha = Math.min(1, Math.max(0.95, alphaNorm * 0.99));
+              pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
+            } else if (luminance > 65) {
+              // Warm rich gold midtone (Robot body, arm holding paper, book covers)
+              baseR = 228;
+              baseG = 152;
+              baseB = 22;
+              baseAlpha = Math.min(0.94, Math.max(0.82, alphaNorm * 0.92));
+              pSize = (1.15 + Math.random() * 0.20) * sizeFactor;
+            } else {
+              // Deep bronze gold (Contours, creases, book shadows)
+              baseR = 185;
+              baseG = 110;
+              baseB = 12;
+              baseAlpha = Math.min(0.80, Math.max(0.60, alphaNorm * 0.78));
+              pSize = (1.00 + Math.random() * 0.18) * sizeFactor;
+            }
+          } else if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
             if (saturation > 0.14 && maxC > 40) {
@@ -836,7 +871,11 @@ export default function VedikaParticleBot({
       }
     };
 
-    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}`;
+    const isMobile = window.innerWidth < 768;
+    const step = particleStep !== null && particleStep !== undefined
+      ? particleStep
+      : (colorMode === 'golden' ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
+    const cacheKey = `${src}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v8`;
     if (TARGET_CACHE.has(cacheKey)) {
       onImageReady();
     } else {
@@ -964,7 +1003,7 @@ export default function VedikaParticleBot({
       window.removeEventListener('click', handleClick);
       window.removeEventListener('resize', handleResize);
     };
-  }, [width, height, colorMode]);
+  }, [width, height, colorMode, particleStep]);
 
   return (
     <div

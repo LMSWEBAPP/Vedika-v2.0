@@ -427,82 +427,6 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           overflow: hidden;
         }
 
-        /* Multi-layered Shimmer Glow Aura behind Quiz Bot */
-        .quiz-bot-glow-bg {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 480px;
-          height: 480px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(245, 158, 11, 0.32) 0%,
-            rgba(217, 119, 6, 0.12) 42%,
-            transparent 72%
-          );
-          filter: blur(44px);
-          pointer-events: none;
-          z-index: 0;
-          animation: quizShimmerPulse 4.5s ease-in-out infinite;
-        }
-
-        .quiz-bot-glow-radial {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 340px;
-          height: 340px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(251, 191, 36, 0.35) 0%,
-            rgba(245, 158, 11, 0.1) 50%,
-            transparent 75%
-          );
-          filter: blur(28px);
-          pointer-events: none;
-          z-index: 0;
-          animation: quizShimmerRotate 10s linear infinite;
-        }
-
-        .quiz-bot-glow-pulse {
-          position: absolute;
-          top: 48%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 220px;
-          height: 220px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.25) 0%,
-            rgba(245, 158, 11, 0.28) 45%,
-            transparent 70%
-          );
-          filter: blur(18px);
-          pointer-events: none;
-          z-index: 0;
-          animation: quizShimmerPulse 3.2s ease-in-out infinite alternate;
-        }
-
-        @keyframes quizShimmerPulse {
-          0%, 100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.75;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.12);
-            opacity: 0.98;
-          }
-        }
-
-        @keyframes quizShimmerRotate {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
 
         /* Seamless Cosmic Purple Ambient Background */
         .assignments-ambient-bg {
@@ -1203,12 +1127,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         {/* BOX 1 SIDE: SMALLER PANEL - QUIZ BOT PARTICLE ANIMATION        */}
         {/* ============================================================== */}
         <div className="box1-side">
-          {/* Multi-layered Shimmer Glow Aura behind Quiz Bot (Golden Theme) */}
-          <div className="quiz-bot-glow-bg" />
-          <div className="quiz-bot-glow-radial" />
-          <div className="quiz-bot-glow-pulse" />
-
-          {/* Interactive Particle Bot Canvas */}
+          {/* Interactive Particle Bot Canvas (Golden & White Particles, No Obscuring Glow) */}
           <div style={{
             position: 'relative',
             width: '100%',
@@ -1220,12 +1139,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-quiz.png?v=7"
-              colorMode="vibrant"
+              src="/vedika-bot-quiz.png?v=9"
+              colorMode="golden"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}
               inline={true}
-              intensity={0.82}
+              particleStep={isMobile ? 3 : 2}
             />
           </div>
 
