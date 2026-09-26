@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Home, BookOpen, Brain, Code2, BarChart3, Zap, ArrowLeft, Mic, MicOff, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Home, BookOpen, Brain, Code2, BarChart3, Zap, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Trash2, RotateCcw } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import dynamic from 'next/dynamic';
 import VoiceChatMessages from './VoiceChatMessages';
+import UnifiedSidebar from './UnifiedSidebar';
 
 const VoiceRobotVisualizer = dynamic(() => import('./VoiceRobotVisualizer'), {
   ssr: false,
@@ -26,7 +27,8 @@ const VoiceRobotVisualizer = dynamic(() => import('./VoiceRobotVisualizer'), {
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 
-const SESSIONS_KEY = 'general-tutor-sessions';
+const SESSIONS_KEY = 'voice-tutor-sessions';
+const TEXT_SESSIONS_KEY = 'general-tutor-sessions';
 
 function loadSessions() {
   if (typeof window === 'undefined') return [];
@@ -39,7 +41,7 @@ function loadSessions() {
         ...m,
         sender: m.sender || (m.role === 'ai' ? 'tutor' : 'student'),
         text: m.text || m.content || '',
-        timestamp: new Date(m.timestamp)
+        timestamp: new Date(m.timestamp || Date.now())
       })),
     }));
   } catch { return []; }
@@ -56,58 +58,11 @@ function generateLabel(messages, subject) {
   return subjects[subject] || 'Voice Session';
 }
 
-function analyzeSentiment(text) {
-  if (!text) return { label: 'Calm / Conversational', score: 0.0, emoji: '😐' };
-  const lowercase = text.toLowerCase();
-  const confusedWords = [
-    "don't understand", "do not understand", "dont understand", "not sure", "confused",
-    "cannot get", "cant get", "difficult", "hard", "stuck", "doubt", "explain again",
-    "unclear", "lost", "struggling", "help", "confusing", "అర్థం కాలేదు", "కష్టంగా ఉంది",
-    "సందేహం", "తెలియదు", "మళ్ళీ చెప్పండి", "కన్ఫ్యూజ్", "ardham raledu", "artham kaledu",
-    "kashtanga undi", "malli cheppandi", "samajh nahi", "mushkil", "kathin", "shanka"
-  ];
-  const positiveWords = [
-    "understand", "got it", "easy", "awesome", "perfect", "clear", "great", "wow",
-    "fantastic", "amazing", "makes sense", "thank you", "thanks", "excellent", "brilliant",
-    "అర్థమైంది", "సులభంగా ఉంది", "చాలా బాగుంది", "థాంక్స్", "సూపర్", "అవును", "ardhamaindi",
-    "sulabhanga undi", "chala bagundi", "samajh gaya", "samajh gya", "aasan", "saral", "badhiya"
-  ];
-  const curiousWords = [
-    "what is", "how do", "tell me about", "why is", "curious", "interested", "learn", "know",
-    "question", "ఏమిటి", "ఎలా", "ఎందుకు", "తెలుసుకోవాలి", "emiti", "ela", "enduku", "telusukovali"
-  ];
-  let confusedCount = 0, positiveCount = 0, curiousCount = 0;
-  for (const w of confusedWords) { if (lowercase.includes(w)) confusedCount++; }
-  for (const w of positiveWords) { if (lowercase.includes(w)) positiveCount++; }
-  for (const w of curiousWords) { if (lowercase.includes(w)) curiousCount++; }
-  if (confusedCount > positiveCount && confusedCount >= curiousCount)
-    return { label: 'Struggling / Confused', score: -0.6, emoji: '😟' };
-  if (positiveCount > confusedCount && positiveCount >= curiousCount)
-    return { label: 'Happy / Confident', score: 0.8, emoji: '😊' };
-  if (curiousCount > confusedCount && curiousCount > positiveCount)
-    return { label: 'Curious / Inquisitive', score: 0.4, emoji: '🤔' };
-  return { label: 'Calm / Conversational', score: 0.0, emoji: '😐' };
-}
-
-function cleanSpokenText(raw) {
-  if (!raw) return '';
-  return raw
-    .replace(/```[\s\S]*?```/g, 'Here is a code demonstration.')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/^#+\s+/gm, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 const LANGUAGES = [
-  { id: 'all', name: 'Auto-Detect', flag: '🌍', speechLang: 'en-US' },
-  { id: 'english', name: 'English', flag: '🇺🇸', speechLang: 'en-US' },
-  { id: 'telugu', name: 'Telugu', flag: '🇮🇳', speechLang: 'te-IN' },
-  { id: 'hindi', name: 'Hindi', flag: '🇮🇳', speechLang: 'hi-IN' },
+  { id: 'all', name: 'Auto-Detect', flag: '🌍' },
+  { id: 'english', name: 'English', flag: '🇺🇸' },
+  { id: 'telugu', name: 'Telugu', flag: '🇮🇳' },
+  { id: 'hindi', name: 'Hindi', flag: '🇮🇳' },
 ];
 
 const SUBJECTS = [
@@ -126,18 +81,42 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
   const [currentSentiment, setCurrentSentiment] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [sessions, setSessions] = useState(loadSessions);
-  const [engineMode, setEngineMode] = useState('browser-voice'); // 'live-ws' | 'browser-voice'
+  const [textSessions, setTextSessions] = useState([]);
 
   const [localUserId] = useState(() => {
     if (typeof window === 'undefined') return '';
     let id = localStorage.getItem('lms-user-id');
-    if (!id) { id = 'user-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); localStorage.setItem('lms-user-id', id); }
+    if (!id) {
+      id = 'user-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      localStorage.setItem('lms-user-id', id);
+    }
     return id;
   });
 
   const activeUserId = userId || localUserId;
 
-  // Refs for audio, speech, and WebSocket
+  // Load text sessions for unified history
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TEXT_SESSIONS_KEY);
+      if (raw) setTextSessions(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  // Merge both session types
+  const mergedSessions = useMemo(() => {
+    const voice = (sessions || []).map(s => ({ ...s, type: 'voice' }));
+    const text = (textSessions || []).map(s => ({ ...s, type: 'text' }));
+    const all = [...text, ...voice];
+    all.sort((a, b) => {
+      const ta = new Date(a.timestamp || a.startedAt || 0).getTime();
+      const tb = new Date(b.timestamp || b.startedAt || 0).getTime();
+      return tb - ta;
+    });
+    return all;
+  }, [sessions, textSessions]);
+
+  // Audio and WebSocket Refs (Full-Duplex Gemini Multimodal Live Streaming)
   const wsRef = useRef(null);
   const audioCtxRef = useRef(null);
   const processorRef = useRef(null);
@@ -146,17 +125,14 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
   const nextPlayTimeRef = useRef(0);
   const audioSourcesQueueRef = useRef([]);
   const isMutedRef = useRef(false);
+  const wsHadErrorRef = useRef(false);
   const voiceSessionIdRef = useRef(null);
   const conversationRef = useRef([]);
-  const recognitionRef = useRef(null);
-  const silenceTimerRef = useRef(null);
-  const isSpeakingTutorRef = useRef(false);
-  const isProcessingQueryRef = useRef(false);
 
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
   useEffect(() => { conversationRef.current = conversation; }, [conversation]);
 
-  // Restore initial session passed from parent
+  // Restore initial session passed from parent (e.g. clicking a voice session from history)
   useEffect(() => {
     if (initialSession && initialSession.messages) {
       setConversation(initialSession.messages.map((m) => ({
@@ -168,30 +144,27 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       setCurrentSentiment(null);
       if (initialSession.subject) setSelectedSubject(initialSession.subject);
       if (initialSession.language) setSelectedLanguage(initialSession.language);
-      setStatusMessage(`Viewing: ${initialSession.label}`);
+      setStatusMessage(`Viewing: ${initialSession.label || 'Saved Session'}`);
     }
   }, [initialSession]);
 
+  // Immediate audio playback cancellation (for interruption / barge-in)
   const stopAllAudioPlaybacks = useCallback(() => {
-    // 1. Stop Web Audio PCM sources
-    audioSourcesQueueRef.current.forEach((source) => { try { source.stop(); } catch {} });
+    audioSourcesQueueRef.current.forEach((source) => {
+      try { source.stop(); } catch {}
+    });
     audioSourcesQueueRef.current = [];
     nextPlayTimeRef.current = 0;
-
-    // 2. Stop Browser SpeechSynthesis
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch {}
-    }
-    isSpeakingTutorRef.current = false;
   }, []);
 
+  // Save current conversation session to local storage and remote memory
   const saveCurrentSession = useCallback(() => {
-    const msgs = conversationRef.current;
-    if (msgs.length === 0) return;
+    const currentMsgs = conversationRef.current;
+    if (currentMsgs.length === 0) return;
     const sid = sessionId || voiceSessionIdRef.current || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
     if (!voiceSessionIdRef.current) voiceSessionIdRef.current = sid;
 
-    const normalizedMessages = msgs.map(m => ({
+    const normalizedMessages = currentMsgs.map(m => ({
       id: m.id || Date.now().toString(36),
       role: m.sender === 'tutor' || m.role === 'ai' ? 'ai' : 'user',
       content: m.text || m.content || '',
@@ -201,7 +174,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
     const session = {
       id: sid,
-      label: generateLabel(msgs, selectedSubject),
+      label: generateLabel(currentMsgs, selectedSubject),
       subject: selectedSubject,
       language: selectedLanguage,
       timestamp: new Date().toISOString(),
@@ -209,26 +182,30 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       type: 'voice'
     };
 
-    const updated = [session, ...sessions.filter((s) => s.id !== session.id)];
-    setSessions(updated);
-    saveSessions(updated);
+    setSessions(prev => {
+      const updated = [session, ...prev.filter((s) => s.id !== session.id)];
+      saveSessions(updated);
+      return updated;
+    });
 
+    // Notify parent callback so chat state updates
     if (onSessionComplete) {
-      onSessionComplete(msgs);
+      onSessionComplete(currentMsgs);
     }
 
+    // Dispatch update event to sidebar / listeners
     try {
       const event = new CustomEvent('tutor-state-update', {
         detail: {
           currentSessionId: sid,
-          textSessions: updated,
-          type: 'general-tutor'
+          voiceSessions: [session],
+          type: 'voice'
         }
       });
       window.dispatchEvent(event);
     } catch (e) {}
 
-    // Persist to memory API
+    // Persist to Redis memory asynchronously
     fetch('/api/memory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -239,17 +216,10 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
         messages: normalizedMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
       }),
     }).catch(() => {});
-  }, [selectedSubject, selectedLanguage, sessions, activeUserId, sessionId, onSessionComplete]);
+  }, [selectedSubject, selectedLanguage, activeUserId, sessionId, onSessionComplete]);
 
+  // Clean termination of all Web Audio, media streams, and WebSocket handles
   const terminateSession = useCallback((preserveMessage) => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
-      recognitionRef.current = null;
-    }
     if (wsRef.current) {
       try { wsRef.current.close(); } catch {}
       wsRef.current = null;
@@ -271,338 +241,148 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       micStreamRef.current.getTracks().forEach((t) => t.stop());
       micStreamRef.current = null;
     }
-    isProcessingQueryRef.current = false;
     setConnectionStatus('disconnected');
     if (!preserveMessage) {
-      setStatusMessage('Session completed. Tap the mic button to start speaking again!');
+      setStatusMessage('Lesson completed. Press the mic button to start again!');
     }
   }, [stopAllAudioPlaybacks]);
 
   useEffect(() => {
-    return () => terminateSession();
+    return () => terminateSession(true);
   }, [terminateSession]);
 
-  const speakWithBrowserTts = useCallback((text, langCode, onComplete) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis || isMutedRef.current) {
-      if (onComplete) onComplete();
-      return;
-    }
+  const handleSelectSession = useCallback((session) => {
+    if (connectionStatus !== 'disconnected') return;
+    setConversation(session.messages || []);
+    setCurrentSentiment(null);
+    if (session.subject) setSelectedSubject(session.subject);
+    if (session.language) setSelectedLanguage(session.language);
+    setStatusMessage(`Viewing: ${session.label || 'Saved Session'}`);
+  }, [connectionStatus]);
+
+  // Gapless 24kHz PCM Web Audio playback scheduled via nextPlayTimeRef
+  const playPcmAudioChunk = useCallback((base64Data) => {
+    if (isMutedRef.current || !audioCtxRef.current) return;
     try {
-      window.speechSynthesis.cancel();
-      const clean = cleanSpokenText(text);
-      if (!clean) {
-        if (onComplete) onComplete();
-        return;
+      const audioCtx = audioCtxRef.current;
+      const binaryString = atob(base64Data);
+      const buffer = new ArrayBuffer(binaryString.length);
+      const view = new Uint8Array(buffer);
+      for (let i = 0; i < binaryString.length; i++) {
+        view[i] = binaryString.charCodeAt(i);
+      }
+      const int16Samples = new Int16Array(buffer);
+      const audioBuffer = audioCtx.createBuffer(1, int16Samples.length, 24000);
+      const channelData = audioBuffer.getChannelData(0);
+      for (let i = 0; i < int16Samples.length; i++) {
+        channelData[i] = int16Samples[i] / 32768.0;
       }
 
-      const utterance = new SpeechSynthesisUtterance(clean);
-      const voices = window.speechSynthesis.getVoices() || [];
+      const bufferSource = audioCtx.createBufferSource();
+      bufferSource.buffer = audioBuffer;
+      bufferSource.connect(audioCtx.destination);
+      audioSourcesQueueRef.current.push(bufferSource);
 
-      // Determine matching voice
-      let chosenVoice = null;
-      if (langCode === 'telugu') {
-        chosenVoice = voices.find(v => v.lang.startsWith('te') || v.lang.includes('IN'));
-      } else if (langCode === 'hindi') {
-        chosenVoice = voices.find(v => v.lang.startsWith('hi') || v.lang.includes('IN'));
-      } else {
-        chosenVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('India') || v.name.includes('US')));
+      bufferSource.onended = () => {
+        audioSourcesQueueRef.current = audioSourcesQueueRef.current.filter((src) => src !== bufferSource);
+        if (audioSourcesQueueRef.current.length === 0) {
+          setConnectionStatus('connected');
+          setStatusMessage('Tutor is listening... Feel free to talk.');
+        }
+      };
+
+      const now = audioCtx.currentTime;
+      if (nextPlayTimeRef.current < now) {
+        nextPlayTimeRef.current = now + 0.05;
       }
-      if (!chosenVoice && voices.length > 0) {
-        chosenVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-      }
-      if (chosenVoice) utterance.voice = chosenVoice;
-
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
-
-      utterance.onstart = () => {
-        isSpeakingTutorRef.current = true;
-        setConnectionStatus('tutor-speaking');
-        setStatusMessage('Tutor is speaking...');
-      };
-
-      utterance.onend = () => {
-        isSpeakingTutorRef.current = false;
-        setConnectionStatus('connected');
-        setStatusMessage('Tutor is listening... Feel free to talk.');
-        if (onComplete) onComplete();
-      };
-
-      utterance.onerror = () => {
-        isSpeakingTutorRef.current = false;
-        setConnectionStatus('connected');
-        setStatusMessage('Tutor is listening... Feel free to talk.');
-        if (onComplete) onComplete();
-      };
-
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('[TTS] Synthesis error:', e);
-      if (onComplete) onComplete();
+      setConnectionStatus('tutor-speaking');
+      setStatusMessage('Tutor is speaking...');
+      bufferSource.start(nextPlayTimeRef.current);
+      nextPlayTimeRef.current += audioBuffer.duration;
+    } catch (err) {
+      console.error('[VoiceAgent] Audio playback error:', err);
     }
   }, []);
 
-  const buildSystemInstruction = useCallback(() => {
-    let instruction =
-      'You are Vedika, a friendly, patient, highly expert AI voice tutor for students. ' +
-      'Keep answers concise, conversational, and directly spoken (strictly 1 to 3 short sentences maximum) so that listening is effortless. ' +
-      'Do not include markdown tables, code fences, or lengthy lists unless explicitly requested. ';
-
-    if (selectedLanguage === 'telugu') {
-      instruction += 'You must respond in sweet, natural Telugu (with common English technical words if needed).';
-    } else if (selectedLanguage === 'hindi') {
-      instruction += 'You must respond in clear, friendly Hindi with a supportive tutoring tone.';
-    } else if (selectedLanguage === 'english') {
-      instruction += 'Speak in simple, engaging, encouraging English.';
-    } else {
-      instruction += 'Respond naturally in the language the student speaks to you (supporting English, Telugu, Hindi, or conversational blends).';
-    }
-
-    if (selectedSubject === 'math') {
-      instruction += ' Currently tutoring Mathematics! Explain concepts with intuitive real-world examples.';
-    } else if (selectedSubject === 'science') {
-      instruction += ' Currently tutoring Science! Share fascinating, curious facts and explain principles simply.';
-    } else if (selectedSubject === 'languages') {
-      instruction += ' Currently tutoring Languages & Communication! Encourage clear speaking and vocabulary.';
-    }
-
-    return instruction;
-  }, [selectedLanguage, selectedSubject]);
-
-  // Query AI Tutor via streaming HTTP API and speak back
-  const handleQueryTutor = useCallback(async (userText) => {
-    if (!userText || !userText.trim() || isProcessingQueryRef.current) return;
-    isProcessingQueryRef.current = true;
-
-    try {
-      setConnectionStatus('tutor-thinking');
-      setStatusMessage('Vedika is thinking...');
-
-      const tutorMsgId = 'msg-' + Date.now().toString(36);
-      const systemPrompt = buildSystemInstruction();
-      const currentHistory = conversationRef.current.slice(-6).map(m => ({
-        role: m.sender === 'student' ? 'user' : 'assistant',
-        content: m.text
-      }));
-
-      const res = await fetch('/api/gemini/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: systemPrompt,
-          user: userText,
-          maxOutputTokens: 250,
-          sessionId: voiceSessionIdRef.current || sessionId || 'voice-general',
-          userId: activeUserId
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullResponse += decoder.decode(value, { stream: true });
-        const currentText = fullResponse;
-
-        setConversation(prev => {
-          const idx = prev.findIndex(m => m.id === tutorMsgId);
-          if (idx !== -1) {
-            const next = [...prev];
-            next[idx] = { ...next[idx], text: currentText };
-            return next;
-          }
-          return [...prev, { id: tutorMsgId, sender: 'tutor', text: currentText, timestamp: new Date() }];
-        });
-      }
-
-      // Speak response aloud via SpeechSynthesis
-      speakWithBrowserTts(fullResponse, selectedLanguage, () => {
-        // Once speech finishes, resume listening
-        if (recognitionRef.current && connectionStatus !== 'disconnected') {
-          try { recognitionRef.current.start(); } catch {}
-        }
-      });
-    } catch (err) {
-      console.error('[VoiceQuery] Error:', err);
-      const fallbackMsg = "I'm here! Could you please ask that again?";
-      setConversation(prev => [...prev, { id: 'err-' + Date.now(), sender: 'tutor', text: fallbackMsg, timestamp: new Date() }]);
-      speakWithBrowserTts(fallbackMsg, selectedLanguage, () => {
-        if (recognitionRef.current) {
-          try { recognitionRef.current.start(); } catch {}
-        }
-      });
-    } finally {
-      isProcessingQueryRef.current = false;
-    }
-  }, [buildSystemInstruction, selectedLanguage, speakWithBrowserTts, activeUserId, sessionId, connectionStatus]);
-
-  // Start in-browser Web Speech Recognition
-  const startBrowserVoiceEngine = useCallback((stream) => {
-    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
-    if (!SpeechRecognition) {
-      setConnectionStatus('error');
-      setStatusMessage('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      const langConfig = LANGUAGES.find(l => l.id === selectedLanguage);
-      recognition.lang = langConfig?.speechLang || 'en-US';
-
-      let lastUserMsgId = null;
-      let finalTranscriptAccum = '';
-
-      recognition.onstart = () => {
-        setEngineMode('browser-voice');
-        setConnectionStatus('connected');
-        setStatusMessage('Tutor is ready! Ask your academic questions.');
-      };
-
-      recognition.onresult = (event) => {
-        if (isSpeakingTutorRef.current) {
-          // Student interrupted tutor: cancel tutor speech and listen to student!
-          stopAllAudioPlaybacks();
-        }
-
-        let interim = '';
-        let finalSpoken = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i];
-          const transcript = res[0]?.transcript || '';
-          if (res.isFinal) {
-            finalSpoken += transcript + ' ';
-          } else {
-            interim += transcript;
-          }
-        }
-
-        const displayText = (finalTranscriptAccum + finalSpoken + interim).trim();
-        if (displayText) {
-          setConnectionStatus('student-speaking');
-          setStatusMessage('Listening to you...');
-
-          if (!lastUserMsgId) {
-            lastUserMsgId = 'user-' + Date.now().toString(36);
-            setConversation(prev => [...prev, {
-              id: lastUserMsgId,
-              sender: 'student',
-              text: displayText,
-              timestamp: new Date(),
-              sentiment: analyzeSentiment(displayText)
-            }]);
-          } else {
-            setConversation(prev => {
-              const idx = prev.findIndex(m => m.id === lastUserMsgId);
-              if (idx !== -1) {
-                const next = [...prev];
-                next[idx] = { ...next[idx], text: displayText, sentiment: analyzeSentiment(displayText) };
-                return next;
-              }
-              return [...prev, { id: lastUserMsgId, sender: 'student', text: displayText, timestamp: new Date() }];
-            });
-          }
-        }
-
-        if (finalSpoken) {
-          finalTranscriptAccum += finalSpoken;
-        }
-
-        // Silence debounce: trigger query when student stops talking for 1.3 seconds
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = setTimeout(() => {
-          const queryText = displayText;
-          if (queryText && queryText.length > 1) {
-            finalTranscriptAccum = '';
-            lastUserMsgId = null;
-            try { recognition.stop(); } catch {}
-            handleQueryTutor(queryText);
-          }
-        }, 1300);
-      };
-
-      recognition.onerror = (e) => {
-        if (e.error === 'no-speech') return;
-        console.warn('[SpeechRecognition] warning:', e.error);
-      };
-
-      recognition.onend = () => {
-        // Auto-restart recognition if still connected and tutor isn't speaking
-        if (connectionStatus !== 'disconnected' && !isSpeakingTutorRef.current && !isProcessingQueryRef.current) {
-          try { recognition.start(); } catch {}
-        }
-      };
-
-      recognition.start();
-    } catch (err) {
-      console.error('[SpeechRecognition] startup failed:', err);
-      setConnectionStatus('error');
-      setStatusMessage(`Microphone startup error: ${err.message}`);
-    }
-  }, [selectedLanguage, stopAllAudioPlaybacks, handleQueryTutor, connectionStatus]);
-
-  // Main Toggle: Connect or Disconnect
+  // Main Toggle: Connect or Disconnect Live Gemini WebSocket Session
   const handleMicToggle = useCallback(async () => {
     if (connectionStatus === 'disconnected' || connectionStatus === 'error') {
       try {
         setConnectionStatus('connecting');
-        setStatusMessage('Requesting microphone access and initializing tutor...');
+        setStatusMessage('Requesting microphone access and initializing Gemini Live...');
         stopAllAudioPlaybacks();
 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
         micStreamRef.current = stream;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        audioCtxRef.current = audioCtx;
+        if (audioCtx.state === 'suspended') {
+          try { await audioCtx.resume(); } catch (e) {}
+        }
 
         const voiceSid = sessionId || voiceSessionIdRef.current || ('voice-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
         voiceSessionIdRef.current = voiceSid;
 
-        // Try Live WebSocket first with safe 2-second timeout
-        const wsHost = process.env.NEXT_PUBLIC_WS_URL || (
+        // Dual-Port Strategy: Try port 5001 first, fallback to current window host (port 3000)
+        const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
           typeof window !== 'undefined' && window.location.hostname === 'localhost'
-            ? `ws://localhost:5001`
+            ? 'ws://localhost:5001'
             : `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
         );
+        const fallbackWsHost = `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`;
 
-        let wsConnected = false;
-        try {
-          const wsUrl = `${wsHost}/api/ws?language=${selectedLanguage}&subject=${selectedSubject}&sessionId=${voiceSid}&userId=${activeUserId}`;
+        const connectToSocket = (targetHost, isFallbackAttempt = false) => {
+          const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
+          let wsUrl = `${targetHost}/api/ws?language=${encodeURIComponent(selectedLanguage)}&subject=${encodeURIComponent(selectedSubject)}&sessionId=${encodeURIComponent(voiceSid)}&userId=${encodeURIComponent(activeUserId)}`;
+          if (jwtToken) {
+            wsUrl += `&token=${encodeURIComponent(jwtToken)}`;
+          }
+
           const ws = new WebSocket(wsUrl);
           wsRef.current = ws;
 
-          const wsTimeout = setTimeout(() => {
-            if (!wsConnected && ws.readyState !== WebSocket.OPEN) {
+          // 5-second connection timeout
+          const connTimeout = setTimeout(() => {
+            if (ws.readyState !== WebSocket.OPEN) {
+              wsHadErrorRef.current = true;
               try { ws.close(); } catch {}
-              console.log('[VoiceTutor] WebSocket server offline or timed out. Transitioning to Intelligent Browser Voice Engine.');
-              startBrowserVoiceEngine(stream);
+
+              if (!isFallbackAttempt && targetHost !== fallbackWsHost) {
+                console.warn('[VoiceAgent] Primary port 5001 timed out. Trying fallback host on port 3000...');
+                connectToSocket(fallbackWsHost, true);
+                return;
+              }
+
+              setConnectionStatus('error');
+              setStatusMessage('Connection timed out. Make sure the voice server is running (npm run dev:voice).');
             }
-          }, 2000);
+          }, 5000);
 
           ws.onopen = () => {
-            wsConnected = true;
-            clearTimeout(wsTimeout);
-            setEngineMode('live-ws');
+            clearTimeout(connTimeout);
+            wsHadErrorRef.current = false;
             setConnectionStatus('connected');
             setStatusMessage('Tutor connected! Start speaking.');
 
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-            audioCtxRef.current = audioCtx;
+            // Establish 16kHz PCM audio streaming pipeline from microphone
             const source = audioCtx.createMediaStreamSource(stream);
             sourceRef.current = source;
             const processor = audioCtx.createScriptProcessor(4096, 1, 1);
             processorRef.current = processor;
+
+            // Route through zero-gain node to prevent local feedback/echo
+            const silentGain = audioCtx.createGain();
+            silentGain.gain.value = 0;
             source.connect(processor);
-            processor.connect(audioCtx.destination);
+            processor.connect(silentGain);
+            silentGain.connect(audioCtx.destination);
 
             processor.onaudioprocess = (e) => {
               if (ws.readyState !== WebSocket.OPEN || isMutedRef.current) return;
@@ -616,7 +396,9 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               }
               let binary = '';
               const bytes = new Uint8Array(pcmBuffer);
-              for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+              for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+              }
               ws.send(JSON.stringify({ type: 'audio', data: btoa(binary) }));
             };
           };
@@ -624,54 +406,89 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
           ws.onmessage = (event) => {
             try {
               const message = JSON.parse(event.data);
-              if (message.type === 'status') setStatusMessage(message.message);
-              else if (message.type === 'interrupted') {
+              if (message.type === 'status') {
+                setStatusMessage(message.message);
+              } else if (message.type === 'error') {
+                setStatusMessage(message.message);
+                setConnectionStatus('error');
+              } else if (message.type === 'audio' && message.data) {
+                // Play 24kHz PCM chunk received from Gemini Live
+                playPcmAudioChunk(message.data);
+              } else if (message.type === 'interrupted') {
+                // Immediate barge-in handling: cancel ongoing tutor speech
                 stopAllAudioPlaybacks();
                 setConnectionStatus('connected');
                 setStatusMessage('Tutor was interrupted. Listening now...');
               } else if (message.type === 'agent-transcription') {
-                setConversation(prev => {
+                setConversation((prev) => {
                   if (prev.length > 0 && prev[prev.length - 1].sender === 'tutor') {
                     const updated = [...prev];
-                    updated[updated.length - 1] = { ...updated[updated.length - 1], text: updated[updated.length - 1].text + ' ' + message.text };
+                    updated[updated.length - 1] = {
+                      ...updated[updated.length - 1],
+                      text: (updated[updated.length - 1].text ? updated[updated.length - 1].text + ' ' : '') + message.text
+                    };
                     return updated;
                   }
-                  return [...prev, { id: Math.random().toString(36).slice(2), sender: 'tutor', text: message.text, timestamp: new Date() }];
+                  return [
+                    ...prev,
+                    {
+                      id: Math.random().toString(36).slice(2),
+                      sender: 'tutor',
+                      text: message.text,
+                      timestamp: new Date()
+                    }
+                  ];
                 });
               } else if (message.type === 'user-transcription') {
-                setConversation(prev => [...prev, { id: Math.random().toString(36).slice(2), sender: 'student', text: message.text, timestamp: new Date(), sentiment: message.sentiment }]);
-                if (message.sentiment) setCurrentSentiment(message.sentiment);
+                setConversation((prev) => [
+                  ...prev,
+                  {
+                    id: Math.random().toString(36).slice(2),
+                    sender: 'student',
+                    text: message.text,
+                    timestamp: new Date(),
+                    sentiment: message.sentiment
+                  }
+                ]);
+                if (message.sentiment) {
+                  setCurrentSentiment(message.sentiment);
+                }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error('[VoiceAgent] WS parse error:', e);
+            }
           };
 
           ws.onerror = () => {
-            clearTimeout(wsTimeout);
-            if (!wsConnected) {
-              console.log('[VoiceTutor] Live WebSocket unavailable. Activating Intelligent Browser Voice Engine.');
-              startBrowserVoiceEngine(stream);
+            clearTimeout(connTimeout);
+            if (!isFallbackAttempt && targetHost !== fallbackWsHost) {
+              console.warn('[VoiceAgent] Primary port error. Falling back to port 3000...');
+              connectToSocket(fallbackWsHost, true);
+              return;
             }
+            wsHadErrorRef.current = true;
+            setConnectionStatus('error');
+            setStatusMessage('Connection failed. Verify the voice server is running (npm run dev:voice).');
           };
 
           ws.onclose = () => {
-            clearTimeout(wsTimeout);
-            if (!wsConnected) {
-              startBrowserVoiceEngine(stream);
+            clearTimeout(connTimeout);
+            if (!wsHadErrorRef.current && connectionStatus === 'connected') {
+              terminateSession(false);
             }
           };
-        } catch (wsErr) {
-          console.warn('[VoiceTutor] Live socket error, activating Browser Voice Engine:', wsErr);
-          startBrowserVoiceEngine(stream);
-        }
-      } catch (micErr) {
+        };
+
+        connectToSocket(primaryWsHost, false);
+      } catch (err) {
         setConnectionStatus('error');
-        setStatusMessage(`Microphone access denied: ${micErr.message || micErr}. Please allow microphone permissions.`);
+        setStatusMessage(`Microphone access denied: ${err.message || err}. Please permit microphone permissions.`);
       }
     } else {
       saveCurrentSession();
       terminateSession();
     }
-  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, startBrowserVoiceEngine, terminateSession, saveCurrentSession, sessionId, activeUserId]);
+  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, playPcmAudioChunk, terminateSession, saveCurrentSession, sessionId, activeUserId]);
 
   const clearTranscriptLog = useCallback(() => {
     setConversation([]);
@@ -680,6 +497,24 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
   const isActive = connectionStatus !== 'disconnected' && connectionStatus !== 'error';
   const isMobile = useMediaQuery(isMobileMQ);
+  const voiceZ = isMobile ? 1010 : 1000;
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSidebarCollapsed(localStorage.getItem('sidebar_collapsed') === 'true');
+      const handleStorageChange = () => {
+        setSidebarCollapsed(localStorage.getItem('sidebar_collapsed') === 'true');
+      };
+      window.addEventListener('storage', handleStorageChange);
+      const interval = setInterval(handleStorageChange, 300);
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
+  }, []);
 
   return (
     <div style={inline ? {
@@ -696,73 +531,132 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       position: 'fixed',
       top: 0,
       bottom: 0,
-      left: isMobile ? 0 : 220,
+      left: isMobile ? 0 : (sidebarCollapsed ? 70 : 220),
       right: 0,
-      zIndex: 1000,
+      zIndex: voiceZ,
       display: 'flex',
-      flexDirection: 'column',
       background: T.bg,
       color: T.text,
-      fontFamily: 'var(--font-outfit), "Segoe UI", sans-serif'
+      fontFamily: 'var(--font-outfit), "Segoe UI", sans-serif',
+      transition: 'left 0.2s ease'
     }}>
-      {/* Top Header Bar when not inline */}
+      {/* Standalone Sidebar for Full Page Modal */}
       {!inline && (
-        <header style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: isMobile ? '0 12px' : '0 24px', height: isMobile ? 48 : 56,
-          background: T.s1, borderBottom: `1px solid ${T.border}`, flexShrink: 0
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
-            <button
-              onClick={onClose}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'transparent', border: 'none', color: T.muted,
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: '4px 8px',
-                borderRadius: 6, transition: 'all 0.2s'
-              }}
-            >
-              <ArrowLeft size={16} />
-              {!isMobile && <span>Back to Chat</span>}
-            </button>
-            <h2 style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, color: T.text, margin: 0 }}>
-              {SUBJECTS.find((s) => s.id === selectedSubject)?.name || 'General Tutor'}
-            </h2>
-          </div>
-        </header>
+        <UnifiedSidebar
+          sessions={mergedSessions}
+          currentSessionId={voiceSessionIdRef.current || sessionId}
+          onSelectSession={handleSelectSession}
+          onBack={onClose}
+        />
       )}
 
-      {/* Main Container */}
+      {/* Main Voice Agent Workspace */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', overflow: 'hidden' }}>
-        {/* Chat Messages */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <VoiceChatMessages conversation={conversation} />
-        </div>
-
-        {/* Voice Control Deck */}
-        <div style={{
+        {/* Navigation & Status Header */}
+        <header style={{
           display: 'flex',
-          flexDirection: 'column',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          padding: isMobile ? '12px 14px 16px' : '16px 28px 22px',
-          background: T.s1,
-          borderTop: `1px solid ${T.border}`,
-          gap: 10
+          padding: isMobile ? '0 12px' : '0 24px',
+          height: isMobile ? 50 : 56,
+          background: inline ? 'rgba(15, 23, 42, 0.65)' : T.s1,
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${T.border}`,
+          flexShrink: 0,
+          zIndex: 10
         }}>
-          {/* Controls toolbar: Language & Subject */}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', width: '100%', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#CBD5E1',
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  padding: '5px 12px',
+                  borderRadius: 10,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)'; e.currentTarget.style.borderColor = '#A855F7'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#CBD5E1'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; }}
+                title="Return to Text Chat"
+              >
+                <ArrowLeft size={15} />
+                <span>Back to Chat</span>
+              </button>
+            )}
+
+            <h2 style={{ fontSize: isMobile ? 13.5 : 15, fontWeight: 700, color: T.text, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{SUBJECTS.find((s) => s.id === selectedSubject)?.name || 'General Tutor'}</span>
+            </h2>
+
+            <div style={{ width: 1, height: 16, background: 'rgba(255, 255, 255, 0.15)' }} />
+
+            {/* Live Connection Pill */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 10px',
+              background: 'rgba(15, 23, 42, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 20
+            }}>
+              <div style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: connectionStatus === 'tutor-speaking'
+                  ? '#A855F7'
+                  : isActive
+                  ? T.green
+                  : connectionStatus === 'connecting'
+                  ? T.amber
+                  : T.dim,
+                boxShadow: isActive ? `0 0 8px ${connectionStatus === 'tutor-speaking' ? '#A855F7' : T.green}` : 'none',
+                animation: connectionStatus === 'connecting' || connectionStatus === 'tutor-speaking' ? 'pulse 1.5s infinite' : 'none'
+              }} />
+              <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600, letterSpacing: '0.04em' }}>
+                {connectionStatus === 'disconnected' && 'Voice Offline'}
+                {connectionStatus === 'connecting' && 'Connecting...'}
+                {connectionStatus === 'connected' && 'Voice Mode Active'}
+                {connectionStatus === 'tutor-speaking' && 'Tutor Speaking'}
+                {connectionStatus === 'error' && 'Error'}
+              </span>
+            </div>
+          </div>
+
+          {/* Subject & Language Selectors */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <select
               value={selectedLanguage}
               onChange={(e) => setSelectedLanguage(e.target.value)}
               disabled={isActive}
               style={{
-                background: T.s2, color: T.text, fontSize: 11.5, fontWeight: 600,
-                border: `1px solid ${T.border}`, borderRadius: 10, padding: '6px 12px',
-                cursor: isActive ? 'not-allowed' : 'pointer', outline: 'none', opacity: isActive ? 0.7 : 1
+                background: 'rgba(15, 23, 42, 0.8)',
+                color: '#CBD5E1',
+                fontSize: 11.5,
+                fontWeight: 600,
+                border: `1px solid ${T.border}`,
+                borderRadius: 8,
+                padding: '5px 8px',
+                cursor: isActive ? 'not-allowed' : 'pointer',
+                outline: 'none',
+                fontFamily: 'inherit',
+                opacity: isActive ? 0.6 : 1
               }}
             >
               {LANGUAGES.map((lang) => (
-                <option key={lang.id} value={lang.id} style={{ background: T.s1, color: T.text }}>
+                <option key={lang.id} value={lang.id} style={{ background: '#0F172A', color: '#F8FAFC' }}>
                   {lang.flag} {lang.name}
                 </option>
               ))}
@@ -773,79 +667,123 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               onChange={(e) => setSelectedSubject(e.target.value)}
               disabled={isActive}
               style={{
-                background: T.s2, color: T.text, fontSize: 11.5, fontWeight: 600,
-                border: `1px solid ${T.border}`, borderRadius: 10, padding: '6px 12px',
-                cursor: isActive ? 'not-allowed' : 'pointer', outline: 'none', opacity: isActive ? 0.7 : 1
+                background: 'rgba(15, 23, 42, 0.8)',
+                color: '#CBD5E1',
+                fontSize: 11.5,
+                fontWeight: 600,
+                border: `1px solid ${T.border}`,
+                borderRadius: 8,
+                padding: '5px 8px',
+                cursor: isActive ? 'not-allowed' : 'pointer',
+                outline: 'none',
+                fontFamily: 'inherit',
+                opacity: isActive ? 0.6 : 1
               }}
             >
               {SUBJECTS.map((sub) => (
-                <option key={sub.id} value={sub.id} style={{ background: T.s1, color: T.text }}>
+                <option key={sub.id} value={sub.id} style={{ background: '#0F172A', color: '#F8FAFC' }}>
                   {sub.name}
                 </option>
               ))}
             </select>
           </div>
+        </header>
 
-          {/* Status Message Pill */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '4px 14px',
-            background: isActive ? `${T.accent}14` : T.s2,
-            border: `1px solid ${isActive ? `${T.accent}40` : T.border}`,
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 600,
-            color: isActive ? T.accent : T.muted
+        {/* Live Conversation Transcript */}
+        {conversation.length > 0 && (
+          <VoiceChatMessages conversation={conversation} />
+        )}
+
+        {/* Center Robot Visualizer & Real-Time Controls */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: isMobile ? '12px 14px 18px' : '18px 24px 24px',
+          flex: conversation.length === 0 ? 1 : undefined,
+          justifyContent: conversation.length === 0 ? 'center' : undefined,
+          borderTop: conversation.length > 0 ? `1px solid ${T.border}` : 'none',
+          background: inline ? 'rgba(10, 15, 28, 0.45)' : T.s1,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}>
+          {/* Status Message Text */}
+          <p style={{
+            fontSize: isMobile ? 12 : 13,
+            color: isActive ? '#E2E8F0' : '#94A3B8',
+            textAlign: 'center',
+            margin: '0 0 12px',
+            fontWeight: 500,
+            maxWidth: 500,
+            lineHeight: 1.5
           }}>
-            <div style={{
-              width: 7, height: 7, borderRadius: '50%',
-              background: connectionStatus === 'tutor-speaking' ? T.purple : isActive ? T.green : connectionStatus === 'error' ? T.red : T.muted,
-              animation: (connectionStatus === 'tutor-speaking' || connectionStatus === 'student-speaking') ? 'pulse 1s infinite' : 'none'
-            }} />
-            <span>{statusMessage}</span>
-          </div>
+            {statusMessage}
+          </p>
 
-          {/* Animated Robot Visualizer Orb */}
+          {/* Real-Time Sentiment Badge */}
+          {currentSentiment && isActive && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '5px 14px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              borderRadius: 20,
+              marginBottom: 12,
+              border: `1px solid ${T.border}`,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+            }}>
+              <span style={{ fontSize: 15 }}>{currentSentiment.emoji}</span>
+              <span style={{ fontSize: 11, color: '#CBD5E1', fontWeight: 600 }}>{currentSentiment.label}</span>
+            </div>
+          )}
+
+          {/* Interactive 3D Robot Visualizer Container */}
           <div style={{
             position: 'relative',
-            width: isMobile ? 70 : 84,
-            height: isMobile ? 70 : 84,
+            width: isMobile ? 80 : 100,
+            height: isMobile ? 80 : 100,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '4px 0'
+            marginBottom: 14
           }}>
+            {/* Ambient Pulsing Aura */}
             <div style={{
               position: 'absolute',
-              inset: -6,
+              inset: -8,
               borderRadius: '50%',
               background: connectionStatus === 'tutor-speaking'
-                ? `radial-gradient(circle, ${T.purple}40 0%, transparent 70%)`
+                ? 'radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(124, 58, 237, 0.1) 70%, transparent 100%)'
                 : isActive
-                  ? `radial-gradient(circle, ${T.accent}30 0%, transparent 70%)`
-                  : 'transparent',
-              animation: isActive ? 'pulse 2s infinite ease-in-out' : 'none'
+                ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.05) 70%, transparent 100%)'
+                : 'radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%)',
+              border: isActive ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+              animation: isActive ? 'pulse 2s infinite ease-in-out' : 'none',
+              pointerEvents: 'none'
             }} />
             <VoiceRobotVisualizer />
           </div>
 
-          {/* Main Action Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Mute Button */}
+          {/* Control Dock */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Mute Microphone Button */}
             {isActive && (
               <button
-                onClick={() => {
-                  const nextMute = !isMuted;
-                  setIsMuted(nextMute);
-                  if (nextMute) stopAllAudioPlaybacks();
-                }}
+                type="button"
+                onClick={() => setIsMuted((m) => !m)}
                 style={{
-                  width: 38, height: 38, borderRadius: '50%', border: `1px solid ${T.border}`,
-                  background: isMuted ? `${T.red}20` : T.s2,
-                  color: isMuted ? T.red : T.text,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  border: isMuted ? '1px solid rgba(239, 68, 68, 0.5)' : `1px solid ${T.border}`,
+                  background: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                  color: isMuted ? '#EF4444' : '#CBD5E1',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s'
                 }}
                 title={isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
@@ -854,37 +792,39 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               </button>
             )}
 
-            {/* Primary Start / End Button */}
+            {/* Main Action Button (Start / End Session) */}
             <button
+              type="button"
               onClick={handleMicToggle}
               style={{
-                display: 'inline-flex',
+                padding: '9px 24px',
+                borderRadius: 24,
+                cursor: 'pointer',
+                display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '10px 24px',
-                borderRadius: 24,
-                border: 'none',
-                background: isActive ? T.red : `linear-gradient(135deg, ${T.accent} 0%, #3B82F6 100%)`,
-                color: '#FFFFFF',
-                fontSize: 13,
+                fontFamily: 'inherit',
                 fontWeight: 700,
-                letterSpacing: '0.03em',
-                cursor: 'pointer',
-                boxShadow: isActive ? '0 4px 14px rgba(239, 68, 68, 0.35)' : '0 4px 16px rgba(59, 130, 246, 0.35)',
-                transition: 'transform 0.15s ease'
+                fontSize: 12,
+                letterSpacing: '0.04em',
+                transition: 'all 0.2s',
+                background: isActive
+                  ? 'rgba(239, 68, 68, 0.18)'
+                  : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
+                color: isActive ? '#F87171' : '#FFFFFF',
+                border: isActive ? '1px solid rgba(239, 68, 68, 0.45)' : 'none',
+                boxShadow: isActive ? 'none' : '0 4px 18px rgba(168, 85, 247, 0.35)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               {isActive ? (
                 <>
-                  <MicOff size={16} />
-                  <span>END VOICE SESSION</span>
+                  <MicOff size={14} />
+                  <span>END SESSION</span>
                 </>
               ) : (
                 <>
-                  <Mic size={16} />
-                  <span>START VOICE SESSION</span>
+                  <Mic size={14} />
+                  <span>START SESSION</span>
                 </>
               )}
             </button>
@@ -892,20 +832,61 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
             {/* Clear Transcript Button */}
             {conversation.length > 0 && (
               <button
+                type="button"
                 onClick={clearTranscriptLog}
                 style={{
-                  width: 38, height: 38, borderRadius: '50%', border: `1px solid ${T.border}`,
-                  background: T.s2, color: T.muted,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  border: `1px solid ${T.border}`,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s'
                 }}
-                title="Clear Transcript"
+                title="Clear Live Transcript"
               >
-                <RotateCcw size={15} />
+                <Trash2 size={15} />
               </button>
             )}
           </div>
         </div>
+
+        {/* Ambient Subtle Background Light */}
+        {!inline && (
+          <React.Fragment>
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: isMobile ? 0 : 260,
+              width: isMobile ? 200 : 400,
+              height: isMobile ? 200 : 400,
+              background: 'rgba(168, 85, 247, 0.08)',
+              borderRadius: '50%',
+              filter: 'blur(100px)',
+              pointerEvents: 'none',
+              transform: 'translate(-50%, -50%)',
+              zIndex: -1
+            }} />
+            <div style={{
+              position: 'fixed',
+              bottom: 0,
+              right: 0,
+              width: isMobile ? 150 : 300,
+              height: isMobile ? 150 : 300,
+              background: 'rgba(16, 185, 129, 0.05)',
+              borderRadius: '50%',
+              filter: 'blur(80px)',
+              pointerEvents: 'none',
+              transform: 'translate(30%, 30%)',
+              zIndex: -1
+            }} />
+          </React.Fragment>
+        )}
       </div>
     </div>
   );

@@ -180,7 +180,7 @@ wss.on('connection', async (clientWs, request) => {
     clientWs.send(JSON.stringify({ type: 'status', message: 'Establishing low-latency connection to Gemini...' }));
     const ai = getGeminiClient();
     geminiSession = await ai.live.connect({
-      model: 'gemini-2.0-flash-exp', // fallback: gemini-2.0-flash
+      model: process.env.GEMINI_LIVE_MODEL || process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp', // fallback: gemini-2.0-flash
       callbacks: {
         onmessage: (message) => {
           const content = message.serverContent;
