@@ -228,7 +228,7 @@ export default function VedikaParticleBot({
       const isMobile = window.innerWidth < 768;
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v5`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_v6`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -322,24 +322,36 @@ export default function VedikaParticleBot({
           if (colorMode === 'vibrant') {
             const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-            // Lift darker midtones and boost brightness for radiant, luminous visibility
-            const boost = saturation > 0.14 ? 1.26 : 1.16;
-            baseR = Math.min(255, Math.round(Math.pow(r / 255, 0.84) * 255 * boost + 12));
-            baseG = Math.min(255, Math.round(Math.pow(g / 255, 0.84) * 255 * boost + 10));
-            baseB = Math.min(255, Math.round(Math.pow(b / 255, 0.84) * 255 * boost + 16));
-
-            if (saturation > 0.16 && maxC > 40) {
-              baseAlpha = Math.min(1, Math.max(0.90, alphaNorm * 0.98));
+            if (saturation > 0.14 && maxC > 40) {
+              // Saturated vibrant elements (glowing purple eyes, smile, pen, accent colors)
+              const boost = 1.25;
+              baseR = Math.min(255, Math.round(r * boost));
+              baseG = Math.min(255, Math.round(g * boost));
+              baseB = Math.min(255, Math.round(b * boost));
+              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 0.98));
               pSize = (1.20 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 160) {
-              baseAlpha = Math.min(1, Math.max(0.94, (0.86 + ((luminance - 160) / 95) * 0.14) * alphaNorm));
+            } else if (luminance > 150) {
+              // Crisp highlights (white helmet shell, paper lines)
+              const boost = 1.08;
+              baseR = Math.min(255, Math.round(r * boost));
+              baseG = Math.min(255, Math.round(g * boost));
+              baseB = Math.min(255, Math.round(b * boost));
+              baseAlpha = Math.min(1, Math.max(0.92, alphaNorm * 0.98));
               pSize = (1.22 + Math.random() * 0.25) * sizeFactor;
-            } else if (luminance > 75) {
-              baseAlpha = Math.min(0.96, Math.max(0.86, alphaNorm * 0.92));
-              pSize = (1.08 + Math.random() * 0.20) * sizeFactor;
+            } else if (luminance > 60) {
+              // Midtones
+              baseR = r;
+              baseG = g;
+              baseB = b;
+              baseAlpha = Math.min(0.90, Math.max(0.75, alphaNorm * 0.88));
+              pSize = (1.05 + Math.random() * 0.20) * sizeFactor;
             } else {
-              baseAlpha = Math.min(0.92, Math.max(0.80, alphaNorm * 0.88));
-              pSize = (0.98 + Math.random() * 0.20) * sizeFactor;
+              // Deep shadows and dark outlines - keep dark and subtle so edges stay sharp
+              baseR = r;
+              baseG = g;
+              baseB = b;
+              baseAlpha = Math.min(0.65, alphaNorm * 0.70);
+              pSize = (0.90 + Math.random() * 0.15) * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -793,7 +805,7 @@ export default function VedikaParticleBot({
           const bGlow = Math.round(p.baseB + (255 - p.baseB) * liftRatio * 0.7);
           ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${finalAlpha.toFixed(2)})`;
         } else {
-          ctx.fillStyle = `rgba(${p.baseR}, ${p.baseG}, ${p.baseB}, ${Math.min(1, finalAlpha * 1.15).toFixed(2)})`;
+          ctx.fillStyle = `rgba(${p.baseR}, ${p.baseG}, ${p.baseB}, ${finalAlpha.toFixed(2)})`;
         }
 
         ctx.fillRect(renderX, renderY, renderSize, renderSize);

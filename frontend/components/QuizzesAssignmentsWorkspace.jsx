@@ -529,8 +529,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           border-radius: 50%;
           background: radial-gradient(
             circle,
-            rgba(168, 85, 247, 0.32) 0%,
-            rgba(126, 34, 206, 0.12) 42%,
+            rgba(168, 85, 247, 0.16) 0%,
+            rgba(126, 34, 206, 0.05) 42%,
             transparent 72%
           );
           filter: blur(44px);
@@ -549,11 +549,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           border-radius: 50%;
           background: radial-gradient(
             circle,
-            rgba(192, 132, 252, 0.35) 0%,
-            rgba(168, 85, 247, 0.12) 50%,
+            rgba(192, 132, 252, 0.18) 0%,
+            rgba(168, 85, 247, 0.06) 50%,
             transparent 75%
           );
-          filter: blur(28px);
+          filter: blur(32px);
           pointer-events: none;
           z-index: 0;
           animation: assignmentShimmerRotate 10s linear infinite;
@@ -569,11 +569,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           border-radius: 50%;
           background: radial-gradient(
             circle,
-            rgba(255, 255, 255, 0.25) 0%,
-            rgba(192, 132, 252, 0.28) 45%,
+            rgba(192, 132, 252, 0.15) 0%,
+            rgba(168, 85, 247, 0.06) 45%,
             transparent 70%
           );
-          filter: blur(18px);
+          filter: blur(22px);
           pointer-events: none;
           z-index: 0;
           animation: assignmentShimmerPulse 3.2s ease-in-out infinite alternate;
@@ -1294,7 +1294,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             zIndex: 2
           }}>
             <VedikaParticleBot
-              src="/vedika-bot-assignment.png?v=3"
+              src="/vedika-bot-assignment.png?v=5"
               colorMode="vibrant"
               width={isMobile ? 360 : 640}
               height={isMobile ? 280 : 480}
