@@ -482,8 +482,15 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
             const systemPrompt = buildTutorSystemPrompt(selectedLanguage, selectedSubject);
 
+            const VALID_LIVE_MODELS = [
+              'gemini-3.1-flash-live-preview',
+              'gemini-2.5-flash-native-audio-latest',
+              'gemini-3.8-live'
+            ];
+            const liveModel = (model && VALID_LIVE_MODELS.includes(model)) ? model : 'gemini-3.1-flash-live-preview';
+
             const liveSession = await ai.live.connect({
-              model: model || 'gemini-2.0-flash-exp',
+              model: liveModel,
               callbacks: {
                 onmessage: (message) => {
                   const content = message.serverContent;
@@ -536,13 +543,21 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
                     if (sentiment) setCurrentSentiment(sentiment);
                   }
                 },
-                onclose: () => {
-                  terminateSession(false);
+                onclose: (e) => {
+                  console.warn('[Gemini Live] Direct session closed:', e);
+                  const isClean = e?.code === 1000;
+                  if (!isClean && e?.code) {
+                    setConnectionStatus('error');
+                    setStatusMessage(`Voice session ended (Code ${e.code}: ${e.reason || 'Connection lost'}). Tap mic to reconnect.`);
+                    terminateSession(true);
+                  } else {
+                    terminateSession(false);
+                  }
                 },
                 onerror: (err) => {
                   console.error('[Gemini Live] Direct session error:', err);
                   setConnectionStatus('error');
-                  setStatusMessage('Gemini Live session error. Please tap mic to retry.');
+                  setStatusMessage(`Gemini Live error: ${err?.message || 'Connection failed'}. Tap mic to retry.`);
                 }
               },
               config: {
@@ -564,13 +579,26 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
             setupMicProcessor((base64Data) => {
               if (!liveSessionRef.current || isMutedRef.current) return;
-              liveSession.sendRealtimeInput({
-                audio: {
-                  data: base64Data,
-                  mimeType: 'audio/pcm;rate=16000'
-                }
-              });
+              try {
+                liveSession.sendRealtimeInput({
+                  audio: {
+                    data: base64Data,
+                    mimeType: 'audio/pcm;rate=16000'
+                  }
+                });
+              } catch (e) {
+                console.warn('[VoiceAgent] Mic audio send error:', e);
+              }
             });
+
+            // Trigger warm initial vocal greeting
+            try {
+              liveSession.sendRealtimeInput({
+                text: 'Hi Vedika! Please greet the student warmly in one friendly, short sentence and ask what we are learning today.'
+              });
+            } catch (e) {
+              console.warn('[VoiceAgent] Greeting send error:', e);
+            }
           } catch (err) {
             console.error('[VoiceAgent] Direct connection error:', err);
             setConnectionStatus('error');
