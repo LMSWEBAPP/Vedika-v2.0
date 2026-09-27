@@ -190,7 +190,7 @@ export default function VivaInterviewPage() {
   const [userAnswer, setUserAnswer] = useState('');
   
   // Execution Engine & Dynamic Flow States
-  const [executionMode, setExecutionMode] = useState('live'); // 'live' (Gemini Live Voice) | 'turn' (Turn Guided)
+  const [executionMode, setExecutionMode] = useState('turn'); // 'turn' (Turn Guided 90s Rounds) | 'live' (Realtime Voice Examiner)
   const [sessionTimeRemaining, setSessionTimeRemaining] = useState(900); // 15-minute global countdown (900 seconds)
   const [turnTimeRemaining, setTurnTimeRemaining] = useState(90); // 90-second turn countdown for turn-mode
   const [currentStageInfo, setCurrentStageInfo] = useState({
@@ -1183,10 +1183,10 @@ export default function VivaInterviewPage() {
         try { await audioCtx.resume(); } catch (e) {}
       }
 
-      // Dual-Port Strategy: Try port 5001 first, fallback to current window host (port 3000) if port 5001 is offline
-      const primaryWsHost = process.env.NEXT_PUBLIC_WS_URL || (
+      // Dual-Port Strategy: Try dedicated voice port 5050 first, fallback to current window host (port 3000)
+      const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
         window.location.hostname === 'localhost'
-          ? 'ws://localhost:5001'
+          ? 'ws://localhost:5050'
           : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
       );
 
@@ -1207,7 +1207,7 @@ export default function VivaInterviewPage() {
           liveWsHadErrorRef.current = true;
           ws.close();
           if (!forcePort && targetWsHost !== fallbackWsHost) {
-            console.warn('[WS] Primary port 5001 timed out. Falling back to port 3000...');
+            console.warn('[WS] Primary port 5050 timed out. Falling back to port 3000...');
             startGeminiLiveSession(activeTopic, activeSubject, activeDifficulty, activeLevel, isReconnect, fallbackWsHost);
             return;
           }
@@ -1349,7 +1349,7 @@ export default function VivaInterviewPage() {
         liveWsHadErrorRef.current = true;
         // Dual-port fallback on error if we haven't tried port 3000 yet
         if (!forcePort && targetWsHost !== fallbackWsHost) {
-          console.warn('[WS] Primary port 5001 error. Falling back to port 3000...');
+          console.warn('[WS] Primary port 5050 error. Falling back to port 3000...');
           startGeminiLiveSession(activeTopic, activeSubject, activeDifficulty, activeLevel, isReconnect, fallbackWsHost);
           return;
         }

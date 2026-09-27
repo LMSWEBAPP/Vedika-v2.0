@@ -330,10 +330,10 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
         const voiceSid = sessionId || voiceSessionIdRef.current || ('voice-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
         voiceSessionIdRef.current = voiceSid;
 
-        // Dual-Port Strategy: Try port 5001 first, fallback to current window host (port 3000)
+        // Dual-Port Strategy: Try dedicated port 5050 first, fallback to current window host (port 3000)
         const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
           typeof window !== 'undefined' && window.location.hostname === 'localhost'
-            ? 'ws://localhost:5001'
+            ? 'ws://localhost:5050'
             : `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
         );
         const fallbackWsHost = `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`;
@@ -355,7 +355,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               try { ws.close(); } catch {}
 
               if (!isFallbackAttempt && targetHost !== fallbackWsHost) {
-                console.warn('[VoiceAgent] Primary port 5001 timed out. Trying fallback host on port 3000...');
+                console.warn('[VoiceAgent] Primary port 5050 timed out. Trying fallback host on port 3000...');
                 connectToSocket(fallbackWsHost, true);
                 return;
               }
