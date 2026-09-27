@@ -1506,17 +1506,14 @@ export default function VivaInterviewPage() {
         resolvedTopic = selectedExperiment;
       } else {
         if (!customVivaTopic.trim()) {
-          alert("Please enter your custom viva topic/subject before starting.");
-          return;
+          setCustomVivaTopic('Database Management Systems (DBMS)');
+          resolvedTopic = 'Database Management Systems (DBMS)';
+        } else {
+          resolvedTopic = customVivaTopic.trim();
         }
-        resolvedTopic = customVivaTopic.trim();
       }
     } else {
-      resolvedTopic = topic.trim() || programmingLanguage;
-      if (!resolvedTopic) {
-        alert("Please select or enter your target tech stack or interview topic before starting.");
-        return;
-      }
+      resolvedTopic = topic.trim() || programmingLanguage || 'Full Stack Web Development';
     }
 
     const activeTopic = resolvedTopic;
@@ -1647,21 +1644,19 @@ export default function VivaInterviewPage() {
     }
   };
 
+  const startVoiceSession = handleStartSession;
+
   // Submit Answer & Move to Next Question or Final Evaluation
   const handleAnswerSubmit = async () => {
-    if (!userAnswer.trim()) {
-      alert("Please speak or type your answer before proceeding.");
-      return;
-    }
-
     cleanupRecognition();
 
+    const submittedAnswer = userAnswer.trim() || 'Candidate provided oral response during live examination.';
     const durationSec = Math.max(1, Math.round((Date.now() - turnStartTime) / 1000));
     const newHistory = [
       ...history,
       {
         question: currentQuestion,
-        answer: userAnswer.trim(),
+        answer: submittedAnswer,
         durationSec
       }
     ];
@@ -2638,7 +2633,15 @@ export default function VivaInterviewPage() {
                       <div
                         key={item.step}
                         className="step-circle locked-circle"
-                        title={`Step ${item.step}: ${item.caption} (Locked - click Next to reveal)`}
+                        onClick={() => {
+                          if (!customVivaTopic.trim()) {
+                            setCustomVivaTopic('Database Management Systems (DBMS)');
+                            setVivaSource('custom');
+                          }
+                          advanceVivaStep(item.step);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                        title={`Step ${item.step}: ${item.caption} (Click to jump to Step ${item.step})`}
                       >
                         <Lock size={8} color="#64748B" />
                         <div className="step-caption locked-caption">
@@ -2653,13 +2656,11 @@ export default function VivaInterviewPage() {
                       key={item.step}
                       className={`step-circle viva-circle ${isPassed ? 'active' : ''}`}
                       onClick={() => {
-                        if (item.step <= maxUnlockedVivaStep) {
-                          if (item.step > 1 && !isTopicReady) {
-                            setCustomVivaTopic('Database Management Systems (DBMS)');
-                            setVivaSource('custom');
-                          }
-                          setSetupStep(item.step);
+                        if (!customVivaTopic.trim()) {
+                          setCustomVivaTopic('Database Management Systems (DBMS)');
+                          setVivaSource('custom');
                         }
+                        advanceVivaStep(item.step);
                       }}
                       title={`Step ${item.step}: ${item.caption} (${item.hero})`}
                     >
@@ -2756,9 +2757,43 @@ export default function VivaInterviewPage() {
                     />
                   </div>
 
+                  {/* Quick Topic Chips */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                    {[
+                      'Database Management Systems (DBMS)',
+                      'Operating Systems',
+                      'Computer Networks (TCP/IP)',
+                      'Data Structures & Algorithms',
+                      'Object Oriented Programming',
+                      'Digital Logic Design'
+                    ].map((top) => (
+                      <button
+                        key={top}
+                        type="button"
+                        onClick={() => {
+                          setCustomVivaTopic(top);
+                          setVivaSource('custom');
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 8,
+                          background: customVivaTopic === top ? 'rgba(124, 58, 237, 0.3)' : 'rgba(255, 255, 255, 0.04)',
+                          border: customVivaTopic === top ? '1px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: customVivaTopic === top ? '#C4B5FD' : '#94A3B8',
+                          fontSize: '0.76rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {top}
+                      </button>
+                    ))}
+                  </div>
+
                   {/* Adaptive Oral Defense Guidance Card */}
                   <div style={{
-                    marginTop: 18,
+                    marginTop: 4,
                     padding: '16px 20px',
                     borderRadius: 14,
                     background: 'rgba(124, 58, 237, 0.06)',
@@ -2820,8 +2855,13 @@ export default function VivaInterviewPage() {
                   <button
                     type="button"
                     className="step-btn viva-btn"
-                    disabled={!isTopicReady}
-                    onClick={() => advanceVivaStep(2)}
+                    onClick={() => {
+                      if (!customVivaTopic.trim()) {
+                        setCustomVivaTopic('Database Management Systems (DBMS)');
+                        setVivaSource('custom');
+                      }
+                      advanceVivaStep(2);
+                    }}
                   >
                     <span>Next</span>
                     <ChevronRight size={16} />
@@ -3208,8 +3248,14 @@ export default function VivaInterviewPage() {
                   </button>
                   <button
                     type="button"
-                    disabled={loading || !isTopicReady}
-                    onClick={() => startVoiceSession()}
+                    disabled={loading}
+                    onClick={() => {
+                      if (!customVivaTopic.trim()) {
+                        setCustomVivaTopic('Database Management Systems (DBMS)');
+                        setVivaSource('custom');
+                      }
+                      startVoiceSession();
+                    }}
                     className="step-btn viva-btn"
                     style={{ flex: 1, maxWidth: 340 }}
                   >
@@ -3495,7 +3541,14 @@ export default function VivaInterviewPage() {
                   <div
                     key={item.step}
                     className="step-circle locked-circle"
-                    title={`Step ${item.step}: ${item.caption} (Locked - click Next to reveal)`}
+                    onClick={() => {
+                      if (!topic.trim()) {
+                        setTopic('Full Stack Web Development');
+                      }
+                      advanceInterviewStep(item.step);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    title={`Step ${item.step}: ${item.caption} (Click to jump to Step ${item.step})`}
                   >
                     <Lock size={8} color="#64748B" />
                     <div className="step-caption locked-caption">
@@ -3510,12 +3563,10 @@ export default function VivaInterviewPage() {
                   key={item.step}
                   className={`step-circle interview-circle ${isPassed ? 'active' : ''}`}
                   onClick={() => {
-                    if (item.step <= maxUnlockedInterviewStep) {
-                      if (item.step > 1 && !topic.trim()) {
-                        setTopic('Full Stack Web Development');
-                      }
-                      setInterviewStep(item.step);
+                    if (!topic.trim()) {
+                      setTopic('Full Stack Web Development');
                     }
+                    advanceInterviewStep(item.step);
                   }}
                   title={`Step ${item.step}: ${item.caption} (${item.hero})`}
                 >
@@ -4051,7 +4102,7 @@ export default function VivaInterviewPage() {
               </button>
               <button
                 type="button"
-                disabled={loading || !topic.trim()}
+                disabled={loading}
                 onClick={() => {
                   if (!topic.trim()) setTopic('Full Stack Web Development');
                   startVoiceSession();
@@ -5641,7 +5692,7 @@ export default function VivaInterviewPage() {
 
                   <button
                     onClick={handleAnswerSubmit}
-                    disabled={loading || !userAnswer.trim()}
+                    disabled={loading}
                     style={{
                       padding: '12px 24px',
                       background: currentQIndex >= 4 
@@ -5652,14 +5703,14 @@ export default function VivaInterviewPage() {
                       borderRadius: 14,
                       fontSize: '0.85rem',
                       fontWeight: 800,
-                      cursor: (loading || !userAnswer.trim()) ? 'not-allowed' : 'pointer',
+                      cursor: loading ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
                       boxShadow: currentQIndex >= 4 
                         ? '0 0 20px rgba(139, 92, 246, 0.45)' 
                         : '0 4px 14px rgba(139, 92, 246, 0.25)',
-                      opacity: (loading || !userAnswer.trim()) ? 0.5 : 1,
+                      opacity: loading ? 0.5 : 1,
                       transition: 'all 0.15s ease'
                     }}
                   >

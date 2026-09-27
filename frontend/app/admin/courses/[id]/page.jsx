@@ -601,8 +601,9 @@ export default function CourseOutlinePage() {
       {/* CHAPTER MODAL */}
       {chapterModal.open && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)',
-          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(6px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '76px 20px 24px 20px', boxSizing: 'border-box'
         }}>
           <form onSubmit={handleChapterSubmit} style={{ background: T.s1, border: `1px solid ${T.border}`, borderRadius: 16, width: '100%', maxWidth: 460, padding: 24 }}>
             <h3 style={{ color: T.text, fontSize: 16, fontWeight: 700, margin: '0 0 16px 0' }}>

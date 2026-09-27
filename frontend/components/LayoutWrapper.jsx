@@ -103,7 +103,7 @@ export default function LayoutWrapper({ children }) {
   }, [pathname, router]);
 
   const isHomePage = pathname === '/';
-  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname === '/general-tutor' || pathname === '/coding-tutor' || pathname === '/code-puzzle' || pathname === '/viva-interview' || pathname === '/quizzes' || pathname === '/assignments' || pathname === '/courses';
+  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname?.startsWith('/general-tutor') || pathname?.startsWith('/coding-tutor') || pathname?.startsWith('/code-puzzle') || pathname?.startsWith('/viva-interview') || pathname?.startsWith('/quizzes') || pathname?.startsWith('/assignments') || pathname?.startsWith('/courses');
 
   useEffect(() => {
     // Configure layout background dynamically matching theme
@@ -164,7 +164,7 @@ export default function LayoutWrapper({ children }) {
     );
   }
 
-  const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
+  const isAskVedika = pathname === '/general-tutor' || pathname?.startsWith('/vedika-ai/ask') || pathname === '/coding-tutor' || pathname?.startsWith('/vedika-ai/code');
   const isViewportLocked = isFixedPage || isHomePage;
 
   return (
@@ -183,11 +183,7 @@ export default function LayoutWrapper({ children }) {
       {/* Present Navbar displayed consistently on every page */}
       <Header />
       <main style={{
-        position: isViewportLocked ? 'fixed' : 'relative',
-        top: isViewportLocked ? (isAskVedika ? 0 : 54) : 'auto',
-        bottom: isViewportLocked ? 0 : 'auto',
-        left: isViewportLocked ? 0 : 'auto',
-        right: isViewportLocked ? 0 : 'auto',
+        position: 'relative',
         width: '100%',
         boxSizing: 'border-box',
         overflowY: isViewportLocked ? 'hidden' : 'auto',
@@ -195,7 +191,8 @@ export default function LayoutWrapper({ children }) {
         height: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'auto',
         maxHeight: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'none',
         minHeight: !isViewportLocked ? 'calc(100vh - 54px)' : 'auto',
-        paddingTop: isViewportLocked ? 0 : '54px',
+        marginTop: isAskVedika ? 0 : '54px',
+        paddingTop: 0,
         background: isHomePage ? '#02050c' : 'var(--bg)'
       }}>
         {children}

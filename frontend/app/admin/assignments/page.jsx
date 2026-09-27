@@ -1,9 +1,10 @@
 'use client';
 
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FileText, Clock, CheckCircle, X, ChevronRight, HelpCircle, ArrowLeft, 
   Send, AlertCircle, Filter, Plus, Edit2, Trash2, Award, Folder,
-  ClipboardList, User, Loader2, Brain, Star
+  ClipboardList, User, Loader2, Brain, Star, RotateCcw
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
@@ -61,6 +62,7 @@ export default function AdminAssignmentsPage() {
     score: 80,
     ai_evaluation: null
   });
+  const [evaluatingId, setEvaluatingId] = useState(null);
 
   // Load assignments, courses, submissions
   useEffect(() => {
@@ -82,6 +84,28 @@ export default function AdminAssignmentsPage() {
       }
     }
     loadData();
+  }, []);
+
+  const refreshSubmissions = async () => {
+    try {
+      const fresh = await getAssignmentSubmissions();
+      setSubmissions(fresh || []);
+    } catch (e) {
+      console.error('Failed to refresh submissions:', e);
+    }
+  };
+
+  useEffect(() => {
+    const handleSubmissionsUpdated = () => {
+      refreshSubmissions();
+    };
+
+    window.addEventListener('assignment_submissions_updated', handleSubmissionsUpdated);
+    window.addEventListener('storage', handleSubmissionsUpdated);
+    return () => {
+      window.removeEventListener('assignment_submissions_updated', handleSubmissionsUpdated);
+      window.removeEventListener('storage', handleSubmissionsUpdated);
+    };
   }, []);
 
   const updateChecklist = (newList) => {
@@ -508,6 +532,31 @@ export default function AdminAssignmentsPage() {
             </span>
           )}
         </button>
+
+        {activeTab === 'submissions' && (
+          <button
+            type="button"
+            onClick={refreshSubmissions}
+            title="Refresh student submissions"
+            style={{
+              marginLeft: 'auto',
+              background: 'rgba(155, 110, 248, 0.1)',
+              border: `1px solid ${T.purple}40`,
+              color: T.purple,
+              padding: '4px 12px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <RotateCcw size={12} />
+            <span>Refresh</span>
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -986,13 +1035,14 @@ export default function AdminAssignmentsPage() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(7, 8, 15, 0.85)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(7, 8, 15, 0.88)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          padding: 16
+          zIndex: 9999,
+          padding: '76px 20px 24px 20px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: T.s1,
@@ -1000,9 +1050,9 @@ export default function AdminAssignmentsPage() {
             borderRadius: 16,
             width: '100%',
             maxWidth: 640,
-            maxHeight: '90vh',
+            maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
           }}>
             {/* Modal Header */}
             <div style={{
@@ -1396,13 +1446,14 @@ export default function AdminAssignmentsPage() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(7, 8, 15, 0.85)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(7, 8, 15, 0.88)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          padding: 16
+          zIndex: 9999,
+          padding: '76px 20px 24px 20px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: T.s1,
@@ -1410,9 +1461,9 @@ export default function AdminAssignmentsPage() {
             borderRadius: 16,
             width: '100%',
             maxWidth: 640,
-            maxHeight: '90vh',
+            maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
           }}>
             {/* Modal Header */}
             <div style={{

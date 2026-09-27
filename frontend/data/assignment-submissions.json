@@ -1,0 +1,106 @@
+[
+  {
+    "id": "sub-ass-1790487213398",
+    "status": "Fail",
+    "comments": "The submission identifies basic components of the axial and appendicular skeletons and lists the three main vertebral curves. However, it lacks a detailed comparison of structural and mechanical distinctions between the skeletal divisions and fails to fully explain the biomechanical mechanism of how spinal curvature absorbs shock and distributes compressive stress during upright posture.",
+    "evaluator": "Vedika AI + Admin",
+    "score": 55,
+    "ai_evaluation": {
+      "overall_score": 55,
+      "suggested_status": "Fail",
+      "summary_feedback": "The submission identifies basic components of the axial and appendicular skeletons and lists the three main vertebral curves. However, it lacks a detailed comparison of structural and mechanical distinctions between the skeletal divisions and fails to fully explain the biomechanical mechanism of how spinal curvature absorbs shock and distributes compressive stress during upright posture.",
+      "criteria_breakdown": [
+        {
+          "criterion": "Accurate differentiation of axial vs appendicular skeletal components",
+          "status": "Partial",
+          "score_earned": 20,
+          "max_score": 35,
+          "evidence_quote": "The vertebral column is part of the axial skeleton. The appendicular skeleton includes the arms, legs, and the shoulder and pelvic girdles.",
+          "feedback": "You correctly named examples for both divisions, but you omitted structural components of the axial skeleton (such as the skull and thoracic cage) and did not explain their functional or mechanical distinctions."
+        },
+        {
+          "criterion": "Analysis of cervical, thoracic, and lumbar vertebral curvatures",
+          "status": "Partial",
+          "score_earned": 25,
+          "max_score": 35,
+          "evidence_quote": "Cervical curve: curves inward and supports the head. Thoracic curve: curves outward and supports the chest. Lumbar curve: curves inward and carries much of the body's weight.",
+          "feedback": "You identified the basic direction and role of the cervical, thoracic, and lumbar curves. However, the analysis lacks anatomical depth, such as mentioning lordosis and kyphosis or primary vs. secondary curvatures."
+        },
+        {
+          "criterion": "Biomechanical explanation of shock absorption and load distribution",
+          "status": "Partial",
+          "score_earned": 10,
+          "max_score": 30,
+          "evidence_quote": "As we move down the spine, the load and stress increase, so the lumbar vertebrae are larger and stronger.",
+          "feedback": "You noted that vertebral size increases lower in the column due to increased load, but you missed explaining how the curvature itself provides shock absorption and distributes compressive stress like a spring."
+        }
+      ],
+      "strengths": [
+        "Correctly identified key components of both appendicular and axial divisions.",
+        "Accurately recognized the inward/outward directions of the cervical, thoracic, and lumbar curves.",
+        "Correctly linked increasing vertebral size down the spine to increased load."
+      ],
+      "improvements": [
+        "Elaborate on the mechanical distinctions between axial (central protection and support) and appendicular (mobility and leverage) skeletons.",
+        "Include medical/biomechanical terminology such as lordosis and kyphosis when describing vertebral curves.",
+        "Explain how the S-shaped curvature functions to dissipate axial impact loads and decrease compressive stress compared to a rigid straight structure."
+      ]
+    },
+    "assignment": "assign-bio-skeletal-map",
+    "assignment_title": "Biomechanical Analysis of the Axial Skeleton",
+    "type": "Text",
+    "member": "student1@lms.com",
+    "member_name": "Aarav Mehta",
+    "answer": "The vertebral column is part of the axial skeleton. The appendicular skeleton includes the arms, legs, and the shoulder and pelvic girdles.\n\nThe vertebral column has three main curves:\n\nCervical curve: curves inward and supports the head.\nThoracic curve: curves outward and supports the chest.\nLumbar curve: curves inward and carries much of the body's weight.\n\nAs we move down the spine, the load and stress increase, so the lumbar vertebrae are larger and stronger.",
+    "course": "1789228482056",
+    "question": "<p>Explain the structural and mechanical distinctions between the axial and appendicular skeletons. Describe how the curvature of the human vertebral column distributes compressive stress during upright posture.</p>",
+    "timestamp": "2026-09-27T05:33:33.398Z",
+    "updated_at": "2026-09-27T05:42:20.498Z",
+    "graded_at": "2026-09-27T06:13:16.142Z"
+  },
+  {
+    "id": "sub-fibonacci-1",
+    "assignment": "assign-python-fibonacci",
+    "assignment_title": "Implementing Fibonacci Sequence Generator",
+    "type": "Text",
+    "member": "alex.student@apex.edu",
+    "member_name": "Alex Rivera",
+    "evaluator": "",
+    "status": "Not Graded",
+    "question": "Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.",
+    "answer": "def fibonacci(n):\n    if n <= 0:\n        return []\n    elif n == 1:\n        return [0]\n    \n    fib_series = [0, 1]\n    for i in range(2, n):\n        next_val = fib_series[-1] + fib_series[-2]\n        fib_series.append(next_val)\n    return fib_series",
+    "course": "1",
+    "lesson": "l2",
+    "timestamp": "2026-09-26T14:30:00.000Z"
+  },
+  {
+    "id": "sub-fibonacci-2",
+    "assignment": "assign-python-fibonacci",
+    "assignment_title": "Implementing Fibonacci Sequence Generator",
+    "type": "Text",
+    "member": "priya.sharma@globaleng.edu",
+    "member_name": "Priya Sharma",
+    "evaluator": "",
+    "status": "Not Graded",
+    "question": "Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.",
+    "answer": "def fibonacci(n):\n    # Generates fibonacci list up to n elements\n    res = []\n    a, b = 0, 1\n    for _ in range(n):\n        res.append(a)\n        a, b = b, a + b\n    return res",
+    "course": "1",
+    "lesson": "l2",
+    "timestamp": "2026-09-26T15:10:00.000Z"
+  },
+  {
+    "id": "sub-sorting-1",
+    "assignment": "assign-dsa-sorting",
+    "assignment_title": "Custom Merge Sort Complexity Analysis",
+    "type": "Text",
+    "member": "rahul.v@apex.edu",
+    "member_name": "Rahul Verma",
+    "evaluator": "",
+    "status": "Not Graded",
+    "question": "Compare the computational complexity and space requirements of Merge Sort and In-place Quicksort. Submit a report explaining edge cases.",
+    "answer": "Merge Sort vs Quicksort Complexity Analysis:\n\n1. Time Complexity:\n- Merge Sort: Always O(N log N) in best, average, and worst cases because it consistently divides arrays in half and requires O(N) merge steps.\n- Quicksort: Average case O(N log N), but worst-case degrades to O(N^2) if the pivot chosen is consistently the extreme element (e.g. already sorted array without randomized pivot).\n\n2. Space Complexity:\n- Merge Sort: O(N) auxiliary space required for temporary merge buffers.\n- Quicksort: O(log N) stack space for recursive calls, operates in-place.\n\n3. Stability:\n- Merge Sort is stable (preserves relative order of duplicate elements).\n- Standard Quicksort is unstable due to far-distance swaps.\n\n4. Edge Cases:\n- Empty array: handled in base case len <= 1.\n- Duplicate values: Merge sort handles duplicates stably without performance penalty.",
+    "course": "2",
+    "lesson": "2_m1",
+    "timestamp": "2026-09-26T16:45:00.000Z"
+  }
+]

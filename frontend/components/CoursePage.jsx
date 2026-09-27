@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   CheckCircle, Circle, Clock, Play, GraduationCap, ChevronRight, ChevronLeft, ArrowLeft, Users, Tag, BookOpen, Terminal, X, Award, Search, Grid, Layers
 } from 'lucide-react';
-import { T } from '@/lib/lms-data';
-import { getCourses, getCourseSyllabus, checkStudentEnrollment, enrollStudentInCourse, getStudentEnrollments, saveProgressToRedis, getProgressFromRedis } from '@/lib/frappe';
+import { T, getCourseDetails } from '@/lib/lms-data';
+import { getCourses, getCourseSyllabus, checkStudentEnrollment, enrollStudentInCourse, getStudentEnrollments, saveProgressToRedis, getProgressFromRedis, DEFAULT_COURSES } from '@/lib/frappe';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import dynamic from 'next/dynamic';
 import PDFViewerModal from './PDFViewerModal';
@@ -140,8 +140,24 @@ export default function CoursePage() {
 
   const outerStyle = { padding: isMobile ? '20px 16px' : '32px 36px', fontFamily: 'var(--font-outfit), sans-serif' };
 
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Instant synchronous course hydration (0ms load time)
+  const [courses, setCourses] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('admin_courses_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            let locallyDeleted = [];
+            try { locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String); } catch (_) {}
+            return parsed.filter(c => c && !locallyDeleted.includes(String(c.id)));
+          }
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_COURSES;
+  });
+  const [loading, setLoading] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseDetails, setCourseDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -266,7 +282,7 @@ export default function CoursePage() {
     async function loadData() {
       try {
         const [list, enrollments] = await Promise.all([
-          getCourses({ forceRefresh: true }),
+          getCourses(),
           email ? getStudentEnrollments(email) : Promise.resolve([])
         ]);
         let locallyDeleted = [];
@@ -370,7 +386,15 @@ export default function CoursePage() {
         window.history.pushState({ inCourse: true, courseId: course.id }, '', '/courses');
       } catch (e) {}
     }
-    setDetailsLoading(true);
+
+    // Instant local syllabus population (0ms delay)
+    const instantDetails = getCourseDetails(course);
+    if (instantDetails) {
+      setCourseDetails(instantDetails);
+    } else {
+      setDetailsLoading(true);
+    }
+
     try {
       // Retrieve stored user email directly in case it changed
       let email = userEmail;
@@ -391,7 +415,9 @@ export default function CoursePage() {
       setIsEnrolled(enrolledStatus);
 
       const details = await getCourseSyllabus(course.id);
-      setCourseDetails(details);
+      if (details) {
+        setCourseDetails(details);
+      }
     } catch (e) {
       console.error("Failed to load course details", e);
     } finally {

@@ -317,13 +317,14 @@ export default function StudentJobsPage() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(7, 8, 15, 0.85)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(7, 8, 15, 0.88)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          padding: 16
+          zIndex: 9999,
+          padding: '76px 20px 24px 20px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: T.s1,
@@ -331,8 +332,8 @@ export default function StudentJobsPage() {
             borderRadius: 16,
             width: '100%',
             maxWidth: 580,
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-            maxHeight: '85vh',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.75)',
+            maxHeight: 'calc(100vh - 100px)',
             display: 'flex',
             flexDirection: 'column'
           }}>

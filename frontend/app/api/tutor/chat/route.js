@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyJwt } from '@/lib/auth';
+import { verifyJwt, isAdminUser } from '@/lib/auth';
 import { getRotatedKey } from '@/lib/keys';
 import pool from '@/lib/db';
 import { loadHistory, saveHistory, recall, buildMemoryContext, trackApiConsumption } from '@/lib/memory';

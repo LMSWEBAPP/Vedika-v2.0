@@ -2,17 +2,71 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getCourses, getCourseSyllabus, frappeRestGet, saveProgressToRedis, getProgressFromRedis } from '@/lib/frappe';
+import { getCourses, getCourseSyllabus, frappeRestGet, saveProgressToRedis, getProgressFromRedis, DEFAULT_COURSES } from '@/lib/frappe';
 import { getCourseDetails } from '@/lib/lms-data';
 import LessonPage from '@/components/LessonPage';
+
+// Instant local lesson resolver (< 1ms execution time)
+function findLocalLesson(lessonId) {
+  if (!lessonId) return null;
+
+  // 1. Check all stored course details in localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('admin_course_details_'));
+      for (const k of keys) {
+        try {
+          const syl = JSON.parse(localStorage.getItem(k));
+          if (syl && Array.isArray(syl.modules)) {
+            for (const m of syl.modules) {
+              const l = (m.lessons || []).find(x => x.id === lessonId);
+              if (l) {
+                return {
+                  ...l,
+                  moduleTitle: m.title,
+                  courseTitle: syl.title,
+                  courseId: syl.id,
+                  module: m
+                };
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  // 2. Check DEFAULT_COURSES and built-in course details
+  for (const c of DEFAULT_COURSES) {
+    const details = getCourseDetails(c);
+    if (details && Array.isArray(details.modules)) {
+      for (const m of details.modules) {
+        const l = (m.lessons || []).find(x => x.id === lessonId);
+        if (l) {
+          return {
+            ...l,
+            moduleTitle: m.title,
+            courseTitle: details.title || c.title,
+            courseId: details.id || c.id,
+            module: m
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+}
 
 export default function LessonRoute() {
   const params = useParams();
   const id = decodeURIComponent(params.id);
   const router = useRouter();
   const [completed, setCompleted] = useState({});
-  const [lesson, setLesson] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Instant synchronous lesson hydration (0ms load)
+  const [lesson, setLesson] = useState(() => findLocalLesson(id));
+  const [loading, setLoading] = useState(() => !findLocalLesson(id));
 
   // Sync completion states
   useEffect(() => {
@@ -56,16 +110,25 @@ export default function LessonRoute() {
     }
   }, []);
 
-  // Fetch courses dynamically and compile the lesson list
+  // Fetch courses dynamically and compile/revalidate the lesson list
   useEffect(() => {
+    let isMounted = true;
     async function loadLesson() {
+      let found = findLocalLesson(id);
+      if (found) {
+        setLesson(found);
+        setLoading(false);
+      }
+
       try {
-        let found = null;
         const FRAPPE_URL = process.env.NEXT_PUBLIC_FRAPPE_URL || process.env.FRAPPE_URL;
 
-        if (FRAPPE_URL) {
+        if (FRAPPE_URL && (!found || found.lazyLoad)) {
           try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 1800);
             const lDoc = await frappeRestGet(`Course Lesson/${id}`);
+            clearTimeout(timer);
             if (lDoc && lDoc.course) {
               const syllabus = await getCourseSyllabus(lDoc.course);
               if (syllabus && syllabus.modules) {
@@ -81,11 +144,11 @@ export default function LessonRoute() {
                     });
                   });
                 });
-                found = lessonsInCourse.find(l => l.id === id);
-                if (found && found.lazyLoad) {
-                  let pts = ["Key concept introduction."];
-                  let quizQuestions = [];
-                  let codingExercise = {
+                const remoteFound = lessonsInCourse.find(l => l.id === id);
+                if (remoteFound) {
+                  let pts = remoteFound.pts || ["Key concept introduction."];
+                  let quizQuestions = remoteFound.quizQuestions || [];
+                  let codingExercise = remoteFound.codingExercise || {
                     hasExercise: false,
                     language: 'python',
                     instruction: '',
@@ -93,7 +156,7 @@ export default function LessonRoute() {
                     solutionCode: '',
                     testCases: []
                   };
-                  let pdf = "";
+                  let pdf = remoteFound.pdf || "";
                   if (lDoc.instructor_notes) {
                     try {
                       const meta = JSON.parse(lDoc.instructor_notes);
@@ -105,31 +168,35 @@ export default function LessonRoute() {
                   }
                   
                   found = {
-                    ...found,
-                    title: lDoc.title || found.title,
-                    dur: lDoc.duration || "10 min",
-                    vid: lDoc.youtube || "_uQrJ0TkZlc",
-                    overview: lDoc.body || "",
+                    ...remoteFound,
+                    title: lDoc.title || remoteFound.title,
+                    dur: lDoc.duration || remoteFound.dur || "10 min",
+                    vid: lDoc.youtube || remoteFound.vid || "_uQrJ0TkZlc",
+                    overview: lDoc.body || remoteFound.overview || "",
                     pts,
                     quizQuestions,
                     codingExercise,
                     pdf,
                     lazyLoad: false
                   };
+                  if (isMounted) setLesson(found);
                 }
               }
             }
-          } catch (e) {
-            console.error("Backend fetch failed, trying local fallback", e);
+          } catch (_) {
+            // Background sync error handled gracefully
           }
         }
 
-        // Local cache fallback
+        // Parallel fallback across all courses if not found
         if (!found) {
           const courses = await getCourses();
+          const syllabuses = await Promise.all(
+            courses.map(course => getCourseSyllabus(course.id).catch(() => null))
+          );
           const allLessons = [];
-          for (const course of courses) {
-            const syllabus = await getCourseSyllabus(course.id).catch(() => null);
+          courses.forEach((course, idx) => {
+            const syllabus = syllabuses[idx];
             const details = (syllabus && syllabus.modules?.length > 0) ? syllabus : getCourseDetails(course);
             if (details && details.modules) {
               details.modules.forEach(m => {
@@ -144,18 +211,23 @@ export default function LessonRoute() {
                 });
               });
             }
-          }
+          });
           found = allLessons.find(l => l.id === id);
+          if (found && isMounted) {
+            setLesson(found);
+          }
         }
-
-        setLesson(found);
       } catch (e) {
-        console.error(e);
+        console.error("Error during background lesson lookup:", e);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     loadLesson();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const onComplete = async (lessonId) => {

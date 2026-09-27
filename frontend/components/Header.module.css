@@ -449,6 +449,7 @@
     display: flex;
   }
   .header {
-    padding: 1rem 1.25rem;
+    padding: 0 1.25rem;
+    height: 54px;
   }
 }

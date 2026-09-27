@@ -17,6 +17,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { StateField, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, WidgetType } from "@codemirror/view";
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
 
 // ── CodeMirror Error Widget ──────────────────────────────────────────────────
 const setErrorEffect = StateEffect.define();

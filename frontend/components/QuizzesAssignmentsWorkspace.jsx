@@ -4,14 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Award, FileText, Clock, CheckCircle, X, ChevronRight, HelpCircle,
-  ArrowLeft, Search, Send, AlertCircle, Filter, Sparkles, BookOpen, Check
+  ArrowLeft, Search, Send, AlertCircle, Filter, Sparkles, BookOpen, Check,
+  Edit2, RotateCcw
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import {
   getQuizzes, getQuizSubmissions, submitQuizResponse,
   getAssignments, getAssignmentSubmissions, submitAssignmentResponse,
-  getCourses, parseQuestionsList
+  getCourses, parseQuestionsList,
+  DEFAULT_QUIZZES, DEFAULT_ASSIGNMENTS, DEFAULT_COURSES
 } from '@/lib/frappe';
 import { getSubjectArtwork } from '@/lib/artwork';
 import CategoryShowcaseCarousel from '@/components/CategoryShowcaseCarousel';
@@ -26,14 +28,47 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
   const [activeTab, setActiveTab] = useState(initialMode);
   const isAssignmentsOpen = activeTab === 'assignments';
 
-  // Shared Data States
+  // Shared Data States (Instant synchronous local hydration)
   const [currentUser, setCurrentUser] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('admin_courses_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_COURSES;
+  });
+  const [loading, setLoading] = useState(false);
 
   // Quizzes Specific States
-  const [quizzes, setQuizzes] = useState([]);
-  const [quizSubmissions, setQuizSubmissions] = useState([]);
+  const [quizzes, setQuizzes] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('admin_quizzes_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_QUIZZES;
+  });
+  const [quizSubmissions, setQuizSubmissions] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('quiz_submissions');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [selectedQuizCategory, setSelectedQuizCategory] = useState(null);
   const [quizSearch, setQuizSearch] = useState('');
   const [quizPage, setQuizPage] = useState(1);
@@ -48,8 +83,30 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
   const [quizScore, setQuizScore] = useState(null);
 
   // Assignments Specific States
-  const [assignments, setAssignments] = useState([]);
-  const [assignmentSubmissions, setAssignmentSubmissions] = useState([]);
+  const [assignments, setAssignments] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('admin_assignments_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_ASSIGNMENTS;
+  });
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('assignment_submissions');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [selectedAssignmentCategory, setSelectedAssignmentCategory] = useState(null);
   const [assignmentSearch, setAssignmentSearch] = useState('');
   const [assignmentCourseFilter, setAssignmentCourseFilter] = useState('all');
@@ -64,6 +121,17 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
   const [assignmentAnswers, setAssignmentAnswers] = useState({});
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
   const [assignmentSuccessMsg, setAssignmentSuccessMsg] = useState('');
+  const [isEditingSubmission, setIsEditingSubmission] = useState(false);
+
+  const existingUserSub = useMemo(() => {
+    if (!selectedAssignment || !currentUser) return null;
+    const curU = (currentUser.username || '').toLowerCase();
+    const curE = (currentUser.email || '').toLowerCase();
+    return assignmentSubmissions.find(
+      (s) => s.assignment === selectedAssignment.id && 
+      (s.member?.toLowerCase() === curU || s.member?.toLowerCase() === curE || (currentUser.name && s.member_name?.toLowerCase() === currentUser.name.toLowerCase()))
+    ) || null;
+  }, [selectedAssignment, currentUser, assignmentSubmissions]);
 
 
   // Read current user
@@ -76,11 +144,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
     }
   }, []);
 
-  // Fetch initial combined data
+  // Fetch initial combined data in background (SWR pattern)
   useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       try {
-        setLoading(true);
         const [quizList, courseList, qSubs, assList, aSubs] = await Promise.all([
           getQuizzes(),
           getCourses(),
@@ -88,18 +156,39 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           getAssignments(),
           getAssignmentSubmissions()
         ]);
-        setQuizzes(quizList || []);
-        setCourses(courseList || []);
-        setQuizSubmissions(qSubs || []);
-        setAssignments(assList || []);
-        setAssignmentSubmissions(aSubs || []);
+        if (!isMounted) return;
+        if (Array.isArray(quizList) && quizList.length > 0) setQuizzes(quizList);
+        if (Array.isArray(courseList) && courseList.length > 0) setCourses(courseList);
+        if (Array.isArray(qSubs)) setQuizSubmissions(qSubs);
+        if (Array.isArray(assList) && assList.length > 0) setAssignments(assList);
+        if (Array.isArray(aSubs)) setAssignmentSubmissions(aSubs);
       } catch (e) {
         console.error('Failed to load quizzes & assignments data', e);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();
+
+    // Live update listeners
+    const handleQuizzesUpdated = () => getQuizzes().then(q => { if (isMounted && q) setQuizzes(q); });
+    const handleAssignmentsUpdated = () => getAssignments().then(a => { if (isMounted && a) setAssignments(a); });
+    const handleCoursesUpdated = () => getCourses().then(c => { if (isMounted && c) setCourses(c); });
+    const handleSubmissionsUpdated = () => {
+      getQuizSubmissions().then(qs => { if (isMounted && qs) setQuizSubmissions(qs); });
+      getAssignmentSubmissions().then(as => { if (isMounted && as) setAssignmentSubmissions(as); });
+    };
+
+    window.addEventListener('quizzes_updated', handleQuizzesUpdated);
+    window.addEventListener('assignments_updated', handleAssignmentsUpdated);
+    window.addEventListener('courses_updated', handleCoursesUpdated);
+    window.addEventListener('submissions_updated', handleSubmissionsUpdated);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('quizzes_updated', handleQuizzesUpdated);
+      window.removeEventListener('assignments_updated', handleAssignmentsUpdated);
+      window.removeEventListener('courses_updated', handleCoursesUpdated);
+      window.removeEventListener('submissions_updated', handleSubmissionsUpdated);
+    };
   }, [currentUser]);
 
   // Reset pagination when category or search changes
@@ -319,12 +408,32 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
     setSelectedAssignment(targetAss);
     setAssignmentSuccessMsg('');
     setActiveAssignmentQIdx(0);
+    const curU = (currentUser?.username || '').toLowerCase();
+    const curE = (currentUser?.email || '').toLowerCase();
     const existingSub = assignmentSubmissions.find(
-      (s) => s.assignment === ass.id && (s.member === currentUser?.username || s.member === currentUser?.email)
+      (s) => s.assignment === ass.id && 
+      (s.member?.toLowerCase() === curU || s.member?.toLowerCase() === curE || (currentUser?.name && s.member_name?.toLowerCase() === currentUser?.name?.toLowerCase()))
     );
     const initialAns = {};
     if (existingSub && existingSub.answer) {
-      initialAns[0] = existingSub.answer;
+      const text = existingSub.answer;
+      if (resolvedQuestions.length > 1 && text.includes('[Question 1]')) {
+        resolvedQuestions.forEach((_, idx) => {
+          const tag = `[Question ${idx + 1}]`;
+          const nextTag = `[Question ${idx + 2}]`;
+          const sIdx = text.indexOf(tag);
+          if (sIdx !== -1) {
+            const afterTag = sIdx + tag.length;
+            const eIdx = text.indexOf(nextTag, afterTag);
+            initialAns[idx] = (eIdx !== -1 ? text.substring(afterTag, eIdx) : text.substring(afterTag)).trim();
+          }
+        });
+      } else {
+        initialAns[0] = existingSub.answer;
+      }
+      setIsEditingSubmission(false); // Open in read-only View Work mode
+    } else {
+      setIsEditingSubmission(true); // Open in Solve mode
     }
     setAssignmentAnswers(initialAns);
     setIsViewingAssignmentPrompt(true);
@@ -362,19 +471,23 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
     setAssignmentSuccessMsg('');
     try {
       const subPayload = {
+        id: existingUserSub?.id || undefined,
         assignment: selectedAssignment.id,
         assignment_title: selectedAssignment.title,
         type: selectedAssignment.type || 'Text',
         member: currentUser.username || currentUser.email,
-        member_name: currentUser.name || 'Student',
+        member_name: currentUser.name || currentUser.username || 'Student',
         answer: fullAnswerText,
         course: selectedAssignment.course,
-        question: selectedAssignment.question || ''
+        question: typeof selectedAssignment.question === 'string' && selectedAssignment.question
+          ? selectedAssignment.question
+          : (typeof qList[0]?.prompt === 'string' ? qList[0].prompt : '')
       };
       await submitAssignmentResponse(subPayload);
-      setAssignmentSuccessMsg('Assignment submitted successfully! An instructor will review and grade your work.');
+      setAssignmentSuccessMsg(existingUserSub ? 'Assignment submission updated successfully! Your updated work has been recorded.' : 'Assignment submitted successfully! An instructor will review and grade your work.');
       const freshSubs = await getAssignmentSubmissions();
       setAssignmentSubmissions(freshSubs || []);
+      setIsEditingSubmission(false);
     } catch (e) {
       console.error(e);
       alert('Failed to submit assignment. Please try again.');
@@ -446,14 +559,15 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         /* DEFAULT STATE: QUIZZES ACTIVE */
         .box1-content {
           background: transparent !important;
-          flex: 5.5 !important;
-          max-width: 56% !important;
+          flex: 6.2 !important;
+          max-width: 65% !important;
           display: flex;
           flex-direction: column;
           opacity: 1 !important;
           min-width: 0;
           overflow-y: auto;
-          padding: ${isMobile ? '14px 12px' : '22px 36px 18px 44px'};
+          overflow-x: hidden;
+          padding: ${isMobile ? '16px 12px' : '22px 28px 20px 24px'};
           box-sizing: border-box;
           pointer-events: auto !important;
           position: relative;
@@ -464,11 +578,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         .box1-side {
           background: transparent !important;
           border-left: none !important;
-          flex: 4.5 !important;
-          max-width: 48% !important;
+          flex: 3.8 !important;
+          max-width: 38% !important;
           opacity: 1 !important;
           min-width: 0;
-          padding: ${isMobile ? '10px' : '16px 24px 20px 0'};
+          padding: ${isMobile ? '12px 10px' : '16px 10px 20px 0'};
           pointer-events: auto !important;
           display: flex;
           flex-direction: column;
@@ -536,19 +650,19 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         .box-container.right-open .box2-side {
-          flex: 4.5 !important;
-          max-width: 48% !important;
+          flex: 3.8 !important;
+          max-width: 38% !important;
           background: transparent !important;
           border-right: none !important;
           border-left: none !important;
           opacity: 1 !important;
           min-width: 0 !important;
-          padding: ${isMobile ? '10px' : '16px 0 20px 24px'} !important;
+          padding: ${isMobile ? '12px 10px' : '16px 0 20px 10px'} !important;
           pointer-events: auto !important;
           display: flex !important;
           flex-direction: column !important;
           align-items: center !important;
-          justify-content: center !important;
+          justifyContent: center !important;
           box-sizing: border-box !important;
           position: relative !important;
           z-index: 1 !important;
@@ -556,14 +670,14 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         .box-container.right-open .box2-content {
-          flex: 5.5 !important;
-          max-width: 56% !important;
+          flex: 6.2 !important;
+          max-width: 65% !important;
           background: transparent !important;
           border-right: none !important;
           border-left: none !important;
           opacity: 1 !important;
           min-width: 0 !important;
-          padding: ${isMobile ? '14px 12px' : '22px 44px 18px 36px'} !important;
+          padding: ${isMobile ? '16px 12px' : '22px 28px 20px 24px'} !important;
           pointer-events: auto !important;
           display: flex !important;
           flex-direction: column !important;
@@ -571,6 +685,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           position: relative !important;
           z-index: 1 !important;
           overflow-y: auto !important;
+          overflow-x: hidden !important;
           transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
@@ -584,7 +699,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           .box1-content, .box-container.right-open .box2-content {
             flex: 1 !important;
             max-width: 100% !important;
-            padding: 14px 12px !important;
+            padding: 18px 14px !important;
           }
         }
       `}</style>
@@ -802,13 +917,17 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   justifyContent: 'space-between',
                   gap: 12,
                   marginBottom: 16,
-                  padding: '10px 16px',
+                  padding: '10px 14px',
                   background: 'rgba(12, 16, 24, 0.85)',
                   border: '1px solid rgba(245, 158, 11, 0.25)',
                   borderRadius: 14,
-                  flexWrap: isMobile ? 'wrap' : 'nowrap'
+                  flexWrap: 'wrap',
+                  rowGap: 10,
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  maxWidth: '100%'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minWidth: 0 }}>
                     <button
                       onClick={() => {
                         setSelectedQuizCategory(null);
@@ -826,14 +945,16 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         borderRadius: 8,
                         fontSize: 12.5,
                         fontWeight: 600,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                       }}
                     >
                       <ArrowLeft size={14} />
                       <span>Back to Domains</span>
                     </button>
 
-                    <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700 }}>
+                    <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700, whiteSpace: 'nowrap' }}>
                       {selectedQuizCategory}
                     </h2>
                     <span style={{
@@ -843,14 +964,21 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       color: '#FDE68A',
                       padding: '2px 8px',
                       borderRadius: 12,
-                      fontWeight: 600
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
                     }}>
                       {filteredQuizzes.length} Quizzes
                     </span>
                   </div>
 
                   {/* Search Bar */}
-                  <div style={{ position: 'relative', width: isMobile ? '100%' : 240 }}>
+                  <div style={{
+                    position: 'relative',
+                    minWidth: 140,
+                    maxWidth: 220,
+                    flex: '1 1 140px'
+                  }}>
                     <Search size={14} color="#F59E0B" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                       type="text"
@@ -894,9 +1022,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 ) : (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))',
                     gap: 14,
-                    alignItems: 'stretch'
+                    alignItems: 'stretch',
+                    width: '100%',
+                    boxSizing: 'border-box'
                   }}>
                     {paginatedQuizzes.map((quiz) => {
                       const qStatus = getQuizStatus(quiz.id);
@@ -1055,8 +1185,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 640,
-            height: isMobile ? 320 : 490,
+            maxWidth: 480,
+            height: isMobile ? 280 : 420,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1065,8 +1195,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             <VedikaParticleBot
               src="/vedika-bot-quiz.png?v=12"
               colorMode="golden"
-              width={isMobile ? 360 : 640}
-              height={isMobile ? 280 : 480}
+              width={isMobile ? 320 : 460}
+              height={isMobile ? 260 : 400}
               inline={true}
               particleStep={isMobile ? 3 : 2}
             />
@@ -1124,8 +1254,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 640,
-            height: isMobile ? 320 : 490,
+            maxWidth: 480,
+            height: isMobile ? 280 : 420,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1134,8 +1264,8 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             <VedikaParticleBot
               src="/vedika-bot-assignment.png?v=12"
               colorMode="cosmic-purple"
-              width={isMobile ? 360 : 640}
-              height={isMobile ? 280 : 480}
+              width={isMobile ? 320 : 460}
+              height={isMobile ? 260 : 400}
               inline={true}
               particleStep={isMobile ? 3 : 2}
             />
@@ -1252,15 +1382,19 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 10,
+                  gap: 12,
                   marginBottom: 16,
-                  padding: '10px 16px',
+                  padding: '10px 14px',
                   background: 'rgba(168, 85, 247, 0.04)',
                   border: '1px solid rgba(168, 85, 247, 0.16)',
                   borderRadius: 12,
-                  flexWrap: isMobile ? 'wrap' : 'nowrap'
+                  flexWrap: 'wrap',
+                  rowGap: 10,
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  maxWidth: '100%'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
                     <button
                       onClick={() => {
                         setSelectedAssignmentCategory(null);
@@ -1280,14 +1414,16 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         borderRadius: 8,
                         fontSize: 12.5,
                         fontWeight: 600,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                       }}
                     >
                       <ArrowLeft size={14} />
                       <span>Back to Domains</span>
                     </button>
 
-                    <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700 }}>
+                    <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700, whiteSpace: 'nowrap' }}>
                       {selectedAssignmentCategory}
                     </h2>
                     <span style={{
@@ -1297,14 +1433,24 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       color: '#E9D5FF',
                       padding: '2px 8px',
                       borderRadius: 12,
-                      fontWeight: 600
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
                     }}>
                       {filteredAssignments.length} Assignments
                     </span>
                   </div>
 
                   {/* Filter & Search Bar */}
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    minWidth: 0,
+                    flex: '1 1 auto',
+                    justifyContent: 'flex-end'
+                  }}>
                     {/* Course Filter */}
                     <select
                       value={assignmentCourseFilter}
@@ -1317,7 +1463,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         color: '#FFFFFF',
                         fontSize: 12,
                         outline: 'none',
-                        maxWidth: 150
+                        maxWidth: 130,
+                        minWidth: 90,
+                        flexShrink: 1
                       }}
                     >
                       <option value="all">All Courses</option>
@@ -1338,7 +1486,9 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                         color: '#FFFFFF',
                         fontSize: 12,
                         outline: 'none',
-                        maxWidth: 130
+                        maxWidth: 115,
+                        minWidth: 80,
+                        flexShrink: 1
                       }}
                     >
                       <option value="all">All Chapters</option>
@@ -1348,7 +1498,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                     </select>
 
                     {/* Search Input */}
-                    <div style={{ position: 'relative', width: isMobile ? '100%' : 180 }}>
+                    <div style={{
+                      position: 'relative',
+                      minWidth: 120,
+                      maxWidth: 180,
+                      flex: '1 1 120px'
+                    }}>
                       <Search size={14} color="#C084FC" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }} />
                       <input
                         type="text"
@@ -1385,9 +1540,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 ) : (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))',
                     gap: 14,
-                    alignItems: 'stretch'
+                    alignItems: 'stretch',
+                    width: '100%',
+                    boxSizing: 'border-box'
                   }}>
                     {paginatedAssignments.map((ass) => {
                       const aStatus = getAssignmentStatus(ass.id);
@@ -1545,13 +1702,14 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(7, 8, 15, 0.85)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(7, 8, 15, 0.88)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          padding: 16
+          zIndex: 9999,
+          padding: isMobile ? '70px 14px 20px 14px' : '76px 24px 30px 24px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: '#0F172A',
@@ -1559,10 +1717,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             borderRadius: 16,
             width: '100%',
             maxWidth: 580,
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-            maxHeight: '85vh',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.75)',
+            maxHeight: 'calc(100vh - 100px)',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden'
           }}>
             <div style={{
               padding: '16px 22px',
@@ -1732,13 +1891,14 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(7, 8, 15, 0.85)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(7, 8, 15, 0.88)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          padding: 16
+          zIndex: 9999,
+          padding: isMobile ? '70px 14px 20px 14px' : '76px 24px 30px 24px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: '#0D0819',
@@ -1746,10 +1906,11 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             borderRadius: 16,
             width: '100%',
             maxWidth: 640,
-            boxShadow: '0 20px 40px rgba(0,0,0,0.7)',
-            maxHeight: '88vh',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)',
+            maxHeight: 'calc(100vh - 100px)',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden'
           }}>
             <div style={{
               padding: '16px 22px',
@@ -1805,6 +1966,42 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                 </div>
               ) : (
                 <form onSubmit={handleAssignmentSubmit}>
+                  {/* Status Banner for Existing Submission */}
+                  {existingUserSub && (
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      marginBottom: 14,
+                      background: (existingUserSub.status === 'Pass' || (existingUserSub.score !== undefined && existingUserSub.score >= (selectedAssignment.pass_threshold || 70)))
+                        ? 'rgba(16, 185, 129, 0.1)'
+                        : (existingUserSub.status === 'Fail')
+                        ? 'rgba(239, 68, 68, 0.1)'
+                        : 'rgba(168, 85, 247, 0.1)',
+                      border: `1px solid ${
+                        (existingUserSub.status === 'Pass' || (existingUserSub.score !== undefined && existingUserSub.score >= (selectedAssignment.pass_threshold || 70)))
+                          ? 'rgba(16, 185, 129, 0.3)'
+                          : (existingUserSub.status === 'Fail')
+                          ? 'rgba(239, 68, 68, 0.3)'
+                          : 'rgba(168, 85, 247, 0.3)'
+                      }`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: existingUserSub.comments ? 4 : 0 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: (existingUserSub.status === 'Pass' || (existingUserSub.score !== undefined && existingUserSub.score >= (selectedAssignment.pass_threshold || 70))) ? '#10B981' : (existingUserSub.status === 'Fail') ? '#EF4444' : '#C084FC' }}>
+                          {existingUserSub.status ? `Status: ${existingUserSub.status}` : 'Submission Received'}
+                          {existingUserSub.score !== undefined && ` (${existingUserSub.score}%)`}
+                        </span>
+                        {existingUserSub.evaluator && (
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>Evaluated by {existingUserSub.evaluator}</span>
+                        )}
+                      </div>
+                      {existingUserSub.comments && (
+                        <p style={{ margin: 0, fontSize: 11.5, color: '#CBD5E1' }}>
+                          <strong>Feedback:</strong> {existingUserSub.comments}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Multi-question tabs if > 1 question */}
                   {selectedAssignment.questions?.length > 1 && (
                     <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
@@ -1825,7 +2022,7 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                             boxShadow: 'none', transform: 'none', transition: 'none'
                           }}
                         >
-                          Prompt {qIdx + 1}
+                          Question {qIdx + 1}
                         </button>
                       ))}
                     </div>
@@ -1840,86 +2037,243 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                     marginBottom: 14
                   }}>
                     <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#C084FC', fontWeight: 700, display: 'block', marginBottom: 4 }}>
-                      Task Instruction
+                      Task Instruction {selectedAssignment.questions?.length > 1 ? `(Question ${activeAssignmentQIdx + 1} of ${selectedAssignment.questions.length})` : ''}
                     </span>
-                    <p style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.5 }}>
-                      {selectedAssignment.questions?.[activeAssignmentQIdx] || selectedAssignment.question}
-                    </p>
+                    {(() => {
+                      const curQ = selectedAssignment.questions?.[activeAssignmentQIdx] || selectedAssignment.question;
+                      const promptText = (typeof curQ === 'object' && curQ !== null)
+                        ? (curQ.prompt || curQ.question || curQ.title || '')
+                        : (curQ || '');
+                      const hasHtml = /<[a-z][\s\S]*>/i.test(promptText);
+
+                      return hasHtml ? (
+                        <div
+                          style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.6 }}
+                          dangerouslySetInnerHTML={{ __html: promptText }}
+                        />
+                      ) : (
+                        <p style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                          {promptText}
+                        </p>
+                      );
+                    })()}
                   </div>
 
-                  {/* Textarea */}
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: 11.5, color: '#94A3B8', display: 'block', marginBottom: 6 }}>
-                      Your Solution Response:
-                    </label>
-                    <textarea
-                      rows={6}
-                      value={assignmentAnswers[activeAssignmentQIdx] || ''}
-                      onChange={(e) => {
-                        setAssignmentAnswers({
-                          ...assignmentAnswers,
-                          [activeAssignmentQIdx]: e.target.value
-                        });
-                      }}
-                      placeholder="Write your comprehensive response or paste code solution..."
-                      style={{
-                        width: '100%',
-                        padding: 12,
-                        borderRadius: 10,
-                        background: 'rgba(12, 8, 22, 0.95)',
-                        border: '1.5px solid rgba(168, 85, 247, 0.35)',
-                        color: '#FFFFFF',
-                        fontSize: 13,
-                        outline: 'none',
-                        resize: 'vertical',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748B', marginTop: 4 }}>
-                      <span>Character count: {(assignmentAnswers[activeAssignmentQIdx] || '').length}</span>
-                      <span>Min requirement: {selectedAssignment.min_char_count || 20} chars</span>
+                  {/* Evaluation Criteria if present */}
+                  {Array.isArray(selectedAssignment.evaluation_criteria) && selectedAssignment.evaluation_criteria.length > 0 && (
+                    <div style={{
+                      marginBottom: 14,
+                      padding: 12,
+                      borderRadius: 10,
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}>
+                      <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#A855F7', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                        Evaluation Criteria (Passing threshold: {selectedAssignment.pass_threshold || 70}%)
+                      </span>
+                      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#CBD5E1', lineHeight: 1.5 }}>
+                        {selectedAssignment.evaluation_criteria.map((crit, idx) => (
+                          <li key={idx} style={{ marginBottom: 3 }}>{typeof crit === 'string' ? crit : JSON.stringify(crit)}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
+                  )}
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => setIsViewingAssignmentPrompt(false)}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#FFFFFF',
-                        padding: '7px 16px',
-                        borderRadius: 8,
+                  {/* Reference / Sample Answer if show_answer is true and student has submitted */}
+                  {selectedAssignment.show_answer && existingUserSub && (
+                    <div style={{
+                      marginBottom: 14,
+                      padding: 12,
+                      borderRadius: 10,
+                      background: 'rgba(16, 185, 129, 0.05)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)'
+                    }}>
+                      <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#34D399', fontWeight: 700, display: 'block', marginBottom: 4 }}>
+                        Reference Solution {selectedAssignment.questions?.length > 1 ? `(Question ${activeAssignmentQIdx + 1})` : ''}
+                      </span>
+                      <pre style={{
+                        margin: 0,
                         fontSize: 12,
-                        cursor: 'pointer',
-                        boxShadow: 'none', transform: 'none', transition: 'none'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submittingAssignment}
-                      style={{
-                        background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        padding: '7px 18px',
-                        borderRadius: 8,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: submittingAssignment ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        boxShadow: 'none', transform: 'none', transition: 'none'
-                      }}
-                    >
-                      <Send size={13} />
-                      <span>{submittingAssignment ? 'Submitting...' : 'Submit Assignment'}</span>
-                    </button>
-                  </div>
+                        color: '#A7F3D0',
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'monospace',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: 8,
+                        borderRadius: 6
+                      }}>
+                        {(() => {
+                          const curQ = selectedAssignment.questions?.[activeAssignmentQIdx];
+                          return (curQ && typeof curQ === 'object' && curQ.sample_answer)
+                            ? curQ.sample_answer
+                            : (selectedAssignment.answer || 'No sample answer provided.');
+                        })()}
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* View Work Mode vs Active Submit Form Mode */}
+                  {!isEditingSubmission && existingUserSub ? (
+                    <div>
+                      {/* Submitted Response Display Box */}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircle size={14} color="#10B981" />
+                            <span>Your Submitted Response {selectedAssignment.questions?.length > 1 ? `(Question ${activeAssignmentQIdx + 1})` : ''}</span>
+                          </label>
+                          {existingUserSub.timestamp && (
+                            <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                              Submitted: {new Date(existingUserSub.timestamp).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{
+                          width: '100%',
+                          padding: 16,
+                          borderRadius: 10,
+                          background: 'rgba(12, 8, 22, 0.95)',
+                          border: '1.5px solid rgba(168, 85, 247, 0.35)',
+                          color: '#FFFFFF',
+                          fontSize: 13.5,
+                          lineHeight: 1.6,
+                          whiteSpace: 'pre-wrap',
+                          fontFamily: selectedAssignment.type === 'Code' ? 'monospace' : 'inherit',
+                          minHeight: 120,
+                          boxSizing: 'border-box'
+                        }}>
+                          {assignmentAnswers[activeAssignmentQIdx] || existingUserSub.answer || 'No response recorded.'}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                          <span>Character count: {(assignmentAnswers[activeAssignmentQIdx] || existingUserSub.answer || '').length}</span>
+                          <span style={{ color: '#10B981', fontWeight: 600 }}>✓ Recorded on Server</span>
+                        </div>
+                      </div>
+
+                      {/* View Work Mode Action Buttons */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 20 }}>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingSubmission(true)}
+                          style={{
+                            background: 'rgba(168, 85, 247, 0.15)',
+                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                            color: '#C084FC',
+                            padding: '8px 16px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6
+                          }}
+                        >
+                          <Edit2 size={13} />
+                          <span>Edit / Resubmit Answer</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsViewingAssignmentPrompt(false)}
+                          style={{
+                            background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            padding: '8px 22px',
+                            borderRadius: 8,
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Textarea */}
+                      <div style={{ marginBottom: 14 }}>
+                        <label style={{ fontSize: 11.5, color: '#94A3B8', display: 'block', marginBottom: 6 }}>
+                          Your Solution Response {selectedAssignment.questions?.length > 1 ? `(Question ${activeAssignmentQIdx + 1})` : ''}:
+                        </label>
+                        <textarea
+                          rows={6}
+                          value={assignmentAnswers[activeAssignmentQIdx] || ''}
+                          onChange={(e) => {
+                            setAssignmentAnswers({
+                              ...assignmentAnswers,
+                              [activeAssignmentQIdx]: e.target.value
+                            });
+                          }}
+                          placeholder="Write your comprehensive response or paste code solution..."
+                          style={{
+                            width: '100%',
+                            padding: 12,
+                            borderRadius: 10,
+                            background: 'rgba(12, 8, 22, 0.95)',
+                            border: '1.5px solid rgba(168, 85, 247, 0.35)',
+                            color: '#FFFFFF',
+                            fontSize: 13,
+                            outline: 'none',
+                            resize: 'vertical',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                          <span>Character count: {(assignmentAnswers[activeAssignmentQIdx] || '').length}</span>
+                          <span>Min requirement: {selectedAssignment.min_char_count || 20} chars</span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (existingUserSub) {
+                              setIsEditingSubmission(false);
+                            } else {
+                              setIsViewingAssignmentPrompt(false);
+                            }
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#FFFFFF',
+                            padding: '7px 16px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            boxShadow: 'none', transform: 'none', transition: 'none'
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submittingAssignment}
+                          style={{
+                            background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            padding: '7px 18px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: submittingAssignment ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            boxShadow: 'none', transform: 'none', transition: 'none'
+                          }}
+                        >
+                          <Send size={13} />
+                          <span>{submittingAssignment ? 'Saving...' : existingUserSub ? 'Update Submission' : 'Submit Assignment'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </form>
               )}
             </div>

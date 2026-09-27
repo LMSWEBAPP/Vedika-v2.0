@@ -14,7 +14,7 @@ export function sanitizeTitle(title) {
 }
 
 // Default demo courses fallback
-const DEFAULT_COURSES = [
+export const DEFAULT_COURSES = [
   {
     id: "class-10-biology-2",
     name: "class-10-biology-2",
@@ -108,11 +108,19 @@ const DEFAULT_COURSES = [
   }
 ];
 
-// Client-side cache for optimized loading
-const clientCache = {
-  courses: {},          // Map of userId -> list
-  coursesTimestamp: {}, // Map of userId -> timestamp
+// Client-side cache for optimized zero-latency instant loading
+export const clientCache = {
+  courses: null,
+  coursesTimestamp: 0,
   syllabus: {},         // Map of courseId -> { data, timestamp }
+  quizzes: null,
+  quizzesTimestamp: 0,
+  assignments: null,
+  assignmentsTimestamp: 0,
+  quizSubmissions: null,
+  quizSubmissionsTimestamp: 0,
+  assignmentSubmissions: null,
+  assignmentSubmissionsTimestamp: 0
 };
 
 // Helper to get active user ID to scope cache keys
@@ -129,10 +137,10 @@ function getActiveUserId() {
   return 'anonymous';
 }
 
-// Helper to invalidate cache across all user sessions
+// Helper to invalidate courses cache across all user sessions
 export function invalidateCoursesCache() {
-  clientCache.courses = {};
-  clientCache.coursesTimestamp = {};
+  clientCache.courses = null;
+  clientCache.coursesTimestamp = 0;
   if (typeof window !== 'undefined') {
     try {
       Object.keys(localStorage).forEach(key => {
@@ -163,6 +171,32 @@ export function invalidateSyllabusCache(courseId) {
         }
       });
     }
+  }
+}
+
+export function invalidateQuizzesCache() {
+  clientCache.quizzes = null;
+  clientCache.quizzesTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('quizzes_updated'));
+  }
+}
+
+export function invalidateAssignmentsCache() {
+  clientCache.assignments = null;
+  clientCache.assignmentsTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('assignments_updated'));
+  }
+}
+
+export function invalidateSubmissionsCache() {
+  clientCache.quizSubmissions = null;
+  clientCache.quizSubmissionsTimestamp = 0;
+  clientCache.assignmentSubmissions = null;
+  clientCache.assignmentSubmissionsTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('submissions_updated'));
   }
 }
 
@@ -231,16 +265,25 @@ export async function frappeGet(method, params = {}) {
   const cacheKey = `GET_METHOD:${method}:${JSON.stringify(mergedParams)}`;
   
   return getCachedPromise(cacheKey, async () => {
-    const url = new URL(`${FRAPPE_URL}/api/method/${method}`);
-    Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Email": getActiveUserId()
-      },
-    });
-    return handleResponse(res, false);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    try {
+      const url = new URL(`${FRAPPE_URL}/api/method/${method}`);
+      Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString(), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": getActiveUserId()
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return handleResponse(res, false);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
   });
 }
 
@@ -287,17 +330,26 @@ export async function frappeRestGet(resource, params = {}) {
   const cacheKey = `GET_REST:${resource}:${JSON.stringify(mergedParams)}`;
   
   return getCachedPromise(cacheKey, async () => {
-    const encodedSegments = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
-    const url = new URL(`${FRAPPE_URL}/api/resource/${encodedSegments}`);
-    Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Email": getActiveUserId()
-      },
-    });
-    return handleResponse(res, true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    try {
+      const encodedSegments = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
+      const url = new URL(`${FRAPPE_URL}/api/resource/${encodedSegments}`);
+      Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString(), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": getActiveUserId()
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return handleResponse(res, true);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
   });
 }
 
@@ -465,71 +517,8 @@ export async function addCourseCategory(categoryName) {
 
 // --- High-level Unified REST-based Course Management API ---
 
-/**
- * Fetch all courses (filtered or unfiltered)
- */
-export async function getCourses(options = {}) {
-  let locallyDeleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String);
-    } catch (e) {}
-  }
-
-  // 1. Instant local read for zero-latency UI rendering
-  let list = null;
-  if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem('admin_courses_list');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          list = parsed;
-        }
-      }
-    } catch (e) {}
-  }
-
-  // 2. Fetch authoritative courses from local Next.js server API (/api/courses)
-  if (typeof window !== 'undefined') {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch('/api/courses', { signal: controller.signal }).catch(() => null);
-      clearTimeout(timeoutId);
-
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.courses) && data.courses.length > 0) {
-          // If local storage has newly added courses not yet on server, merge them
-          if (list && Array.isArray(list)) {
-            const serverIds = new Set(data.courses.map(c => String(c.id)));
-            const localOnly = list.filter(c => !serverIds.has(String(c.id)));
-            list = [...localOnly, ...data.courses];
-          } else {
-            list = data.courses;
-          }
-          try {
-            localStorage.setItem('admin_courses_list', JSON.stringify(list));
-          } catch (e) {}
-        }
-      }
-    } catch (e) {
-      console.warn('[getCourses] API fetch fallback to local:', e);
-    }
-  }
-
-  // 3. Fallback to DEFAULT_COURSES if nothing is initialized yet
-  if (!list || !Array.isArray(list) || list.length === 0) {
-    list = DEFAULT_COURSES;
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('admin_courses_list', JSON.stringify(DEFAULT_COURSES));
-      } catch (e) {}
-    }
-  }
-
-  // 4. Attach student enrollment counts from local storage
+// Helper to decorate course list with enrollments and filter deleted courses
+function prepareCourses(list, locallyDeleted = []) {
   let localEnrollments = [];
   if (typeof window !== 'undefined') {
     try {
@@ -549,14 +538,105 @@ export async function getCourses(options = {}) {
     });
   }
 
-  const preparedList = list
+  return (list || [])
     .filter(c => c && !locallyDeleted.includes(String(c.id)))
     .map(c => ({
       ...c,
       enrolled: localCounts[c.id] !== undefined ? localCounts[c.id] : (c.enrolled || 0)
     }));
+}
 
-  return preparedList;
+/**
+ * Fetch all courses (filtered or unfiltered) - Instant 0ms return with background revalidation
+ */
+export async function getCourses(options = {}) {
+  let locallyDeleted = [];
+  if (typeof window !== 'undefined') {
+    try {
+      locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String);
+    } catch (e) {}
+  }
+
+  const now = Date.now();
+
+  // 1. Instant in-memory cache check (< 60s)
+  if (!options.forceRefresh && clientCache.courses && (now - clientCache.coursesTimestamp < 60000)) {
+    return prepareCourses(clientCache.courses, locallyDeleted);
+  }
+
+  // 2. Instant local read from localStorage
+  let list = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_courses_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.courses = list;
+          clientCache.coursesTimestamp = now;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Background server fetch to sync newly published courses
+  const revalidateCourses = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/courses', { signal: controller.signal }).catch(() => null);
+      clearTimeout(timeoutId);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.courses) && data.courses.length > 0) {
+          let updated = data.courses;
+          if (list && Array.isArray(list)) {
+            const serverIds = new Set(data.courses.map(c => String(c.id)));
+            const localOnly = list.filter(c => !serverIds.has(String(c.id)));
+            updated = [...localOnly, ...data.courses];
+          }
+          clientCache.courses = updated;
+          clientCache.coursesTimestamp = Date.now();
+          try {
+            localStorage.setItem('admin_courses_list', JSON.stringify(updated));
+          } catch (e) {}
+          window.dispatchEvent(new Event('courses_updated'));
+        }
+      }
+    } catch (_) {}
+  };
+
+  // 3. If local list is available and forceRefresh not requested, return INSTANTLY (0ms!)
+  if (list && !options.forceRefresh) {
+    revalidateCourses();
+    return prepareCourses(list, locallyDeleted);
+  }
+
+  // If forceRefresh, await revalidation
+  if (options.forceRefresh && typeof window !== 'undefined') {
+    await revalidateCourses();
+    if (clientCache.courses) {
+      list = clientCache.courses;
+    }
+  }
+
+  // 4. Fallback to DEFAULT_COURSES if nothing is initialized yet
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_COURSES;
+    clientCache.courses = list;
+    clientCache.coursesTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_courses_list', JSON.stringify(DEFAULT_COURSES));
+      } catch (e) {}
+      revalidateCourses();
+    }
+  }
+
+  return prepareCourses(list, locallyDeleted);
 }
 
 /**
@@ -839,7 +919,7 @@ export async function getCourseSyllabus(courseId, options = {}) {
   const forceRefresh = options.forceRefresh || (typeof window !== 'undefined' && window.location.pathname.includes('/admin'));
   const now = Date.now();
 
-  // Check in-memory cache first if not forced refresh
+  // 1. Check in-memory cache first if not forced refresh
   if (!forceRefresh) {
     const cachedEntry = clientCache.syllabus[courseId];
     if (cachedEntry && (now - cachedEntry.timestamp < 300000)) { // 5 minutes TTL
@@ -849,37 +929,65 @@ export async function getCourseSyllabus(courseId, options = {}) {
 
   let syllabus = null;
 
-  // 1. Try local server persistence API first (Instant and consistent across all pages and users)
+  // 2. Check localStorage custom syllabus outlines (instant 0ms read)
   if (typeof window !== 'undefined') {
-    try {
-      const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.modules) && data.modules.length > 0) {
-          syllabus = data;
-          localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(syllabus));
-        }
-      }
-    } catch (_) {}
-  }
-
-  // 2. Check localStorage custom syllabus outlines
-  if (!syllabus && typeof window !== 'undefined') {
     const saved = localStorage.getItem(`admin_course_details_${courseId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.modules)) {
+        if (parsed && Array.isArray(parsed.modules) && parsed.modules.length > 0) {
           syllabus = parsed;
-          // Sync back to server API in background
-          fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ syllabus: parsed })
-          }).catch(() => {});
+          clientCache.syllabus[courseId] = { data: syllabus, timestamp: now };
         }
       } catch (_) {}
     }
+  }
+
+  // Background server sync helper
+  const revalidateSyllabus = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.modules) && data.modules.length > 0) {
+          clientCache.syllabus[courseId] = { data, timestamp: Date.now() };
+          try {
+            localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(data));
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  };
+
+  // If already found in localStorage and not forceRefresh, return immediately and sync in background!
+  if (syllabus && !forceRefresh) {
+    revalidateSyllabus();
+    return syllabus;
+  }
+
+  // 3. Try local server persistence API if forceRefresh or not found yet
+  if (typeof window !== 'undefined') {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.modules) && data.modules.length > 0) {
+          syllabus = data;
+          clientCache.syllabus[courseId] = { data: syllabus, timestamp: Date.now() };
+          try {
+            localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(syllabus));
+          } catch (_) {}
+          return syllabus;
+        }
+      }
+    } catch (_) {}
   }
 
   // 3. Try Frappe DocTypes if online and not a local ID
@@ -1422,6 +1530,8 @@ export async function getStudentEnrollments(studentEmail) {
 
   if (FRAPPE_URL) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1800);
       const res = await frappeRestGet("LMS Enrollment", {
         fields: JSON.stringify(["course"]),
         filters: JSON.stringify([
@@ -1429,9 +1539,10 @@ export async function getStudentEnrollments(studentEmail) {
         ]),
         limit_page_length: 100
       });
+      clearTimeout(timeoutId);
       return (res || []).map(e => e.course);
-    } catch (e) {
-      console.warn("Failed to fetch student enrollments via Frappe REST API. Falling back to local state.", e);
+    } catch (_) {
+      // Fast fallback to local
     }
   }
 
@@ -1440,7 +1551,7 @@ export async function getStudentEnrollments(studentEmail) {
 
 // --- LMS Quiz API ---
 
-const DEFAULT_QUIZZES = [
+export const DEFAULT_QUIZZES = [
   {
     id: 'quiz-python-intro',
     title: 'Python Syntax & Variables Quiz',
@@ -1470,108 +1581,80 @@ const DEFAULT_QUIZZES = [
   }
 ];
 
-export async function getQuizzes() {
-  // 1. Try local server API first (instant, persistent across reloads and users)
+export async function getQuizzes(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.quizzes && (now - clientCache.quizzesTimestamp < 60000)) {
+    return clientCache.quizzes;
+  }
+
+  // 2. Try localStorage first (instant 0ms read)
+  let list = null;
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/api/quizzes', { cache: 'no-store' });
-      if (res.ok) {
-        const list = await res.json();
-        if (Array.isArray(list) && list.length > 0) {
-          localStorage.setItem('admin_quizzes_list', JSON.stringify(list));
-          return list;
+      const saved = localStorage.getItem('admin_quizzes_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.quizzes = list;
+          clientCache.quizzesTimestamp = now;
         }
       }
     } catch (_) {}
   }
 
-  // 2. Try Frappe LMS backend if configured
-  if (FRAPPE_URL) {
+  // Non-blocking background revalidation from /api/quizzes
+  const revalidateQuizzes = async () => {
+    if (typeof window === 'undefined') return;
     try {
-      const quizzes = await frappeRestGet("LMS Quiz", {
-        fields: JSON.stringify(["name", "title", "course", "lesson", "max_attempts", "passing_percentage", "total_marks", "duration"]),
-        limit_page_length: 100
-      });
-      // Fetch detailed questions for each quiz
-      const detailedQuizzes = await Promise.all((quizzes || []).map(async (q) => {
-        try {
-          const detailed = await frappeRestGet(`LMS Quiz/${q.name}`);
-          const questionsList = await Promise.all((detailed.questions || []).map(async (ref) => {
-            try {
-              const qDoc = await frappeRestGet(`LMS Question/${ref.question}`);
-              const options = [];
-              if (qDoc.option_1) options.push(qDoc.option_1);
-              if (qDoc.option_2) options.push(qDoc.option_2);
-              if (qDoc.option_3) options.push(qDoc.option_3);
-              if (qDoc.option_4) options.push(qDoc.option_4);
-              
-              let correct = 0;
-              if (qDoc.is_correct_1) correct = 0;
-              else if (qDoc.is_correct_2) correct = 1;
-              else if (qDoc.is_correct_3) correct = 2;
-              else if (qDoc.is_correct_4) correct = 3;
-              
-              return {
-                id: qDoc.name,
-                question: qDoc.question,
-                options,
-                correct
-              };
-            } catch (err) {
-              return {
-                id: ref.name,
-                question: ref.question_detail || "Question details unavailable",
-                options: ["True", "False"],
-                correct: 0
-              };
-            }
-          }));
-          return {
-            id: detailed.name,
-            title: detailed.title,
-            course: detailed.course,
-            lesson: detailed.lesson,
-            max_attempts: detailed.max_attempts || 3,
-            passing_percentage: detailed.passing_percentage || 70,
-            total_marks: detailed.total_marks || 10,
-            duration: detailed.duration || '10 mins',
-            questions: questionsList.filter(Boolean)
-          };
-        } catch (err) {
-          return {
-            id: q.name,
-            title: q.title,
-            course: q.course,
-            lesson: q.lesson,
-            max_attempts: q.max_attempts || 3,
-            passing_percentage: q.passing_percentage || 70,
-            total_marks: q.total_marks || 10,
-            duration: q.duration || '10 mins',
-            questions: []
-          };
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/quizzes', { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        const serverList = await res.json();
+        if (Array.isArray(serverList) && serverList.length > 0) {
+          clientCache.quizzes = serverList;
+          clientCache.quizzesTimestamp = Date.now();
+          localStorage.setItem('admin_quizzes_list', JSON.stringify(serverList));
+          window.dispatchEvent(new Event('quizzes_updated'));
+          return serverList;
         }
-      }));
-      if (detailedQuizzes && detailedQuizzes.length > 0) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('admin_quizzes_list', JSON.stringify(detailedQuizzes));
-        }
-        return detailedQuizzes;
       }
-    } catch (e) {
-      console.warn("Notice: Frappe quizzes API unavailable. Falling back to local state.", e.message || e);
+    } catch (_) {}
+    return null;
+  };
+
+  // If cached list is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (list && !forceRefresh) {
+    revalidateQuizzes();
+    return list;
+  }
+
+  // If forceRefresh, await revalidation
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateQuizzes();
+    if (updated) return updated;
+    if (clientCache.quizzes) return clientCache.quizzes;
+  }
+
+  // 3. Fallback to DEFAULT_QUIZZES
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_QUIZZES;
+    clientCache.quizzes = list;
+    clientCache.quizzesTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_quizzes_list', JSON.stringify(DEFAULT_QUIZZES));
+      } catch (_) {}
+      revalidateQuizzes();
     }
   }
 
-  // 3. Fallback to localStorage or default quizzes
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('admin_quizzes_list');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    localStorage.setItem('admin_quizzes_list', JSON.stringify(DEFAULT_QUIZZES));
-    return DEFAULT_QUIZZES;
-  }
-  return DEFAULT_QUIZZES;
+  return list;
 }
 
 export async function createQuiz(quizData) {
@@ -1792,51 +1875,107 @@ export async function deleteQuiz(id) {
 
 // --- LMS Quiz Submission API ---
 
-export async function getQuizSubmissions() {
-  if (FRAPPE_URL) {
+export async function getQuizSubmissions(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.quizSubmissions && (now - clientCache.quizSubmissionsTimestamp < 60000)) {
+    return clientCache.quizSubmissions;
+  }
+
+  // 2. Read from localStorage (instant 0ms read)
+  let local = [];
+  if (typeof window !== 'undefined') {
     try {
-      return await frappeRestGet("LMS Quiz Submission", {
+      const saved = localStorage.getItem('quiz_submissions');
+      if (saved) local = JSON.parse(saved);
+    } catch (_) {}
+  }
+
+  // Background revalidation with fast timeout
+  const revalidateSubs = async () => {
+    if (!FRAPPE_URL) return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const res = await frappeRestGet("LMS Quiz Submission", {
         fields: JSON.stringify(["name", "quiz", "quiz_title", "course", "member", "member_name", "score", "score_out_of", "percentage", "passing_percentage"]),
         limit_page_length: 100
       });
-    } catch (e) {
-      console.error("Failed to fetch quiz submissions.", e);
-    }
+      clearTimeout(timer);
+      if (Array.isArray(res)) {
+        const mergedMap = new Map();
+        res.forEach(s => { if (s && s.name) mergedMap.set(s.name, s); });
+        local.forEach(s => { if (s) mergedMap.set(s.id || s.name || `${s.quiz}_${s.member}`, s); });
+        const merged = Array.from(mergedMap.values());
+        clientCache.quizSubmissions = merged;
+        clientCache.quizSubmissionsTimestamp = Date.now();
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('quiz_submissions', JSON.stringify(merged));
+          window.dispatchEvent(new Event('submissions_updated'));
+        }
+      }
+    } catch (_) {}
+  };
+
+  // If local submissions exist and not forceRefresh, return immediately and sync in background!
+  if (local.length > 0 && !forceRefresh) {
+    clientCache.quizSubmissions = local;
+    clientCache.quizSubmissionsTimestamp = now;
+    revalidateSubs();
+    return local;
   }
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('quiz_submissions');
-    return saved ? JSON.parse(saved) : [];
+
+  if (forceRefresh) {
+    await revalidateSubs();
+    if (clientCache.quizSubmissions) return clientCache.quizSubmissions;
+  } else {
+    revalidateSubs();
   }
-  return [];
+
+  clientCache.quizSubmissions = local;
+  clientCache.quizSubmissionsTimestamp = now;
+  return local;
 }
 
 export async function submitQuizResponse(subData) {
-  if (FRAPPE_URL) {
-    try {
-      return await frappeRestPost("LMS Quiz Submission", {
-        quiz: subData.quiz,
-        quiz_title: subData.quiz_title,
-        course: subData.course,
-        member: subData.member,
-        member_name: subData.member_name,
-        score: subData.score,
-        score_out_of: subData.score_out_of,
-        percentage: subData.percentage,
-        passing_percentage: subData.passing_percentage
-      });
-    } catch (e) {
-      console.error("Failed to upload quiz submission.", e);
-    }
-  }
+  let createdSub = null;
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('quiz_submissions') || '[]';
-    const list = JSON.parse(saved);
-    const newSub = { ...subData, id: 'sub-' + Date.now(), timestamp: new Date().toISOString() };
-    list.unshift(newSub);
-    localStorage.setItem('quiz_submissions', JSON.stringify(list));
-    return newSub;
+    try {
+      const list = JSON.parse(saved);
+      const newSub = { ...subData, id: 'sub-' + Date.now(), timestamp: new Date().toISOString() };
+      list.unshift(newSub);
+      localStorage.setItem('quiz_submissions', JSON.stringify(list));
+      clientCache.quizSubmissions = list;
+      clientCache.quizSubmissionsTimestamp = Date.now();
+      window.dispatchEvent(new Event('submissions_updated'));
+      createdSub = newSub;
+    } catch (_) {}
   }
-  return subData;
+
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPost("LMS Quiz Submission", {
+          quiz: subData.quiz,
+          quiz_title: subData.quiz_title,
+          course: subData.course,
+          member: subData.member,
+          member_name: subData.member_name,
+          score: subData.score,
+          score_out_of: subData.score_out_of,
+          percentage: subData.percentage,
+          passing_percentage: subData.passing_percentage
+        });
+      } catch (e) {
+        console.warn("Notice: Frappe quiz submission sync deferred or failed:", e.message || e);
+      }
+    })();
+  }
+
+  return createdSub || subData;
 }
 
 // --- LMS Assignment API ---
@@ -1876,7 +2015,7 @@ function setStoredAiEval(subId, score, aiEval) {
   } catch (e) {}
 }
 
-const DEFAULT_ASSIGNMENTS = [
+export const DEFAULT_ASSIGNMENTS = [
   {
     id: 'assign-python-fibonacci',
     title: 'Implementing Fibonacci Sequence Generator',
@@ -1962,54 +2101,95 @@ export function parseQuestionsList(questionStr, extraQuestions, defaultAnswer) {
   return [{ id: 1, prompt: questionStr, sample_answer: defaultAnswer || '' }];
 }
 
-export async function getAssignments(filterParams = {}) {
-  // 1. Try local server API first (instant, persistent across reloads and users)
+export async function getAssignments(filterParams = {}, options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  const formatList = (rawList) => {
+    return (rawList || []).map(a => {
+      const extra = getAssignmentMetadata(a.id);
+      const resolvedQuestions = parseQuestionsList(a.question || '', extra.questions || a.questions, a.answer);
+      return {
+        ...a,
+        evaluation_criteria: extra.evaluation_criteria || a.evaluation_criteria || [],
+        pass_threshold: extra.pass_threshold || a.pass_threshold || 70,
+        min_char_count: extra.min_char_count !== undefined ? extra.min_char_count : (a.min_char_count !== undefined ? a.min_char_count : 20),
+        questions: resolvedQuestions
+      };
+    });
+  };
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.assignments && (now - clientCache.assignmentsTimestamp < 60000)) {
+    return formatList(clientCache.assignments);
+  }
+
+  // 2. Try localStorage first (instant 0ms read)
+  let list = null;
   if (typeof window !== 'undefined') {
     try {
-      const query = new URLSearchParams(filterParams).toString();
-      const res = await fetch(`/api/assignments${query ? '?' + query : ''}`, { cache: 'no-store' });
-      if (res.ok) {
-        const list = await res.json();
-        if (Array.isArray(list) && list.length > 0) {
-          localStorage.setItem('admin_assignments_list', JSON.stringify(list));
-          return list.map(a => {
-            const extra = getAssignmentMetadata(a.id);
-            const resolvedQuestions = parseQuestionsList(a.question || '', extra.questions || a.questions, a.answer);
-            return {
-              ...a,
-              evaluation_criteria: extra.evaluation_criteria || a.evaluation_criteria || [],
-              pass_threshold: extra.pass_threshold || a.pass_threshold || 70,
-              min_char_count: extra.min_char_count !== undefined ? extra.min_char_count : (a.min_char_count !== undefined ? a.min_char_count : 20),
-              questions: resolvedQuestions
-            };
-          });
+      const saved = localStorage.getItem('admin_assignments_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.assignments = list;
+          clientCache.assignmentsTimestamp = now;
         }
       }
     } catch (_) {}
   }
 
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('admin_assignments_list');
-    if (saved) {
-      try {
-        const list = JSON.parse(saved);
-        return list.map(a => {
-          const extra = getAssignmentMetadata(a.id);
-          const resolvedQuestions = parseQuestionsList(a.question || '', extra.questions || a.questions, a.answer);
-          return {
-            ...a,
-            evaluation_criteria: extra.evaluation_criteria || a.evaluation_criteria || [],
-            pass_threshold: extra.pass_threshold || a.pass_threshold || 70,
-            min_char_count: extra.min_char_count !== undefined ? extra.min_char_count : (a.min_char_count !== undefined ? a.min_char_count : 20),
-            questions: resolvedQuestions
-          };
-        });
-      } catch (e) {}
-    }
-    localStorage.setItem('admin_assignments_list', JSON.stringify(DEFAULT_ASSIGNMENTS));
-    return DEFAULT_ASSIGNMENTS;
+  // Non-blocking background revalidation from /api/assignments
+  const revalidateAssignments = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const query = new URLSearchParams(filterParams).toString();
+      const res = await fetch(`/api/assignments${query ? '?' + query : ''}`, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        const serverList = await res.json();
+        if (Array.isArray(serverList) && serverList.length > 0) {
+          clientCache.assignments = serverList;
+          clientCache.assignmentsTimestamp = Date.now();
+          localStorage.setItem('admin_assignments_list', JSON.stringify(serverList));
+          window.dispatchEvent(new Event('assignments_updated'));
+          return serverList;
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  // If cached list is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (list && !forceRefresh) {
+    revalidateAssignments();
+    return formatList(list);
   }
-  return DEFAULT_ASSIGNMENTS;
+
+  // If forceRefresh, await revalidation
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateAssignments();
+    if (updated) return formatList(updated);
+    if (clientCache.assignments) return formatList(clientCache.assignments);
+  }
+
+  // 3. Fallback to DEFAULT_ASSIGNMENTS
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_ASSIGNMENTS;
+    clientCache.assignments = list;
+    clientCache.assignmentsTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_assignments_list', JSON.stringify(DEFAULT_ASSIGNMENTS));
+      } catch (_) {}
+      revalidateAssignments();
+    }
+  }
+
+  return formatList(list);
 }
 
 export async function createAssignment(assignmentData) {
@@ -2224,110 +2404,212 @@ const DEFAULT_ASSIGNMENT_SUBMISSIONS = [
   }
 ];
 
-export async function getAssignmentSubmissions() {
-  if (FRAPPE_URL) {
-    try {
-      const res = await frappeRestGet("LMS Assignment Submission", {
-        fields: JSON.stringify(["name", "assignment", "assignment_title", "type", "member", "member_name", "evaluator", "assignment_attachment", "answer", "status", "question", "comments", "course", "lesson"]),
-        limit_page_length: 100
-      });
-      if (res && res.length > 0) {
-        return res.map(s => {
-          const extra = getStoredAiEval(s.name) || {};
-          return {
-            id: s.name,
-            ...s,
-            score: extra.score !== undefined ? extra.score : s.score,
-            ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
-          };
-        });
-      }
-    } catch (e) {
-      console.warn("Notice: Failed to fetch assignment submissions from Frappe REST API. Falling back to local state.", e.message || e);
-    }
+export async function getAssignmentSubmissions(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  const formatList = (rawList) => {
+    return (rawList || []).map(s => {
+      const extra = getStoredAiEval(s.id || s.name) || {};
+      return {
+        ...s,
+        score: extra.score !== undefined ? extra.score : s.score,
+        ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
+      };
+    });
+  };
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.assignmentSubmissions && (now - clientCache.assignmentSubmissionsTimestamp < 60000)) {
+    return formatList(clientCache.assignmentSubmissions);
   }
+
+  // 2. Read from localStorage (instant 0ms read)
+  let local = null;
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('assignment_submissions');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('assignment_submissions');
+      if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(s => {
-            const extra = getStoredAiEval(s.id || s.name) || {};
-            return {
-              ...s,
-              score: extra.score !== undefined ? extra.score : s.score,
-              ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
-            };
-          });
+          local = parsed;
+          clientCache.assignmentSubmissions = local;
+          clientCache.assignmentSubmissionsTimestamp = now;
         }
-      } catch (e) {}
-    }
-    localStorage.setItem('assignment_submissions', JSON.stringify(DEFAULT_ASSIGNMENT_SUBMISSIONS));
-    return DEFAULT_ASSIGNMENT_SUBMISSIONS;
+      }
+    } catch (_) {}
   }
-  return DEFAULT_ASSIGNMENT_SUBMISSIONS;
+
+  // Background revalidation
+  const revalidateSubmissions = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/assignment-submissions', { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        let list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          clientCache.assignmentSubmissions = list;
+          clientCache.assignmentSubmissionsTimestamp = Date.now();
+          localStorage.setItem('assignment_submissions', JSON.stringify(list));
+          window.dispatchEvent(new Event('submissions_updated'));
+          return list;
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  // If local is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (local && !forceRefresh) {
+    revalidateSubmissions();
+    return formatList(local);
+  }
+
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateSubmissions();
+    if (updated) return formatList(updated);
+    if (clientCache.assignmentSubmissions) return formatList(clientCache.assignmentSubmissions);
+  }
+
+  // Fallback to DEFAULT_ASSIGNMENT_SUBMISSIONS
+  if (!local || local.length === 0) {
+    local = DEFAULT_ASSIGNMENT_SUBMISSIONS;
+    clientCache.assignmentSubmissions = local;
+    clientCache.assignmentSubmissionsTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('assignment_submissions', JSON.stringify(DEFAULT_ASSIGNMENT_SUBMISSIONS));
+      } catch (_) {}
+      revalidateSubmissions();
+    }
+  }
+
+  return formatList(local);
 }
 
 export async function submitAssignmentResponse(subData) {
-  if (FRAPPE_URL) {
-    try {
-      return await frappeRestPost("LMS Assignment Submission", {
-        assignment: subData.assignment,
-        assignment_title: subData.assignment_title,
-        type: subData.type || 'Text',
-        member: subData.member,
-        member_name: subData.member_name,
-        answer: subData.answer || '',
-        course: subData.course,
-        status: 'Not Graded',
-        question: subData.question || ''
-      });
-    } catch (e) {
-      console.error("Failed to upload assignment submission.", e);
-    }
-  }
+  let createdOrUpdatedSub = null;
+
+  // 1. Persist to server API first
   if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/assignment-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.submission) {
+          createdOrUpdatedSub = data.submission;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Server API submit failed, falling back to local storage', e);
+    }
+
+    // 2. Persist to localStorage and dispatch update events
     const saved = localStorage.getItem('assignment_submissions') || '[]';
-    const list = JSON.parse(saved);
-    const newSub = {
-      ...subData,
-      id: 'sub-ass-' + Date.now(),
-      status: 'Not Graded',
-      comments: '',
-      evaluator: '',
-      timestamp: new Date().toISOString()
-    };
-    list.unshift(newSub);
-    localStorage.setItem('assignment_submissions', JSON.stringify(list));
-    return newSub;
+    try {
+      const list = JSON.parse(saved);
+      const subId = createdOrUpdatedSub?.id || subData.id || ('sub-ass-' + Date.now());
+      const existingIdx = list.findIndex(s => 
+        (s.id && s.id === subId) || 
+        (s.assignment === subData.assignment && s.member?.toLowerCase() === subData.member?.toLowerCase())
+      );
+      
+      const record = createdOrUpdatedSub || {
+        ...subData,
+        id: subId,
+        status: 'Not Graded',
+        comments: '',
+        evaluator: '',
+        timestamp: new Date().toISOString()
+      };
+
+      if (existingIdx >= 0) {
+        list[existingIdx] = { ...list[existingIdx], ...record };
+      } else {
+        list.unshift(record);
+      }
+      localStorage.setItem('assignment_submissions', JSON.stringify(list));
+      createdOrUpdatedSub = record;
+
+      // Broadcast update event so other tabs/components reload immediately
+      window.dispatchEvent(new Event('assignment_submissions_updated'));
+    } catch (e) {}
   }
-  return subData;
+
+  // 3. Optional background sync to Frappe
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPost("LMS Assignment Submission", {
+          assignment: subData.assignment,
+          assignment_title: subData.assignment_title,
+          type: subData.type || 'Text',
+          member: subData.member,
+          member_name: subData.member_name,
+          answer: subData.answer || '',
+          course: subData.course,
+          status: 'Not Graded',
+          question: subData.question || ''
+        });
+      } catch (_) {}
+    })();
+  }
+
+  return createdOrUpdatedSub || subData;
 }
 
 export async function gradeAssignmentSubmission(id, gradeData) {
   if (gradeData.score !== undefined || gradeData.ai_evaluation) {
     setStoredAiEval(id, gradeData.score, gradeData.ai_evaluation);
   }
-  if (FRAPPE_URL) {
-    try {
-      return await frappeRestPut("LMS Assignment Submission", id, {
-        status: gradeData.status,
-        comments: gradeData.comments,
-        evaluator: gradeData.evaluator
-      });
-    } catch (e) {
-      console.error("Failed to grade assignment submission.", e);
-    }
-  }
+
+  let updatedSub = null;
+
+  // 1. Update on server API
   if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/assignment-submissions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...gradeData })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.submission) updatedSub = data.submission;
+      }
+    } catch (_) {}
+
+    // 2. Update in localStorage
     const saved = localStorage.getItem('assignment_submissions') || '[]';
-    const list = JSON.parse(saved);
-    const updated = list.map(sub => sub.id === id ? { ...sub, ...gradeData } : sub);
-    localStorage.setItem('assignment_submissions', JSON.stringify(updated));
-    return gradeData;
+    try {
+      const list = JSON.parse(saved);
+      const updated = list.map(sub => sub.id === id ? { ...sub, ...gradeData } : sub);
+      localStorage.setItem('assignment_submissions', JSON.stringify(updated));
+      window.dispatchEvent(new Event('assignment_submissions_updated'));
+    } catch (e) {}
   }
-  return gradeData;
+
+  // 3. Optional background sync to Frappe
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPut("LMS Assignment Submission", id, {
+          status: gradeData.status,
+          comments: gradeData.comments,
+          evaluator: gradeData.evaluator
+        });
+      } catch (_) {}
+    })();
+  }
+
+  return updatedSub || gradeData;
 }
 
 // --- Job Opportunity API ---

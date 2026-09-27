@@ -64,6 +64,7 @@ export default function ChemistryLab() {
 
   // DOM Mount Ref & Global State Reference
   const mountRef = useRef(null);
+  const diffParticlesRef = useRef([]);
   const simStateRef = useRef({
     isPlaying: true,
     timeScale: 1,
@@ -363,6 +364,7 @@ export default function ChemistryLab() {
     // Left and Right gas molecule populations
     const maxDiffParticles = 40;
     const diffParticles = [];
+    diffParticlesRef.current = diffParticles;
     for (let i = 0; i < maxDiffParticles; i++) {
       const m = new THREE.Mesh(partGeo, partMat);
       diffusionGroup.add(m);
@@ -1148,7 +1150,7 @@ export default function ChemistryLab() {
                 } else if (selectedExperiment === 'diffusion') {
                   setIsPartitionOpen(false);
                   // Resets particle left coordinates
-                  diffParticles.forEach(p => {
+                  diffParticlesRef.current?.forEach(p => {
                     p.pos.set(
                       -1.8 + Math.random() * 1.6,
                       -1.4 + Math.random() * 1.8,
