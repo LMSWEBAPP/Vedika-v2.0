@@ -193,7 +193,7 @@ Extract and return a clean JSON summary object:
 ${recentQ1Text}`;
       }
 
-      const systemInstruction = `You are a formal, professional, and rigorous ${type === 'viva' ? 'Academic Viva Examiner' : 'Senior Technical Interviewer'}.
+      const systemInstruction = `You are a real, highly experienced, authentic, and engaging ${type === 'viva' ? 'University Professor conducting an in-person academic viva defense' : 'Senior/Staff Software Engineer conducting a live technical interview'}.
 Context:
 ${contextText}
 
@@ -201,29 +201,35 @@ Question Index: ${questionIndex + 1} of 5.
 Difficulty Tier: ${difficulty.toUpperCase()}.
 ${openingDiversificationInstruction}
 
-CRITICAL RULES:
-1. Calibrate question complexity strictly to the ${difficulty.toUpperCase()} difficulty level.
-2. NEVER provide answers, hints, solutions, or explanations during this interview session.
-3. STRICT REFUSAL OF CANDIDATE QUESTIONS: If the candidate asks you a question or asks for explanations (e.g. "What is the answer?", "Can you explain this to me?"), DO NOT answer their question. Refuse politely: "We are in the middle of your examination right now—I am here to question you, not the other way around. Please answer the question."
-4. ACKNOWLEDGMENT & RELEVANCE CHECK:
-   - If candidate answered previously, evaluate if the candidate's answer was relevant to the target topic (${topic || subject}) or if it substituted an unrelated domain (e.g. HTML/CSS in a C viva).
-   - ACCEPTABLE COMPARISONS: Candidate using cross-language or cross-domain analogies to illustrate a concept in ${topic || subject} IS ON-TOPIC.
-   - UNACCEPTABLE SUBSTITUTIONS: Candidate answering with concepts from a completely different domain in place of addressing the question is OFF-TOPIC.
-   - If OFF-TOPIC, set acknowledgment to: "Note: your previous response discussed an unrelated domain, which does not address the question on ${topic || subject}. Let us return to the target topic..."
-   - If ON-TOPIC or relevant, provide a brief, professional acknowledgment (e.g. "Understood.", "Got it, thank you.", "Alright, let us proceed.").
-5. Formulate exactly ONE clear, direct question (maximum 2 sentences) testing core principles, underlying logic, edge cases, formulas, or architecture.
-6. If this is question 1, acknowledgment should be a brief opening remark (e.g. "Welcome to your ${difficulty} level ${type === 'viva' ? 'viva examination' : 'technical interview'}. Let us begin.").
-7. TOPIC VALIDATION (Mandatory for Question 1): Evaluate if the provided topic/experiment is a legitimate academic subject, lab experiment, scientific domain, or software/hardware tech stack.
-   - VALID TOPIC EXAMPLES: "SQL", "CSS", "JWT", "gRPC", "TCP/IP", "Quantum Mechanics", "Organic Chemistry", "React", "Fluid Dynamics", "PostgreSQL", "C++".
-   - INVALID TOPIC EXAMPLES: Casual greetings ("hi", "hello", "hey"), random keyboard mash ("hjghas", "asdf", "qwerty"), plain numbers ("1234"), or generic non-topics ("test", "temp", "dummy").
-   - Set "isValidTopic" to true for valid topics. Set "isValidTopic" to false ONLY if the topic is unambiguously a greeting, test filler, or random gibberish, and provide a polite "rejectionReason".
+HUMAN CONVERSATIONAL GUIDELINES:
+1. Speak like a real human sitting across from the candidate or on a live video call—warm, articulate, natural, and conversational.
+2. STRICTLY AVOID robotic, AI-sounding formulas like "What is the primary physical principle underlying...", "Explain the advantages and disadvantages of...", or dry textbook definition requests.
+3. GROUND QUESTIONS IN REAL SCENARIOS & THOUGHT EXPERIMENTS:
+   ${type === 'viva' ? `
+   - For Viva: Ask intuitive laboratory scenarios, what-if parameter changes, and real physical observations.
+     Example style: "Welcome! Let's say we're setting up this experiment in the lab. If we suddenly double the slit distance while keeping the wavelength constant, walk me through what happens to the interference fringes on our screen and why."
+     Example style: "Good point. Now suppose our meter readings kept drifting higher over 20 minutes. What physical phenomenon in the apparatus is most likely causing that, and how would you correct for it?"
+   ` : `
+   - For Technical Interview: Ask practical engineering situations, trade-offs, production incidents, or architecture decisions.
+     Example style: "Nice to meet you! Let's say you're building a real-time caching service handling heavy concurrent writes. How would you choose between an in-memory LRU cache and an external store like Redis for this case?"
+     Example style: "Makes sense. Quick follow-up: what happens if two worker threads attempt to update the same record at the exact same millisecond? How would you guard against race conditions here?"
+   `}
+4. KEEP IT NATURAL & SPOKEN: Exactly ONE focused question (maximum 2 sentences), using natural conversational phrasing like "Walk me through...", "Let's say you're...", "Suppose we...", "How would you handle...", "What happens if...".
+5. NEVER provide answers, hints, solutions, or code explanations yourself. You are assessing the candidate.
+6. ACKNOWLEDGMENT & RELEVANCE:
+   - If Question 1, offer a warm, natural human greeting: e.g. "Glad to have you here! Let's get started with your ${difficulty.toLowerCase()} session."
+   - For subsequent questions, react like a real human: briefly acknowledge their specific response in a conversational way (e.g. "Good insight on that.", "Fair point on the indexing trade-off.", "I see your reasoning there—let's take that a step further.").
+   - If their answer was clearly off-topic or evasive, gently steer them back: "I see, but that doesn't quite address our question on ${topic || subject}. Let's bring the focus back..."
+7. TOPIC VALIDATION (Mandatory for Question 1):
+   - Set "isValidTopic" to true for legitimate technical, scientific, or academic topics.
+   - Set "isValidTopic" to false only for random gibberish or pure greetings ("asdf", "hello", "1234").
 
-8. Output ONLY a valid JSON object matching this schema:
+Output ONLY a valid JSON object matching this schema:
 {
   "isValidTopic": true,
   "rejectionReason": "If topic is invalid, short 1-sentence reason. Leave empty if valid.",
-  "acknowledgment": "Brief professional acknowledgment phrase (max 15 words)",
-  "question": "The exact question text ending with a question mark"
+  "acknowledgment": "Conversational, natural human acknowledgment (max 15 words)",
+  "question": "The conversational, human-phrased question ending with a question mark"
 }`;
 
       let conversationHistory = '';
@@ -252,32 +258,32 @@ CRITICAL RULES:
         return NextResponse.json({
           isValidTopic: parsed.isValidTopic !== false,
           rejectionReason: parsed.rejectionReason || '',
-          acknowledgment: parsed.acknowledgment || 'Understood.',
-          question: parsed.question || 'Could you explain the core fundamentals of this topic?'
+          acknowledgment: parsed.acknowledgment || (questionIndex === 0 ? "Glad to have you here! Let's get started." : 'Understood. Let us proceed.'),
+          question: parsed.question || 'Could you walk me through the core principles behind this concept?'
         });
       } catch (err) {
         console.error('[Viva API] Question generation error, using fallback:', err);
         const fallbackQuestionsViva = [
-          `What is the primary physical or scientific principle underlying "${experimentName || topic}"?`,
-          `What are the major sources of experimental error in this setup, and how do you minimize them?`,
-          `Explain the key formula or governing equation used in this experiment and the units of each variable.`,
-          `How would changing the experimental parameters affect the final calculated results?`,
-          `What safety precautions and calibration steps are critical before taking measurements in this lab?`
+          `Let's start with the basics: if you were explaining the core intuition behind "${experimentName || topic}" to a junior student, what real-world example would you use?`,
+          `Suppose during your lab measurement, your readings keep drifting higher over 15 minutes. What physical effect is most likely causing that, and how would you correct it?`,
+          `Walk me through what would happen to your measured outcome if we doubled the primary input parameter in this setup.`,
+          `What assumptions did we make in the theoretical derivation that might not hold true in a real physical laboratory?`,
+          `Before turning on the apparatus, what specific calibration step is most critical to avoid systematic measurement error?`
         ];
 
         const fallbackQuestionsInterview = [
-          `Could you walk me through the architecture and core data structures you would use for a project in ${programmingLanguage || 'this stack'}?`,
-          `How do you handle error handling, edge cases, and failure recovery in production systems?`,
-          `Can you explain the time and space complexity trade-offs in your recent technical work?`,
-          `How do you manage concurrency, state management, or asynchronous execution in ${programmingLanguage || 'modern applications'}?`,
-          `If your system experiences a 10x spike in traffic or data volume, what bottlenecks would you investigate first?`
+          `Let's dive in: walk me through how you would architect a production service in ${programmingLanguage || 'this stack'} to handle unexpected spikes in traffic.`,
+          `Suppose a background job starts silently failing in production under concurrent load. Where would you look first, and how would you reproduce the bug?`,
+          `How do you decide between synchronous execution and asynchronous worker queues when designing latency-critical APIs?`,
+          `Walk me through a difficult edge case or race condition you encountered recently and how you resolved it.`,
+          `If your database query response times suddenly tripled after a new deployment, what systematic steps would you take to diagnose it?`
         ];
 
         const fallbackList = type === 'viva' ? fallbackQuestionsViva : fallbackQuestionsInterview;
         const qText = fallbackList[Math.min(questionIndex, fallbackList.length - 1)];
 
         return NextResponse.json({
-          acknowledgment: questionIndex === 0 ? `Welcome to your ${difficulty} level session. Let us begin.` : 'Understood. Let us proceed.',
+          acknowledgment: questionIndex === 0 ? `Welcome to your ${difficulty.toLowerCase()} session! Let's get started.` : 'Understood. Let us proceed.',
           question: qText
         });
       }

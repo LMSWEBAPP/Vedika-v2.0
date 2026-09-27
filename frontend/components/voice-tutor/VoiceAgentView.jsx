@@ -8,32 +8,6 @@ import VoiceChatMessages from './VoiceChatMessages';
 import UnifiedSidebar from './UnifiedSidebar';
 import { getJwtToken } from '@/lib/jwtCache';
 
-function cleanForSpeech(text) {
-  if (!text) return '';
-  return text
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/#+\s/g, '')
-    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-    .replace(/[-*•]\s+/g, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-}
-
-function getVoiceSystemPrompt(subject, language) {
-  const langName = language === 'telugu' ? 'Telugu' : language === 'hindi' ? 'Hindi' : 'English';
-  const subjects = { math: 'Mathematics', science: 'Science', languages: 'Languages', all: 'General Tutoring' };
-  const subjName = subjects[subject] || 'General Tutoring';
-  return `You are Vedika, a brilliant, warm, supportive, and conversational AI voice tutor specializing in ${subjName}.
-You are speaking directly to a student in real-time through voice audio.
-GUIDELINES:
-1. Speak in ${langName}.
-2. Keep your answers concise, natural, and friendly (2 to 4 spoken sentences).
-3. Do NOT use markdown symbols, asterisks, bullet points, numbered lists, or headers because your response will be read aloud.
-4. If the topic is complex, give the core intuition first and ask an encouraging question.`;
-}
 
 const VoiceRobotVisualizer = dynamic(() => import('./VoiceRobotVisualizer'), {
   ssr: false,
@@ -157,13 +131,6 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
   const voiceSessionIdRef = useRef(null);
   const conversationRef = useRef([]);
 
-  // In-Browser Web Voice Engine Refs (Continuous Speech Recognition + Synthesizer for Vercel/Production)
-  const recognitionRef = useRef(null);
-  const webVoiceActiveRef = useRef(false);
-  const isSpeakingRef = useRef(false);
-  const isThinkingRef = useRef(false);
-  const silenceTimerRef = useRef(null);
-  const pendingTranscriptRef = useRef('');
 
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
   useEffect(() => { conversationRef.current = conversation; }, [conversation]);
@@ -256,25 +223,6 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
   // Clean termination of all Web Audio, media streams, and WebSocket handles
   const terminateSession = useCallback((preserveMessage) => {
-    webVoiceActiveRef.current = false;
-    isSpeakingRef.current = false;
-    isThinkingRef.current = false;
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.abort();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
-    }
     if (wsRef.current) {
       try { wsRef.current.close(); } catch {}
       wsRef.current = null;
@@ -359,261 +307,12 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
     }
   }, []);
 
-  // Text-to-Speech Output for Web Voice Mode
-  const speakTutorUtterance = useCallback((text, lang) => {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined' || !window.speechSynthesis) {
-        setConnectionStatus('connected');
-        setStatusMessage('Tutor is listening... Feel free to talk.');
-        resolve();
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-      const clean = cleanForSpeech(text);
-      if (!clean) {
-        setConnectionStatus('connected');
-        setStatusMessage('Tutor is listening... Feel free to talk.');
-        resolve();
-        return;
-      }
-
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
-
-      let langTag = 'en-US';
-      if (lang === 'telugu') langTag = 'te-IN';
-      else if (lang === 'hindi') langTag = 'hi-IN';
-      utterance.lang = langTag;
-
-      try {
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find(v => 
-          (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Zira') || v.name.includes('Jenny') || v.name.includes('Female')) &&
-          v.lang.startsWith(langTag.slice(0, 2))
-        ) || voices.find(v => v.lang.startsWith(langTag.slice(0, 2)));
-        if (preferred) utterance.voice = preferred;
-      } catch (e) {}
-
-      utterance.onstart = () => {
-        isSpeakingRef.current = true;
-        setConnectionStatus('tutor-speaking');
-        setStatusMessage('Vedika is speaking...');
-      };
-
-      const finishSpeaking = () => {
-        isSpeakingRef.current = false;
-        if (webVoiceActiveRef.current) {
-          setConnectionStatus('connected');
-          setStatusMessage('Tutor is listening... Feel free to talk.');
-        }
-        resolve();
-      };
-
-      utterance.onend = finishSpeaking;
-      utterance.onerror = finishSpeaking;
-
-      window.speechSynthesis.speak(utterance);
-    });
-  }, []);
-
-  // Process Student Spoken Turn via Tutor Chat API
-  const handleWebVoiceStudentTurn = useCallback(async (spokenText, sid) => {
-    if (!spokenText || isThinkingRef.current || !webVoiceActiveRef.current) return;
-
-    isThinkingRef.current = true;
-    setConnectionStatus('tutor-speaking');
-    setStatusMessage('Vedika is thinking...');
-
-    // Add student message to conversation transcript
-    const userMsg = {
-      id: 'student-' + Date.now().toString(36),
-      sender: 'student',
-      text: spokenText,
-      timestamp: new Date()
-    };
-    setConversation(prev => [...prev, userMsg]);
-
-    try {
-      let token = null;
-      try {
-        token = await getJwtToken();
-      } catch (e) {}
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch('/api/tutor/chat', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          sessionId: sid,
-          userId: activeUserId,
-          user: spokenText,
-          system: getVoiceSystemPrompt(selectedSubject, selectedLanguage)
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Chat API error: ${res.status}`);
-      }
-
-      const data = await res.json();
-      const reply = data.text || "I understand. What would you like to explore next?";
-
-      // Add tutor response to conversation transcript
-      const tutorMsg = {
-        id: 'tutor-' + Date.now().toString(36),
-        sender: 'tutor',
-        text: reply,
-        timestamp: new Date()
-      };
-      setConversation(prev => [...prev, tutorMsg]);
-
-      // Speak response aloud
-      await speakTutorUtterance(reply, selectedLanguage);
-    } catch (err) {
-      console.warn('[WebVoice] Error in student turn:', err);
-      const fallbackReply = "I heard you, but had a slight connection hiccup. Could you say that again?";
-      setConversation(prev => [
-        ...prev,
-        {
-          id: 'tutor-' + Date.now().toString(36),
-          sender: 'tutor',
-          text: fallbackReply,
-          timestamp: new Date()
-        }
-      ]);
-      await speakTutorUtterance(fallbackReply, selectedLanguage);
-    } finally {
-      isThinkingRef.current = false;
-    }
-  }, [activeUserId, selectedSubject, selectedLanguage, speakTutorUtterance]);
-
-  // Start In-Browser Web Voice Session (Web Speech Recognition + Tutor Chat + Speech Synthesis)
-  const startWebVoiceMode = useCallback((voiceSid) => {
-    webVoiceActiveRef.current = true;
-    wsHadErrorRef.current = false;
-    setConnectionStatus('connected');
-    setStatusMessage('Tutor connected! Start speaking.');
-
-    const SpeechRecognition = typeof window !== 'undefined'
-      ? (window.SpeechRecognition || window.webkitSpeechRecognition)
-      : null;
-
-    if (!SpeechRecognition) {
-      setStatusMessage('Voice recognition is best supported in Chrome, Edge, or Safari.');
-      return;
-    }
-
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.abort();
-      } catch (e) {}
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    let langTag = 'en-US';
-    if (selectedLanguage === 'telugu') langTag = 'te-IN';
-    else if (selectedLanguage === 'hindi') langTag = 'hi-IN';
-    recognition.lang = langTag;
-
-    recognition.onstart = () => {
-      if (webVoiceActiveRef.current) {
-        setConnectionStatus('connected');
-        if (!isSpeakingRef.current && !isThinkingRef.current) {
-          setStatusMessage('Tutor is listening... Feel free to talk.');
-        }
-      }
-    };
-
-    recognition.onresult = (event) => {
-      if (isMutedRef.current || !webVoiceActiveRef.current) return;
-
-      // Barge-in: if tutor is speaking and student starts speaking, stop tutor audio immediately
-      if (isSpeakingRef.current && typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        isSpeakingRef.current = false;
-        setConnectionStatus('connected');
-        setStatusMessage('Listening to you...');
-      }
-
-      let interim = '';
-      let finalized = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const res = event.results[i];
-        const text = res[0]?.transcript || '';
-        if (res.isFinal) {
-          finalized += text + ' ';
-        } else {
-          interim += text;
-        }
-      }
-
-      const activeText = (finalized || interim).trim();
-      if (activeText) {
-        pendingTranscriptRef.current = activeText;
-        setStatusMessage(`Listening: "${activeText.slice(-35)}..."`);
-
-        // Debounce turn trigger when student pauses speaking
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = setTimeout(() => {
-          const toSend = pendingTranscriptRef.current.trim();
-          pendingTranscriptRef.current = '';
-          if (toSend && !isThinkingRef.current && webVoiceActiveRef.current) {
-            handleWebVoiceStudentTurn(toSend, voiceSid);
-          }
-        }, 1200);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'no-speech') return; // Normal silence
-      if (event.error === 'not-allowed') {
-        setStatusMessage('Microphone permission blocked. Please allow mic access in your browser.');
-        setConnectionStatus('error');
-        webVoiceActiveRef.current = false;
-      }
-    };
-
-    recognition.onend = () => {
-      // Auto-restart if session is still active and not muted
-      if (webVoiceActiveRef.current && !isMutedRef.current) {
-        try {
-          recognition.start();
-        } catch (e) {}
-      }
-    };
-
-    try {
-      recognition.start();
-    } catch (e) {
-      console.warn('[WebVoice] start error:', e);
-    }
-  }, [selectedLanguage, handleWebVoiceStudentTurn]);
-
   // Handle Mute Microphone Toggle
   const handleToggleMute = useCallback(() => {
     setIsMuted(prev => {
       const next = !prev;
       isMutedRef.current = next;
-      if (webVoiceActiveRef.current && recognitionRef.current) {
-        if (next) {
-          try { recognitionRef.current.abort(); } catch (e) {}
-          setStatusMessage('Microphone muted. Tap mic icon to resume.');
-        } else {
-          try { recognitionRef.current.start(); } catch (e) {}
-          setStatusMessage('Tutor is listening... Feel free to talk.');
-        }
-      }
+      setStatusMessage(next ? 'Microphone muted. Tap mic to resume.' : 'Tutor is listening... Feel free to talk.');
       return next;
     });
   }, []);
@@ -630,7 +329,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true
+            autoGainControl: true,
           }
         });
         micStreamRef.current = stream;
@@ -644,21 +343,22 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
         const voiceSid = sessionId || voiceSessionIdRef.current || ('voice-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
         voiceSessionIdRef.current = voiceSid;
 
-        // On production serverless (e.g. Vercel) where WebSocket servers are not deployed, seamlessly start Web Voice mode
-        const isServerlessOrProd = typeof window !== 'undefined' && 
-          (window.location.hostname.includes('vercel.app') || (window.location.hostname !== 'localhost' && !process.env.NEXT_PUBLIC_VOICE_WS_URL && !process.env.NEXT_PUBLIC_WS_URL));
+        // WebSocket Target Strategy (Port 5001 primary, Port 5050 and host fallback)
+        const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
+          typeof window !== 'undefined' && window.location.hostname === 'localhost'
+            ? 'ws://localhost:5001'
+            : `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
+        );
 
-        if (isServerlessOrProd) {
-          console.warn('[VoiceAgent] Production serverless environment detected. Initializing browser Web Voice engine...');
-          startWebVoiceMode(voiceSid);
-          return;
-        }
+        const fallbackHosts = [
+          primaryWsHost,
+          'ws://localhost:5050',
+          `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
+        ].filter((host, idx, arr) => arr.indexOf(host) === idx);
 
-        // Local or Dedicated WebSocket Strategy
-        const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5050';
-        const fallbackWsHost = `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`;
+        let currentHostIdx = 0;
 
-        const connectToSocket = (targetHost, isFallbackAttempt = false) => {
+        const connectToSocket = (targetHost) => {
           const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
           let wsUrl = `${targetHost}/api/ws?language=${encodeURIComponent(selectedLanguage)}&subject=${encodeURIComponent(selectedSubject)}&sessionId=${encodeURIComponent(voiceSid)}&userId=${encodeURIComponent(activeUserId)}`;
           if (jwtToken) {
@@ -668,21 +368,19 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
           const ws = new WebSocket(wsUrl);
           wsRef.current = ws;
 
-          // 2.5-second connection timeout, fallback to Web Voice if server is not reachable
           const connTimeout = setTimeout(() => {
             if (ws.readyState !== WebSocket.OPEN) {
               try { ws.close(); } catch {}
-
-              if (!isFallbackAttempt && targetHost !== fallbackWsHost) {
-                console.warn('[VoiceAgent] Primary port 5050 timed out. Trying fallback host...');
-                connectToSocket(fallbackWsHost, true);
-                return;
+              currentHostIdx++;
+              if (currentHostIdx < fallbackHosts.length) {
+                console.warn(`[VoiceAgent] WebSocket timeout on ${targetHost}. Trying fallback: ${fallbackHosts[currentHostIdx]}...`);
+                connectToSocket(fallbackHosts[currentHostIdx]);
+              } else {
+                setConnectionStatus('error');
+                setStatusMessage('Connection timed out. Verify the voice server is running (npm run dev:voice).');
               }
-
-              console.warn('[VoiceAgent] WebSocket timeout, falling back to Web Voice engine...');
-              startWebVoiceMode(voiceSid);
             }
-          }, 2500);
+          }, 4500);
 
           ws.onopen = () => {
             clearTimeout(connTimeout);
@@ -778,25 +476,26 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
           ws.onerror = () => {
             clearTimeout(connTimeout);
-            if (!isFallbackAttempt && targetHost !== fallbackWsHost) {
-              console.warn('[VoiceAgent] Primary port error. Falling back to host...');
-              connectToSocket(fallbackWsHost, true);
+            currentHostIdx++;
+            if (currentHostIdx < fallbackHosts.length) {
+              console.warn(`[VoiceAgent] WebSocket error on ${targetHost}. Trying fallback: ${fallbackHosts[currentHostIdx]}...`);
+              try { ws.close(); } catch {}
+              connectToSocket(fallbackHosts[currentHostIdx]);
               return;
             }
-            console.warn('[VoiceAgent] WebSocket unavailable, falling back to Web Voice engine...');
-            try { ws.close(); } catch {}
-            startWebVoiceMode(voiceSid);
+            setStatusMessage('Connection failed. Verify the voice server is running (npm run dev:voice).');
+            setConnectionStatus('error');
           };
 
           ws.onclose = () => {
             clearTimeout(connTimeout);
-            if (!wsHadErrorRef.current && connectionStatus === 'connected' && !webVoiceActiveRef.current) {
+            if (!wsHadErrorRef.current && connectionStatus === 'connected') {
               terminateSession(false);
             }
           };
         };
 
-        connectToSocket(primaryWsHost, false);
+        connectToSocket(fallbackHosts[0]);
       } catch (err) {
         setConnectionStatus('error');
         setStatusMessage(`Microphone access denied: ${err.message || err}. Please permit microphone permissions.`);
@@ -805,7 +504,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       saveCurrentSession();
       terminateSession();
     }
-  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, playPcmAudioChunk, terminateSession, saveCurrentSession, sessionId, activeUserId, startWebVoiceMode]);
+  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, playPcmAudioChunk, terminateSession, saveCurrentSession, sessionId, activeUserId]);
 
   const clearTranscriptLog = useCallback(() => {
     setConversation([]);

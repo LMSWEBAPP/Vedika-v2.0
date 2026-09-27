@@ -1197,11 +1197,11 @@ export default function VivaInterviewPage() {
         try { await audioCtx.resume(); } catch (e) {}
       }
 
-      // Dual-Port Strategy: Try dedicated voice port 5050 first, fallback to current window host (port 3000)
+      // Dual-Port Strategy: Try dedicated voice port 5001 first, fallback to current window host (port 3000)
       const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
-        window.location.hostname === 'localhost'
-          ? 'ws://localhost:5050'
-          : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+        typeof window !== 'undefined' && window.location.hostname === 'localhost'
+          ? 'ws://localhost:5001'
+          : `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
       );
 
       const fallbackWsHost = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
@@ -1662,9 +1662,19 @@ export default function VivaInterviewPage() {
 
   // Submit Answer & Move to Next Question or Final Evaluation
   const handleAnswerSubmit = async () => {
+    const rawAnswer = (userAnswer || sessionFinalRef.current || '').trim();
+    if (!rawAnswer) {
+      const msg = '⚠️ Please provide an answer before submitting. Speak into your microphone or type your response below.';
+      setStatusMessage(msg);
+      if (typeof window !== 'undefined') {
+        alert('⚠️ Please provide an answer before submitting. Speak into your microphone or type your response.');
+      }
+      return;
+    }
+
     cleanupRecognition();
 
-    const submittedAnswer = userAnswer.trim() || 'Candidate provided oral response during live examination.';
+    const submittedAnswer = rawAnswer;
     const durationSec = Math.max(1, Math.round((Date.now() - turnStartTime) / 1000));
     const newHistory = [
       ...history,
@@ -5679,8 +5689,12 @@ export default function VivaInterviewPage() {
 
               {/* SUBMIT & SKIP BUTTONS */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                  {loading && (statusMessage || 'Examiner is evaluating your answer...')}
+                <span style={{ 
+                  fontSize: '0.8rem', 
+                  color: statusMessage?.startsWith('⚠️') ? '#F59E0B' : 'var(--muted)',
+                  fontWeight: statusMessage?.startsWith('⚠️') ? 600 : 400
+                }}>
+                  {statusMessage || (loading ? 'Examiner is evaluating your answer...' : '')}
                 </span>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
