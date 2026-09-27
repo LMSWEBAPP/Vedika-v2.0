@@ -32,6 +32,63 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 const SESSIONS_KEY = 'voice-tutor-sessions';
 const TEXT_SESSIONS_KEY = 'general-tutor-sessions';
 
+function analyzeSentiment(text) {
+  if (!text) return null;
+  const lowercase = text.toLowerCase();
+  const confusedWords = ["don't understand","do not understand","dont understand","not sure","confused","cannot get","cant get","difficult","hard","stuck","doubt","explain again","unclear","lost","struggling","help","confusing","అర్థం కాలేదు","కష్టంగా ఉంది","సందేహం","తెలియదు","మళ్ళీ చెప్పండి","కన్ఫ్యూజ్","ardham raledu","artham kaledu","kashtanga undi","malli cheppandi","samajh nahi","mushkil","kathin","shanka","phirse","phir se","pareshani","confuse","sandeha"];
+  const positiveWords = ["understand","got it","easy","awesome","perfect","clear","great","wow","fantastic","amazing","makes sense","thank you","thanks","excellent","brilliant","అర్థమైంది","సులభంగా ఉంది","చాలా బాగుంది","థాంక్స్","సూపర్","అవును","ardhamaindi","sulabhanga undi","chala bagundi","samajh gaya","samajh gya","aasan","saral","badhiya","bahut achha","clear hai","dhanyawad","shukriya"];
+  const curiousWords = ["what is","how do","tell me about","why is","curious","interested","learn","know","question","ఏమిటి","ఎలా","ఎందుకు","తెలుసుకోవాలి","emiti","ela","enduku","telusukovali","kya hai","kaise","kyun","jaan na"];
+  let confusedCount = 0, positiveCount = 0, curiousCount = 0;
+  for (const w of confusedWords) { if (lowercase.includes(w)) confusedCount++; }
+  for (const w of positiveWords) { if (lowercase.includes(w)) positiveCount++; }
+  for (const w of curiousWords) { if (lowercase.includes(w)) curiousCount++; }
+  if (confusedCount > positiveCount && confusedCount >= curiousCount)
+    return { label: 'Struggling / Confused', score: -0.6, emoji: '😟' };
+  if (positiveCount > confusedCount && positiveCount >= curiousCount)
+    return { label: 'Happy / Confident', score: 0.8, emoji: '😊' };
+  if (curiousCount > confusedCount && curiousCount > positiveCount)
+    return { label: 'Curious / Inquisitive', score: 0.4, emoji: '🤔' };
+  return { label: 'Calm / Conversational', score: 0.0, emoji: '😐' };
+}
+
+function buildTutorSystemPrompt(language, subject, memoryCtx = '') {
+  let prompt =
+    'Your name is Vedika. You are a warm, highly humanized, and friendly academic tutor supporting school students. ' +
+    'VOICE & HUMANIZATION GUIDELINES: ' +
+    'Speak in a smooth, expressive, warm, and natural human tone with a familiar, conversational Indian accent rhythm in English ' +
+    '(using natural phrases like "chalo", "got it ya", "super simple", "no problem at all", "don\'t worry!"). ' +
+    'Sound like an encouraging elder sibling or personal tutor: warm, relatable, dynamic, and full of natural life. ' +
+    'Keep answers strictly short and fluid (usually 1 to 2 short sentences per turn) so text-to-speech voice output sounds immediate, crisp, and human. ' +
+    'Never output markdown symbols, asterisks, bullet points, numbers, or complex formulas into text, as they disrupt natural voice synthesis. ';
+
+  if (language === 'telugu') {
+    prompt += 'LANGUAGE MODE: You must speak in sweet, conversational Telugu only (unless referring to specific scientific/mathematical English terms). ';
+  } else if (language === 'hindi') {
+    prompt += 'LANGUAGE MODE: You must speak in simple, warm, conversational Hindi. ';
+  } else if (language === 'english') {
+    prompt += 'LANGUAGE MODE: Speak in clear, warm, expressive Indian English with friendly colloquial phrasing. ';
+  } else {
+    prompt +=
+      'CODE-SWITCHING & LANGUAGE MATCHING: Dynamically match and mirror the student\'s exact language mix and tone. ' +
+      'If the user speaks in Teluglish (e.g., "Artham kaledu brother", "Ela cheyyali cheppu"), respond in natural, sweet Teluglish. ' +
+      'If the user speaks in Hinglish (e.g., "Samajh nahi aaya, phir se batao"), respond in natural, friendly Hinglish. ' +
+      'If the user speaks in English, respond in natural, warm Indian English. ';
+  }
+
+  if (subject === 'math') {
+    prompt += ' SUBJECT FOCUS: Currently helping with Mathematics! Explain concepts using simple physical analogies.';
+  } else if (subject === 'science') {
+    prompt += ' SUBJECT FOCUS: Currently helping with Science! Explain concepts with fun real-world facts.';
+  } else if (subject === 'languages') {
+    prompt += ' SUBJECT FOCUS: Currently helping with Languages & Reading! Expand vocabulary and grammar.';
+  } else {
+    prompt += ' Ready to tutor across all academic subjects with simple, delightful real-world analogies.';
+  }
+
+  if (memoryCtx) prompt += memoryCtx;
+  return prompt;
+}
+
 function loadSessions() {
   if (typeof window === 'undefined') return [];
   try {
@@ -130,6 +187,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
   const wsHadErrorRef = useRef(false);
   const voiceSessionIdRef = useRef(null);
   const conversationRef = useRef([]);
+  const liveSessionRef = useRef(null);
 
 
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
@@ -223,6 +281,10 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
   // Clean termination of all Web Audio, media streams, and WebSocket handles
   const terminateSession = useCallback((preserveMessage) => {
+    if (liveSessionRef.current) {
+      try { liveSessionRef.current.close(); } catch {}
+      liveSessionRef.current = null;
+    }
     if (wsRef.current) {
       try { wsRef.current.close(); } catch {}
       wsRef.current = null;
@@ -358,6 +420,164 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
 
         let currentHostIdx = 0;
 
+        const isLocalHost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname === '[::1]'
+        );
+
+        const setupMicProcessor = (onChunk) => {
+          if (processorRef.current) {
+            try { processorRef.current.disconnect(); } catch {}
+          }
+          if (sourceRef.current) {
+            try { sourceRef.current.disconnect(); } catch {}
+          }
+          const source = audioCtx.createMediaStreamSource(stream);
+          sourceRef.current = source;
+          const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+          processorRef.current = processor;
+
+          const silentGain = audioCtx.createGain();
+          silentGain.gain.value = 0;
+          source.connect(processor);
+          processor.connect(silentGain);
+          silentGain.connect(audioCtx.destination);
+
+          processor.onaudioprocess = (e) => {
+            if (isMutedRef.current) return;
+            const float32Data = e.inputBuffer.getChannelData(0);
+            const pcmBuffer = new ArrayBuffer(float32Data.length * 2);
+            const dataView = new DataView(pcmBuffer);
+            let offset = 0;
+            for (let i = 0; i < float32Data.length; i++, offset += 2) {
+              let s = Math.max(-1, Math.min(1, float32Data[i]));
+              dataView.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+            }
+            let binary = '';
+            const bytes = new Uint8Array(pcmBuffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            onChunk(btoa(binary));
+          };
+        };
+
+        const connectDirectGeminiLive = async () => {
+          try {
+            setConnectionStatus('connecting');
+            setStatusMessage('Connecting directly to Gemini Live Voice AI...');
+            const tokenRes = await fetch('/api/voice/token');
+            if (!tokenRes.ok) {
+              const errBody = await tokenRes.json().catch(() => ({}));
+              throw new Error(errBody.error || 'Gemini API key is not configured on server.');
+            }
+            const { key, model } = await tokenRes.json();
+
+            const { GoogleGenAI, Modality } = await import('@google/genai');
+            const ai = new GoogleGenAI({
+              apiKey: key,
+              httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+            });
+
+            const systemPrompt = buildTutorSystemPrompt(selectedLanguage, selectedSubject);
+
+            const liveSession = await ai.live.connect({
+              model: model || 'gemini-2.0-flash-exp',
+              callbacks: {
+                onmessage: (message) => {
+                  const content = message.serverContent;
+                  if (!content) return;
+                  for (const part of content.modelTurn?.parts || []) {
+                    if (part.inlineData?.data) {
+                      playPcmAudioChunk(part.inlineData.data);
+                    }
+                  }
+                  if (content.outputTranscription?.text) {
+                    const text = content.outputTranscription.text;
+                    setConversation((prev) => {
+                      if (prev.length > 0 && prev[prev.length - 1].sender === 'tutor') {
+                        const updated = [...prev];
+                        updated[updated.length - 1] = {
+                          ...updated[updated.length - 1],
+                          text: (updated[updated.length - 1].text ? updated[updated.length - 1].text + ' ' : '') + text
+                        };
+                        return updated;
+                      }
+                      return [
+                        ...prev,
+                        {
+                          id: Math.random().toString(36).slice(2),
+                          sender: 'tutor',
+                          text: text,
+                          timestamp: new Date()
+                        }
+                      ];
+                    });
+                  }
+                  if (content.interrupted) {
+                    stopAllAudioPlaybacks();
+                    setConnectionStatus('connected');
+                    setStatusMessage('Tutor was interrupted. Listening now...');
+                  }
+                  if (content.inputTranscription?.text?.trim()) {
+                    const userText = content.inputTranscription.text;
+                    const sentiment = analyzeSentiment(userText);
+                    setConversation((prev) => [
+                      ...prev,
+                      {
+                        id: Math.random().toString(36).slice(2),
+                        sender: 'student',
+                        text: userText,
+                        timestamp: new Date(),
+                        sentiment
+                      }
+                    ]);
+                    if (sentiment) setCurrentSentiment(sentiment);
+                  }
+                },
+                onclose: () => {
+                  terminateSession(false);
+                },
+                onerror: (err) => {
+                  console.error('[Gemini Live] Direct session error:', err);
+                  setConnectionStatus('error');
+                  setStatusMessage('Gemini Live session error. Please tap mic to retry.');
+                }
+              },
+              config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: 'Zephyr' }
+                  }
+                },
+                systemInstruction: systemPrompt,
+                outputAudioTranscription: {},
+                inputAudioTranscription: {}
+              }
+            });
+
+            liveSessionRef.current = liveSession;
+            setConnectionStatus('connected');
+            setStatusMessage('Tutor connected! Start speaking.');
+
+            setupMicProcessor((base64Data) => {
+              if (!liveSessionRef.current || isMutedRef.current) return;
+              liveSession.sendRealtimeInput({
+                audio: {
+                  data: base64Data,
+                  mimeType: 'audio/pcm;rate=16000'
+                }
+              });
+            });
+          } catch (err) {
+            console.error('[VoiceAgent] Direct connection error:', err);
+            setConnectionStatus('error');
+            setStatusMessage(`Connection failed: ${err.message || err}.`);
+          }
+        };
+
         const connectToSocket = (targetHost) => {
           const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
           let wsUrl = `${targetHost}/api/ws?language=${encodeURIComponent(selectedLanguage)}&subject=${encodeURIComponent(selectedSubject)}&sessionId=${encodeURIComponent(voiceSid)}&userId=${encodeURIComponent(activeUserId)}`;
@@ -376,11 +596,11 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
                 console.warn(`[VoiceAgent] WebSocket timeout on ${targetHost}. Trying fallback: ${fallbackHosts[currentHostIdx]}...`);
                 connectToSocket(fallbackHosts[currentHostIdx]);
               } else {
-                setConnectionStatus('error');
-                setStatusMessage('Connection timed out. Verify the voice server is running (npm run dev:voice).');
+                console.warn('[VoiceAgent] Dedicated WebSocket server unreachable. Connecting directly to Gemini Live API...');
+                connectDirectGeminiLive();
               }
             }
-          }, 4500);
+          }, 2500);
 
           ws.onopen = () => {
             clearTimeout(connTimeout);
@@ -388,36 +608,10 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
             setConnectionStatus('connected');
             setStatusMessage('Tutor connected! Start speaking.');
 
-            // Establish 16kHz PCM audio streaming pipeline from microphone
-            const source = audioCtx.createMediaStreamSource(stream);
-            sourceRef.current = source;
-            const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-            processorRef.current = processor;
-
-            // Route through zero-gain node to prevent local feedback/echo
-            const silentGain = audioCtx.createGain();
-            silentGain.gain.value = 0;
-            source.connect(processor);
-            processor.connect(silentGain);
-            silentGain.connect(audioCtx.destination);
-
-            processor.onaudioprocess = (e) => {
+            setupMicProcessor((base64Data) => {
               if (ws.readyState !== WebSocket.OPEN || isMutedRef.current) return;
-              const float32Data = e.inputBuffer.getChannelData(0);
-              const pcmBuffer = new ArrayBuffer(float32Data.length * 2);
-              const dataView = new DataView(pcmBuffer);
-              let offset = 0;
-              for (let i = 0; i < float32Data.length; i++, offset += 2) {
-                let s = Math.max(-1, Math.min(1, float32Data[i]));
-                dataView.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-              }
-              let binary = '';
-              const bytes = new Uint8Array(pcmBuffer);
-              for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-              }
-              ws.send(JSON.stringify({ type: 'audio', data: btoa(binary) }));
-            };
+              ws.send(JSON.stringify({ type: 'audio', data: base64Data }));
+            });
           };
 
           ws.onmessage = (event) => {
@@ -483,8 +677,9 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               connectToSocket(fallbackHosts[currentHostIdx]);
               return;
             }
-            setStatusMessage('Connection failed. Verify the voice server is running (npm run dev:voice).');
-            setConnectionStatus('error');
+            console.warn('[VoiceAgent] Dedicated WebSocket server unreachable. Connecting directly to Gemini Live API...');
+            try { ws.close(); } catch {}
+            connectDirectGeminiLive();
           };
 
           ws.onclose = () => {
@@ -495,7 +690,12 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
           };
         };
 
-        connectToSocket(fallbackHosts[0]);
+        // If in production on Vercel and no external WebSocket URL is configured, connect directly to Gemini Live immediately
+        if (!isLocalHost && !process.env.NEXT_PUBLIC_VOICE_WS_URL) {
+          connectDirectGeminiLive();
+        } else {
+          connectToSocket(fallbackHosts[0]);
+        }
       } catch (err) {
         setConnectionStatus('error');
         setStatusMessage(`Microphone access denied: ${err.message || err}. Please permit microphone permissions.`);
