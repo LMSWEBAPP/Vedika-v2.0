@@ -218,20 +218,11 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
     }).catch(() => {});
   }, [selectedSubject, selectedLanguage, activeUserId, sessionId, onSessionComplete]);
 
-  const recognitionRef = useRef(null);
-
   // Clean termination of all Web Audio, media streams, and WebSocket handles
   const terminateSession = useCallback((preserveMessage) => {
     if (wsRef.current) {
       try { wsRef.current.close(); } catch {}
       wsRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
-      recognitionRef.current = null;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try { window.speechSynthesis.cancel(); } catch {}
     }
     stopAllAudioPlaybacks();
     if (audioCtxRef.current) {
@@ -313,125 +304,6 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
     }
   }, []);
 
-  // Web Voice Fallback: SpeechRecognition + /api/tutor/chat + speechSynthesis
-  // Ensures seamless voice interaction even on serverless platforms (like Vercel) where WebSocket is unavailable
-  const startWebVoiceFallback = useCallback((sid) => {
-    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
-    if (!SpeechRecognition) {
-      setConnectionStatus('error');
-      setStatusMessage('Live voice server unavailable. Please run local voice server (npm run dev:voice) or open in Google Chrome/Edge.');
-      return;
-    }
-
-    setConnectionStatus('connected');
-    setStatusMessage('Connected in Web Voice mode! Speak to Vedika.');
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      recognition.continuous = true;
-      recognition.interimResults = false;
-
-      const langMap = {
-        'en': 'en-US',
-        'hi': 'hi-IN',
-        'es': 'es-ES',
-        'fr': 'fr-FR',
-        'de': 'de-DE',
-        'te': 'te-IN',
-        'ta': 'ta-IN'
-      };
-      recognition.lang = langMap[selectedLanguage] || 'en-US';
-
-      recognition.onresult = async (event) => {
-        const transcript = event.results[event.results.length - 1]?.[0]?.transcript?.trim();
-        if (!transcript) return;
-
-        setConversation(prev => [
-          ...prev,
-          {
-            id: Math.random().toString(36).slice(2),
-            sender: 'student',
-            text: transcript,
-            timestamp: new Date()
-          }
-        ]);
-
-        setStatusMessage('Vedika is thinking...');
-
-        try {
-          const res = await fetch('/api/tutor/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: transcript,
-              subject: selectedSubject,
-              language: selectedLanguage,
-              sessionId: sid,
-              userId: activeUserId
-            })
-          });
-          const data = await res.json();
-          const reply = data.response || data.message || "I'm listening. Could you clarify your question?";
-
-          setConversation(prev => [
-            ...prev,
-            {
-              id: Math.random().toString(36).slice(2),
-              sender: 'tutor',
-              text: reply,
-              timestamp: new Date()
-            }
-          ]);
-
-          if (typeof window !== 'undefined' && 'speechSynthesis' in window && !isMutedRef.current) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(reply);
-            utterance.lang = langMap[selectedLanguage] || 'en-US';
-            setConnectionStatus('tutor-speaking');
-            setStatusMessage('Vedika is speaking...');
-            utterance.onend = () => {
-              setConnectionStatus('connected');
-              setStatusMessage('Vedika is listening... Feel free to talk.');
-            };
-            utterance.onerror = () => {
-              setConnectionStatus('connected');
-              setStatusMessage('Vedika is listening... Feel free to talk.');
-            };
-            window.speechSynthesis.speak(utterance);
-          } else {
-            setConnectionStatus('connected');
-            setStatusMessage('Vedika is listening... Feel free to talk.');
-          }
-        } catch (e) {
-          console.error('[WebVoiceFallback] Chat error:', e);
-          setConnectionStatus('connected');
-          setStatusMessage('Vedika is listening... Feel free to talk.');
-        }
-      };
-
-      recognition.onerror = (e) => {
-        console.warn('[WebVoiceFallback] SpeechRecognition error:', e.error);
-        if (e.error === 'not-allowed') {
-          setConnectionStatus('error');
-          setStatusMessage('Microphone permission was denied.');
-        }
-      };
-
-      recognition.onend = () => {
-        if (recognitionRef.current) {
-          try { recognition.start(); } catch {}
-        }
-      };
-
-      recognition.start();
-    } catch (err) {
-      console.warn('[WebVoiceFallback] initialization error:', err);
-      setConnectionStatus('error');
-      setStatusMessage('Voice interaction failed to start. Please check microphone permissions.');
-    }
-  }, [selectedLanguage, selectedSubject, activeUserId]);
-
   // Main Toggle: Connect or Disconnect Live Gemini WebSocket Session
   const handleMicToggle = useCallback(async () => {
     if (connectionStatus === 'disconnected' || connectionStatus === 'error') {
@@ -488,8 +360,8 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
                 return;
               }
 
-              console.warn('[VoiceAgent] WebSocket timed out. Falling back to Web Voice mode...');
-              startWebVoiceFallback(voiceSid);
+              setConnectionStatus('error');
+              setStatusMessage('Connection timed out. Make sure the voice server is running (npm run dev:voice).');
             }
           }, 5000);
 
@@ -595,8 +467,8 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               return;
             }
             wsHadErrorRef.current = true;
-            console.warn('[VoiceAgent] WebSocket connection error. Falling back to Web Voice mode...');
-            startWebVoiceFallback(voiceSid);
+            setConnectionStatus('error');
+            setStatusMessage('Connection failed. Verify the voice server is running (npm run dev:voice).');
           };
 
           ws.onclose = () => {
@@ -616,7 +488,7 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       saveCurrentSession();
       terminateSession();
     }
-  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, playPcmAudioChunk, terminateSession, saveCurrentSession, sessionId, activeUserId, startWebVoiceFallback]);
+  }, [connectionStatus, selectedLanguage, selectedSubject, stopAllAudioPlaybacks, playPcmAudioChunk, terminateSession, saveCurrentSession, sessionId, activeUserId]);
 
   const clearTranscriptLog = useCallback(() => {
     setConversation([]);

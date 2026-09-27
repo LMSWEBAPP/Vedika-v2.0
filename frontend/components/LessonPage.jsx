@@ -824,7 +824,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             minWidth: 0,
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            gap: isExpanded ? 8 : 0
+            gap: 0
           }}>
             {/* Opening Companion Tab Drawer Panel */}
             {isExpanded && (() => {

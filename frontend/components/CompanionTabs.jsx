@@ -63,6 +63,7 @@ export default function CompanionTabs({
           const isActive = activeTab === tab.id;
           const { Icon } = tab;
           const count = tab.id === 'notes' ? notesCount : tab.id === 'qa' ? qaCount : 0;
+          const isMerged = isActive && isExpanded;
 
           return (
             <button
@@ -77,18 +78,21 @@ export default function CompanionTabs({
                 justifyContent: 'center',
                 gap: 5,
                 padding: '12px 6px',
-                borderRadius: 12,
-                border: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
-                background: isActive ? `${tab.color}18` : 'transparent',
-                boxShadow: isActive ? `0 0 16px ${tab.color}25` : 'none',
+                borderRadius: isMerged ? '0 16px 16px 0' : 12,
+                borderTop: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderRight: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderBottom: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                borderLeft: isMerged ? `3px solid ${T.s1}` : (isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent'),
+                background: isActive ? (isMerged ? T.s1 : `${tab.color}18`) : 'transparent',
+                boxShadow: isActive && !isMerged ? `0 0 16px ${tab.color}25` : 'none',
                 color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                width: '100%',
-                marginLeft: 0,
+                width: isMerged ? 'calc(100% + 2px)' : '100%',
+                marginLeft: isMerged ? -2 : 0,
                 boxSizing: 'border-box',
                 position: 'relative',
-                zIndex: isActive ? 10 : 1
+                zIndex: isActive ? 20 : 1
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
@@ -105,17 +109,62 @@ export default function CompanionTabs({
                 }
               }}
             >
-              {isActive && (
-                <span style={{
-                  position: 'absolute',
-                  left: 2,
-                  top: '20%',
-                  bottom: '20%',
-                  width: 3,
-                  borderRadius: 3,
-                  background: tab.color,
-                  boxShadow: `0 0 8px ${tab.color}`
-                }} />
+              {isMerged && (
+                <>
+                  {/* Smooth top concave fillet curve blending into panel */}
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      top: -16,
+                      left: -1,
+                      width: 16,
+                      height: 16,
+                      pointerEvents: 'none',
+                      overflow: 'visible',
+                      zIndex: 25
+                    }}
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M 0,0 A 16 16 0 0 0 16,16 L 0,16 Z"
+                      fill={T.s1}
+                    />
+                    <line x1="0" y1="0" x2="0" y2="16" stroke={T.s1} strokeWidth="3" />
+                    <path
+                      d="M 0,0 A 16 16 0 0 0 16,16"
+                      fill="none"
+                      stroke={tab.color}
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+
+                  {/* Smooth bottom concave fillet curve blending into panel */}
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      bottom: -16,
+                      left: -1,
+                      width: 16,
+                      height: 16,
+                      pointerEvents: 'none',
+                      overflow: 'visible',
+                      zIndex: 25
+                    }}
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M 16,0 A 16 16 0 0 0 0,16 L 0,0 Z"
+                      fill={T.s1}
+                    />
+                    <line x1="0" y1="0" x2="0" y2="16" stroke={T.s1} strokeWidth="3" />
+                    <path
+                      d="M 16,0 A 16 16 0 0 0 0,16"
+                      fill="none"
+                      stroke={tab.color}
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                </>
               )}
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={20} style={{ color: isActive ? tab.color : 'inherit', filter: 'none', transition: 'color 0.2s' }} />

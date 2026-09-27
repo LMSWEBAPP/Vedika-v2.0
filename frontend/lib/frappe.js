@@ -1,12 +1,22 @@
 // lib/frappe.js
 
 const rawFrappeUrl = typeof window !== 'undefined'
-  ? (process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com')
+  ? (process.env.NEXT_PUBLIC_FRAPPE_URL || '')
   : (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
 
 const FRAPPE_URL = (rawFrappeUrl && rawFrappeUrl.includes('vyomanta.onrender.com'))
   ? 'https://vedika-v2-0.onrender.com'
-  : (rawFrappeUrl || 'https://vedika-v2-0.onrender.com');
+  : (rawFrappeUrl || (typeof window !== 'undefined' ? '' : 'https://vedika-v2-0.onrender.com'));
+
+export function buildFrappeUrl(path) {
+  const base = typeof window !== 'undefined'
+    ? window.location.origin
+    : (FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
+  const fullPath = (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FRAPPE_URL)
+    ? path
+    : `${FRAPPE_URL}${path}`;
+  return new URL(fullPath, base);
+}
 
 export function sanitizeTitle(title) {
   if (!title) return title;
@@ -250,7 +260,7 @@ export function clearApiCache() {
 }
 
 export async function frappeGet(method, params = {}) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   let sid = null;
   if (typeof window !== 'undefined') {
@@ -268,7 +278,7 @@ export async function frappeGet(method, params = {}) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
-      const url = new URL(`${FRAPPE_URL}/api/method/${method}`);
+      const url = buildFrappeUrl(`/api/method/${method}`);
       Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
       const res = await fetch(url.toString(), {
         credentials: "include",
@@ -288,7 +298,7 @@ export async function frappeGet(method, params = {}) {
 }
 
 export async function frappePost(method, body = {}) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   promiseCache.clear();
   
@@ -297,7 +307,7 @@ export async function frappePost(method, body = {}) {
     sid = localStorage.getItem('frappe_sid');
   }
   
-  const url = new URL(`${FRAPPE_URL}/api/method/${method}`);
+  const url = buildFrappeUrl(`/api/method/${method}`);
   if (sid) {
     url.searchParams.set('sid', sid);
   }
@@ -315,7 +325,7 @@ export async function frappePost(method, body = {}) {
 }
 
 export async function frappeRestGet(resource, params = {}) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   let sid = null;
   if (typeof window !== 'undefined') {
@@ -334,7 +344,7 @@ export async function frappeRestGet(resource, params = {}) {
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
       const encodedSegments = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
-      const url = new URL(`${FRAPPE_URL}/api/resource/${encodedSegments}`);
+      const url = buildFrappeUrl(`/api/resource/${encodedSegments}`);
       Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
       const res = await fetch(url.toString(), {
         credentials: "include",
@@ -354,7 +364,7 @@ export async function frappeRestGet(resource, params = {}) {
 }
 
 export async function frappeRestPost(resource, body = {}) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   promiseCache.clear();
   
@@ -365,7 +375,7 @@ export async function frappeRestPost(resource, body = {}) {
     sid = localStorage.getItem('frappe_sid');
   }
   
-  const url = new URL(`${FRAPPE_URL}/api/resource/${encodedSegments}`);
+  const url = buildFrappeUrl(`/api/resource/${encodedSegments}`);
   if (sid) {
     url.searchParams.set('sid', sid);
   }
@@ -383,7 +393,7 @@ export async function frappeRestPost(resource, body = {}) {
 }
 
 export async function frappeRestPut(resource, name, body = {}) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   promiseCache.clear();
   
@@ -395,7 +405,7 @@ export async function frappeRestPut(resource, name, body = {}) {
     sid = localStorage.getItem('frappe_sid');
   }
   
-  const url = new URL(`${FRAPPE_URL}/api/resource/${encodedResource}/${encodedName}`);
+  const url = buildFrappeUrl(`/api/resource/${encodedResource}/${encodedName}`);
   if (sid) {
     url.searchParams.set('sid', sid);
   }
@@ -413,7 +423,7 @@ export async function frappeRestPut(resource, name, body = {}) {
 }
 
 export async function frappeRestDelete(resource, name) {
-  if (!FRAPPE_URL) throw new Error("Frappe URL not configured");
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
   
   promiseCache.clear();
   
@@ -425,7 +435,7 @@ export async function frappeRestDelete(resource, name) {
     sid = localStorage.getItem('frappe_sid');
   }
   
-  const url = new URL(`${FRAPPE_URL}/api/resource/${encodedResource}/${encodedName}`);
+  const url = buildFrappeUrl(`/api/resource/${encodedResource}/${encodedName}`);
   if (sid) {
     url.searchParams.set('sid', sid);
   }
