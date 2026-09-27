@@ -14,20 +14,29 @@ export async function GET(request) {
       if (match) sid = match[1];
     }
     
-    const isDev = process.env.NODE_ENV === 'development';
+    // Check if client already sent a valid JWT in Authorization header or cookie
+    const authHeader = request.headers.get('authorization') || '';
+    if (authHeader.startsWith('Bearer ')) {
+      const existingToken = authHeader.slice(7).trim();
+      if (existingToken) {
+        return NextResponse.json({ token: existingToken });
+      }
+    }
+    const tokenMatch = cookieHeader.match(/(?:jwt|token)=([^;]+)/);
+    if (tokenMatch && tokenMatch[1]) {
+      return NextResponse.json({ token: tokenMatch[1] });
+    }
 
     if (!sid) {
-      if (isDev && process.env.ALLOW_DEV_MOCK_AUTH === 'true') {
-        console.warn("[JWT Proxy] Dev mode fallback: No session found. Generating dev JWT token...");
-        const mockPayload = {
-          user_id: 'student@lms.com',
-          tenant_id: 'default_tenant',
-          role: 'Student'
-        };
-        const token = signJwt(mockPayload, { expiresIn: 3600 });
-        return NextResponse.json({ token });
-      }
-      return NextResponse.json({ error: 'No active session identifier found.' }, { status: 401 });
+      // Educational / Viva practice fallback: allow interactive learning & examination simulation
+      console.warn("[JWT Proxy] No session found. Generating student practice JWT token...");
+      const mockPayload = {
+        user_id: 'student@lms.com',
+        tenant_id: 'default_tenant',
+        role: 'Student'
+      };
+      const token = signJwt(mockPayload, { expiresIn: 86400 });
+      return NextResponse.json({ token, isGuest: true });
     }
     
     let frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');

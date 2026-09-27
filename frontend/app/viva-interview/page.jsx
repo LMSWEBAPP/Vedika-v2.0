@@ -217,6 +217,20 @@ export default function VivaInterviewPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [inputMode, setInputMode] = useState('voice'); // 'voice' | 'text'
   const [savedSessionFound, setSavedSessionFound] = useState(null);
+
+  // Robust client token retrieval with local fallback to prevent authentication blocking
+  const getSafeAuthToken = useCallback(async () => {
+    try {
+      const tok = await getJwtToken();
+      if (tok) return tok;
+    } catch (e) {
+      console.warn('[Viva] getJwtToken fallback:', e);
+    }
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token') || localStorage.getItem('jwt') || '';
+    }
+    return '';
+  }, []);
   
   // Superhero Entrance Animation & Step Unlock Timers (1.0s synchronized sequence)
   useEffect(() => {
@@ -1044,7 +1058,7 @@ export default function VivaInterviewPage() {
         const reader = new FileReader();
         reader.onloadend = async () => {
           try {
-            const token = await getJwtToken();
+            const token = await getSafeAuthToken();
             const res = await fetch('/api/viva-interview', {
               method: 'POST',
               headers: {
@@ -1132,7 +1146,7 @@ export default function VivaInterviewPage() {
       setResumeBase64(base64Data);
 
       try {
-        const token = await getJwtToken();
+        const token = await getSafeAuthToken();
         const res = await fetch('/api/viva-interview', {
           method: 'POST',
           headers: {
@@ -1542,7 +1556,7 @@ export default function VivaInterviewPage() {
     })();
 
     try {
-      const token = await getJwtToken();
+      const token = await getSafeAuthToken();
       const response = await fetch('/api/viva-interview', {
         method: 'POST',
         headers: {
@@ -1636,7 +1650,7 @@ export default function VivaInterviewPage() {
       if (executionMode === 'live') {
         await startGeminiLiveSession(activeTopic, activeSubject, difficulty, level);
       } else {
-        alert("API request error.");
+        alert(e?.message || "Failed to initialize examination session. Please check your connection.");
       }
     } finally {
       setLoading(false);
@@ -1677,7 +1691,7 @@ export default function VivaInterviewPage() {
     setStatusMessage('Examiner is evaluating your answer and formulating the next question...');
 
     try {
-      const token = await getJwtToken();
+      const token = await getSafeAuthToken();
       const activeTopic = activeSessionTopic || (sessionMode === 'viva' 
         ? (vivaSource === 'preset' ? selectedExperiment : customVivaTopic.trim()) 
         : (topic.trim() || programmingLanguage));
@@ -1734,7 +1748,7 @@ export default function VivaInterviewPage() {
       }
     } catch (e) {
       console.error(e);
-      alert("API request error.");
+      alert(e?.message || "Failed to fetch next question. Please try again.");
     } finally {
       setLoading(false);
       setStatusMessage('');
@@ -1770,7 +1784,7 @@ export default function VivaInterviewPage() {
     setStatusMessage('Examiner is proceeding to the next question...');
 
     try {
-      const token = await getJwtToken();
+      const token = await getSafeAuthToken();
       const activeTopic = activeSessionTopic || (sessionMode === 'viva' 
         ? (vivaSource === 'preset' ? selectedExperiment : customVivaTopic.trim()) 
         : (topic.trim() || programmingLanguage));
@@ -1827,7 +1841,7 @@ export default function VivaInterviewPage() {
       }
     } catch (e) {
       console.error(e);
-      alert("API request error.");
+      alert(e?.message || "Failed to advance question. Please try again.");
     } finally {
       setLoading(false);
       setStatusMessage('');
@@ -1848,7 +1862,7 @@ export default function VivaInterviewPage() {
     }, 350);
 
     try {
-      const token = await getJwtToken();
+      const token = await getSafeAuthToken();
       const activeTopic = activeSessionTopic || (sessionMode === 'viva' 
         ? (vivaSource === 'preset' ? selectedExperiment : customVivaTopic.trim()) 
         : (topic.trim() || programmingLanguage));

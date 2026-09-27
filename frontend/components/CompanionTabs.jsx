@@ -63,7 +63,6 @@ export default function CompanionTabs({
           const isActive = activeTab === tab.id;
           const { Icon } = tab;
           const count = tab.id === 'notes' ? notesCount : tab.id === 'qa' ? qaCount : 0;
-          const isMerged = isActive && isExpanded;
 
           return (
             <button
@@ -78,18 +77,15 @@ export default function CompanionTabs({
                 justifyContent: 'center',
                 gap: 5,
                 padding: '12px 6px',
-                borderRadius: isMerged ? '0 16px 16px 0' : 12,
-                borderTop: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
-                borderRight: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
-                borderBottom: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
-                borderLeft: isMerged ? `3px solid ${T.s1}` : (isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent'),
-                background: isActive ? (isMerged ? T.s1 : `${tab.color}18`) : 'transparent',
-                boxShadow: 'none', // NO GLOW on selected tab
+                borderRadius: 12,
+                border: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                background: isActive ? `${tab.color}18` : 'transparent',
+                boxShadow: isActive ? `0 0 16px ${tab.color}25` : 'none',
                 color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                width: isMerged ? 'calc(100% + 3px)' : '100%',
-                marginLeft: isMerged ? -3 : 0,
+                width: '100%',
+                marginLeft: 0,
                 boxSizing: 'border-box',
                 position: 'relative',
                 zIndex: isActive ? 10 : 1
@@ -109,35 +105,17 @@ export default function CompanionTabs({
                 }
               }}
             >
-              {isMerged && (
-                <>
-                  {/* Top concave fillet corner curve blending into panel */}
-                  <span style={{
-                    position: 'absolute',
-                    top: -10,
-                    left: 0,
-                    width: 10,
-                    height: 10,
-                    borderBottomRightRadius: 10,
-                    boxShadow: `3px 3px 0 2px ${T.s1}`,
-                    borderRight: `1.5px solid ${tab.color}`,
-                    borderBottom: `1.5px solid ${tab.color}`,
-                    pointerEvents: 'none'
-                  }} />
-                  {/* Bottom concave fillet corner curve blending into panel */}
-                  <span style={{
-                    position: 'absolute',
-                    bottom: -10,
-                    left: 0,
-                    width: 10,
-                    height: 10,
-                    borderTopRightRadius: 10,
-                    boxShadow: `3px -3px 0 2px ${T.s1}`,
-                    borderRight: `1.5px solid ${tab.color}`,
-                    borderTop: `1.5px solid ${tab.color}`,
-                    pointerEvents: 'none'
-                  }} />
-                </>
+              {isActive && (
+                <span style={{
+                  position: 'absolute',
+                  left: 2,
+                  top: '20%',
+                  bottom: '20%',
+                  width: 3,
+                  borderRadius: 3,
+                  background: tab.color,
+                  boxShadow: `0 0 8px ${tab.color}`
+                }} />
               )}
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={20} style={{ color: isActive ? tab.color : 'inherit', filter: 'none', transition: 'color 0.2s' }} />

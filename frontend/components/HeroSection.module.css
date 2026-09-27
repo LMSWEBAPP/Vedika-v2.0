@@ -240,7 +240,7 @@
   max-width: 610px;
   aspect-ratio: 1.328 / 1;
   overflow: visible;
-  cursor: crosshair;
+  cursor: pointer;
   user-select: none;
   touch-action: none;
   background: transparent;

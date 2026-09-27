@@ -811,7 +811,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             </div>
           </div>
 
-          {/* Right Section: Seamless Merged Drawer Panel + 4 Tabs Column */}
+          {/* Right Section: Companion Drawer Panel + 4 Tabs Column */}
           <div style={{
             flex: isExpanded ? '0 0 calc(50% - 6px)' : '0 0 calc(10% - 6px)',
             width: isExpanded ? 'calc(50% - 6px)' : 'calc(10% - 6px)',
@@ -823,31 +823,32 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             height: '100%',
             minWidth: 0,
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-            position: 'relative'
+            position: 'relative',
+            gap: isExpanded ? 8 : 0
           }}>
             {/* Opening Companion Tab Drawer Panel */}
-            {isExpanded && (
-              <div style={{
-                flex: 1,
-                minWidth: 0,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '16px 0 0 16px',
-                border: `1.5px solid ${(TABS.find(t => t.id === activeCompanionTab) || TABS[0]).color}`,
-                background: T.s1,
-                padding: '14px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)',
-                overflow: 'hidden',
-                boxSizing: 'border-box',
-                position: 'relative',
-                zIndex: 1
-              }}>
-              {/* Panel Header */}
-              {(() => {
-                const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
-                const TabIcon = currentTab.Icon;
-                return (
+            {isExpanded && (() => {
+              const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
+              const panelColor = currentTab.color;
+              const TabIcon = currentTab.Icon;
+              return (
+                <div style={{
+                  flex: 1,
+                  minWidth: 0,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: '16px',
+                  border: `1.5px solid ${panelColor}`,
+                  background: T.s1,
+                  padding: '14px',
+                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.35), 0 0 20px ${panelColor}15`,
+                  overflow: 'hidden',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  {/* Panel Header */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -862,8 +863,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
                         width: 30,
                         height: 30,
                         borderRadius: 8,
-                        background: `${currentTab.color}20`,
-                        color: currentTab.color,
+                        background: `${panelColor}20`,
+                        color: panelColor,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -885,10 +886,10 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
                       onClick={() => setIsExpanded(false)}
                       title="Close panel"
                       style={{
-                        background: 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${T.border}`,
+                        background: `${panelColor}12`,
+                        border: `1px solid ${panelColor}30`,
                         borderRadius: 6,
-                        color: T.muted,
+                        color: panelColor,
                         width: 26,
                         height: 26,
                         display: 'flex',
@@ -897,509 +898,529 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = T.muted; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = panelColor; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = panelColor; e.currentTarget.style.background = `${panelColor}12`; }}
                     >
                       <X size={14} />
                     </button>
                   </div>
-                );
-              })()}
 
-              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-            {/* TAB 1 CONTENT: ASK VEDIKA */}
-            {activeCompanionTab === 'ask_vedika' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
-                <div style={{
-                  padding: 14,
-                  borderRadius: 12,
-                  background: T.s2,
-                  border: `1px solid ${T.border}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: 12,
-                      background: 'rgba(245, 158, 11, 0.15)',
-                      color: '#F59E0B'
-                    }}>
-                      Paused at {formatTimestamp(videoCurrentTime)}
-                    </span>
-                    <span style={{ fontSize: 11.5, color: T.muted }}>{lesson.dur}</span>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
-                    {lesson.title}
-                  </div>
-                  <p style={{ fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.5 }}>
-                    Pause the video at any time to receive a step-by-step Socratic breakdown of what is being explained.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleExplainMoment(videoCurrentTime)}
-                  disabled={explainerLoading}
-                  style={{
-                    width: '100%',
-                    padding: '11px 16px',
-                    borderRadius: 10,
-                    background: T.purple,
-                    color: '#fff',
-                    border: 'none',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: explainerLoading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
-                    transition: 'opacity 0.15s'
-                  }}
-                >
-                  <Bot size={16} />
-                  <span>
-                    {explainerLoading ? 'Analyzing Lecture Moment...' : `Explain Concept at ${formatTimestamp(videoCurrentTime)}`}
-                  </span>
-                </button>
-
-                {aiExplainerData && (
-                  <div style={{
-                    padding: 14,
-                    borderRadius: 12,
-                    background: T.s2,
-                    border: `1px solid ${T.border}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    fontSize: 12.5,
-                    lineHeight: 1.5
-                  }}>
-                    <div style={{ fontWeight: 700, color: T.purple, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Sparkles size={14} />
-                      <span>Lecture Concept Breakdown</span>
-                    </div>
-                    <div style={{ color: T.text }}>
-                      {aiExplainerData.coreExplanation}
-                    </div>
-                    {aiExplainerData.keyTakeaways?.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <span style={{ fontWeight: 700, fontSize: 11.5, color: T.muted }}>Key Takeaways:</span>
-                        {aiExplainerData.keyTakeaways.map((point, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                            <span style={{ color: T.accent }}>•</span>
-                            <span style={{ color: T.muted }}>{point}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 2 CONTENT: PERSONAL NOTES */}
-            {activeCompanionTab === 'notes' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={() => setNoteFilter('lesson')}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 6,
-                        border: 'none',
-                        background: noteFilter === 'lesson' ? T.purple : T.s2,
-                        color: noteFilter === 'lesson' ? '#fff' : T.muted,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      This Lesson ({notes.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNoteFilter('course')}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 6,
-                        border: 'none',
-                        background: noteFilter === 'course' ? T.purple : T.s2,
-                        color: noteFilter === 'course' ? '#fff' : T.muted,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      All Course ({allCourseNotes.length || notes.length})
-                    </button>
-                  </div>
-
-                  {(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadAllNotes(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes))}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        background: 'transparent',
-                        border: 'none',
-                        color: T.muted,
-                        fontSize: 11,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Download size={12} /> Export .txt
-                    </button>
-                  )}
-                </div>
-
-                {/* Composer */}
-                <form onSubmit={handleSaveManualNote} style={{ display: 'flex', gap: 6 }}>
-                  <input
-                    type="text"
-                    value={newNoteText}
-                    onChange={(e) => setNewNoteText(e.target.value)}
-                    placeholder={isDictating ? "Listening... Speak note now" : `Add note at ${formatTimestamp(videoCurrentTime)}...`}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: 8,
-                      background: T.s2,
-                      border: `1px solid ${isDictating ? '#EC4899' : T.border}`,
-                      color: T.text,
-                      fontSize: 12,
-                      outline: 'none'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleToggleDictation}
-                    title="Voice dictation"
-                    style={{
-                      padding: '0 10px',
-                      borderRadius: 8,
-                      border: `1px solid ${isDictating ? '#EC4899' : T.border}`,
-                      background: isDictating ? 'rgba(236, 72, 153, 0.2)' : T.s2,
-                      color: isDictating ? '#EC4899' : T.muted,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isDictating ? <MicOff size={14} /> : <Mic size={14} />}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!newNoteText.trim()}
-                    style={{
-                      padding: '0 12px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: T.purple,
-                      color: '#fff',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: newNoteText.trim() ? 'pointer' : 'default',
-                      opacity: newNoteText.trim() ? 1 : 0.6
-                    }}
-                  >
-                    <Plus size={14} />
-                  </button>
-                </form>
-
-                {/* Notes List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
-                      No study notes recorded yet. Type or dictate notes at any lecture timestamp!
-                    </div>
-                  ) : (
-                    (noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).map((n) => (
-                      <div
-                        key={n.id}
-                        style={{
-                          padding: 10,
-                          borderRadius: 8,
+                    {/* TAB 1 CONTENT: ASK VEDIKA */}
+                    {activeCompanionTab === 'ask_vedika' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
+                        <div style={{
+                          padding: 14,
+                          borderRadius: 12,
                           background: T.s2,
                           border: `1px solid ${T.border}`,
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 6
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <button
-                            type="button"
-                            onClick={() => setVideoSeekTime(n.timestampSeconds || 0)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              background: `${T.accent}15`,
-                              border: `1px solid ${T.accent}40`,
-                              color: T.accent,
+                          gap: 8
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{
                               fontSize: 11,
                               fontWeight: 700,
-                              borderRadius: 4,
-                              padding: '2px 6px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Play size={9} />
-                            <span>{n.timestampFormatted || '00:00'}</span>
-                          </button>
-                          <div style={{ display: 'flex', gap: 4 }}>
+                              padding: '2px 8px',
+                              borderRadius: 12,
+                              background: `${panelColor}20`,
+                              color: panelColor,
+                              border: `1px solid ${panelColor}40`
+                            }}>
+                              Paused at {formatTimestamp(videoCurrentTime)}
+                            </span>
+                            <span style={{ fontSize: 11.5, color: T.muted }}>{lesson.dur}</span>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                            {lesson.title}
+                          </div>
+                          <p style={{ fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+                            Pause the video at any time to receive a step-by-step Socratic breakdown of what is being explained.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleExplainMoment(videoCurrentTime)}
+                          disabled={explainerLoading}
+                          style={{
+                            width: '100%',
+                            padding: '11px 16px',
+                            borderRadius: 10,
+                            background: panelColor,
+                            color: '#fff',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: explainerLoading ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            boxShadow: `0 4px 14px ${panelColor}40`,
+                            transition: 'opacity 0.15s'
+                          }}
+                        >
+                          <Bot size={16} />
+                          <span>
+                            {explainerLoading ? 'Analyzing Lecture Moment...' : `Explain Concept at ${formatTimestamp(videoCurrentTime)}`}
+                          </span>
+                        </button>
+
+                        {aiExplainerData && (
+                          <div style={{
+                            padding: 14,
+                            borderRadius: 12,
+                            background: T.s2,
+                            border: `1px solid ${T.border}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                            fontSize: 12.5,
+                            lineHeight: 1.5
+                          }}>
+                            <div style={{ fontWeight: 700, color: panelColor, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Sparkles size={14} />
+                              <span>Lecture Concept Breakdown</span>
+                            </div>
+                            <div style={{ color: T.text }}>
+                              {aiExplainerData.coreExplanation}
+                            </div>
+                            {aiExplainerData.keyTakeaways?.length > 0 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <span style={{ fontWeight: 700, fontSize: 11.5, color: T.muted }}>Key Takeaways:</span>
+                                {aiExplainerData.keyTakeaways.map((point, i) => (
+                                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                    <span style={{ color: panelColor }}>•</span>
+                                    <span style={{ color: T.muted }}>{point}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* TAB 2 CONTENT: PERSONAL NOTES */}
+                    {activeCompanionTab === 'notes' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
                             <button
                               type="button"
-                              onClick={() => handleDownloadNote(n)}
-                              style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                              onClick={() => setNoteFilter('lesson')}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 6,
+                                border: `1px solid ${noteFilter === 'lesson' ? panelColor : 'transparent'}`,
+                                background: noteFilter === 'lesson' ? panelColor : T.s2,
+                                color: noteFilter === 'lesson' ? '#0A0E1A' : T.muted,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
                             >
-                              <Download size={12} />
+                              This Lesson ({notes.length})
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteNoteById(n.id)}
-                              style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                              onClick={() => setNoteFilter('course')}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 6,
+                                border: `1px solid ${noteFilter === 'course' ? panelColor : 'transparent'}`,
+                                background: noteFilter === 'course' ? panelColor : T.s2,
+                                color: noteFilter === 'course' ? '#0A0E1A' : T.muted,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
                             >
-                              <Trash2 size={12} />
+                              All Course ({allCourseNotes.length || notes.length})
                             </button>
                           </div>
+
+                          {(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadAllNotes(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes))}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                background: `${panelColor}15`,
+                                border: `1px solid ${panelColor}35`,
+                                borderRadius: 6,
+                                padding: '3px 8px',
+                                color: panelColor,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Download size={12} /> Export .txt
+                            </button>
+                          )}
                         </div>
-                        <div style={{ fontSize: 12.5, color: T.text }}>
-                          {n.noteText}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* TAB 3 CONTENT: LESSON Q&A */}
-            {activeCompanionTab === 'qa' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                  overflowY: 'auto',
-                  padding: 10,
-                  borderRadius: 10,
-                  background: T.s2,
-                  border: `1px solid ${T.border}`,
-                  minHeight: 180
-                }}>
-                  {chatHistory.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
-                      <MessageSquare size={22} style={{ color: T.accent, margin: '0 auto 8px' }} />
-                      <div>Ask questions regarding concepts or code covered in this lesson.</div>
-                    </div>
-                  ) : (
-                    chatHistory.map((m, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                          maxWidth: '85%',
-                          padding: '8px 12px',
-                          borderRadius: 8,
-                          background: m.role === 'user' ? T.accent : T.s1,
-                          color: m.role === 'user' ? '#fff' : T.text,
-                          fontSize: 12,
-                          border: m.role === 'user' ? 'none' : `1px solid ${T.border}`
-                        }}
-                      >
-                        {m.text}
-                      </div>
-                    ))
-                  )}
-                  {chatLoading && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.accent, fontSize: 11.5 }}>
-                      <Loader2 size={12} className="animate-spin" />
-                      <span>Vedika is thinking...</span>
-                    </div>
-                  )}
-                </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAskQuestion(chatQuestion);
-                  }}
-                  style={{ display: 'flex', gap: 6 }}
-                >
-                  <input
-                    type="text"
-                    value={chatQuestion}
-                    onChange={(e) => setChatQuestion(e.target.value)}
-                    placeholder="Ask a question about this lesson..."
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: 8,
-                      background: T.s2,
-                      border: `1px solid ${T.border}`,
-                      color: T.text,
-                      fontSize: 12,
-                      outline: 'none'
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={chatLoading || !chatQuestion.trim()}
-                    style={{
-                      padding: '0 14px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: T.accent,
-                      color: '#fff',
-                      cursor: chatLoading || !chatQuestion.trim() ? 'default' : 'pointer',
-                      opacity: chatLoading || !chatQuestion.trim() ? 0.6 : 1
-                    }}
-                  >
-                    <Send size={14} />
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* TAB 4 CONTENT: PRACTICE QUIZ */}
-            {activeCompanionTab === 'quiz' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
-                {!aiQuiz && !aiLoading && (
-                  <div style={{ textAlign: 'center', padding: '24px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                    <Award size={26} color={T.green} />
-                    <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Generate Practice Quiz</div>
-                    <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
-                      Take an instant AI-generated practice quiz based on this lecture topic to test your knowledge!
-                    </p>
-                    <button
-                      onClick={handleGeneratePracticeQuiz}
-                      style={{
-                        background: T.green,
-                        color: '#000',
-                        border: 'none',
-                        padding: '9px 18px',
-                        borderRadius: 8,
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Start Practice Quiz
-                    </button>
-                  </div>
-                )}
-
-                {aiLoading && (
-                  <div style={{ textAlign: 'center', padding: '36px 12px', color: T.green, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <Loader2 size={24} className="animate-spin" />
-                    <span style={{ fontSize: 12.5, fontWeight: 600 }}>Crafting practice quiz questions...</span>
-                  </div>
-                )}
-
-                {aiQuiz && aiQuiz.questions && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: T.muted }}>
-                      <span>Question {aiQuizIdx + 1} of {aiQuiz.questions.length}</span>
-                      <button
-                        onClick={handleGeneratePracticeQuiz}
-                        style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}
-                      >
-                        <RotateCcw size={11} /> New Quiz
-                      </button>
-                    </div>
-
-                    <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
-                      {aiQuiz.questions[aiQuizIdx].q}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {aiQuiz.questions[aiQuizIdx].opts.map((opt, oi) => {
-                        const isSelected = aiQuizAns === oi;
-                        const isCorrect = oi === aiQuiz.questions[aiQuizIdx].ans;
-                        let optBg = T.s2;
-                        let optBorder = T.border;
-
-                        if (aiQuizAns !== null) {
-                          if (isCorrect) {
-                            optBg = 'rgba(16, 185, 129, 0.15)';
-                            optBorder = '#10B981';
-                          } else if (isSelected) {
-                            optBg = 'rgba(239, 68, 68, 0.15)';
-                            optBorder = '#EF4444';
-                          }
-                        }
-
-                        return (
-                          <button
-                            key={oi}
-                            disabled={aiQuizAns !== null}
-                            onClick={() => setAiQuizAns(oi)}
+                        {/* Composer */}
+                        <form onSubmit={handleSaveManualNote} style={{ display: 'flex', gap: 6 }}>
+                          <input
+                            type="text"
+                            value={newNoteText}
+                            onChange={(e) => setNewNoteText(e.target.value)}
+                            placeholder={isDictating ? "Listening... Speak note now" : `Add note at ${formatTimestamp(videoCurrentTime)}...`}
                             style={{
+                              flex: 1,
                               padding: '8px 12px',
                               borderRadius: 8,
-                              background: optBg,
-                              border: `1px solid ${optBorder}`,
+                              background: T.s2,
+                              border: `1px solid ${isDictating ? panelColor : T.border}`,
                               color: T.text,
                               fontSize: 12,
-                              textAlign: 'left',
-                              cursor: aiQuizAns !== null ? 'default' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8
+                              outline: 'none'
                             }}
-                          >
-                            <span style={{ fontWeight: 700, color: T.muted }}>{String.fromCharCode(65 + oi)}.</span>
-                            <span>{opt}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {aiQuizAns !== null && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: aiQuizAns === aiQuiz.questions[aiQuizIdx].ans ? T.green : '#EF4444' }}>
-                          {aiQuizAns === aiQuiz.questions[aiQuizIdx].ans ? '✓ Correct Answer!' : '✗ Incorrect Option'}
-                        </span>
-                        {aiQuizIdx < aiQuiz.questions.length - 1 && (
+                          />
                           <button
-                            onClick={() => {
-                              setAiQuizIdx(idx => idx + 1);
-                              setAiQuizAns(null);
-                            }}
+                            type="button"
+                            onClick={handleToggleDictation}
+                            title="Voice dictation"
                             style={{
-                              background: T.green,
-                              color: '#000',
-                              border: 'none',
-                              padding: '5px 12px',
-                              borderRadius: 6,
-                              fontSize: 11.5,
-                              fontWeight: 700,
+                              padding: '0 10px',
+                              borderRadius: 8,
+                              border: `1px solid ${isDictating ? panelColor : T.border}`,
+                              background: isDictating ? `${panelColor}25` : T.s2,
+                              color: isDictating ? panelColor : T.muted,
                               cursor: 'pointer'
                             }}
                           >
-                            Next Question →
+                            {isDictating ? <MicOff size={14} /> : <Mic size={14} />}
                           </button>
+                          <button
+                            type="submit"
+                            disabled={!newNoteText.trim()}
+                            style={{
+                              padding: '0 12px',
+                              borderRadius: 8,
+                              border: 'none',
+                              background: panelColor,
+                              color: '#0A0E1A',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: newNoteText.trim() ? 'pointer' : 'default',
+                              opacity: newNoteText.trim() ? 1 : 0.6,
+                              boxShadow: newNoteText.trim() ? `0 2px 8px ${panelColor}40` : 'none'
+                            }}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </form>
+
+                        {/* Notes List */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
+                              <BookMarked size={24} style={{ color: panelColor, margin: '0 auto 8px', opacity: 0.85 }} />
+                              <div>No study notes recorded yet. Type or dictate notes at any lecture timestamp!</div>
+                            </div>
+                          ) : (
+                            (noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).map((n) => (
+                              <div
+                                key={n.id}
+                                style={{
+                                  padding: 10,
+                                  borderRadius: 8,
+                                  background: T.s2,
+                                  border: `1px solid ${T.border}`,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 6
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setVideoSeekTime(n.timestampSeconds || 0)}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      background: `${panelColor}15`,
+                                      border: `1px solid ${panelColor}40`,
+                                      color: panelColor,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      borderRadius: 4,
+                                      padding: '2px 6px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <Play size={9} style={{ fill: panelColor }} />
+                                    <span>{n.timestampFormatted || '00:00'}</span>
+                                  </button>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadNote(n)}
+                                      style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                                    >
+                                      <Download size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteNoteById(n.id)}
+                                      style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div style={{ fontSize: 12.5, color: T.text }}>
+                                  {n.noteText}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 3 CONTENT: LESSON Q&A */}
+                    {activeCompanionTab === 'qa' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
+                        <div style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                          overflowY: 'auto',
+                          padding: 10,
+                          borderRadius: 10,
+                          background: T.s2,
+                          border: `1px solid ${T.border}`,
+                          minHeight: 180
+                        }}>
+                          {chatHistory.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
+                              <MessageSquare size={24} style={{ color: panelColor, margin: '0 auto 8px' }} />
+                              <div>Ask questions regarding concepts or code covered in this lesson.</div>
+                            </div>
+                          ) : (
+                            chatHistory.map((m, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                                  maxWidth: '85%',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  background: m.role === 'user' ? panelColor : T.s1,
+                                  color: m.role === 'user' ? '#fff' : T.text,
+                                  fontSize: 12,
+                                  border: m.role === 'user' ? 'none' : `1px solid ${T.border}`
+                                }}
+                              >
+                                {m.text}
+                              </div>
+                            ))
+                          )}
+                          {chatLoading && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: panelColor, fontSize: 11.5 }}>
+                              <Loader2 size={12} className="animate-spin" />
+                              <span>Vedika is thinking...</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleAskQuestion(chatQuestion);
+                          }}
+                          style={{ display: 'flex', gap: 6 }}
+                        >
+                          <input
+                            type="text"
+                            value={chatQuestion}
+                            onChange={(e) => setChatQuestion(e.target.value)}
+                            placeholder="Ask a question about this lesson..."
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              borderRadius: 8,
+                              background: T.s2,
+                              border: `1px solid ${T.border}`,
+                              color: T.text,
+                              fontSize: 12,
+                              outline: 'none'
+                            }}
+                          />
+                          <button
+                            type="submit"
+                            disabled={chatLoading || !chatQuestion.trim()}
+                            style={{
+                              padding: '0 14px',
+                              borderRadius: 8,
+                              border: 'none',
+                              background: panelColor,
+                              color: '#fff',
+                              cursor: chatLoading || !chatQuestion.trim() ? 'default' : 'pointer',
+                              opacity: chatLoading || !chatQuestion.trim() ? 0.6 : 1,
+                              boxShadow: chatQuestion.trim() ? `0 2px 8px ${panelColor}40` : 'none'
+                            }}
+                          >
+                            <Send size={14} />
+                          </button>
+                        </form>
+                      </div>
+                    )}
+
+                    {/* TAB 4 CONTENT: PRACTICE QUIZ */}
+                    {activeCompanionTab === 'quiz' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
+                        {!aiQuiz && !aiLoading && (
+                          <div style={{ textAlign: 'center', padding: '24px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                            <Award size={28} color={panelColor} />
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Generate Practice Quiz</div>
+                            <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+                              Take an instant AI-generated practice quiz based on this lecture topic to test your knowledge!
+                            </p>
+                            <button
+                              onClick={handleGeneratePracticeQuiz}
+                              style={{
+                                background: panelColor,
+                                color: '#0A0E1A',
+                                border: 'none',
+                                padding: '10px 20px',
+                                borderRadius: 8,
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: `0 4px 14px ${panelColor}40`
+                              }}
+                            >
+                              Start Practice Quiz
+                            </button>
+                          </div>
+                        )}
+
+                        {aiLoading && (
+                          <div style={{ textAlign: 'center', padding: '36px 12px', color: panelColor, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                            <Loader2 size={24} className="animate-spin" />
+                            <span style={{ fontSize: 12.5, fontWeight: 600 }}>Crafting practice quiz questions...</span>
+                          </div>
+                        )}
+
+                        {aiQuiz && aiQuiz.questions && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: T.muted }}>
+                              <span style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: 10,
+                                background: `${panelColor}20`,
+                                color: panelColor,
+                                border: `1px solid ${panelColor}40`
+                              }}>
+                                Question {aiQuizIdx + 1} of {aiQuiz.questions.length}
+                              </span>
+                              <button
+                                onClick={handleGeneratePracticeQuiz}
+                                style={{ background: 'none', border: 'none', color: panelColor, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}
+                              >
+                                <RotateCcw size={11} /> New Quiz
+                              </button>
+                            </div>
+
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                              {aiQuiz.questions[aiQuizIdx].q}
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {aiQuiz.questions[aiQuizIdx].opts.map((opt, oi) => {
+                                const isSelected = aiQuizAns === oi;
+                                const isCorrect = oi === aiQuiz.questions[aiQuizIdx].ans;
+                                let optBg = T.s2;
+                                let optBorder = T.border;
+
+                                if (aiQuizAns !== null) {
+                                  if (isCorrect) {
+                                    optBg = 'rgba(16, 185, 129, 0.15)';
+                                    optBorder = '#10B981';
+                                  } else if (isSelected) {
+                                    optBg = 'rgba(239, 68, 68, 0.15)';
+                                    optBorder = '#EF4444';
+                                  }
+                                }
+
+                                return (
+                                  <button
+                                    key={oi}
+                                    disabled={aiQuizAns !== null}
+                                    onClick={() => setAiQuizAns(oi)}
+                                    style={{
+                                      padding: '8px 12px',
+                                      borderRadius: 8,
+                                      background: optBg,
+                                      border: `1px solid ${optBorder}`,
+                                      color: T.text,
+                                      fontSize: 12,
+                                      textAlign: 'left',
+                                      cursor: aiQuizAns !== null ? 'default' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8
+                                    }}
+                                  >
+                                    <span style={{ fontWeight: 700, color: T.muted }}>{String.fromCharCode(65 + oi)}.</span>
+                                    <span>{opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {aiQuizAns !== null && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                                <span style={{ fontSize: 11.5, fontWeight: 700, color: aiQuizAns === aiQuiz.questions[aiQuizIdx].ans ? '#10B981' : '#EF4444' }}>
+                                  {aiQuizAns === aiQuiz.questions[aiQuizIdx].ans ? '✓ Correct Answer!' : '✗ Incorrect Option'}
+                                </span>
+                                {aiQuizIdx < aiQuiz.questions.length - 1 && (
+                                  <button
+                                    onClick={() => {
+                                      setAiQuizIdx(idx => idx + 1);
+                                      setAiQuizAns(null);
+                                    }}
+                                    style={{
+                                      background: panelColor,
+                                      color: '#0A0E1A',
+                                      border: 'none',
+                                      padding: '6px 14px',
+                                      borderRadius: 6,
+                                      fontSize: 11.5,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      boxShadow: `0 2px 8px ${panelColor}35`
+                                    }}
+                                  >
+                                    Next Question →
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            )}
                 </div>
-            </div>
-          )}
+              );
+            })()}
 
           {/* 4 Companion Tabs (Floating beside panel, background box removed, merging with panel when selected) */}
           <div style={{

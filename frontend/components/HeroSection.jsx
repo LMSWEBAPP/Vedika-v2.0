@@ -7,48 +7,12 @@ import ParticlesBackground from './ParticlesBackground';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 
-// Maps speech timeline to smooth phoneme transitions matching the audio
-const PHONEME_SCHEDULE = [
-  // "Curious" (0.0s - 0.95s)
-  { start: 0.00, end: 0.12, fromFrame: 0, toFrame: 0 }, // Rest
-  { start: 0.12, end: 0.40, fromFrame: 0, toFrame: 2 }, // "Cyu-" (Round Oh)
-  { start: 0.40, end: 0.68, fromFrame: 2, toFrame: 3 }, // "-ri-" (Wide Ee)
-  { start: 0.68, end: 0.95, fromFrame: 3, toFrame: 1 }, // "-ous" (Open Ah)
-
-  // "who's behind" (0.95s - 1.85s)
-  { start: 0.95, end: 1.25, fromFrame: 1, toFrame: 2 }, // "who's" (Round Oh)
-  { start: 1.25, end: 1.55, fromFrame: 2, toFrame: 4 }, // "be-" (Closed Mm)
-  { start: 1.55, end: 1.85, fromFrame: 4, toFrame: 1 }, // "-hind" (Open Ah)
-
-  // "my smile?" (1.85s - 2.75s)
-  { start: 1.85, end: 2.15, fromFrame: 1, toFrame: 4 }, // "my" (Closed Mm)
-  { start: 2.15, end: 2.75, fromFrame: 4, toFrame: 3 }, // "smile?" (Wide Ee)
-
-  // Natural brief breath pause (2.75s - 2.95s)
-  { start: 2.75, end: 2.95, fromFrame: 3, toFrame: 0 }, // Pause
-
-  // "Hover to reveal!" (2.95s - 4.75s)
-  { start: 2.95, end: 3.35, fromFrame: 0, toFrame: 1 }, // "Ho-" (Open Ah)
-  { start: 3.35, end: 3.75, fromFrame: 1, toFrame: 2 }, // "-ver" (Round Oh)
-  { start: 3.75, end: 4.10, fromFrame: 2, toFrame: 1 }, // "to" (Open Ah)
-  { start: 4.10, end: 4.55, fromFrame: 1, toFrame: 5 }, // "re-veal!" (Accent Smile)
-  { start: 4.55, end: 4.75, fromFrame: 5, toFrame: 0 }, // Settle into warm smile/rest
-];
-
-function getMouthBlend(t) {
-  if (t <= 0 || t >= 4.75) return { fromFrame: 0, toFrame: 0, weight: 0 };
-
-  for (const seg of PHONEME_SCHEDULE) {
-    if (t >= seg.start && t < seg.end) {
-      const p = (t - seg.start) / (seg.end - seg.start);
-      // Smooth cosine ease for organic muscle transition
-      const weight = 0.5 - 0.5 * Math.cos(Math.PI * p);
-      return { fromFrame: seg.fromFrame, toFrame: seg.toFrame, weight };
-    }
-  }
-
-  return { fromFrame: 0, toFrame: 0, weight: 0 };
-}
+// High-Fidelity 3D Video Kid Talking Constants (Extracted from reference video)
+const TOTAL_TALKING_FRAMES = 80;
+const FRAME_COLS = 8;
+const FRAME_W = 448;
+const FRAME_H = 600;
+const SPEECH_DURATION = 4.87;
 
 const initialHeroState = {
   mounted: false,
@@ -246,7 +210,7 @@ export default function HeroSection() {
     };
 
     const spriteSheet = new window.Image();
-    spriteSheet.src = '/vedika-human-talking-spritesheet.png';
+    spriteSheet.src = '/vedika-kid-talking-frames.webp';
     spriteSheet.onload = () => {
       spriteSheetRef.current = spriteSheet;
       checkAllLoaded();
@@ -264,7 +228,7 @@ export default function HeroSection() {
     playKidVoice();
   }, [imagesLoaded, playKidVoice]);
 
-  // Canvas animation, smooth continuous talking viseme morphing, and fluid reveal loop
+  // Canvas animation, video-perfect lip sync, and fluid hover reveal loop
   useEffect(() => {
     if (!mounted || !imagesLoaded) return;
     const canvas = canvasRef.current;
@@ -286,20 +250,23 @@ export default function HeroSection() {
     handleResize();
     window.addEventListener('resize', handleResize);
 
-    const SPEECH_DURATION = 4.75;
-
     const renderLoop = (timestamp) => {
       timeRef.current += 0.04;
       if (!speechStartTimeRef.current) {
         speechStartTimeRef.current = timestamp;
       }
 
-      // Track speech progress synchronized with audio
-      const elapsedSpeechSec = (timestamp - speechStartTimeRef.current) / 1000;
+      // Track speech progress synchronized with natural audio playback
+      let elapsedSpeechSec = (timestamp - speechStartTimeRef.current) / 1000;
+      if (audioRef.current && !audioRef.current.paused && audioRef.current.currentTime > 0) {
+        elapsedSpeechSec = audioRef.current.currentTime;
+      }
       speechTimeRef.current = elapsedSpeechSec;
 
       const isAudioActive = audioRef.current && !audioRef.current.ended && !audioRef.current.paused;
-      if ((elapsedSpeechSec >= SPEECH_DURATION || (audioRef.current && audioRef.current.ended)) && !revealUnlockedRef.current) {
+      const isSpeechDone = elapsedSpeechSec >= SPEECH_DURATION || (audioRef.current && audioRef.current.ended);
+
+      if (isSpeechDone && !revealUnlockedRef.current) {
         revealUnlockedRef.current = true;
         dispatch({ type: 'UNLOCK_REVEAL' });
       }
@@ -312,48 +279,30 @@ export default function HeroSection() {
       ctx.clearRect(0, 0, w, h);
 
       // 1. Draw top human student layer
-      // During speech, perform silky-smooth continuous alpha-blended morphing between visemes
-      const isTalking = (isAudioActive || elapsedSpeechSec < SPEECH_DURATION) && elapsedSpeechSec < 5.0;
+      // During speech, render video-extracted transparent frames synchronized with the dialogue
+      const isTalking = !isSpeechDone && (isAudioActive || elapsedSpeechSec < SPEECH_DURATION);
       if (isTalking && spriteSheetRef.current) {
-        const { fromFrame, toFrame, weight } = getMouthBlend(elapsedSpeechSec);
-        const frameW = 448;
-        const frameH = 600;
+        const progress = Math.min(1, Math.max(0, elapsedSpeechSec / SPEECH_DURATION));
+        const frameIndex = Math.min(
+          TOTAL_TALKING_FRAMES - 1,
+          Math.floor(progress * TOTAL_TALKING_FRAMES)
+        );
+        const col = frameIndex % FRAME_COLS;
+        const row = Math.floor(frameIndex / FRAME_COLS);
 
-        // Base frame
-        const col1 = fromFrame % 3;
-        const row1 = Math.floor(fromFrame / 3);
         ctx.drawImage(
           spriteSheetRef.current,
-          col1 * frameW,
-          row1 * frameH,
-          frameW,
-          frameH,
+          col * FRAME_W,
+          row * FRAME_H,
+          FRAME_W,
+          FRAME_H,
           0,
           0,
           w,
           h
         );
-
-        // Interpolated target frame smoothly cross-faded with cosine easing
-        if (weight > 0.01 && fromFrame !== toFrame) {
-          ctx.save();
-          ctx.globalAlpha = weight;
-          const col2 = toFrame % 3;
-          const row2 = Math.floor(toFrame / 3);
-          ctx.drawImage(
-            spriteSheetRef.current,
-            col2 * frameW,
-            row2 * frameH,
-            frameW,
-            frameH,
-            0,
-            0,
-            w,
-            h
-          );
-          ctx.restore();
-        }
       } else if (humanImgRef.current) {
+        // Dialogue complete! Draw the exact resting static frame
         ctx.drawImage(humanImgRef.current, 0, 0, w, h);
       }
 
