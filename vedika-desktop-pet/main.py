@@ -675,6 +675,8 @@ class DesktopPetApp(QObject):
 
         print(f"[WS Server] Browser WebApp connected from {peer_addr} (Origin: {raw_origin or 'direct'})")
         self.web_clients.append(client)
+        self.has_active_web_tab = True
+        self.last_browser_launch_time = 0.0
         client.textMessageReceived.connect(lambda msg: self.on_ws_bridge_message(msg))
         client.disconnected.connect(lambda: self.on_ws_client_disconnected(client))
 
@@ -696,6 +698,10 @@ class DesktopPetApp(QObject):
         print(f"[WS Server] Browser WebApp disconnected.")
         if client in self.web_clients:
             self.web_clients.remove(client)
+        if not self.is_webapp_connected():
+            self.has_active_web_tab = False
+            self.last_browser_launch_time = 0.0
+            print("[WS Server] No active browser tabs connected. (has_active_web_tab=False)")
 
     def is_webapp_connected(self) -> bool:
         """Returns True if at least one active Vyomanta WebApp browser tab is connected via WebSocket."""
@@ -716,11 +722,15 @@ class DesktopPetApp(QObject):
 
     @Slot(bool)
     def _on_web_tab_presence_changed(self, has_tab: bool):
-        self.has_active_web_tab = has_tab
+        # Local WebSocket connection is the authoritative ground truth for desktop environment
+        if self.is_webapp_connected():
+            self.has_active_web_tab = True
+        else:
+            self.has_active_web_tab = False
 
     def is_browser_launching_grace_period(self) -> bool:
-        """Returns True if the browser was launched recently (within 25s) to prevent duplicate tabs during initial load."""
-        return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 25.0
+        """Returns True if the browser was launched recently (within 5s) to prevent duplicate tabs during initial load."""
+        return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 5.0
 
     def send_to_cloud_relay(self, message_dict: dict) -> bool:
         """Asynchronously dispatches a command to the cloud relay for delivery to the active browser tab."""
@@ -892,6 +902,18 @@ class DesktopPetApp(QObject):
                         "payload": {"id": note_id}
                     })
 
+            elif msg_type == "NAVIGATE_ACK":
+                ack_route = payload.get("route", "")
+                ack_from = payload.get("currentPath") or payload.get("from", "")
+                print(f"[WS Bridge] Browser confirmed navigation to: '{ack_route}' (from '{ack_from}')")
+
+            elif msg_type == "TAB_UNLOADING":
+                tab_id = payload.get("tabId", "")
+                print(f"[WS Bridge] Browser tab unloading (tabId: {tab_id})")
+                if len(self.web_clients) <= 1:
+                    self.has_active_web_tab = False
+                    self.last_browser_launch_time = 0.0
+
         except Exception as e:
             print(f"[WS Bridge] Message parse error: {e}")
             traceback.print_exc()
@@ -918,31 +940,33 @@ class DesktopPetApp(QObject):
         raw_route = route
         route = sanitize_and_validate_route(route)
         print(f"[Main] Voice requested navigation to route: '{raw_route}' -> Validated target: '{route}'")
-        
-        # 1. Try seamless in-tab WebSocket navigation if an active local browser tab is connected
-        if self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route}}):
-            print(f"[Main] Seamless in-tab WebSocket navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
-            if self.pet:
-                self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
-            return
-
-        # 2. Try seamless in-tab Cloud Relay navigation if production browser tab is active or launching
-        has_active_tab = self.has_active_web_tab or self.is_browser_launching_grace_period()
-        self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route}})
-
-        if has_active_tab:
-            print(f"[Main] Seamless in-tab Cloud Relay navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
-            if self.pet:
-                self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
-            return
-
-        # 3. Only if NO active tab is connected or launching anywhere, open browser ONCE
-        print(f"[Main] No active browser tab detected. Launching browser once for target route: '{route}'")
-        self.last_browser_launch_time = time.time()
-        self.has_active_web_tab = True
         base_url = self.get_vyomanta_base_url()
         target_url = f"{base_url}{route}" if route.startswith("/") else route
+        
+        # 1. Try seamless in-tab WebSocket navigation if an active local browser tab is connected
+        if self.is_webapp_connected():
+            if self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}}):
+                print(f"[Main] Seamless in-tab WebSocket navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
+                if self.pet:
+                    self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
+                # Background mirror to cloud relay
+                self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
+                return
+
+        # 2. If browser was just launched within the last 5 seconds, wait for it rather than opening duplicate windows
+        if self.is_browser_launching_grace_period():
+            print(f"[Main] Browser was recently launched (grace period active). Dispatching target route '{route}' to cloud relay.")
+            self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
+            if self.pet:
+                self.pet.say(f"Opening {route}! 🚀", duration=2.5)
+            return
+
+        # 3. No active browser tab detected. Launch the browser once for target route!
+        print(f"[Main] No active browser tab detected. Launching browser once for target route: '{route}' -> URL: '{target_url}'")
+        self.last_browser_launch_time = time.time()
+        self.has_active_web_tab = True
         self._do_open_url(target_url)
+        self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
         if self.pet:
             self.pet.say(f"Opening {route}! 🚀", duration=2.5)
 
