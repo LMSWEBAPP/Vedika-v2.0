@@ -591,15 +591,12 @@ class GeminiLiveWorker(QThread):
             sys_inst += "LANGUAGE MODE: You must speak in sweet, conversational Telugu only (unless referring to specific scientific/mathematical English terms). "
         elif tutor_lang == 'hindi':
             sys_inst += "LANGUAGE MODE: You must speak in simple, warm, conversational Hindi. "
-        elif tutor_lang == 'english':
-            sys_inst += "LANGUAGE MODE: Speak in clear, warm, expressive Indian English with friendly colloquial phrasing. "
         else:
             sys_inst += (
-                "CODE-SWITCHING & LANGUAGE MATCHING: Dynamically match and mirror the student's exact language mix and tone. "
-                "If the user speaks in Teluglish (Telugu-English blend, e.g., 'Artham kaledu brother', 'Ela cheyyali cheppu'), respond in natural, sweet Teluglish (e.g., 'Choodu, super simple line by line explain chestha!'). "
-                "If the user speaks in Hinglish (Hindi-English blend, e.g., 'Samajh nahi aaya, phir se batao'), respond in natural, friendly Hinglish (e.g., 'Arre no problem! Step by step samajhte hain.'). "
-                "If the user speaks in English, respond in natural, warm Indian English. "
-                "If the user speaks in Telugu or Hindi, respond in sweet conversational Telugu or Hindi. "
+                "LANGUAGE & ARTICULATION: Always speak in clean, articulate, and natural English by default. "
+                "Never mix random Telugu or Hindi words into English sentences (e.g. do NOT say 'choodu' or 'wave chesthunnanu'). "
+                "Maintain neat, professional, and friendly English pronunciation and grammar. "
+                "Only if the student explicitly addresses you in Telugu or Hindi, smoothly respond in that language. "
             )
 
         if tutor_subj == 'math':
@@ -611,12 +608,11 @@ class GeminiLiveWorker(QThread):
         else:
             sys_inst += "SUBJECT FOCUS: You are ready to tutor on any academic school subject: math, science, history, geography, languages, or reading. "
 
-        # Real-time Multilingual & Instant Language Adaptation Directive (Requirement 5)
+        # Real-time Language Adaptation Directive
         sys_inst += (
-            "\n\nCRITICAL REAL-TIME MULTILINGUAL SWITCHING RULE:\n"
-            "- You are 100% multilingual in English, Hindi, and Telugu, as well as conversational Hinglish and Teluglish.\n"
-            "- INSTANT RECOGNITION: The moment the student switches language (for example, speaks in Hindi, Telugu, or switches back to English), you MUST IMMEDIATELY switch your response language to match their spoken language in that very same response turn!\n"
-            "- Never delay, hesitate, or ask for confirmation ('Shall I explain in Hindi?'). Directly speak in the student's chosen language with natural, warm conversational fluency.\n"
+            "\n\nLANGUAGE ADAPTATION RULE:\n"
+            "- Always default to clean, articulate, and grammatically neat English.\n"
+            "- Only if the student speaks to you in Hindi or Telugu, switch to that language smoothly.\n"
         )
 
         # Dynamic User Profile Context Injection
@@ -748,43 +744,49 @@ class GeminiLiveWorker(QThread):
                 print("[GeminiLiveWorker] Connected successfully.")
                 self.client.connection_established.emit()
                 
-                # Check for scoped initial prompt (Requirement 6):
-                # Scenario 1: Proactive video moment prompt triggered by "Ask Vedika at [timestamp]" button
-                if getattr(self.client, "pending_initial_prompt", None):
-                    greeting_text = self.client.pending_initial_prompt
-                    self.client.pending_initial_prompt = None
-                    print(f"[GeminiLiveWorker] Using proactive video moment prompt: {greeting_text}")
-                else:
-                    # Check if student is actively inside the LMS Course/Lesson page
-                    webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
-                    c_title = webapp_ctx.get("courseTitle", "")
-                    l_title = webapp_ctx.get("lessonTitle", "")
-                    route = str(webapp_ctx.get("route", ""))
-                    is_in_course = bool(c_title or l_title or "/lesson" in route or "/courses" in route)
+                # Check for initial greeting prompt (Only sent ONCE per user session):
+                if not getattr(self.client, "initial_greeting_sent", False):
+                    self.client.initial_greeting_sent = True
 
-                    if is_in_course:
-                        # Scenario 2: Active on course page
+                    # Scenario 1: Proactive video moment prompt triggered by "Ask Vedika at [timestamp]" button
+                    if getattr(self.client, "pending_initial_prompt", None):
+                        greeting_text = self.client.pending_initial_prompt
+                        self.client.pending_initial_prompt = None
+                        print(f"[GeminiLiveWorker] Using proactive video moment prompt: {greeting_text}")
+                    else:
+                        # Check if student is actively inside the LMS Course/Lesson page
+                        webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
+                        c_title = webapp_ctx.get("courseTitle", "")
+                        l_title = webapp_ctx.get("lessonTitle", "")
+                        route = str(webapp_ctx.get("route", ""))
+                        is_in_course = bool(c_title or l_title or "/lesson" in route or "/courses" in route)
+
                         display_name = student_name if (student_name and student_name.lower() != "there") else ""
                         name_part = f" {display_name}" if display_name else ""
-                        if l_title and c_title:
-                            greeting_text = (
-                                f"Speak this exact sentence warmly out loud: 'Hi{name_part}! Ready to continue {l_title} in {c_title}?' and wave to me."
-                            )
-                        elif c_title:
-                            greeting_text = (
-                                f"Speak this exact sentence warmly out loud: 'Hi{name_part}! Ready to explore {c_title}?' and wave to me."
-                            )
-                        else:
-                            greeting_text = (
-                                f"Speak this exact sentence warmly out loud: 'Hi{name_part}! Ready to dive into your lesson?' and wave to me."
-                            )
-                    else:
-                        # Scenario 3: Standard / Normal talk everywhere else (matching previous implementation!)
-                        # No repeating old questions from SQLite database!
-                        greeting_text = "Greet me warmly by saying: 'Hey! What are we exploring today?' and wave to me."
 
-                print(f"[GeminiLiveWorker] Initial greeting prompt: {greeting_text}")
-                await session.send_realtime_input(text=greeting_text)
+                        if is_in_course:
+                            if l_title and c_title:
+                                greeting_text = (
+                                    f"Speak this exact sentence in clean, articulate English: 'Hi{name_part}! How is your day? Ready to continue {l_title} in {c_title}?' and call play_animation with 'wave'."
+                                )
+                            elif c_title:
+                                greeting_text = (
+                                    f"Speak this exact sentence in clean, articulate English: 'Hi{name_part}! How is your day? Ready to explore {c_title}?' and call play_animation with 'wave'."
+                                )
+                            else:
+                                greeting_text = (
+                                    f"Speak this exact sentence in clean, articulate English: 'Hi{name_part}! How is your day? Ready to dive into your lesson?' and call play_animation with 'wave'."
+                                )
+                        else:
+                            # Standard clean, articulate English greeting without mixed words
+                            greeting_text = (
+                                f"Speak this exact sentence in clean, articulate English: 'Hi{name_part}! How is your day? What are we going to do now?' and call play_animation with 'wave'."
+                            )
+
+                    print(f"[GeminiLiveWorker] Initial greeting prompt: {greeting_text}")
+                    await session.send_realtime_input(text=greeting_text)
+                else:
+                    print("[GeminiLiveWorker] Session active/reconnected. Skipping greeting prompt to preserve conversation context.")
 
                 # Run audio streaming, receiving, and playing concurrently until session is stopped
                 tasks = [
@@ -832,15 +834,6 @@ class GeminiLiveWorker(QThread):
                         await self.session.send_realtime_input(text=text_val)
                     except Exception as e:
                         print(f"[GeminiLiveWorker] Error sending realtime text prompt: {e}")
-                continue
-
-            if chunk == "END_OF_SPEECH":
-                print("[SEND] Sent audio_stream_end=True to Gemini Live API.")
-                if self.session and self.client.is_active:
-                    try:
-                        await self.session.send_realtime_input(audio_stream_end=True)
-                    except Exception as e:
-                        print(f"[GeminiLiveWorker] Error sending audio_stream_end: {e}")
                 continue
 
             n += 1
@@ -933,17 +926,16 @@ class GeminiLiveWorker(QThread):
                     if raw_rms >= threshold:
                         if not self.vad_active:
                             self.vad_active = True
-                            print(f"[VAD] Speech detected (RMS={raw_rms:.1f} >= {threshold:.1f}), sending audio.")
-                        self.hangover_counter = 4  # Fast 200ms hangover duration (4 * 50ms) for near-instant responses
+                            print(f"[VAD] Speech detected (RMS={raw_rms:.1f} >= {threshold:.1f}), streaming audio to Gemini Live.")
+                        self.hangover_counter = 16  # ~800ms natural speech hangover to prevent chopping words
                     else:
                         if self.hangover_counter > 0:
                             self.hangover_counter -= 1
                         else:
                             if self.vad_active:
                                 self.vad_active = False
-                                print(f"[VAD] End of speech detected. Triggering audio_stream_end for immediate response.")
-                                await self.async_queue.put("END_OF_SPEECH")
-                            continue  # Discard chunk (gated silence)
+                                print("[VAD] User paused speaking. Awaiting model response...")
+                            continue  # Gated silence: discard silent chunks to save bandwidth
                     
                     await self.async_queue.put(chunk)
         except asyncio.CancelledError:
@@ -1583,6 +1575,7 @@ class GeminiLiveClient(QObject):
             return
             
         self.is_active = True
+        self.initial_greeting_sent = False
         self.user_explicitly_started_voice = True
         self.is_speaking = False
         self.turn_completed_received = False

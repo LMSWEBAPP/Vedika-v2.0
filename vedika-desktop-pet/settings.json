@@ -5,6 +5,6 @@
   "sound_enabled": true,
   "static_mode": true,
   "auto_activity_reaction": true,
-  "tutor_language": "all",
+  "tutor_language": "english",
   "tutor_subject": "all"
 }
