@@ -1,0 +1,172 @@
+import os
+import sys
+import time
+
+# Native Windows Foreground Window Detection via ctypes (Zero external dependencies)
+if sys.platform == "win32":
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    kernel32 = ctypes.windll.kernel32
+
+    def get_foreground_window_title():
+        """Returns the title of the active foreground window on Windows."""
+        try:
+            hwnd = user32.GetForegroundWindow()
+            if not hwnd:
+                return ""
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length == 0:
+                return ""
+            buff = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, buff, length + 1)
+            return buff.value
+        except Exception:
+            return ""
+else:
+    def get_foreground_window_title():
+        return ""
+
+
+class DesktopActivityTracker:
+    """
+    Lightweight local desktop window activity tracker.
+    Monitors active foreground window to trigger matching pet animations
+    (typing, reading, music, speak) with 0ms latency and 0 cloud API costs.
+    """
+    def __init__(self, main_app, check_interval=0.1):
+        self.main_app = main_app
+        self.check_interval = check_interval
+        self.last_check_time = 0.0
+        self.current_category = "idle"
+        self.enabled = True
+
+        # Activity classification keywords
+        self.coding_keywords = [
+            "visual studio code", "vscode", "vs code", "visual studio", "antigravity", "cursor",
+            "pycharm", "sublime text", "intellij", "eclipse", "neovim"
+        ]
+        self.music_keywords = [
+            "youtube", "youtube.com", "spotify", "twitch", "netflix",
+            "vlc", "media player", "groove", "soundCloud"
+        ]
+        self.chemistry_keywords = [
+            "chemistry", "chem", "phet", "chemdraw", "molview", "virtual lab", "experiment"
+        ]
+        self.maths_keywords = [
+            "math", "geogebra", "desmos", "calculator", "symbolab", "matlab", "octave", "mathematica"
+        ]
+        self.reading_keywords = [
+            "chrome", "edge", "firefox", "brave", "vivaldi", "opera", "safari",
+            "pdf", "acrobat", "foxit", "sumatra", "evince", "okular", "reader"
+        ]
+        self.chat_keywords = [
+            "discord", "slack", "telegram", "whatsapp", "signal"
+        ]
+        self.explorer_keywords = [
+            "file explorer", "explorer", "this pc", "downloads",
+            "documents", "pictures", "desktop", "c:\\", "d:\\", "e:\\"
+        ]
+
+    def classify_window(self, title):
+        """Classifies window title into activity category."""
+        if not title or title.lower() in ("program manager", "desktop", ""):
+            return "idle"
+            
+        t_lower = title.lower()
+
+        # Check Music / Video / Media FIRST to ensure YouTube video title overrides browser reading
+        for kw in self.music_keywords:
+            if kw in t_lower:
+                return "music"
+
+        # Check Chemistry / Virtual Lab -> Chemistry animation
+        for kw in self.chemistry_keywords:
+            if kw in t_lower:
+                return "chemistry"
+
+        # Check Maths / Calculator -> Maths animation
+        for kw in self.maths_keywords:
+            if kw in t_lower:
+                return "maths"
+
+        # Check Coding / IDE (Antigravity, VS Code, Cursor, PyCharm, etc.) -> Typing animation
+        for kw in self.coding_keywords:
+            if kw in t_lower:
+                return "typing"
+
+        # Check File Explorer / File Manager -> Searching animation
+        for kw in self.explorer_keywords:
+            if kw in t_lower:
+                return "searching"
+
+        # Check Chat / Messaging -> Speak animation
+        for kw in self.chat_keywords:
+            if kw in t_lower:
+                return "speak"
+
+        # Check Browsing / Reading / PDF -> Reading animation
+        for kw in self.reading_keywords:
+            if kw in t_lower:
+                return "reading"
+
+        return "idle"
+
+    def update(self):
+        """Called periodically in the game loop."""
+        if not self.enabled or not self.main_app.pet:
+            return
+
+        # Debounce activity tracking during pending browser open to prevent state thrashing
+        if getattr(self.main_app, 'pending_browser_open', False):
+            return
+
+        now = time.time()
+        if now - self.last_check_time < self.check_interval:
+            return
+
+        self.last_check_time = now
+        title = get_foreground_window_title()
+        category = self.classify_window(title)
+
+        is_voice_chat_active = (
+            hasattr(self.main_app, 'gemini_client') and 
+            self.main_app.gemini_client and 
+            self.main_app.gemini_client.is_active
+        )
+
+        user_explicit_voice = (
+            is_voice_chat_active and 
+            getattr(self.main_app.gemini_client, 'user_explicitly_started_voice', False)
+        )
+
+        clean_title = (title[:40].encode('ascii', 'replace').decode('ascii')) if title else ""
+
+        # Safely disable speaker and mic streams and stop voice chat when laptop sound/YouTube media is detected (unless user explicitly activated voice chat)
+        if is_voice_chat_active and category == "music" and not user_explicit_voice:
+            print(f"[ActivityTracker] System media playback detected ('{clean_title}...') -> Disabling speaker & mic hardware and stopping voice chat.")
+            self.main_app.gemini_client.stop()
+            if self.main_app.pet:
+                music_anim = "music" if "music" in self.main_app.pet.sprite.animations else "idle"
+                self.main_app.set_active_animation(music_anim)
+                self.main_app.pet.say("Media detected 🎵 Muting voice chat. Press Alt+V to restart!", duration=3.0)
+            return
+
+        curr_anim_name = self.main_app.pet.sprite.current_animation.name if self.main_app.pet.sprite.current_animation else ""
+        curr_state_name = self.main_app.pet.state_machine.current_state.name if self.main_app.pet.state_machine.current_state else ""
+
+        # If voice chat is active and pet is currently speaking or thinking/searching, preserve speech/search animation
+        if is_voice_chat_active:
+            if curr_state_name in ("speak", "searching") or curr_anim_name in ("speak", "searching"):
+                return
+
+        # Preserve sleep animation if pet went to sleep while idle
+        if curr_anim_name == "sleep" and category == "idle":
+            return
+
+        # Instantly switch animation when foreground application category changes
+        if category != self.current_category or curr_anim_name != category:
+            self.current_category = category
+            print(f"[ActivityTracker] Active Window: '{clean_title}...' -> Triggering animation: {category}")
+            self.main_app.set_active_animation(category)

@@ -1,0 +1,28 @@
+{
+  "routes": [
+    { "id": "/", "label": "Dashboard", "aliases": ["home", "dashboard", "main", "portal", "home page"] },
+    { "id": "/courses", "label": "Courses", "aliases": ["courses", "lessons", "classes", "subjects", "course catalog", "open courses"] },
+    { "id": "/vedika-ai", "label": "Vedika AI Assistant Hub", "aliases": ["vedika ai", "ai tutor", "ai hub", "ai companion"] },
+    { "id": "/vedika-ai/ask", "label": "Ask Vedika (General Tutor)", "aliases": ["start chatting", "ask vedika", "general tutor", "chatting", "ask vedika tutor", "general ai tutor"] },
+    { "id": "/general-tutor", "label": "General Tutor", "aliases": ["general-tutor", "open general tutor"] },
+    { "id": "/vedika-ai/code", "label": "Code with Vedika (Coding Tutor)", "aliases": ["start coding", "code with vedika", "coding tutor", "code tutor", "programming tutor", "open coding tutor"] },
+    { "id": "/coding-tutor", "label": "Coding Tutor", "aliases": ["coding-tutor", "open code with vedika"] },
+    { "id": "/code-puzzle", "label": "Code Puzzles (DSA Challenge)", "aliases": ["play puzzles", "code puzzles", "code puzzle", "dsa", "puzzles", "dsa puzzles", "open code puzzle"] },
+    { "id": "/vedika-ai/puzzle", "label": "Code Puzzles", "aliases": ["vedika puzzle", "puzzle"] },
+    { "id": "/viva-interview", "label": "Viva & Interview", "aliases": ["viva", "interview", "viva interview", "mock interview", "academic viva", "technical interview", "open viva"] },
+    { "id": "/vedika-labs", "label": "Vedika 3D Science Simulator Labs", "aliases": ["labs", "virtual labs", "science labs", "simulations", "open labs"] },
+    { "id": "/labs", "label": "Labs Hub", "aliases": ["labs hub", "virtual lab", "simulators"] },
+    { "id": "/vedika-labs/math", "label": "Math Lab (Enter Math Lab)", "aliases": ["enter math lab", "math lab", "math", "enter math", "mathematics lab", "open math lab", "open mathematics lab", "maths lab"] },
+    { "id": "/labs/math", "label": "Math Lab", "aliases": ["labs math", "math simulation"] },
+    { "id": "/vedika-labs/chemistry", "label": "Chemistry Lab (Enter Chemistry Lab)", "aliases": ["enter chemistry lab", "chemistry lab", "chemistry", "enter chemistry", "chem lab", "open chemistry lab"] },
+    { "id": "/labs/chemistry", "label": "Chemistry Lab", "aliases": ["labs chemistry", "chemistry simulation"] },
+    { "id": "/vedika-labs/physics", "label": "Physics Lab (Enter Physics Lab)", "aliases": ["enter physics lab", "physics lab", "physics", "enter physics", "open physics lab"] },
+    { "id": "/labs/physics", "label": "Physics Lab", "aliases": ["labs physics", "physics simulation"] },
+    { "id": "/vedika-labs/biology", "label": "Biology Lab (Enter Biology Lab)", "aliases": ["enter biology lab", "biology lab", "biology", "enter biology", "bio lab", "open biology lab"] },
+    { "id": "/labs/biology", "label": "Biology Lab", "aliases": ["labs biology", "biology simulation"] },
+    { "id": "/quizzes", "label": "Quizzes", "aliases": ["quizzes", "quiz", "tests", "examinations", "open quizzes"] },
+    { "id": "/assignments", "label": "Assignments", "aliases": ["assignments", "homework", "submissions", "tasks", "open assignments"] },
+    { "id": "/jobs", "label": "Jobs & Placements", "aliases": ["jobs", "careers", "placements", "opportunities", "open jobs"] },
+    { "id": "/progress", "label": "Progress & Analytics", "aliases": ["progress", "analytics", "stats", "performance", "my progress", "learning progress", "open progress"] }
+  ]
+}
