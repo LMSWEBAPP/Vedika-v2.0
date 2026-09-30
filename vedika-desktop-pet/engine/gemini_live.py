@@ -1519,10 +1519,16 @@ class GeminiLiveClient(QObject):
         env_paths = [
             ".env",
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "vedika-2.0", "backend", ".env"),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "vedika-2.0", "frontend", ".env")
         ]
         for p in env_paths:
             if os.path.exists(p):
+                try:
+                    import dotenv
+                    dotenv.load_dotenv(p, override=False)
+                except Exception:
+                    pass
                 try:
                     with open(p, "r", encoding="utf-8") as f:
                         for line in f:

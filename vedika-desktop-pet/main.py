@@ -5,13 +5,69 @@ import time
 import traceback
 import re
 
-if sys.platform == "win32":
-    try:
-        import io
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-    except Exception:
-        pass
+# --- Persistent Mascot Logging (Console + mascot.log) ---
+LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mascot.log")
+
+class MascotLogger:
+    """Tee logger that writes to both console and mascot.log, persisting logs even when launched via pythonw.exe."""
+    def __init__(self, filename, original_stream=None):
+        self.filename = filename
+        self.original_stream = original_stream
+
+    def write(self, data):
+        if not data:
+            return
+        if self.original_stream:
+            try:
+                self.original_stream.write(data)
+                self.original_stream.flush()
+            except Exception:
+                pass
+        try:
+            with open(self.filename, "a", encoding="utf-8", errors="replace") as f:
+                f.write(data)
+        except Exception:
+            pass
+
+    def flush(self):
+        if self.original_stream:
+            try:
+                self.original_stream.flush()
+            except Exception:
+                pass
+
+    def isatty(self):
+        if self.original_stream and hasattr(self.original_stream, "isatty"):
+            try:
+                return self.original_stream.isatty()
+            except Exception:
+                pass
+        return False
+
+# Setup persistent logging for all print and error streams
+orig_stdout = sys.stdout
+orig_stderr = sys.stderr
+sys.stdout = MascotLogger(LOG_FILE_PATH, orig_stdout)
+sys.stderr = MascotLogger(LOG_FILE_PATH, orig_stderr)
+
+print(f"\n========================================================")
+print(f"=== Vedika Desktop Mascot Started [{time.ctime()}] ===")
+print(f"=== Logs: {LOG_FILE_PATH} ===")
+print(f"========================================================\n")
+
+# Load environment variables (.env) from local and project root
+try:
+    import dotenv
+    env_candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "vedika-2.0", "backend", ".env"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "vedika-2.0", "frontend", ".env"),
+    ]
+    for env_path in env_candidates:
+        if os.path.exists(env_path):
+            dotenv.load_dotenv(env_path, override=False)
+except Exception as e:
+    print(f"[Main] Warning loading .env: {e}")
 
 # Import GeminiLiveClient before PySide6 QApplication to prevent Shiboken inspection locks
 from engine.gemini_live import GeminiLiveClient
@@ -580,6 +636,20 @@ class DesktopPetApp(QObject):
         except Exception as e:
             print(f"[WS Server] Exception during initialization: {e}")
 
+    def get_request_origin(self, request) -> str:
+        """Safely extracts Origin header across all PySide6 platforms without type mismatch crashes."""
+        if not request:
+            return ""
+        try:
+            val = request.rawHeader("Origin")
+            return bytes(val).decode('utf-8', errors='ignore').strip()
+        except Exception:
+            try:
+                val = request.rawHeader(b"Origin")
+                return bytes(val).decode('utf-8', errors='ignore').strip()
+            except Exception:
+                return ""
+
     def on_ws_new_connection(self):
         client = self.ws_server.nextPendingConnection()
         if not client:
@@ -592,8 +662,7 @@ class DesktopPetApp(QObject):
             return
 
         # Security: Validate Origin header against known trusted hosts
-        request = client.request()
-        raw_origin = request.rawHeader(b"Origin").data().decode('utf-8', errors='ignore').lower().strip()
+        raw_origin = self.get_request_origin(client.request()).lower()
         allowed_origins = [
             "http://localhost", "http://127.0.0.1", "https://localhost",
             "https://vedika-v20c.vercel.app",
@@ -836,7 +905,7 @@ class DesktopPetApp(QObject):
         if self.is_webapp_connected():
             for client in getattr(self, 'web_clients', []):
                 try:
-                    origin = client.request().rawHeader(b"Origin").data().decode('utf-8', errors='ignore').strip()
+                    origin = self.get_request_origin(client.request())
                     if origin and "localhost" in origin:
                         return "http://localhost:3000"
                 except Exception:
