@@ -129,6 +129,51 @@ from engine.user_profile import UserProfileManager
 from engine.memory import MemoryManager
 from ui.transparent_window import TransparentWindow
 
+class CloudRelayPoller(QThread):
+    tab_presence_changed = Signal(bool)
+    relay_event_received = Signal(str)
+
+    def __init__(self, base_url="https://vedika-v20c.vercel.app"):
+        super().__init__()
+        self.base_url = base_url.rstrip("/")
+        self._running = True
+
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        import urllib.request
+        import json
+        import time
+
+        url = f"{self.base_url}/api/mascot/bridge?role=mascot"
+        while self._running:
+            try:
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent": "VedikaDesktopMascot/2.0",
+                        "Accept": "application/json"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=2.5) as resp:
+                    if resp.status == 200:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        has_tab = bool(data.get("hasActiveTab", False))
+                        self.tab_presence_changed.emit(has_tab)
+
+                        event = data.get("event")
+                        if event:
+                            event_str = json.dumps(event) if isinstance(event, dict) else str(event)
+                            self.relay_event_received.emit(event_str)
+            except Exception:
+                pass
+
+            for _ in range(15):
+                if not self._running:
+                    break
+                time.sleep(0.1)
+
 class DesktopPetApp(QObject):
     yt_resolved_signal = Signal(str)
 
@@ -233,6 +278,14 @@ class DesktopPetApp(QObject):
         
         # Initialize local WebSocket bridge to Vedika AI Tutor WebApp
         self.init_websocket_bridge()
+
+        # Cloud Relay Poller for Production HTTPS Single-Tab Bridge
+        self.has_active_web_tab = False
+        self.last_browser_launch_time = 0.0
+        self.cloud_relay_poller = CloudRelayPoller(self.get_vyomanta_base_url())
+        self.cloud_relay_poller.tab_presence_changed.connect(self._on_web_tab_presence_changed)
+        self.cloud_relay_poller.relay_event_received.connect(self.on_ws_bridge_message)
+        self.cloud_relay_poller.start()
 
         # Failsafe timer for stuck voice states (network/event drops)
         self.voice_failsafe_timer = QTimer()
@@ -592,6 +645,51 @@ class DesktopPetApp(QObject):
                 sent_count += 1
         return sent_count > 0
 
+    @Slot(bool)
+    def _on_web_tab_presence_changed(self, has_tab: bool):
+        self.has_active_web_tab = has_tab
+
+    def is_browser_launching_grace_period(self) -> bool:
+        """Returns True if the browser was launched recently (within 25s) to prevent duplicate tabs during initial load."""
+        return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 25.0
+
+    def send_to_cloud_relay(self, message_dict: dict) -> bool:
+        """Asynchronously dispatches a command to the cloud relay for delivery to the active browser tab."""
+        import threading
+        import urllib.request
+        import json
+
+        base_url = self.get_vyomanta_base_url()
+        url = f"{base_url}/api/mascot/bridge"
+        body = {
+            "source": "mascot",
+            "type": message_dict.get("type", "NAVIGATE_WEBAPP"),
+            "payload": message_dict.get("payload", {})
+        }
+        data_bytes = json.dumps(body).encode('utf-8')
+
+        def _async_post():
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=data_bytes,
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "VedikaDesktopMascot/2.0"
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=3.0) as resp:
+                    if resp.status == 200:
+                        res_data = json.loads(resp.read().decode('utf-8'))
+                        if res_data.get("hasActiveTab"):
+                            self.has_active_web_tab = True
+            except Exception as e:
+                pass
+
+        threading.Thread(target=_async_post, daemon=True).start()
+        return self.has_active_web_tab or self.is_browser_launching_grace_period()
+
     @Slot(str)
     def on_ws_bridge_message(self, message_str):
         """Handles incoming real-time WebApp context updates and proactive student hints."""
@@ -747,23 +845,37 @@ class DesktopPetApp(QObject):
 
     @Slot(str)
     def on_navigate_webapp_requested(self, route):
-        """Handles voice-triggered webapp route navigation with whitelist validation & regex security."""
+        """Handles voice-triggered webapp route navigation, enforcing single-tab navigation across the entire site."""
         raw_route = route
         route = sanitize_and_validate_route(route)
         print(f"[Main] Voice requested navigation to route: '{raw_route}' -> Validated target: '{route}'")
         
-        # 1. Try seamless in-tab WebSocket navigation if an active browser tab is connected
+        # 1. Try seamless in-tab WebSocket navigation if an active local browser tab is connected
         if self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route}}):
             print(f"[Main] Seamless in-tab WebSocket navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
             if self.pet:
                 self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
             return
 
-        # 2. Fallback to opening browser only if no active browser tab is connected
-        print(f"[Main] No active browser tab connected via WebSocket. Launching browser for target route: '{route}'")
+        # 2. Try seamless in-tab Cloud Relay navigation if production browser tab is active or launching
+        has_active_tab = self.has_active_web_tab or self.is_browser_launching_grace_period()
+        self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route}})
+
+        if has_active_tab:
+            print(f"[Main] Seamless in-tab Cloud Relay navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
+            if self.pet:
+                self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
+            return
+
+        # 3. Only if NO active tab is connected or launching anywhere, open browser ONCE
+        print(f"[Main] No active browser tab detected. Launching browser once for target route: '{route}'")
+        self.last_browser_launch_time = time.time()
+        self.has_active_web_tab = True
         base_url = self.get_vyomanta_base_url()
         target_url = f"{base_url}{route}" if route.startswith("/") else route
-        self.open_url_by_gemini(target_url)
+        self._do_open_url(target_url)
+        if self.pet:
+            self.pet.say(f"Opening {route}! 🚀", duration=2.5)
 
     @Slot(int)
     def on_trigger_hint_requested(self, hint_level=1):
@@ -843,12 +955,25 @@ class DesktopPetApp(QObject):
         url_lower = url.lower().strip()
         if url_lower.startswith("/"):
             return True
-        if "vedika-v20c.vercel.app" in url_lower or "vedika" in url_lower or "vyomanta" in url_lower or "vyomantha" in url_lower or "localhost:3000" in url_lower or "127.0.0.1:3000" in url_lower:
+        if (
+            "vedika-v20c.vercel.app" in url_lower
+            or "vedika" in url_lower
+            or "vyomanta" in url_lower
+            or "vyomantha" in url_lower
+            or "localhost:3000" in url_lower
+            or "127.0.0.1:3000" in url_lower
+            or url_lower in ("website", "the website", "portal", "the portal", "dashboard", "home", "page", "the page", "labs", "courses")
+        ):
             return True
         return False
 
     def extract_route_from_vyomanta_url(self, url: str) -> str:
         """Extracts pathname route from a Vedika URL (e.g. https://vedika-v20c.vercel.app/courses -> /courses)."""
+        if not url:
+            return "/"
+        url_lower = url.lower().strip()
+        if url_lower in ("vedika", "vedika website", "portal", "the portal", "website", "the website", "dashboard", "home", "home page", "page", "the page"):
+            return "/"
         if url.startswith("/"):
             return sanitize_and_validate_route(url)
         from urllib.parse import urlparse
@@ -862,30 +987,20 @@ class DesktopPetApp(QObject):
             return "/"
 
     def open_url_by_gemini(self, url):
-        """Intelligently routes URLs: Vedika URLs navigate inside active tab via WebSocket bridge; YouTube/external URLs open in new browser tabs."""
+        """Intelligently routes URLs: Vedika URLs navigate inside active tab; external media/websites open in default browser."""
         if not url:
             return
 
-        # Check if URL belongs to Vedika LMS
+        # Check if URL belongs to Vedika LMS -> route seamlessly into active tab
         if self.is_vyomanta_url(url):
             route = self.extract_route_from_vyomanta_url(url)
-            if self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route}}):
-                print(f"[Main] Vedika URL detected ('{url}'). Routing seamlessly inside active browser tab to: '{route}' (No new tab opened).")
-                if self.pet:
-                    self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
-                return
+            self.on_navigate_webapp_requested(route)
+            return
 
         base_url = self.get_vyomanta_base_url()
         url_lower = url.lower().strip()
-        if url_lower in ("vedika", "vedika website", "portal", "website", "vyomantha", "vyomanta", "study", "vyomantha website", "vyomanta website", "https://vedika-v20c.vercel.app", "https://vedika-v20c.vercel.app/", "https://vyomanta-ai.vercel.app", "https://vyomanta-ai.vercel.app/", "https://vyomanta.vercel.app", "https://vyomanta.vercel.app/", "http://localhost:3000", "http://localhost:3000/"):
-            url = f"{base_url}/"
-        elif url.startswith("/"):
-            url = f"{base_url}{url}"
-        elif not (url.startswith("http://") or url.startswith("https://")):
-            if "vedika-v20c.vercel.app" in url_lower or "vedika" in url_lower or "vyomanta-ai.vercel.app" in url_lower or "vyomanta.vercel.app" in url_lower or "vyomanta" in url_lower or "vyomantha" in url_lower or "localhost" in url_lower:
-                url = "https://" + url if "." in url else f"{base_url}/{url.lstrip('/')}"
-            else:
-                url = "https://" + url
+        if not (url.startswith("http://") or url.startswith("https://")):
+            url = "https://" + url
 
         is_media = self.is_media_url(url)
         self.pending_browser_open = True
