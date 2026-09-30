@@ -24,7 +24,14 @@ from PySide6.QtGui import QCursor, Qt
 from PySide6.QtWebSockets import QWebSocketServer, QWebSocket
 from PySide6.QtNetwork import QHostAddress, QAbstractSocket
 
-ALLOWED_ROUTE_PATTERN = re.compile(r"^/[a-z0-9\-_/]*$")
+ALLOWED_ROUTE_PATTERN = re.compile(r"^/[a-zA-Z0-9\-_/?=&%#\.]*$")
+
+VALID_PREFIXES = (
+    "/", "/courses", "/lesson", "/vedika-ai", "/general-tutor", "/coding-tutor",
+    "/code-puzzle", "/viva-interview", "/vedika-labs", "/labs", "/resources",
+    "/quizzes", "/assignments", "/jobs", "/progress", "/admin", "/super-admin",
+    "/users", "/login"
+)
 
 def load_valid_routes() -> set:
     routes_path = "routes.json"
@@ -40,7 +47,7 @@ def load_valid_routes() -> set:
 VALID_ROUTES = load_valid_routes()
 
 def resolve_route_from_alias(query: str) -> str:
-    """Resolves human natural aliases (e.g. 'math lab', 'chemistry') to canonical route IDs."""
+    """Resolves human natural aliases (e.g. 'titration', 'math lab', 'chemistry') to canonical route IDs."""
     if not query or not isinstance(query, str):
         return "/"
     q = query.strip().lower()
@@ -49,13 +56,26 @@ def resolve_route_from_alias(query: str) -> str:
         try:
             with open(routes_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                # First pass: look for exact alias or id match
                 for item in data.get("routes", []):
                     r_id = item.get("id", "")
                     if q == r_id.lower() or q == r_id.lstrip("/").lower():
                         return r_id
                     for alias in item.get("aliases", []):
-                        if q == alias.lower() or alias.lower() in q:
+                        if q == alias.lower():
                             return r_id
+                # Second pass: look for substring match, preferring longer alias matches
+                best_match = None
+                best_len = 0
+                for item in data.get("routes", []):
+                    r_id = item.get("id", "")
+                    for alias in item.get("aliases", []):
+                        a_low = alias.lower()
+                        if (a_low in q or q in a_low) and len(a_low) > best_len:
+                            best_match = r_id
+                            best_len = len(a_low)
+                if best_match:
+                    return best_match
         except Exception:
             pass
     return query
@@ -68,17 +88,27 @@ def sanitize_and_validate_route(route: str) -> str:
     if not route.startswith("/"):
         route = "/" + route
         
-    # Enforce regex security allowlist
-    if not ALLOWED_ROUTE_PATTERN.match(route):
+    # Prevent path traversal or script injection
+    if ".." in route or not ALLOWED_ROUTE_PATTERN.match(route):
         print(f"[Security Warning] Blocked suspicious route format: '{route}'. Falling back to '/'")
         return "/"
         
-    # Enforce dynamic whitelist membership check
-    if route not in VALID_ROUTES:
-        print(f"[Route Validation] Unknown route '{route}'. Falling back to dashboard '/'")
-        return "/"
-        
-    return route
+    # Check exact match against VALID_ROUTES (which includes query params like ?experiment=titration)
+    if route in VALID_ROUTES:
+        return route
+
+    # Extract pathname without query string
+    pathname = route.split("?")[0].rstrip("/") or "/"
+    if pathname in VALID_ROUTES:
+        return route
+
+    # Allow known app prefixes (e.g. /lesson/123, /courses/intro, /vedika-labs/...)
+    for prefix in VALID_PREFIXES:
+        if prefix != "/" and (pathname == prefix or pathname.startswith(f"{prefix}/")):
+            return route
+
+    print(f"[Route Validation] Unknown route '{route}'. Falling back to dashboard '/'")
+    return "/"
 
 def log_uncaught_exception(exc_type, exc_value, exc_tb):
     err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))

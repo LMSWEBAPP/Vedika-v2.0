@@ -389,7 +389,37 @@ class GeminiLiveWorker(QThread):
             return {"status": "success", "playing_music": query or "trending music"}
 
         def navigate_webapp(route: str = "/") -> dict:
-            """Navigates the Vedika LMS WebApp to a specific route or page (e.g. '/' for Dashboard, '/courses', '/vedika-labs', '/viva-interview', '/code-puzzle'). If an active Vedika tab is connected, it navigates seamlessly in-place; otherwise, opens https://vedika-v20c.vercel.app{route} in the browser."""
+            """Navigates the Vedika LMS WebApp to a specific route, page, or inner lab experiment:
+            - Labs Hub: '/vedika-labs'
+            - Chemistry Experiments:
+              * '/vedika-labs/chemistry?experiment=titration' (Acid-Base Titration)
+              * '/vedika-labs/chemistry?experiment=bohr' (Bohr Model Builder)
+              * '/vedika-labs/chemistry?experiment=gas' (Ideal Gas Laws & Kinetic Simulator)
+              * '/vedika-labs/chemistry?experiment=diffusion' (Molecular Gas Diffusion)
+              * '/vedika-labs/chemistry?experiment=trends' (Periodic Trends & Atomic Orbitals)
+              * '/vedika-labs/chemistry?mode=phet' (Chemistry PhET Simulations)
+            - Physics Experiments:
+              * '/vedika-labs/physics?experiment=pendulum' (Simple Harmonic Motion Pendulum)
+              * '/vedika-labs/physics?experiment=projectile' (Projectile Motion & Kinematics)
+              * '/vedika-labs/physics?experiment=refraction' (Optics, Snell's Law & Refraction)
+              * '/vedika-labs/physics?experiment=spring' (Spring-Mass Hooke's Law Oscillations)
+              * '/vedika-labs/physics?experiment=circuit' (Ohm's Law & DC Electrical Circuit)
+              * '/vedika-labs/physics?mode=phet' (Physics PhET Simulations)
+            - Biology Experiments:
+              * '/vedika-labs/biology?experiment=cell' (3D Animal Cell Organelles)
+              * '/vedika-labs/biology?experiment=ecosystem' (Food Web & Predator-Prey)
+              * '/vedika-labs/biology?experiment=dna' (DNA Double Helix & Genetics)
+              * '/vedika-labs/biology?mode=phet' (Biology PhET Simulations)
+            - Math Visualizers & Graphing:
+              * '/vedika-labs/math?tab=visualizer&subtab=calculus' (Calculus Tangents & Derivatives)
+              * '/vedika-labs/math?tab=visualizer&subtab=pythagoras' (Pythagoras Theorem Proof)
+              * '/vedika-labs/math?tab=visualizer&subtab=sector' (Circle Sector & Clock Wiper)
+              * '/vedika-labs/math?tab=visualizer&subtab=solid' (3D Solid Surface Area)
+              * '/vedika-labs/math?tab=visualizer&subtab=trig' (Unit Circle & Trigonometry)
+              * '/vedika-labs/math?tab=graph&mode=linear' (Linear Equations & Slope)
+              * '/vedika-labs/math?tab=graph&mode=quadratic' (Quadratic Parabolas)
+              * '/vedika-labs/math?tab=whiteboard' (Math AI Canvas)
+            - Other Pages: '/courses', '/code-puzzle', '/viva-interview', '/resources', '/quizzes', '/assignments', '/jobs', '/progress'."""
             if hasattr(self.client, 'navigate_webapp_requested'):
                 self.client.navigate_webapp_requested.emit(route)
             return {"status": "success", "navigated_route": route}
@@ -401,7 +431,12 @@ class GeminiLiveWorker(QThread):
             return {"status": "success", "hint_level": hint_level}
 
         def trigger_pet_action(action: str, target: str = "") -> dict:
-            """Triggers a remote page action on the active WebApp page (e.g. 'start_presentation', 'show_architecture', 'clear_screen', 'start_viva')."""
+            """Triggers an action or switches experiments directly on the active WebApp page:
+            - 'select_experiment': target can be 'titration', 'bohr', 'gas', 'diffusion', 'trends', 'pendulum', 'projectile', 'refraction', 'spring', 'circuit', 'cell', 'ecosystem', 'dna'
+            - 'select_organelle': target can be 'nucleus', 'mitochondria', 'er', 'golgi', 'lysosome'
+            - 'select_visualizer': target can be 'calculus', 'pythagoras', 'sector', 'solid', 'trig'
+            - 'set_mode': target can be '3d' or 'phet'
+            - 'start_presentation', 'show_architecture', 'clear_screen', 'start_viva'."""
             if hasattr(self.client, 'trigger_action_requested'):
                 self.client.trigger_action_requested.emit(action, target)
             return {"status": "success", "action": action, "target": target}
@@ -640,9 +675,9 @@ class GeminiLiveWorker(QThread):
             "TOOLS & IMMEDIATE ACTIONS:\n"
             "1. When the user asks to play a song, music, video, or study material: "
             "IMMEDIATELY call 'play_music' or 'open_website' tool function on your VERY FIRST turn.\n"
-            "2. If the user asks to open or navigate to any page, tab, or section in Vedika LMS: call 'navigate_webapp' with the appropriate route string:\n"
+            "2. If the user asks to open or navigate to any page, tab, section, or specific lab experiment in Vedika LMS: call 'navigate_webapp' with the appropriate route string:\n"
             + route_instructions +
-            "3. If the user asks to control or trigger actions on a page (like start presentation, show module architecture, clear screen), call 'trigger_pet_action'.\n"
+            "3. If the user asks to switch experiments or control actions on an active page (e.g. 'switch to titration', 'show gas laws', 'switch to projectile motion', 'show cell organelles', 'switch to calculus visualizer', 'start presentation', 'clear screen'): call 'trigger_pet_action(action, target)' (e.g. action='select_experiment', target='titration').\n"
             "4. If the user asks for a hint on their current puzzle, call 'trigger_puzzle_hint'.\n"
             "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route.\n"
             "6. If the user asks to stop or pause voice chat, call 'stop_voice_chat' immediately.\n"
