@@ -14,6 +14,7 @@ import {
   Crop, Mic, MicOff, Square, CheckCircle2, Award, Box, Volume2
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
+import { getMascotBridge } from '@/lib/mascotBridge';
 
 // Preprocess LaTeX math syntax into clean formatted KaTeX math
 function preprocessLaTeX(text) {
@@ -601,6 +602,86 @@ function CustomMathMarkdown({ content }) {
 export default function MathLab() {
   const [activeTab, setActiveTab] = useState('whiteboard');
   const [visualizerSubTab, setVisualizerSubTab] = useState('pythagoras');
+
+  // URL Query Parameters & Mascot Bridge Controller
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const applyQueryParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      const subtab = params.get('subtab') || params.get('vis') || params.get('experiment');
+      const mode = params.get('mode');
+      const eq = params.get('eq') || params.get('equation');
+
+      if (tab) {
+        if (['whiteboard', 'graph', 'visualizer'].includes(tab.toLowerCase())) {
+          setActiveTab(tab.toLowerCase());
+        }
+      }
+      if (subtab) {
+        const validSubtabs = ['pythagoras', 'sector', 'solid', 'trig', 'calculus'];
+        if (validSubtabs.includes(subtab.toLowerCase())) {
+          setActiveTab('visualizer');
+          setVisualizerSubTab(subtab.toLowerCase());
+        }
+      }
+      if (mode) {
+        const validModes = ['linear', 'quadratic', 'polynomial', 'trig', 'exponential'];
+        if (validModes.includes(mode.toLowerCase())) {
+          setActiveTab('graph');
+          setPlotMode(mode.toLowerCase());
+        }
+      }
+      if (eq) {
+        setEquationText(decodeURIComponent(eq));
+      }
+    };
+
+    applyQueryParams();
+
+    // Listen for real-time remote commands from Desktop Mascot
+    const bridge = getMascotBridge();
+    const unsubscribe = bridge.subscribe((msg) => {
+      if (msg.type === 'PET_ACTION_REQUESTED' && msg.payload) {
+        const { action, target } = msg.payload;
+        if (action === 'select_tab') {
+          if (['whiteboard', 'graph', 'visualizer'].includes(target?.toLowerCase())) {
+            setActiveTab(target.toLowerCase());
+          }
+        } else if (action === 'select_visualizer' || action === 'select_experiment') {
+          const sub = target?.toLowerCase();
+          const validSubtabs = ['pythagoras', 'sector', 'solid', 'trig', 'calculus'];
+          if (validSubtabs.includes(sub)) {
+            setActiveTab('visualizer');
+            setVisualizerSubTab(sub);
+          }
+        } else if (action === 'select_plot_mode') {
+          const m = target?.toLowerCase();
+          const validModes = ['linear', 'quadratic', 'polynomial', 'trig', 'exponential'];
+          if (validModes.includes(m)) {
+            setActiveTab('graph');
+            setPlotMode(m);
+          }
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Sync active math tab to Desktop Mascot
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const bridge = getMascotBridge();
+    bridge.sendActivityUpdate('math_tutor', {
+      tab: activeTab,
+      visualizerSubTab: activeTab === 'visualizer' ? visualizerSubTab : undefined,
+      plotMode: activeTab === 'graph' ? plotMode : undefined
+    });
+  }, [activeTab, visualizerSubTab, plotMode]);
 
   // Whiteboard State
   const canvasRef = useRef(null);

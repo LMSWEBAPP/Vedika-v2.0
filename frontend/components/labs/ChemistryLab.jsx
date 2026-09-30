@@ -10,6 +10,7 @@ import {
 import { T } from '@/lib/lms-data';
 
 import PhetSimViewer from '@/components/labs/PhetSimViewer';
+import { getMascotBridge } from '@/lib/mascotBridge';
 
 // Periodic Table Elements Data
 const ELEMENTS = [
@@ -31,6 +32,68 @@ export default function ChemistryLab() {
   const [selectedExperiment, setSelectedExperiment] = useState('bohr');
   const [isPlaying, setIsPlaying] = useState(true);
   const [timeScale, setTimeScale] = useState(1);
+
+  // URL Query Parameters & Mascot Bridge Inner Page Controller
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const applyQueryParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const exp = params.get('experiment') || params.get('exp');
+      const mode = params.get('mode');
+      const phet = params.get('sim') || params.get('phet');
+
+      if (exp) {
+        const validExps = ['bohr', 'gas', 'titration', 'diffusion', 'trends'];
+        if (validExps.includes(exp.toLowerCase())) {
+          setSelectedExperiment(exp.toLowerCase());
+          setLabMode('3d');
+        }
+      }
+      if (mode === '3d' || mode === 'phet') {
+        setLabMode(mode);
+      }
+      if (phet) {
+        setActivePhetSim(phet);
+        setLabMode('phet');
+      }
+    };
+
+    applyQueryParams();
+
+    // Listen for real-time remote commands from Desktop Mascot
+    const bridge = getMascotBridge();
+    const unsubscribe = bridge.subscribe((msg) => {
+      if (msg.type === 'PET_ACTION_REQUESTED' && msg.payload) {
+        const { action, target } = msg.payload;
+        if (action === 'select_experiment' || action === 'switch_experiment') {
+          const exp = target?.toLowerCase();
+          const validExps = ['bohr', 'gas', 'titration', 'diffusion', 'trends'];
+          if (validExps.includes(exp)) {
+            setSelectedExperiment(exp);
+            setLabMode('3d');
+          }
+        } else if (action === 'set_mode') {
+          if (target === '3d' || target === 'phet') setLabMode(target);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Sync active experiment and mode back to Desktop Mascot
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const bridge = getMascotBridge();
+    bridge.sendActivityUpdate('chemistry_lab', {
+      experiment: selectedExperiment,
+      mode: labMode,
+      phetSim: activePhetSim
+    });
+  }, [selectedExperiment, labMode, activePhetSim]);
 
   // --- 1. Bohr Model Builder States ---
   const [protons, setProtons] = useState(3); // Lithium

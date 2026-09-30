@@ -117,9 +117,11 @@ export default function LayoutWrapper({ children }) {
     if (typeof window === 'undefined') return;
     const bridge = getMascotBridge();
 
-    // Listen for mascot-commanded navigation (e.g. "open math lab")
+    // Listen for mascot-commanded navigation (e.g. "open math lab", "open titration")
     const unsubscribeNav = bridge.onNavigate((targetRoute) => {
-      if (targetRoute && targetRoute !== pathname) {
+      if (!targetRoute) return;
+      const currentFull = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : pathname;
+      if (targetRoute !== currentFull) {
         console.log('[LayoutWrapper] Desktop Mascot navigating to:', targetRoute);
         router.push(targetRoute);
       }
