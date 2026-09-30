@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import AdminSidebar from './AdminSidebar';
 import Header from './Header';
 import { T } from '@/lib/lms-data';
+import { getMascotBridge } from '@/lib/mascotBridge';
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
@@ -111,6 +112,34 @@ export default function LayoutWrapper({ children }) {
     document.documentElement.setAttribute('data-theme', theme);
     document.body.style.backgroundColor = isHomePage ? '#02050c' : (theme === 'dark' ? '#090B14' : '#F4F7FB');
   }, [isHomePage]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const bridge = getMascotBridge();
+
+    // Listen for mascot-commanded navigation (e.g. "open math lab")
+    const unsubscribeNav = bridge.onNavigate((targetRoute) => {
+      if (targetRoute && targetRoute !== pathname) {
+        console.log('[LayoutWrapper] Desktop Mascot navigating to:', targetRoute);
+        router.push(targetRoute);
+      }
+    });
+
+    // Notify mascot of page changes
+    let activity = 'browsing';
+    if (pathname?.startsWith('/vedika-labs/math') || pathname?.startsWith('/labs/math')) activity = 'math_tutor';
+    else if (pathname?.startsWith('/vedika-labs/chemistry') || pathname?.startsWith('/labs/chemistry')) activity = 'chemistry_lab';
+    else if (pathname?.startsWith('/vedika-labs/physics') || pathname?.startsWith('/labs/physics')) activity = 'physics_lab';
+    else if (pathname?.startsWith('/code-puzzle')) activity = 'dsa_puzzle';
+    else if (pathname?.startsWith('/lesson/')) activity = 'video_lesson';
+    else if (pathname?.startsWith('/courses')) activity = 'courses';
+
+    bridge.sendActivityUpdate(activity, { page: pathname });
+
+    return () => {
+      unsubscribeNav();
+    };
+  }, [pathname, router]);
 
   if (loading) {
     return (

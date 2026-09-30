@@ -23,6 +23,7 @@ import VideoAIExplainerCard from './VideoAIExplainerCard';
 import PracticePlaygroundModal from './PracticePlaygroundModal';
 import CompanionTabs, { TABS } from './CompanionTabs';
 import OverviewModal from './OverviewModal';
+import { getMascotBridge } from '@/lib/mascotBridge';
 import './LessonPage.css';
 
 function formatTimestamp(seconds) {
@@ -111,6 +112,18 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [assignmentText, setAssignmentText] = useState('');
   const [submittingAss, setSubmittingAss] = useState(false);
   const [assSuccessMsg, setAssSuccessMsg] = useState('');
+
+  // 24/7 Desktop Mascot Connection State
+  const [isMascotConnected, setIsMascotConnected] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const bridge = getMascotBridge();
+    const unsub = bridge.onStatusChange((status) => {
+      setIsMascotConnected(status);
+    });
+    return () => unsub();
+  }, []);
 
   // Load current user & notes
   useEffect(() => {
@@ -226,6 +239,27 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     const vId = extractYoutubeId(lesson?.vid);
     setExplainerLoading(true);
 
+    // 1. Dispatch directly to 24/7 Desktop Mascot via local WebSocket bridge
+    try {
+      const bridge = getMascotBridge();
+      const isMascotAlive = bridge.isMascotConnected();
+      setIsMascotConnected(isMascotAlive);
+
+      bridge.sendVideoMoment({
+        videoId: vId,
+        timestampSeconds: targetSecs,
+        timestampFormatted: formatTimestamp(targetSecs),
+        lessonTitle: lesson?.title || '',
+        chapterTitle: lesson?.chapterTitle || lesson?.chapter || '',
+        courseTitle: lesson?.courseTitle || '',
+        overview: lesson?.overview || '',
+        conceptSummary: lesson?.overview || ''
+      });
+    } catch (mascotErr) {
+      console.warn('[MascotBridge] Video moment dispatch notice:', mascotErr);
+    }
+
+    // 2. Query explain API for structured in-drawer breakdown
     try {
       const res = await fetch('/api/youtube/explain', {
         method: 'POST',
@@ -940,6 +974,53 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
                             Pause the video at any time to receive a step-by-step Socratic breakdown of what is being explained.
                           </p>
                         </div>
+
+                        {/* 24/7 Desktop Mascot Status Indicator */}
+                        {isMascotConnected ? (
+                          <div style={{
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(59, 130, 246, 0.14))',
+                            border: '1px solid rgba(168, 85, 247, 0.45)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            color: '#F3E8FF',
+                            fontSize: 12,
+                            boxShadow: '0 2px 10px rgba(168, 85, 247, 0.15)'
+                          }}>
+                            <span style={{ fontSize: 18, filter: 'drop-shadow(0 0 6px rgba(168,85,247,0.6))' }}>🎙️</span>
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#D8B4FE', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span>24/7 Desktop Mascot Active</span>
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#34D399', boxShadow: '0 0 8px #34D399' }} />
+                              </div>
+                              <div style={{ color: '#C084FC', fontSize: 11, marginTop: 2 }}>
+                                Vedika is explaining this moment out loud on your desktop. Speak into your mic to ask questions!
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: 11.5,
+                            color: T.muted
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ opacity: 0.6 }}>💻</span>
+                              <span>Desktop Mascot Offline</span>
+                            </div>
+                            <span style={{ color: panelColor, fontWeight: 600, fontSize: 11 }}>
+                              Launch Desktop Shortcut for Voice
+                            </span>
+                          </div>
+                        )}
 
                         <button
                           type="button"
