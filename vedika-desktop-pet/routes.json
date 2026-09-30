@@ -2,6 +2,13 @@
   "routes": [
     { "id": "/", "label": "Dashboard", "aliases": ["home", "dashboard", "main", "portal", "home page"] },
     { "id": "/courses", "label": "Courses", "aliases": ["courses", "lessons", "classes", "subjects", "course catalog", "open courses", "my courses"] },
+    { "id": "/courses?category=Physics", "label": "Physics Courses", "aliases": ["physics courses", "physics course", "move to physics courses", "move into physics courses", "physics lessons", "open physics courses", "physics classes"] },
+    { "id": "/courses?category=Maths", "label": "Mathematics Courses", "aliases": ["math courses", "maths courses", "mathematics courses", "move to math courses", "move into math courses", "open math courses", "math lessons"] },
+    { "id": "/courses?category=Chemistry", "label": "Chemistry Courses", "aliases": ["chemistry courses", "chemistry course", "move to chemistry courses", "move into chemistry courses", "open chemistry courses", "chem courses"] },
+    { "id": "/courses?category=Biology", "label": "Biology Courses", "aliases": ["biology courses", "biology course", "move to biology courses", "move into biology courses", "open biology courses", "bio courses"] },
+    { "id": "/courses?category=Python", "label": "Python Courses", "aliases": ["python courses", "python course", "python programming courses", "move to python courses", "move into python courses", "open python courses", "python lessons"] },
+    { "id": "/courses?category=Web+Development", "label": "Web Development Courses", "aliases": ["web development courses", "web dev courses", "frontend courses", "move to web dev courses"] },
+    { "id": "/courses?category=DSA", "label": "Data Structures & Algorithms Courses", "aliases": ["dsa courses", "data structures courses", "algorithms courses", "move to dsa courses"] },
     { "id": "/vedika-ai", "label": "Vedika AI Assistant Hub", "aliases": ["vedika ai", "ai tutor", "ai hub", "ai companion", "ai assistant"] },
     { "id": "/vedika-ai/ask", "label": "Ask Vedika (General Tutor)", "aliases": ["start chatting", "ask vedika", "general tutor", "chatting", "ask vedika tutor", "general ai tutor", "chat with vedika"] },
     { "id": "/general-tutor", "label": "General Tutor", "aliases": ["general-tutor", "open general tutor"] },

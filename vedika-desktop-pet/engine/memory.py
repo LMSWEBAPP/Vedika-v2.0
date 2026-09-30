@@ -410,6 +410,32 @@ class MemoryManager:
             ))
             return cursor.lastrowid
 
+def format_text_as_bullets(text: str) -> str:
+    """Normalizes multi-point or sentence text into clean bullet points with dots, each on its own line."""
+    if not text:
+        return ""
+    import re
+    cleaned = text.replace("**", "").replace("__", "").strip()
+    raw_lines = re.split(r'[\r\n]+', cleaned)
+    bullets = []
+    for line in raw_lines:
+        trimmed = line.strip()
+        if not trimmed:
+            continue
+        items = re.split(r'(?:^|\s+)(?:[•\-\*]|\d+[\.\)])\s+', trimmed)
+        for item in items:
+            it = item.strip()
+            if it:
+                it = re.sub(r'^[•\-\*\d\.\)\s]+', '', it).strip()
+                if it:
+                    bullets.append(f"• {it}")
+    if not bullets:
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', cleaned) if s.strip()]
+        if len(sentences) > 1:
+            return "\n".join(f"• {s}" for s in sentences)
+        return f"• {cleaned}"
+    return "\n".join(bullets)
+
     def append_or_create_notebook_note(
         self,
         note_text: str,
@@ -427,13 +453,15 @@ class MemoryManager:
     ) -> tuple:
         """
         If create_new is False: looks for the most recent note for this lesson/course.
-        If found, appends note_text as a formatted bullet point to the existing note.
-        If not found or create_new is True: inserts a new note.
+        If found, appends note_text as formatted bullet points to the existing note.
+        If not found or create_new is True: inserts a new note with formatted bullet points.
         Returns: (note_id, is_updated, combined_text, note_dict)
         """
         clean_text = scrub_pii(note_text.strip())
         if not clean_text:
             return (0, False, "", {})
+
+        formatted_bullets = format_text_as_bullets(clean_text)
 
         with self._get_connection() as conn:
             if not create_new:
@@ -446,9 +474,9 @@ class MemoryManager:
                 row = cursor.fetchone()
                 if row:
                     note_id = row["id"]
-                    existing_text = row["note_text"]
+                    existing_text = row["note_text"] or ""
                     
-                    if clean_text in existing_text:
+                    if formatted_bullets in existing_text or clean_text in existing_text:
                         note_dict = {
                             "id": note_id,
                             "courseId": row["course_id"],
@@ -466,11 +494,7 @@ class MemoryManager:
                         }
                         return (note_id, True, existing_text, note_dict)
 
-                    formatted_pt = clean_text if clean_text.startswith("•") or clean_text.startswith("-") else f"• {clean_text}"
-                    if "\n" in existing_text or existing_text.startswith("•"):
-                        combined = f"{existing_text}\n{formatted_pt}"
-                    else:
-                        combined = f"• {existing_text}\n{formatted_pt}"
+                    combined = f"{existing_text}\n{formatted_bullets}" if existing_text else formatted_bullets
 
                     conn.execute("""
                         UPDATE student_notebook_notes
@@ -504,7 +528,7 @@ class MemoryManager:
             """, (
                 course_id, course_title, chapter_title, lesson_id, lesson_title,
                 video_id, float(timestamp_seconds or 0.0), timestamp_formatted or "00:00",
-                clean_text, topic or lesson_title or "", source or "vedika_voice"
+                formatted_bullets, topic or lesson_title or "", source or "vedika_voice"
             ))
             new_id = cursor.lastrowid
             note_dict = {
@@ -517,7 +541,7 @@ class MemoryManager:
                 "videoId": video_id,
                 "timestampSeconds": float(timestamp_seconds or 0.0),
                 "timestampFormatted": timestamp_formatted or "00:00",
-                "noteText": clean_text,
+                "noteText": formatted_bullets,
                 "topic": topic or lesson_title or "",
                 "source": source or "vedika_voice",
                 "createdAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

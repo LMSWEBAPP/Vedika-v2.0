@@ -1,6 +1,6 @@
 {
   "user": {
-    "name": "Alex",
+    "name": "Seshu",
     "stage": "College",
     "field_of_study": "Computer Science & Artificial Intelligence",
     "hobbies": [
@@ -20,7 +20,7 @@
     "conversational_notes": []
   },
   "last_interaction": {
-    "timestamp": "2026-09-30T16:53:55.888820",
+    "timestamp": "2026-10-01T00:44:48.615710",
     "topic": "Computer Science & Artificial Intelligence"
   }
 }

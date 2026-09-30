@@ -456,13 +456,21 @@ class GeminiLiveWorker(QThread):
                 if jpeg_bytes:
                     if self.session and self.client.is_active:
                         try:
-                            print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session via video field...")
-                            await self.session.send_realtime_input(
-                                video=types.Blob(
-                                    data=jpeg_bytes,
-                                    mime_type="image/jpeg"
+                            print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session...")
+                            try:
+                                await self.session.send_realtime_input(
+                                    media_chunks=[types.Blob(
+                                        data=jpeg_bytes,
+                                        mime_type="image/jpeg"
+                                    )]
                                 )
-                            )
+                            except Exception as m_err:
+                                await self.session.send_realtime_input(
+                                    video=types.Blob(
+                                        data=jpeg_bytes,
+                                        mime_type="image/jpeg"
+                                    )
+                                )
                             print("[GeminiLiveWorker] Screen image blob successfully transmitted to Gemini Live session!")
                             return {"status": "success", "image_received": True, "message": "Screen image ingested. Analyzing content."}
                         except Exception as e:
@@ -552,6 +560,7 @@ class GeminiLiveWorker(QThread):
         def add_study_note(note_content: str, topic: str = "", timestamp: str = "", create_new: bool = False) -> dict:
             """Adds a key insight, formula, summary point, or takeaway to the student's personal study notebook with the exact video timestamp and course context.
             CRITICAL RULES:
+            - When noting multiple takeaways or points, format each point clearly on its own line prefixed with a bullet (e.g. '• First takeaway\n• Second takeaway').
             - ACCUMULATE POINTS: Unless the student explicitly says 'new note', 'start a new note', or 'create another note', ALWAYS leave create_new=False so all points are compiled cleanly as bullet points into the single active note!
             - Set create_new=True ONLY when the student explicitly demands a new or separate note.
             """
@@ -587,16 +596,22 @@ class GeminiLiveWorker(QThread):
             "6. If the student asks to clear/forget their study history, call 'clear_student_memory()'.\n"
         )
 
+        # Instant Multilingual Language Mirroring Directive
         if tutor_lang == 'telugu':
-            sys_inst += "LANGUAGE MODE: You must speak in sweet, conversational Telugu only (unless referring to specific scientific/mathematical English terms). "
+            sys_inst += "LANGUAGE MODE: Default to sweet, conversational Telugu (unless the student switches to English or Hindi, in which case mirror their language immediately). "
         elif tutor_lang == 'hindi':
-            sys_inst += "LANGUAGE MODE: You must speak in simple, warm, conversational Hindi. "
+            sys_inst += "LANGUAGE MODE: Default to simple, warm, conversational Hindi (unless the student switches to English or Telugu, in which case mirror their language immediately). "
         else:
             sys_inst += (
-                "LANGUAGE & ARTICULATION: Always speak in clean, articulate, and natural English by default. "
-                "Never mix random Telugu or Hindi words into English sentences (e.g. do NOT say 'choodu' or 'wave chesthunnanu'). "
-                "Maintain neat, professional, and friendly English pronunciation and grammar. "
-                "Only if the student explicitly addresses you in Telugu or Hindi, smoothly respond in that language. "
+                "MULTILINGUAL INTELLIGENCE & INSTANT LANGUAGE MIRRORING:\n"
+                "- You are natively multilingual across English, Hindi (हिन्दी), Telugu (తెలుగు), Tamil, and other languages.\n"
+                "- INSTANT ZERO-DELAY LANGUAGE SWITCHING: You MUST detect the language of the student's IMMEDIATE most recent question or speech turn, and reply in that EXACT same language on your very next turn!\n"
+                "- If the student asks in English, respond in articulate, natural, friendly English.\n"
+                "- If the student asks the next question in Hindi (or Hinglish, e.g., 'यह क्या है?', 'मुझे समझ नहीं आया', 'हिंदी में बताओ', 'ye kya hai samjhao'), you MUST IMMEDIATELY switch to natural, fluent conversational Hindi on that exact turn!\n"
+                "- If the student asks the next question in Telugu (or Telugish, e.g., 'ఈ కాన్సెప్ట్ ఏంటి?', 'నాకు అర్థం కాలేదు', 'తెలుగులో చెప్పు', 'idi enti cheppandi'), you MUST IMMEDIATELY switch to natural, fluent conversational Telugu on that exact turn!\n"
+                "- If the student switches back to English, immediately switch back to English.\n"
+                "- NEVER stay in the previous language when the user has switched. Always match and mirror the student's chosen language on the instant turn without delay.\n"
+                "- Keep technical, coding, and scientific keywords (e.g. Python, function, titration, Newton's law) intact while speaking naturally in their chosen language.\n"
             )
 
         if tutor_subj == 'math':
@@ -610,9 +625,9 @@ class GeminiLiveWorker(QThread):
 
         # Real-time Language Adaptation Directive
         sys_inst += (
-            "\n\nLANGUAGE ADAPTATION RULE:\n"
-            "- Always default to clean, articulate, and grammatically neat English.\n"
-            "- Only if the student speaks to you in Hindi or Telugu, switch to that language smoothly.\n"
+            "\n\nCRITICAL LANGUAGE RULE:\n"
+            "- ALWAYS mirror the student's current spoken language instantaneously.\n"
+            "- When the student changes languages from English to Telugu, Hindi, or any other language, seamlessly reply in that language on that exact turn.\n"
         )
 
         # Dynamic User Profile Context Injection
@@ -678,7 +693,7 @@ class GeminiLiveWorker(QThread):
             "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route.\n"
             "6. If the user asks to stop or pause voice chat, call 'stop_voice_chat' immediately.\n"
             "7. You can also trigger pet visual animations on yourself ('wave', 'jump', 'failed', 'waiting', 'review', 'idle', 'explaining').\n"
-            "8. SCREEN VISION & PAGE GUIDANCE: When the user asks 'What is on my screen?', 'What is going on in this page?', 'What should I do here?', 'Can you see what I am doing?', 'Explain what is on my screen', or asks a visual question about their active computer screen: IMMEDIATELY call 'capture_user_screen' tool function on your VERY FIRST turn! Once the image is received, visually inspect the active page, explain what is currently displayed, and give clear, friendly, step-by-step instructions on what to do next. CRITICAL: When the student is asking about an active video lesson moment, do NOT capture the desktop screen; explain the lesson concepts being taught directly!\n"
+            "8. SCREEN VISION & CODE PUZZLE GUIDANCE: When the user asks 'What is on my screen?', 'What is going on in this page?', 'What should I do here?', 'Can you see what I am doing?', 'Explain what is on my screen', 'Check my code', 'Why is my code failing', 'Where is my error', 'Help me solve this puzzle', or asks any question about what is displaying on their active screen or in their code editor: IMMEDIATELY call 'capture_user_screen' tool function on your VERY FIRST turn! Once the image is received, visually inspect the active page or code editor. In addition, read the 'studentCode', 'lastError', and 'puzzleTitle' from your active context. Identify the exact line number, syntax error, missing return, or logic flaw, and explain clearly and encouragingly where to correct the code (e.g. 'On line 4, your while loop condition needs to be...'). CRITICAL: When the student is asking about an active video lesson moment, do NOT capture the desktop screen; explain the lesson concepts being taught directly!\n"
             "9. VISUAL POINTING & LASER HIGHLIGHT: When explaining code errors, UI buttons, syntax mistakes, or specific elements on the user's screen: IMMEDIATELY call 'point_to_screen_location(x, y, label)' with normalized coordinates (x: 0.0 to 1.0, y: 0.0 to 1.0) to highlight the exact position with a glowing laser pointer and sonar pulse for the student.\n"
             "10. RECALL PREVIOUS QUESTIONS & MEMORY SEARCH: Call 'recall_previous_questions(limit)' when the student asks what was previously asked, or 'search_learning_memory(query, category)' to search stored academic insights and past discussions.\n"
             "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, 'update_student_profile(name, stage, field_of_study, hobbies, favorite_topics)' to remember student details, or 'clear_student_memory' to clear history.\n"
@@ -724,12 +739,13 @@ class GeminiLiveWorker(QThread):
             )
             print("[GeminiLiveWorker] PyAudio microphone stream opened successfully.")
             
-            # Setup Speaker Output Stream using PyAudio
+            # Setup Speaker Output Stream using PyAudio (with 2048 frames hardware buffer to prevent underrun)
             self.speaker_stream = self.pya.open(
                 format=pyaudio.paInt16,
                 channels=1,
                 rate=24000,
                 output=True,
+                frames_per_buffer=2048,
             )
             print("[GeminiLiveWorker] PyAudio speaker stream opened successfully.")
         except Exception as e:
@@ -945,8 +961,9 @@ class GeminiLiveWorker(QThread):
 
     async def play_audio_loop(self):
         try:
-            n = 0
             pcm_buffer = bytearray()
+            prebuffering = True
+            PREBUFFER_BYTES = 4800  # ~100ms jitter buffer ensures glitch-free playback on Windows
             while self.client.is_active and self.speaker_stream and not getattr(self, "_stopping_audio", False):
                 # Pause audio output when session is paused or audio is stopping
                 if getattr(self.client, "is_paused", False) or getattr(self, "_stopping_audio", False):
@@ -954,7 +971,7 @@ class GeminiLiveWorker(QThread):
                     continue
 
                 try:
-                    chunk = await asyncio.wait_for(self.audio_out_queue.get(), timeout=0.05)
+                    chunk = await asyncio.wait_for(self.audio_out_queue.get(), timeout=0.04)
                 except asyncio.TimeoutError:
                     chunk = None
 
@@ -965,6 +982,7 @@ class GeminiLiveWorker(QThread):
                 if self.flush_speaker:
                     self.flush_speaker = False
                     pcm_buffer.clear()
+                    prebuffering = True
                     print("[GeminiLiveWorker] Flushed speaker queue on user interruption.")
                     while not self.audio_out_queue.empty():
                         try:
@@ -976,16 +994,19 @@ class GeminiLiveWorker(QThread):
                 if chunk:
                     pcm_buffer.extend(chunk)
 
-                # Buffer PCM chunks to at least 2400 bytes (50ms of 24kHz mono) for smooth, non-stuttering PyAudio playback
+                # Prebuffer at start of speech turn to prevent PortAudio buffer starvation
+                if prebuffering:
+                    if len(pcm_buffer) < PREBUFFER_BYTES and not getattr(self.client, "turn_completed_received", False):
+                        continue
+                    prebuffering = False
+
+                # Buffer PCM chunks to 2400 bytes (50ms of 24kHz mono) for smooth, non-stuttering PyAudio playback
                 min_chunk_bytes = 2400
                 while len(pcm_buffer) >= min_chunk_bytes or (chunk is None and len(pcm_buffer) > 0 and self.audio_out_queue.empty()):
                     send_len = min_chunk_bytes if len(pcm_buffer) >= min_chunk_bytes else len(pcm_buffer)
                     play_bytes = bytes(pcm_buffer[:send_len])
                     del pcm_buffer[:send_len]
 
-                    n += 1
-                    print(f"[PLAY] Playing smooth audio chunk {n}, length={len(play_bytes)} bytes.")
-                    
                     # Push far-end reference audio to Block-NLMS Echo Canceller
                     self.aec.push_reference(play_bytes)
 
@@ -993,23 +1014,22 @@ class GeminiLiveWorker(QThread):
                         break
 
                     try:
-                        # Play audio chunk asynchronously to prevent event loop blocking
+                        # Play audio chunk asynchronously without blocking worker event loop
                         await asyncio.to_thread(self.speaker_stream.write, play_bytes)
                     except Exception as ex:
                         print(f"[GeminiLiveWorker] Speaker stream write gracefully stopped: {ex}")
                         break
-                    
-                    # Thread-safely trigger client timer
-                    self.client.mic_timer_trigger.emit(2500)
                 
                 # Check if we finished playing all chunks after turn completed
-                if self.audio_out_queue.empty() and len(pcm_buffer) == 0 and getattr(self.client, "turn_completed_received", False):
-                    print("[GeminiLive] Speaker finished playing all chunks. Re-enabling mic.")
-                    self.client.turn_completed_received = False
-                    self.client.mic_timer_trigger.emit(0)
-                    if self.client.is_speaking:
-                        self.client.is_speaking = False
-                        self.client.speaking_stopped.emit()
+                if self.audio_out_queue.empty() and len(pcm_buffer) == 0:
+                    prebuffering = True
+                    if getattr(self.client, "turn_completed_received", False):
+                        print("[GeminiLive] Speaker finished playing all chunks. Re-enabling mic.")
+                        self.client.turn_completed_received = False
+                        self.client.mic_timer_trigger.emit(0)
+                        if self.client.is_speaking:
+                            self.client.is_speaking = False
+                            self.client.speaking_stopped.emit()
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -1073,7 +1093,12 @@ class GeminiLiveWorker(QThread):
                                     self.current_turn_model_text += part.text
                                     self.client.text_received.emit(part.text)
                                 if hasattr(part, "inline_data") and part.inline_data:
-                                    self.client.audio_received.emit(part.inline_data.data)
+                                    audio_bytes = part.inline_data.data
+                                    # Directly feed audio queue on worker thread (zero Qt GUI main-thread latency/jitter)
+                                    self.audio_out_queue.put_nowait(audio_bytes)
+                                    if not self.client.is_speaking:
+                                        self.client.is_speaking = True
+                                        self.client.speaking_started.emit()
                         
                         if sc.turn_complete:
                             self.client.turn_completed.emit()
@@ -1213,13 +1238,21 @@ class GeminiLiveWorker(QThread):
                                     if jpeg_bytes:
                                         if self.session and self.client.is_active:
                                             try:
-                                                print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session via video field...")
-                                                await self.session.send_realtime_input(
-                                                    video=types.Blob(
-                                                        data=jpeg_bytes,
-                                                        mime_type="image/jpeg"
+                                                print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session...")
+                                                try:
+                                                    await self.session.send_realtime_input(
+                                                        media_chunks=[types.Blob(
+                                                            data=jpeg_bytes,
+                                                            mime_type="image/jpeg"
+                                                        )]
                                                     )
-                                                )
+                                                except Exception:
+                                                    await self.session.send_realtime_input(
+                                                        video=types.Blob(
+                                                            data=jpeg_bytes,
+                                                            mime_type="image/jpeg"
+                                                        )
+                                                    )
                                                 print("[GeminiLiveWorker] Screen image blob successfully transmitted to Gemini Live session!")
                                                 function_responses.append(
                                                     types.FunctionResponse(

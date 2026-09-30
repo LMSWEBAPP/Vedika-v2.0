@@ -798,11 +798,39 @@ class DesktopPetApp(QObject):
                         elif activity == "reading":
                             self.set_active_animation("reading")
 
-            elif msg_type == "PUZZLE_STUCK":
-                puzzle_title = payload.get("puzzleTitle", "this problem")
+            elif msg_type == "PUZZLE_STUCK" or msg_type == "CHECK_STUDENT_CODE":
+                puzzle_title = payload.get("puzzleTitle", "this coding problem")
+                student_code = payload.get("studentCode") or payload.get("code") or ""
+                last_err = payload.get("lastError") or payload.get("error") or ""
+                cursor_line = payload.get("line") or payload.get("cursorLine") or 1
+
+                if hasattr(self, 'gemini_client') and self.gemini_client:
+                    self.gemini_client.active_webapp_context = {
+                        "page": "/code-puzzle",
+                        "activity": "dsa_puzzle",
+                        "puzzleTitle": puzzle_title,
+                        "studentCode": student_code,
+                        "lastError": last_err,
+                        "cursorLine": cursor_line
+                    }
+
                 self.set_active_animation("explaining")
                 if self.pet:
-                    self.pet.say(f"I notice you've been working on {puzzle_title}! Press Alt+V if you'd like a hint! 💡", duration=6.0)
+                    self.pet.say(f"Inspecting your code for {puzzle_title}... 🔍", duration=4.0)
+
+                if hasattr(self, "gemini_client") and self.gemini_client:
+                    if not self.gemini_client.is_active:
+                        print("[WS Bridge] Activating Gemini Live voice session for code diagnosis...")
+                        self.gemini_client.start()
+
+                    err_part = f" Error encountered: {last_err}." if last_err else ""
+                    code_part = f"\n[STUDENT ACTIVE CODE IN EDITOR]:\n```python\n{student_code}\n```" if student_code else ""
+                    diagnostic_prompt = (
+                        f"The student is working on the code problem '{puzzle_title}' and asked for your guidance.{err_part} "
+                        f"Please inspect the student's code and screen. Call 'capture_user_screen' if needed to verify line numbers. "
+                        f"Explain clearly which line has the error, why it occurs, and give an encouraging step-by-step fix or hint.{code_part}"
+                    )
+                    self.gemini_client.send_realtime_text_prompt(diagnostic_prompt)
 
             elif msg_type == "ASK_VEDIKA_VIDEO_MOMENT":
                 time_str = payload.get("timestampFormatted", "this moment")
