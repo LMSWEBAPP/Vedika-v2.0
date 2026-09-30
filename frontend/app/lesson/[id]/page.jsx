@@ -7,6 +7,25 @@ import { getCourseDetails } from '@/lib/lms-data';
 import LessonPage from '@/components/LessonPage';
 
 // Instant local lesson resolver (< 1ms execution time)
+function normalizeLesson(l, m, details, defaultCourse) {
+  if (!l) return null;
+  const rawVid = l.vid || l.youtube || "";
+  let resolvedVid = rawVid;
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(rawVid)) {
+    const match = String(rawVid || l.content || "").match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    resolvedVid = match ? match[1] : (rawVid || "_uQrJ0TkZlc");
+  }
+  return {
+    ...l,
+    vid: resolvedVid,
+    youtube: resolvedVid,
+    moduleTitle: m?.title || l.moduleTitle || '',
+    courseTitle: details?.title || defaultCourse?.title || l.courseTitle || '',
+    courseId: details?.id || defaultCourse?.id || l.courseId || '',
+    module: m
+  };
+}
+
 function findLocalLesson(lessonId) {
   if (!lessonId) return null;
 
@@ -21,13 +40,7 @@ function findLocalLesson(lessonId) {
             for (const m of syl.modules) {
               const l = (m.lessons || []).find(x => x.id === lessonId);
               if (l) {
-                return {
-                  ...l,
-                  moduleTitle: m.title,
-                  courseTitle: syl.title,
-                  courseId: syl.id,
-                  module: m
-                };
+                return normalizeLesson(l, m, syl, null);
               }
             }
           }
@@ -43,13 +56,7 @@ function findLocalLesson(lessonId) {
       for (const m of details.modules) {
         const l = (m.lessons || []).find(x => x.id === lessonId);
         if (l) {
-          return {
-            ...l,
-            moduleTitle: m.title,
-            courseTitle: details.title || c.title,
-            courseId: details.id || c.id,
-            module: m
-          };
+          return normalizeLesson(l, m, details, c);
         }
       }
     }
@@ -171,7 +178,8 @@ export default function LessonRoute() {
                     ...remoteFound,
                     title: lDoc.title || remoteFound.title,
                     dur: lDoc.duration || remoteFound.dur || "10 min",
-                    vid: lDoc.youtube || remoteFound.vid || "_uQrJ0TkZlc",
+                    vid: lDoc.youtube || remoteFound.vid || remoteFound.youtube || "_uQrJ0TkZlc",
+                    youtube: lDoc.youtube || remoteFound.vid || remoteFound.youtube || "_uQrJ0TkZlc",
                     overview: lDoc.body || remoteFound.overview || "",
                     pts,
                     quizQuestions,
@@ -201,13 +209,7 @@ export default function LessonRoute() {
             if (details && details.modules) {
               details.modules.forEach(m => {
                 m.lessons.forEach(l => {
-                  allLessons.push({
-                    ...l,
-                    moduleTitle: m.title,
-                    courseTitle: course.title,
-                    courseId: course.id,
-                    module: m
-                  });
+                  allLessons.push(normalizeLesson(l, m, details, course));
                 });
               });
             }

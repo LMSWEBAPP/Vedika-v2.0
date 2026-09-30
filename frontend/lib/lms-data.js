@@ -537,8 +537,8 @@ export function getCourseDetails(course) {
   if (combined.includes('chem')) {
     return syllabusesData?.['general-physical-chemistry'];
   }
-  if (combined.includes('bio')) {
-    return syllabusesData?.['cellular-biology-genetics'];
+  if (combined.includes('bio') || combined.includes('life')) {
+    return syllabusesData?.['class-10-biology-2'] || syllabusesData?.['cellular-biology-genetics'];
   }
   if (combined.includes('web') || combined.includes('html') || combined.includes('css')) {
     return syllabusesData?.['modern-web-development-html-css'];

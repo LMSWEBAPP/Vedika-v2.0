@@ -216,6 +216,28 @@ const KNOWN_VIDEO_CHAPTERS = {
     { start: 0, title: 'Gregor Mendel & Pea Plant Experiments', desc: 'Foundations of classical inheritance and particulate theory of genetics' },
     { start: 110, title: 'Genotype vs Phenotype & Alleles (Dominant vs Recessive)', desc: 'Homozygous vs heterozygous alleles and expressed physical traits' },
     { start: 240, title: 'Monohybrid Punnett Squares & Probability', desc: 'Calculating 3:1 phenotypic ratios and 1:2:1 genotypic frequencies' }
+  ],
+  // Biology: Life Processes Full Chapter Animation (NCERT Class 10)
+  'yE3GlzspUJk': [
+    { start: 0, title: 'Introduction to Life Processes & Vital Functions', desc: 'Definition of life processes: nutrition, respiration, transportation, excretion' },
+    { start: 90, title: 'Autotrophic Nutrition & Photosynthesis Mechanism', desc: 'Chlorophyll, sunlight, CO2 and water conversion into glucose and O2' },
+    { start: 240, title: 'Stomata Structure & Guard Cells Regulation', desc: 'Opening and closing of stomatal pores for gaseous exchange and transpiration' },
+    { start: 330, title: 'Experimental Proof: Chlorophyll & Sunlight Needed for Starch', desc: 'Variegated leaf iodine starch test proving photosynthesis requirements' },
+    { start: 480, title: 'Chloroplast Anatomy & Pigments', desc: 'Thylakoids, stroma, and chlorophyll pigments absorbing solar energy' },
+    { start: 540, title: 'Light Dependent Reactions & Photolysis of Water', desc: 'Splitting of water molecules into hydrogen and oxygen gas' },
+    { start: 600, title: 'Heterotrophic Nutrition (Holozoic, Saprophytic, Parasitic)', desc: 'Modes of obtaining organic nutrients from external organic sources' },
+    { start: 690, title: 'Nutrition in Single-Celled Organisms (Amoeba & Paramecium)', desc: 'Pseudopodia engulfment, food vacuole formation, and intracellular digestion' },
+    { start: 780, title: 'Human Digestive System: Mouth, Teeth & Salivary Amylase', desc: 'Mastication, bolus formation, and enzymatic starch breakdown by ptyalin' },
+    { start: 840, title: 'Stomach Digestion: Gastric Glands, HCl & Pepsin', desc: 'Acidic medium creation, protein breakdown into peptones, and mucus lining' },
+    { start: 900, title: 'Small Intestine: Bile, Pancreatic Lipase & Trypsin', desc: 'Emulsification of fats, complete digestion of proteins and carbohydrates' },
+    { start: 960, title: 'Intestinal Villi & Nutrient Absorption into Blood', desc: 'Finger-like projections maximizing surface area for rapid bloodstream absorption' }
+  ],
+  // Biology: Life Processes Full Chapter Animation (Class 10 Biology Part 2)
+  'e0KhpV6V9YY': [
+    { start: 0, title: 'Respiration in Living Organisms', desc: 'Aerobic vs anaerobic breakdown of glucose, ATP synthesis' },
+    { start: 300, title: 'Human Respiratory System & Gas Exchange', desc: 'Nasal cavity, trachea, bronchi, and alveoli mechanism' },
+    { start: 600, title: 'Transportation in Human Beings (Heart & Blood)', desc: 'Double circulation, structure of human heart, arteries, veins, and capillaries' },
+    { start: 900, title: 'Excretion in Humans & Nephron Structure', desc: 'Kidneys, structure of nephron, ultrafiltration, and urine formation' }
   ]
 };
 
@@ -445,12 +467,15 @@ ${detectedChapter?.next ? `- UPCOMING NEXT SECTION: "${detectedChapter.next.titl
 
 ${
   transcriptSnippet
-    ? `VERIFIED SPOKEN WORDS / LECTURE CONTENT AT THIS MOMENT (${formattedCurrentTime}):\n${transcriptSnippet}`
-    : `TIMELINE INFERENCE GUIDELINE:
-- Ground your explanation strictly on the video title "${resolvedVideoTitle}", course "${courseTitle || title}", overview, and timestamp ${formattedCurrentTime}.
-- Do NOT assume Python unless the video is explicitly about Python. If the video is about Rust, explain Rust concepts (ownership, borrowing, syntax). If React, explain React concepts (components, hooks, JSX). If Web Dev, explain HTML/CSS. If Physics, Chemistry, Math, or Biology, explain those specific domain concepts.
-- Explain the concrete topic, code syntax, formula, algorithm, or concept actively covered at ${formattedCurrentTime}.`
+    ? `VERIFIED SPOKEN WORDS / LECTURE CONTENT AT THIS MOMENT (${formattedCurrentTime}):\n${transcriptSnippet}\n`
+    : ''
 }
+CRITICAL TRUTHFULNESS & GROUNDING:
+- You MUST explain what is actively taught and displayed in the video "${resolvedVideoTitle}" (YouTube ID: ${cleanId}) at timestamp ${formattedCurrentTime}.
+- If the video is a programming lecture (e.g. Python, Rust, React, Web Dev), explain the concrete code syntax, constructs, and logic covered at ${formattedCurrentTime} (e.g. conditional statements, comparisons, loops, file handling, modules). NEVER explain biology or unrelated science concepts if the video is programming.
+- If the video is a biology/science lecture (e.g. Life Processes, Genetics, Physics, Chemistry), explain the scientific mechanisms covered at ${formattedCurrentTime}. NEVER explain programming if the video is science.
+- Align strictly with the verified active chapter: "${chapterTitle || resolvedVideoTitle}".
+
 
 Provide a short, direct, accurate, and easy-to-understand explanation:
 1. topic: Short title of the exact topic/concept at this timestamp (e.g. "${chapterTitle || title || resolvedVideoTitle}")

@@ -7,7 +7,7 @@ import {
   Loader2, Sparkles, RotateCcw, ArrowLeft, Send,
   FileText, Award, AlertCircle, ThumbsUp, HelpCircle, Terminal,
   BookOpen, Bot, MessageSquare, Mic, MicOff, BookMarked,
-  Trash2, Plus, Play, Download, Bell, Megaphone, X
+  Trash2, Plus, Play, Download, Bell, Megaphone, X, Check
 } from 'lucide-react';
 import { T, COURSE, geminiCall, buildQuizPrompt, parseQuizOutput, getCourseDetails } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
@@ -56,6 +56,51 @@ function renderCleanFormattedText(text) {
   });
 }
 
+function renderFormattedChatMessage(text, onSeek) {
+  if (!text || typeof text !== 'string') return null;
+  const lines = text.split('\n');
+  const elements = [];
+  let currentList = [];
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`list-${elements.length}`} style={{ margin: '6px 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {currentList.map((item, idx) => (
+            <li key={idx} style={{ lineHeight: 1.5 }}>
+              {renderCleanFormattedText(item)}
+            </li>
+          ))}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  lines.forEach((rawLine, lineIdx) => {
+    const trimmed = rawLine.trim();
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    const bulletMatch = trimmed.match(/^([*\-•]|\d+\.)\s+(.*)/);
+    if (bulletMatch) {
+      currentList.push(bulletMatch[2]);
+    } else {
+      flushList();
+      elements.push(
+        <p key={`p-${lineIdx}`} style={{ margin: '4px 0', lineHeight: 1.55 }}>
+          {renderCleanFormattedText(trimmed)}
+        </p>
+      );
+    }
+  });
+
+  flushList();
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{elements}</div>;
+}
+
 export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const router  = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
@@ -87,6 +132,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [noteFilter, setNoteFilter] = useState('lesson'); // 'lesson' | 'course'
   const [recentNoteAlert, setRecentNoteAlert] = useState(null);
   const [newNoteText, setNewNoteText] = useState('');
+  const [isPointsSaved, setIsPointsSaved] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const [forcePause, setForcePause] = useState(false);
   const recognitionRef = useRef(null);
@@ -281,7 +327,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     setTimeout(() => setForcePause(false), 400);
 
     const targetSecs = typeof optionalSecs === 'number' ? optionalSecs : Math.floor(videoCurrentTime || 0);
-    const vId = extractYoutubeId(lesson?.vid);
+    const vId = extractYoutubeId(lesson?.vid || lesson?.youtube);
     setExplainerLoading(true);
 
     try {
@@ -350,8 +396,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system: `You are Vedika, an expert AI tutor for the lesson "${lesson.title}". Explain the key concept at timestamp ${formatTimestamp(targetSecs)} clearly with key takeaways. Do not treat mid-lecture as introduction.`,
-            user: `Explain the concept being taught at ${formatTimestamp(targetSecs)} in ${lesson.title}. Overview: ${lesson.overview}`
+            system: `You are Vedika, an expert AI tutor for the lesson "${lesson?.title}". Explain the key concept at timestamp ${formatTimestamp(targetSecs)} clearly with key takeaways. Ground strictly on the lesson and video. Do not treat mid-lecture as introduction.`,
+            user: `Explain the concept being taught at ${formatTimestamp(targetSecs)} in ${lesson?.title}. Overview: ${lesson?.overview || ''}`
           })
         });
         if (gemRes.ok) {
@@ -412,7 +458,12 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
       setAllCourseNotes(updatedCourse);
     } catch (err) {}
+    setIsPointsSaved(true);
+    setTimeout(() => setIsPointsSaved(false), 2500);
     setRecentNoteAlert(noteObj);
+    setTimeout(() => {
+      setRecentNoteAlert(cur => cur?.id === noteObj.id ? null : cur);
+    }, 4500);
     try {
       const bridge = getMascotBridge();
       bridge.send({
@@ -462,6 +513,9 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
     setNewNoteText('');
     setRecentNoteAlert(noteObj);
+    setTimeout(() => {
+      setRecentNoteAlert(cur => cur?.id === noteObj.id ? null : cur);
+    }, 4500);
     try {
       const bridge = getMascotBridge();
       bridge.send({
@@ -564,7 +618,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const handleAskQuestion = async (qText) => {
     if (!qText.trim() || chatLoading) return;
     const userText = qText.trim();
-    const vId = extractYoutubeId(lesson?.vid);
+    const vId = extractYoutubeId(lesson?.vid || lesson?.youtube);
     const newHist = [...chatHistory, { role: 'user', text: userText }];
     setChatHistory(newHist);
     setChatQuestion('');
@@ -1047,7 +1101,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               overflow: 'hidden'
             }}>
               <VideoPlayerWithAI
-                videoId={extractYoutubeId(lesson.vid)}
+                videoId={extractYoutubeId(lesson.vid || lesson.youtube)}
                 onTimeUpdate={(secs) => setVideoCurrentTime(secs)}
                 onExplainRequested={(secs) => {
                   setActiveCompanionTab('ask_vedika');
@@ -1344,11 +1398,49 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                                     <span style={{ fontWeight: 700, fontSize: 11.5, color: T.muted }}>Key Takeaways:</span>
                                     {aiExplainerData.keyTakeaways.map((point, i) => (
-                                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                                        <span style={{ color: panelColor, fontWeight: 700, lineHeight: 1.2 }}>•</span>
-                                        <span style={{ color: T.muted, lineHeight: 1.45 }}>
-                                          {renderCleanFormattedText(point)}
-                                        </span>
+                                      <div
+                                        key={i}
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          gap: 8,
+                                          padding: '5px 8px',
+                                          borderRadius: 6,
+                                          background: `${panelColor}0a`,
+                                          border: `1px solid ${panelColor}18`
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flex: 1 }}>
+                                          <span style={{ color: panelColor, fontWeight: 700, lineHeight: 1.2 }}>•</span>
+                                          <span style={{ color: T.text, lineHeight: 1.45, fontSize: 12 }}>
+                                            {renderCleanFormattedText(point)}
+                                          </span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveQuickNote(point, aiExplainerData.timestamp || formatTimestamp(videoCurrentTime))}
+                                          title="Save point to Personal Notes"
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 3,
+                                            padding: '3px 8px',
+                                            borderRadius: 5,
+                                            border: `1px solid ${panelColor}35`,
+                                            background: `${panelColor}15`,
+                                            color: panelColor,
+                                            fontSize: 10.5,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                            transition: 'all 0.15s ease'
+                                          }}
+                                          onMouseEnter={(e) => { e.currentTarget.style.background = panelColor; e.currentTarget.style.color = '#fff'; }}
+                                          onMouseLeave={(e) => { e.currentTarget.style.background = `${panelColor}15`; e.currentTarget.style.color = panelColor; }}
+                                        >
+                                          <Plus size={11} /> Note
+                                        </button>
                                       </div>
                                     ))}
                                   </div>
@@ -1361,11 +1453,11 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                   }}
                                   style={{
                                     marginTop: 8,
-                                    padding: '7px 12px',
+                                    padding: '8px 12px',
                                     borderRadius: 8,
-                                    background: `${panelColor}15`,
-                                    border: `1px solid ${panelColor}40`,
-                                    color: panelColor,
+                                    background: isPointsSaved ? '#10B981' : `${panelColor}15`,
+                                    border: `1px solid ${isPointsSaved ? '#10B981' : `${panelColor}40`}`,
+                                    color: isPointsSaved ? '#fff' : panelColor,
                                     fontSize: 11.5,
                                     fontWeight: 600,
                                     display: 'flex',
@@ -1375,11 +1467,21 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                     cursor: 'pointer',
                                     transition: 'all 0.15s ease'
                                   }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.background = panelColor; e.currentTarget.style.color = '#fff'; }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.background = `${panelColor}15`; e.currentTarget.style.color = panelColor; }}
+                                  onMouseEnter={(e) => {
+                                    if (!isPointsSaved) {
+                                      e.currentTarget.style.background = panelColor;
+                                      e.currentTarget.style.color = '#fff';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isPointsSaved) {
+                                      e.currentTarget.style.background = `${panelColor}15`;
+                                      e.currentTarget.style.color = panelColor;
+                                    }
+                                  }}
                                 >
-                                  <BookMarked size={13} />
-                                  <span>Save Points to Personal Notes</span>
+                                  {isPointsSaved ? <Check size={14} /> : <BookMarked size={14} />}
+                                  <span>{isPointsSaved ? 'Saved to Personal Notes! ✓' : 'Save Points to Personal Notes'}</span>
                                 </button>
                               </div>
                             )}
@@ -1567,18 +1669,24 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                 <div style={{
                                   fontSize: 12.5,
                                   color: T.text,
-                                  whiteSpace: 'pre-line',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   gap: 5
                                 }}>
                                   {(n.noteText || '').split('\n').filter(Boolean).map((line, lIdx) => {
-                                    const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
+                                    const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*');
                                     const cleanLine = isBullet ? line.replace(/^[•\-*]\s*/, '').trim() : line.trim();
+                                    if (isBullet) {
+                                      return (
+                                        <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, lineHeight: 1.55 }}>
+                                          <span style={{ color: panelColor, fontSize: 13, lineHeight: '18px', userSelect: 'none', flexShrink: 0 }}>•</span>
+                                          <span style={{ flex: 1, wordBreak: 'break-word' }}>{renderCleanFormattedText(cleanLine)}</span>
+                                        </div>
+                                      );
+                                    }
                                     return (
-                                      <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, lineHeight: 1.55 }}>
-                                        <span style={{ color: panelColor, fontSize: 13, lineHeight: '18px', userSelect: 'none', flexShrink: 0 }}>•</span>
-                                        <span style={{ flex: 1, wordBreak: 'break-word' }}>{cleanLine}</span>
+                                      <div key={lIdx} style={{ lineHeight: 1.55, wordBreak: 'break-word' }}>
+                                        {renderCleanFormattedText(cleanLine)}
                                       </div>
                                     );
                                   })}
@@ -1616,16 +1724,17 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                 key={idx}
                                 style={{
                                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                                  maxWidth: '85%',
-                                  padding: '8px 12px',
-                                  borderRadius: 8,
+                                  maxWidth: '88%',
+                                  padding: '10px 14px',
+                                  borderRadius: 10,
                                   background: m.role === 'user' ? panelColor : T.s1,
                                   color: m.role === 'user' ? '#fff' : T.text,
                                   fontSize: 12,
+                                  lineHeight: 1.55,
                                   border: m.role === 'user' ? 'none' : `1px solid ${T.border}`
                                 }}
                               >
-                                {m.text}
+                                {m.role === 'user' ? m.text : renderFormattedChatMessage(m.text, (sec) => setVideoSeekTime(sec))}
                               </div>
                             ))
                           )}
@@ -1894,6 +2003,80 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
         initialCode={lesson?.codingExercise?.starterCode || `# Practice code for: ${lesson.title}\nprint("Practicing: ${lesson.title}")\n`}
         codingExercise={lesson?.codingExercise}
       />
+
+      {/* Floating Toast Notification: Personal Note Saved */}
+      {recentNoteAlert && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 9999,
+          background: '#0D1424',
+          border: `1px solid ${panelColor}`,
+          boxShadow: `0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px ${panelColor}40`,
+          borderRadius: 12,
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: '#fff',
+          animation: 'fadeInUp 0.25s ease-out'
+        }}>
+          <div style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: `${panelColor}20`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: panelColor,
+            flexShrink: 0
+          }}>
+            <Check size={16} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Saved to Personal Notes!</span>
+            <span style={{ fontSize: 11, color: T.muted }}>
+              Timestamp {recentNoteAlert.timestampFormatted}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCompanionTab('notes');
+              setIsExpanded(true);
+              setRecentNoteAlert(null);
+            }}
+            style={{
+              marginLeft: 8,
+              padding: '6px 12px',
+              borderRadius: 6,
+              background: panelColor,
+              color: '#0A0E1A',
+              fontSize: 11,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            View Notes →
+          </button>
+          <button
+            type="button"
+            onClick={() => setRecentNoteAlert(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: T.muted,
+              cursor: 'pointer',
+              padding: 4
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
