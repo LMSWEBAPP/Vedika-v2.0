@@ -55,7 +55,7 @@ export async function GET(request) {
 
       if (redis) {
         try {
-          await redis.set('mascot:active_tab', JSON.stringify({ tabId, currentPath, lastSeen: now }), { ex: 120 });
+          await redis.set('mascot:active_tab', JSON.stringify({ tabId, currentPath, lastSeen: now }), { ex: 6 });
           // Pop any pending command for browser
           const cmdRaw = await redis.rpop('mascot:cmd:to_browser');
           if (cmdRaw) {
@@ -96,7 +96,7 @@ export async function GET(request) {
       }
 
       if (!hasActiveTab) {
-        hasActiveTab = (now - inMemoryStore.lastTabSeen) < 120000;
+        hasActiveTab = (now - inMemoryStore.lastTabSeen) < 5000;
       }
       if (!nextEvent && inMemoryStore.eventsToMascot.length > 0) {
         nextEvent = inMemoryStore.eventsToMascot.shift();
@@ -111,7 +111,7 @@ export async function GET(request) {
 
     } else {
       // Status check
-      let hasActiveTab = (now - inMemoryStore.lastTabSeen) < 120000;
+      let hasActiveTab = (now - inMemoryStore.lastTabSeen) < 5000;
       let tabInfo = inMemoryStore.activeTabInfo;
 
       if (redis) {
@@ -168,7 +168,7 @@ export async function POST(request) {
 
       inMemoryStore.commandsToBrowser.push(message);
       if (inMemoryStore.commandsToBrowser.length > 10) inMemoryStore.commandsToBrowser.shift();
-      hasActiveTab = hasActiveTab || (Date.now() - inMemoryStore.lastTabSeen < 120000);
+      hasActiveTab = hasActiveTab || (Date.now() - inMemoryStore.lastTabSeen < 5000);
 
       return NextResponse.json({
         success: true,
@@ -180,6 +180,16 @@ export async function POST(request) {
 
     } else {
       // Event from browser tab destined for desktop mascot
+      if (type === 'TAB_UNLOADING' || type === 'TAB_CLOSED') {
+        inMemoryStore.lastTabSeen = 0;
+        inMemoryStore.activeTabInfo = null;
+        if (redis) {
+          try {
+            await redis.del('mascot:active_tab');
+          } catch (e) {}
+        }
+      }
+
       if (redis) {
         try {
           await redis.lpush('mascot:event:to_mascot', JSON.stringify(message));

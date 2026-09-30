@@ -21,6 +21,16 @@ class MascotBridge {
 
     if (typeof window !== 'undefined') {
       try { sessionStorage.setItem('vedika_mascot_tab_id', this.tabId); } catch (e) {}
+      window.addEventListener('beforeunload', () => {
+        try {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+              type: 'TAB_UNLOADING',
+              payload: { tabId: this.tabId, path: window.location.pathname }
+            }));
+          }
+        } catch (e) {}
+      });
       this.init();
     }
   }
@@ -47,6 +57,17 @@ class MascotBridge {
         this.isConnected = true;
         console.log('[MascotBridge] Local WebSocket connected (ws://127.0.0.1:8765)');
         this._notifyStatus(true);
+        // Announce active tab presence and current path
+        try {
+          this.ws.send(JSON.stringify({
+            type: 'WEBAPP_STATE_UPDATE',
+            payload: {
+              activity: 'connected',
+              page: window.location.pathname + window.location.search,
+              tabId: this.tabId
+            }
+          }));
+        } catch (e) {}
         this._flushPendingQueue();
       };
 
@@ -82,7 +103,7 @@ class MascotBridge {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.connectWebSocket();
-    }, 4000);
+    }, 1500);
   }
 
   startHttpRelay() {
@@ -143,10 +164,38 @@ class MascotBridge {
     const payload = msg.payload || {};
 
     if (type === 'NAVIGATE_WEBAPP' && payload.route) {
-      console.log('[MascotBridge] Navigating active tab to:', payload.route);
-      this.navListeners.forEach((fn) => {
-        try { fn(payload.route); } catch (e) { console.error(e); }
+      const targetRoute = payload.route;
+      console.log('[MascotBridge] Navigating active tab to:', targetRoute);
+
+      // Confirm receipt back to mascot immediately
+      this.send({
+        type: 'NAVIGATE_ACK',
+        payload: {
+          route: targetRoute,
+          currentPath: typeof window !== 'undefined' ? window.location.pathname : ''
+        }
       });
+
+      // 1. Notify Next.js router listener in LayoutWrapper
+      if (this.navListeners.size > 0) {
+        this.navListeners.forEach((fn) => {
+          try { fn(targetRoute); } catch (e) { console.error('[MascotBridge] navListener error:', e); }
+        });
+      }
+
+      // 2. Guaranteed In-Tab Fallback:
+      // If Next.js router.push does not switch the page within 200ms (e.g. frozen worker, pending state, dynamic chunk lag),
+      // force browser window.location in the active tab without opening a new window!
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          const currentFull = window.location.pathname + window.location.search;
+          const targetPathOnly = targetRoute.split('?')[0];
+          if (window.location.pathname !== targetPathOnly && currentFull !== targetRoute) {
+            console.log('[MascotBridge] Soft router transition pending. Enforcing in-tab location.href:', targetRoute);
+            window.location.href = targetRoute;
+          }
+        }
+      }, 200);
     }
 
     this.listeners.forEach((fn) => {

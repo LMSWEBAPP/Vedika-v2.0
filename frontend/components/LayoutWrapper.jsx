@@ -123,7 +123,14 @@ export default function LayoutWrapper({ children }) {
       const currentFull = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : pathname;
       if (targetRoute !== currentFull) {
         console.log('[LayoutWrapper] Desktop Mascot navigating to:', targetRoute);
-        router.push(targetRoute);
+        try {
+          router.push(targetRoute);
+        } catch (err) {
+          console.warn('[LayoutWrapper] router.push threw error, fallback to window.location.href:', err);
+          if (typeof window !== 'undefined') {
+            window.location.href = targetRoute;
+          }
+        }
       }
     });
 
