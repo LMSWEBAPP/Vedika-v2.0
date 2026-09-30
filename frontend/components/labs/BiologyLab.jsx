@@ -88,6 +88,24 @@ export default function BiologyLab() {
         } else if (action === 'set_mode') {
           if (target === '3d' || target === 'phet') setLabMode(target);
         }
+      } else if (msg.type === 'NAVIGATE_WEBAPP' && msg.payload?.route) {
+        const r = msg.payload.route;
+        if (r.includes('?')) {
+          const params = new URLSearchParams(r.split('?')[1]);
+          const exp = params.get('experiment') || params.get('exp');
+          if (exp && ['cell', 'ecosystem', 'dna'].includes(exp.toLowerCase())) {
+            setSelectedExperiment(exp.toLowerCase());
+            setLabMode('3d');
+          }
+          const organelle = params.get('organelle');
+          if (organelle && ['nucleus', 'mitochondria', 'er', 'golgi', 'lysosome'].includes(organelle.toLowerCase())) {
+            setSelectedOrganelleId(organelle.toLowerCase());
+            setSelectedExperiment('cell');
+            setLabMode('3d');
+          }
+          const mode = params.get('mode');
+          if (mode === '3d' || mode === 'phet') setLabMode(mode);
+        }
       }
     });
 

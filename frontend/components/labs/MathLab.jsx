@@ -664,6 +664,25 @@ export default function MathLab() {
             setPlotMode(m);
           }
         }
+      } else if (msg.type === 'NAVIGATE_WEBAPP' && msg.payload?.route) {
+        const r = msg.payload.route;
+        if (r.includes('?')) {
+          const params = new URLSearchParams(r.split('?')[1]);
+          const tab = params.get('tab');
+          const subtab = params.get('subtab') || params.get('vis') || params.get('experiment');
+          const mode = params.get('mode');
+          if (tab && ['whiteboard', 'graph', 'visualizer'].includes(tab.toLowerCase())) {
+            setActiveTab(tab.toLowerCase());
+          }
+          if (subtab && ['pythagoras', 'sector', 'solid', 'trig', 'calculus'].includes(subtab.toLowerCase())) {
+            setActiveTab('visualizer');
+            setVisualizerSubTab(subtab.toLowerCase());
+          }
+          if (mode && ['linear', 'quadratic', 'polynomial', 'trig', 'exponential'].includes(mode.toLowerCase())) {
+            setActiveTab('graph');
+            setPlotMode(mode.toLowerCase());
+          }
+        }
       }
     });
 

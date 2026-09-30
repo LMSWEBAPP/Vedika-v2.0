@@ -1,6 +1,8 @@
 /**
  * mascotBridge.js
- * Bi-directional WebSocket bridge between Vedika WebApp and 24/7 Desktop Mascot (ws://127.0.0.1:8765)
+ * Dual-Transport Bridge between Vedika WebApp and 24/7 Desktop Mascot:
+ * 1. High-speed local WebSocket (ws://127.0.0.1:8765) for local development
+ * 2. Instant Same-Origin HTTP Relay (/api/mascot/bridge) for 100% reliable single-tab navigation on production HTTPS
  */
 
 class MascotBridge {
@@ -8,18 +10,30 @@ class MascotBridge {
     this.ws = null;
     this.isConnected = false;
     this.reconnectTimer = null;
+    this.pollTimer = null;
     this.listeners = new Set();
     this.navListeners = new Set();
     this.statusListeners = new Set();
     this.pendingQueue = [];
-    this.hasLoggedOffline = false;
+    this.tabId = typeof window !== 'undefined'
+      ? (sessionStorage.getItem('vedika_mascot_tab_id') || Math.random().toString(36).substring(2, 9))
+      : 'server';
 
     if (typeof window !== 'undefined') {
-      this.connect();
+      try { sessionStorage.setItem('vedika_mascot_tab_id', this.tabId); } catch (e) {}
+      this.init();
     }
   }
 
-  connect() {
+  init() {
+    if (typeof window === 'undefined') return;
+    // 1. Try local WebSocket first
+    this.connectWebSocket();
+    // 2. Always run the Same-Origin HTTP Relay loop to guarantee single-tab navigation across HTTPS
+    this.startHttpRelay();
+  }
+
+  connectWebSocket() {
     if (typeof window === 'undefined') return;
 
     try {
@@ -31,61 +45,105 @@ class MascotBridge {
 
       this.ws.onopen = () => {
         this.isConnected = true;
-        this.hasLoggedOffline = false;
-        console.log('[MascotBridge] Connected to 24/7 Desktop Mascot bridge (ws://127.0.0.1:8765)');
+        console.log('[MascotBridge] Local WebSocket connected (ws://127.0.0.1:8765)');
         this._notifyStatus(true);
-
-        // Flush any pending messages
-        while (this.pendingQueue.length > 0) {
-          const item = this.pendingQueue.shift();
-          this.send(item);
-        }
+        this._flushPendingQueue();
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           this._handleMessage(data);
-        } catch (e) {
-          // ignore malformed payloads
-        }
+        } catch (e) {}
       };
 
       this.ws.onerror = () => {
-        // Quiet error handling: pet is simply offline or not started yet
-        this.isConnected = false;
+        // Quiet: On HTTPS production Chrome, this fails gracefully and HTTP relay takes over instantly
+        if (!this.isHttpRelayActive) {
+          this.isConnected = false;
+        }
       };
 
       this.ws.onclose = () => {
-        const wasConnected = this.isConnected;
-        this.isConnected = false;
         this.ws = null;
-        if (wasConnected) {
-          console.log('[MascotBridge] Mascot connection closed.');
+        if (!this.isHttpRelayActive) {
+          this.isConnected = false;
           this._notifyStatus(false);
         }
-        this._scheduleReconnect();
+        this._scheduleWsReconnect();
       };
     } catch (err) {
-      this.isConnected = false;
-      this._scheduleReconnect();
+      this._scheduleWsReconnect();
     }
   }
 
-  _scheduleReconnect() {
+  _scheduleWsReconnect() {
     if (this.reconnectTimer) return;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
-      this.connect();
-    }, 3500);
+      this.connectWebSocket();
+    }, 4000);
+  }
+
+  startHttpRelay() {
+    if (typeof window === 'undefined') return;
+
+    const poll = async () => {
+      try {
+        const currentPath = window.location.pathname + window.location.search;
+        const res = await fetch(`/api/mascot/bridge?role=browser&tabId=${this.tabId}&path=${encodeURIComponent(currentPath)}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          this.isHttpRelayActive = true;
+          if (!this.isConnected) {
+            this.isConnected = true;
+            this._notifyStatus(true);
+          }
+
+          if (data && data.command) {
+            console.log('[MascotBridge] Received command via HTTP Relay:', data.command);
+            this._handleMessage(data.command);
+          }
+
+          this._flushPendingQueue();
+        }
+      } catch (e) {
+        // Transient network blip
+      } finally {
+        this.pollTimer = setTimeout(poll, 700);
+      }
+    };
+
+    poll();
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          if (this.pollTimer) clearTimeout(this.pollTimer);
+          poll();
+        }
+      });
+    }
+  }
+
+  _flushPendingQueue() {
+    while (this.pendingQueue.length > 0) {
+      const item = this.pendingQueue.shift();
+      this.send(item);
+    }
   }
 
   _handleMessage(msg) {
+    if (!msg) return;
     const type = msg.type || msg.event;
     const payload = msg.payload || {};
 
     if (type === 'NAVIGATE_WEBAPP' && payload.route) {
-      console.log('[MascotBridge] Mascot requested WebApp navigation to:', payload.route);
+      console.log('[MascotBridge] Navigating active tab to:', payload.route);
       this.navListeners.forEach((fn) => {
         try { fn(payload.route); } catch (e) { console.error(e); }
       });
@@ -103,23 +161,37 @@ class MascotBridge {
   }
 
   send(data) {
-    const msgStr = typeof data === 'string' ? data : JSON.stringify(data);
+    const payloadObj = typeof data === 'string' ? JSON.parse(data) : data;
+
+    // 1. Try local WebSocket first if open
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(msgStr);
+      try {
+        this.ws.send(JSON.stringify(payloadObj));
+        return true;
+      } catch (e) {}
+    }
+
+    // 2. Dispatch via HTTP Relay
+    try {
+      fetch('/api/mascot/bridge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'browser',
+          tabId: this.tabId,
+          type: payloadObj.type,
+          payload: payloadObj.payload || payloadObj
+        })
+      }).catch(() => {});
       return true;
-    }
-    // Queue message if connecting
-    if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+    } catch (e) {
       if (this.pendingQueue.length < 20) {
-        this.pendingQueue.push(data);
+        this.pendingQueue.push(payloadObj);
       }
+      return false;
     }
-    return false;
   }
 
-  /**
-   * Dispatches Ask Vedika Video Moment to the Desktop Mascot
-   */
   sendVideoMoment({
     videoId,
     timestampSeconds = 0,
@@ -131,7 +203,7 @@ class MascotBridge {
     transcriptSnippet = '',
     conceptSummary = ''
   }) {
-    const payload = {
+    return this.send({
       type: 'ASK_VEDIKA_VIDEO_MOMENT',
       payload: {
         videoId,
@@ -146,13 +218,9 @@ class MascotBridge {
         transcriptSnippet,
         activity: 'video_lesson'
       }
-    };
-    return this.send(payload);
+    });
   }
 
-  /**
-   * Dispatches active activity update to trigger mascot animations (e.g. 'chemistry_lab', 'dsa_puzzle')
-   */
   sendActivityUpdate(activity, metadata = {}) {
     return this.send({
       type: 'WEBAPP_STATE_UPDATE',
@@ -175,13 +243,12 @@ class MascotBridge {
 
   onStatusChange(callback) {
     this.statusListeners.add(callback);
-    // Immediately invoke with current state
     try { callback(this.isConnected); } catch (e) {}
     return () => this.statusListeners.delete(callback);
   }
 
   isMascotConnected() {
-    return this.isConnected && this.ws && this.ws.readyState === WebSocket.OPEN;
+    return this.isConnected;
   }
 }
 
