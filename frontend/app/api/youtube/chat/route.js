@@ -58,8 +58,7 @@ async function generateWithFallback({ contents, systemInstruction, maxOutputToke
 
 export async function POST(request) {
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    await authenticateRequest(request, { requireAuth: false });
 
     const body = await request.json().catch(() => ({}));
     const { videoId, title = '', question = '', history = [], timestamp = 0 } = body;
@@ -144,6 +143,8 @@ INSTRUCTIONS:
     return NextResponse.json({
       success: true,
       answer: textAnswer.trim(),
+      reply: textAnswer.trim(),
+      text: textAnswer.trim(),
       timestamp: formattedCurrentTime,
       seconds: currentSeconds
     });

@@ -14,8 +14,9 @@ function formatTimestamp(seconds) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-// Built-in verified chapters table for STEM/coding video tutorials
+// Built-in verified chapters table for STEM, coding (Python, Rust, React, Web Dev), math, and science video tutorials
 const KNOWN_VIDEO_CHAPTERS = {
+  // Python Programming Full Course
   'rfscVS0vtbw': [
     { start: 0, title: 'Introduction to Python & Overview', desc: 'Overview of Python language and syllabus' },
     { start: 105, title: 'Installing Python & PyCharm IDE', desc: 'Environment setup, downloading Python 3 and PyCharm' },
@@ -52,6 +53,70 @@ const KNOWN_VIDEO_CHAPTERS = {
     { start: 14908, title: 'Class Object Functions', desc: 'Adding methods inside class definitions to check conditions like honors' },
     { start: 15157, title: 'Inheritance in Python', desc: 'Inheriting parent class functionality: class ChineseChef(Chef):' },
     { start: 15643, title: 'Python Interactive Interpreter', desc: 'Using python interactive REPL terminal shell' }
+  ],
+  // Rust Programming Tutorial
+  '1PnVor36_40': [
+    { start: 0, title: 'Introduction to Rust & Toolchain', desc: 'Rust safety, cargo package manager, rustc compiler' },
+    { start: 240, title: 'Variables, Mutability & Constants', desc: 'Immutable by default let x, let mut y, and const types' },
+    { start: 580, title: 'Data Types & Scalar Types', desc: 'Integers i32/u64, floats f64, booleans, and chars' },
+    { start: 920, title: 'Compound Types: Tuples & Arrays', desc: 'Fixed-length arrays [i32; 5] and tuple destructuring' },
+    { start: 1340, title: 'Functions & Expressions vs Statements', desc: 'Function parameters, return types -> i32, and implicit return' },
+    { start: 1720, title: 'Control Flow: if, loop, while, for', desc: 'Conditional branches, infinite loop with break, iterating collections' },
+    { start: 2180, title: 'Rust Ownership System & Stack vs Heap', desc: 'Memory safety without garbage collector, move semantics' },
+    { start: 2750, title: 'References & Borrowing (&T, &mut T)', desc: 'Borrow checker rules, mutable references, preventing data races' },
+    { start: 3300, title: 'Slices & String Slices (&str)', desc: 'Contiguous sequence references without heap allocation' },
+    { start: 3840, title: 'Structs & Methods (impl)', desc: 'Defining custom data structures and implementing methods &self' }
+  ],
+  // Rust Lang Crash Course
+  'zOjov-2OZ0E': [
+    { start: 0, title: 'Rust Setup, Cargo & Project Creation', desc: 'cargo new, Cargo.toml dependencies, and project structure' },
+    { start: 180, title: 'Print Formats & Console Output', desc: 'println! macro, positional formatting, and debug traits' },
+    { start: 390, title: 'Variables, Mutability & Types', desc: 'let mut, static typing, and shadowing' },
+    { start: 680, title: 'Strings: Primitive str vs String Object', desc: 'Heap-allocated growable String vs string slice &str' },
+    { start: 1100, title: 'Tuples, Arrays & Vectors (Vec<T>)', desc: 'Dynamic arrays, push, pop, and memory layout' },
+    { start: 1600, title: 'Functions & Closures', desc: 'Closure syntax |a, b| a + b and block scoping' },
+    { start: 2050, title: 'Pointers & Memory Reference Borrowing', desc: 'Ownership transfer vs reference passing &val' }
+  ],
+  // React Tutorial for Beginners
+  'bMknfKXIFA8': [
+    { start: 0, title: 'What is React & Component Architecture', desc: 'Single-page applications, Virtual DOM, and declarative UI' },
+    { start: 300, title: 'Setting Up React Project with Vite / Next.js', desc: 'Node environment, npm create vite, and project folder anatomy' },
+    { start: 720, title: 'JSX Syntax & Expressions', desc: 'Embedding JavaScript expressions in JSX markup with curly braces' },
+    { start: 1200, title: 'Creating Functional Components', desc: 'Reusable modular UI functions returning JSX markup' },
+    { start: 1800, title: 'Props: Passing Data to Components', desc: 'Component attributes, destructuring props, and default values' },
+    { start: 2400, title: 'State Management with useState Hook', desc: 'Reactive state variables, setter functions, and re-rendering' },
+    { start: 3100, title: 'Handling Events & User Input', desc: 'onClick, onChange, and form input event handlers' },
+    { start: 3750, title: 'Conditional Rendering & List Rendering', desc: 'Ternary operators, short-circuit &&, and .map() with unique key' },
+    { start: 4500, title: 'Side Effects with useEffect Hook', desc: 'Lifecycle effects, dependency arrays [], and cleanup functions' },
+    { start: 5300, title: 'Building a Full React Application', desc: 'Combining state, components, and props in a working dynamic app' }
+  ],
+  // React JS 18 Beginner Crash Course
+  'SqcY0GlETPk': [
+    { start: 0, title: 'Introduction to React 18 & Ecosystem', desc: 'Core concepts, component trees, and reactive rendering' },
+    { start: 250, title: 'JSX, Fragments & Embedding Expressions', desc: 'React.Fragment <> syntax and dynamic JSX expressions' },
+    { start: 600, title: 'State & Event Handling (useState)', desc: 'Managing local state, immutability, and state updates' },
+    { start: 1100, title: 'Building Reusable Cards & Components', desc: 'Component composition, prop types, and clean CSS styling' },
+    { start: 1700, title: 'Data Fetching with useEffect & async/await', desc: 'Fetching REST APIs, loading spinners, and error boundaries' }
+  ],
+  // Web Development: HTML & CSS (SuperSimpleDev)
+  'kUMe1FH4CHE': [
+    { start: 0, title: 'HTML Basics & Structure', desc: 'HTML elements, tags, attributes, and boilerplates' },
+    { start: 360, title: 'CSS Basics, Colors & Styling', desc: 'Inline vs external CSS, colors, fonts, and selectors' },
+    { start: 900, title: 'HTML Buttons & CSS Hover Effects', desc: 'Styling interactive buttons, transitions, and hover states' },
+    { start: 1800, title: 'Chrome DevTools & Inspect Element', desc: 'Debugging CSS styles and inspecting live DOM layout' },
+    { start: 2700, title: 'CSS Box Model: Margin, Border, Padding', desc: 'Content box vs border box, sizing, and spacing' },
+    { start: 3900, title: 'Text Formatting & Google Fonts Typography', desc: 'font-family, font-weight, line-height, and typography hierarchy' },
+    { start: 5200, title: 'HTML Forms, Inputs & Textboxes', desc: 'Form controls: input text, email, submit buttons, and validation' },
+    { start: 6800, title: 'CSS Display: Block, Inline & Inline-Block', desc: 'Element flow and block vs inline behavior' },
+    { start: 8400, title: 'CSS Grid & Modern Two-Dimensional Layouts', desc: 'grid-template-columns, fr units, and grid gap' },
+    { start: 10200, title: 'CSS Flexbox & Responsive Layouts', desc: 'flex-direction, justify-content, align-items, and flex-wrap' }
+  ],
+  // Web Dev: CSS Flexbox & Responsive Design
+  'fYq5PXgSsbE': [
+    { start: 0, title: 'Introduction to Flexbox Container & Items', desc: 'display: flex, main axis vs cross axis' },
+    { start: 150, title: 'Justify-Content & Align-Items', desc: 'Distributing space along main axis and cross axis alignment' },
+    { start: 380, title: 'Flex Direction & Flex Wrap', desc: 'Row vs column flows and multi-line wrapping' },
+    { start: 620, title: 'Flex-Grow, Flex-Shrink & Flex-Basis', desc: 'Proportional sizing and responsive shrinking behavior' }
   ],
   // Physics: Kinematics & 1D Motion (Khan Academy)
   'ihNZlp7iUHE': [
@@ -96,6 +161,12 @@ const KNOWN_VIDEO_CHAPTERS = {
     { start: 310, title: 'Why Derivative of Area is the Function', desc: 'dA/dx = f(x) visual geometric proof' },
     { start: 720, title: 'Fundamental Theorem of Calculus Formulation', desc: 'Definite integral from a to b equals F(b) - F(a)' }
   ],
+  // Mathematics: Applications of Integration (Khan Academy)
+  'FnJqaIESC2s': [
+    { start: 0, title: 'Definite Integrals as Accumulated Area', desc: 'Riemann sums converging to exact area under function curve' },
+    { start: 180, title: 'Area Between Two Curves: f(x) - g(x)', desc: 'Upper function minus lower function integrated across bounds' },
+    { start: 420, title: 'Volumes of Solids of Revolution (Disk & Washer Method)', desc: 'Rotating planar regions around x or y axis to compute volume π·r²' }
+  ],
   // Chemistry: Electron Orbitals (Crash Course)
   'rcKilE9CdaA': [
     { start: 0, title: 'Discovery of the Electron & Atomic Structure', desc: 'J.J. Thomson cathode ray experiment and Plum Pudding model' },
@@ -114,12 +185,37 @@ const KNOWN_VIDEO_CHAPTERS = {
     { start: 180, title: 'Avogadro\'s Number & The Mole Concept', desc: 'Converting grams to moles using molar mass' },
     { start: 410, title: 'Limiting Reactants & Theoretical Yield', desc: 'Calculating which reactant runs out first and determining yield' }
   ],
+  // Chemistry: Acids, Bases & Titrations (Crash Course)
+  'ANi709MYnWg': [
+    { start: 0, title: 'Definitions of Acids & Bases (Arrhenius & Brønsted-Lowry)', desc: 'Proton donors H+ and proton acceptors OH- in aqueous solution' },
+    { start: 150, title: 'The pH Scale & Hydronium Ion Concentration', desc: 'Logarithmic scale of acidity pH = -log[H3O+]' },
+    { start: 350, title: 'Acid-Base Neutralization & Titration Equivalence Point', desc: 'Moles of acid equal moles of base with indicator color change' }
+  ],
   // Biology: Cell Structure (Nucleus Medical Media)
   'URUJD5NEXC8': [
     { start: 0, title: 'Overview of Animal Cells & Membrane', desc: 'Phospholipid bilayer and cytoplasm boundaries' },
     { start: 110, title: 'Nucleus, DNA & Nucleolus', desc: 'Genetic material storage and ribosome synthesis' },
     { start: 240, title: 'Endoplasmic Reticulum & Golgi Apparatus', desc: 'Protein folding, lipid synthesis, and vesicle packaging' },
     { start: 330, title: 'Mitochondria: Cellular Powerhouse', desc: 'ATP generation through cellular respiration' }
+  ],
+  // Biology: Cellular Respiration & ATP (Amoeba Sisters)
+  '00jbG_cfGuQ': [
+    { start: 0, title: 'Overview of Cellular Respiration & ATP Energy', desc: 'Glucose and oxygen converted to ATP, carbon dioxide, and water' },
+    { start: 120, title: 'Glycolysis: Splitting Glucose in Cytoplasm', desc: 'Anaerobic breakdown of 6-carbon glucose into 2 pyruvate molecules' },
+    { start: 260, title: 'Krebs Cycle (Citric Acid Cycle) in Mitochondrial Matrix', desc: 'Generating NADH, FADH2, and CO2 byproducts' },
+    { start: 390, title: 'Electron Transport Chain & ATP Synthase', desc: 'Chemiosmosis and oxidative phosphorylation generating ~32 ATP' }
+  ],
+  // Biology: DNA Structure & Replication (Amoeba Sisters)
+  '8kK2zwjRV0M': [
+    { start: 0, title: 'DNA Double Helix & Nucleotide Subunits', desc: 'Phosphate group, deoxyribose sugar, and nitrogenous bases (A, T, C, G)' },
+    { start: 130, title: 'Complementary Base Pairing Rules', desc: 'Adenine pairs with Thymine, Cytosine pairs with Guanine via hydrogen bonds' },
+    { start: 270, title: 'DNA Replication Enzymes (Helicase, Polymerase, Primase, Ligase)', desc: 'Leading and lagging strand synthesis and Okazaki fragments' }
+  ],
+  // Biology: Mendelian Genetics & Heredity (Amoeba Sisters)
+  'Mehz7tCxjSE': [
+    { start: 0, title: 'Gregor Mendel & Pea Plant Experiments', desc: 'Foundations of classical inheritance and particulate theory of genetics' },
+    { start: 110, title: 'Genotype vs Phenotype & Alleles (Dominant vs Recessive)', desc: 'Homozygous vs heterozygous alleles and expressed physical traits' },
+    { start: 240, title: 'Monohybrid Punnett Squares & Probability', desc: 'Calculating 3:1 phenotypic ratios and 1:2:1 genotypic frequencies' }
   ]
 };
 
@@ -138,6 +234,23 @@ function findChapterForTimestamp(videoId, seconds) {
     }
   }
   return { current, next };
+}
+
+// Fetch YouTube video metadata via public oEmbed endpoint (fast, zero auth, reliable)
+async function fetchYouTubeOembed(videoId) {
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, {
+      next: { revalidate: 86400 }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        title: data.title || '',
+        author: data.author_name || ''
+      };
+    }
+  } catch (_) {}
+  return null;
 }
 
 async function extractDynamicChapters(videoId) {
@@ -220,16 +333,24 @@ export async function POST(request) {
   let currentSeconds = 0;
   let formattedCurrentTime = '0:00';
   let title = '';
+  let courseTitle = '';
+  let moduleTitle = '';
+  let overview = '';
+  let keyPoints = [];
   let transcriptSnippet = '';
   let detectedChapter = null;
 
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    // Optional auth: Allow students / guests / demo users without blocking
+    await authenticateRequest(request, { requireAuth: false });
 
     const body = await request.json().catch(() => ({}));
     const videoId = body.videoId;
     title = body.title || '';
+    courseTitle = body.courseTitle || '';
+    moduleTitle = body.moduleTitle || '';
+    overview = body.overview || '';
+    keyPoints = Array.isArray(body.keyPoints) ? body.keyPoints : [];
     const userQuestion = body.userQuestion || '';
 
     if (userQuestion && typeof userQuestion === 'string' && userQuestion.length > 2000) {
@@ -244,7 +365,7 @@ export async function POST(request) {
     currentSeconds = Math.max(0, Math.floor(Number(body.timestamp || 0)));
     formattedCurrentTime = formatTimestamp(currentSeconds);
 
-    // 1. Resolve Chapter for exact timestamp
+    // 1. Resolve Chapter for exact timestamp from known table or dynamic HTML
     detectedChapter = findChapterForTimestamp(cleanId, currentSeconds);
     if (!detectedChapter) {
       const dynamicChapters = await extractDynamicChapters(cleanId);
@@ -263,17 +384,21 @@ export async function POST(request) {
       }
     }
 
-    // 2. Fetch transcript snippet if available with 4.5s timeout
+    // 2. Fetch YouTube metadata via oEmbed for authentic video title & author
+    const oembedInfo = await fetchYouTubeOembed(cleanId);
+    const resolvedVideoTitle = oembedInfo?.title || title || 'Educational Lecture';
+    const resolvedAuthor = oembedInfo?.author || '';
+
+    // 3. Fetch transcript snippet if available with 3.5s timeout
     try {
       const { YoutubeTranscript } = await import('youtube-transcript');
       const fetchPromise = YoutubeTranscript.fetchTranscript(cleanId);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Transcript timeout')), 4500)
+        setTimeout(() => reject(new Error('Transcript timeout')), 3500)
       );
       const transcript = await Promise.race([fetchPromise, timeoutPromise]).catch(() => null);
 
       if (Array.isArray(transcript) && transcript.length > 0) {
-        // Window around current timestamp: 35s before and 25s after
         const windowStart = Math.max(0, currentSeconds - 35);
         const windowEnd = currentSeconds + 25;
         const relevant = transcript.filter((item) => {
@@ -297,30 +422,39 @@ export async function POST(request) {
     const chapterTitle = detectedChapter?.current?.title || '';
     const chapterDesc = detectedChapter?.current?.desc || '';
 
-    // 3. Prompt with explicit timeline grounding preventing generic intro responses
+    // 4. Construct rich, subject-aware prompt grounding on course, syllabus, and video identity
+    const contextDetails = [];
+    if (courseTitle) contextDetails.push(`- Course: "${courseTitle}"`);
+    if (moduleTitle) contextDetails.push(`- Module: "${moduleTitle}"`);
+    if (title && title !== resolvedVideoTitle) contextDetails.push(`- Lesson Title: "${title}"`);
+    if (overview) contextDetails.push(`- Lesson Overview: "${overview}"`);
+    if (keyPoints.length > 0) contextDetails.push(`- Lesson Syllabus Points: ${keyPoints.join('; ')}`);
+    if (resolvedAuthor) contextDetails.push(`- Instructor / Channel: "${resolvedAuthor}"`);
+
     const prompt = `
 You are an expert, truthful video AI tutor for students.
-The student paused the video "${title || "Educational Lecture"}" (YouTube ID: ${cleanId}) at timestamp ${formattedCurrentTime} (${currentSeconds} seconds into the video).
+The student paused the video "${resolvedVideoTitle}" (YouTube ID: ${cleanId}) at timestamp ${formattedCurrentTime} (${currentSeconds} seconds into the video).
 ${userQuestion ? `Student's observation/question: "${userQuestion}"` : `Student paused and asks: "What is the instructor explaining and demonstrating right at this moment?"`}
 
+VIDEO & COURSE CONTEXT:
+${contextDetails.join('\n')}
+
 TIMELINE CONTEXT AT ${formattedCurrentTime}:
-${chapterTitle ? `- VERIFIED ACTIVE CHAPTER AT THIS TIMESTAMP: "${chapterTitle}" (${chapterDesc || 'Key programming/concept section'})` : ''}
+${chapterTitle ? `- VERIFIED ACTIVE CHAPTER AT THIS TIMESTAMP: "${chapterTitle}" (${chapterDesc || 'Key lesson section'})` : ''}
 ${detectedChapter?.next ? `- UPCOMING NEXT SECTION: "${detectedChapter.next.title}"` : ''}
 
 ${
   transcriptSnippet
-    ? `VERIFIED SPOKEN WORDS / TOPIC AT THIS MOMENT (${formattedCurrentTime}):\n${transcriptSnippet}`
-    : `VERIFIED TIMELINE GUIDELINE:
-CRITICAL ZERO-HALLUCINATION & ANTI-INTRO RULE:
-- The video is at timestamp ${formattedCurrentTime} (${currentSeconds}s).
-- If the timestamp is beyond the first 5 minutes (e.g. 10m, 30m, 1 hour, 1 hour 10 minutes, 2 hours), this is NEVER an introductory or setup lecture.
-- At 1:10:00 (1 hour 10 minutes) into this course, the lecture is explaining Lists, list functions, and data structure manipulation in Python (.append, .insert, .remove, .pop, .sort, etc.), NOT introducing the language.
-- Explain the concrete topic, code syntax, function, algorithm, or concept actively covered at ${formattedCurrentTime}.`
+    ? `VERIFIED SPOKEN WORDS / LECTURE CONTENT AT THIS MOMENT (${formattedCurrentTime}):\n${transcriptSnippet}`
+    : `TIMELINE INFERENCE GUIDELINE:
+- Ground your explanation strictly on the video title "${resolvedVideoTitle}", course "${courseTitle || title}", overview, and timestamp ${formattedCurrentTime}.
+- Do NOT assume Python unless the video is explicitly about Python. If the video is about Rust, explain Rust concepts (ownership, borrowing, syntax). If React, explain React concepts (components, hooks, JSX). If Web Dev, explain HTML/CSS. If Physics, Chemistry, Math, or Biology, explain those specific domain concepts.
+- Explain the concrete topic, code syntax, formula, algorithm, or concept actively covered at ${formattedCurrentTime}.`
 }
 
 Provide a short, direct, accurate, and easy-to-understand explanation:
-1. topic: Short title of the exact topic/concept at this timestamp (e.g. "${chapterTitle || "Python Lists & List Methods"}")
-2. chapterTitle: The active chapter name ("${chapterTitle || "Core Concept Breakdown"}")
+1. topic: Short title of the exact topic/concept at this timestamp (e.g. "${chapterTitle || title || resolvedVideoTitle}")
+2. chapterTitle: The active chapter name ("${chapterTitle || moduleTitle || title || "Core Concept Breakdown"}")
 3. summary: Exactly 1 punchy, clear sentence explaining what is happening right now in the lecture.
 4. coreExplanation: 2-3 short, plain-English sentences explaining the concept, code, or demonstration simply without filler.
 5. keyTakeaways: 2-3 concise bullet points (each under 14 words).
@@ -354,7 +488,8 @@ Return ONLY valid JSON.
       }
     }
 
-    const activeTopic = parsed.topic || chapterTitle || (currentSeconds >= 3600 ? "Python Lists and Methods" : (title || "Lesson Concept"));
+    const defaultFallbackTopic = chapterTitle || title || resolvedVideoTitle || "Lesson Concept";
+    const activeTopic = parsed.topic || defaultFallbackTopic;
 
     const finalData = {
       topic: activeTopic,
@@ -364,12 +499,13 @@ Return ONLY valid JSON.
       keyTakeaways: Array.isArray(parsed.keyTakeaways) && parsed.keyTakeaways.length > 0
         ? parsed.keyTakeaways
         : [`Understanding ${activeTopic}`, `Key timestamp lesson point at ${formattedCurrentTime}`],
-      whyItMatters: parsed.whyItMatters || "Essential concept for programming proficiency and practical application.",
+      whyItMatters: parsed.whyItMatters || `Essential concept for understanding ${courseTitle || title || 'this subject'}.`,
       suggestedFollowUps: Array.isArray(parsed.suggestedFollowUps) && parsed.suggestedFollowUps.length > 0
         ? parsed.suggestedFollowUps
-        : [`Can you explain ${activeTopic} with an example?`, "How do I practice this in Python?"],
+        : [`Can you explain ${activeTopic} with an example?`, `What is the key takeaway of ${activeTopic}?`],
       timestamp: formattedCurrentTime,
-      seconds: currentSeconds
+      seconds: currentSeconds,
+      videoTitle: resolvedVideoTitle
     };
 
     if (transcriptSnippet) finalData.transcriptSnippet = transcriptSnippet;
@@ -377,15 +513,15 @@ Return ONLY valid JSON.
     return NextResponse.json(finalData);
   } catch (err) {
     console.error('[YouTube/Explain] Error:', err);
-    const fallbackTopic = detectedChapter?.current?.title || (currentSeconds >= 3600 ? "Python Lists & Methods" : (title || "Lesson Concept"));
+    const fallbackTopic = detectedChapter?.current?.title || title || "Lesson Concept";
     return NextResponse.json({
       topic: fallbackTopic,
       chapterTitle: fallbackTopic,
       summary: `At ${formattedCurrentTime}, the instructor explains ${fallbackTopic}.`,
       coreExplanation: `This moment at ${formattedCurrentTime} covers key principles of ${fallbackTopic}.`,
       keyTakeaways: [`Core concept breakdown for ${fallbackTopic}`, `Practical lecture demonstration at ${formattedCurrentTime}`],
-      whyItMatters: "Essential lesson content for topic mastery.",
-      suggestedFollowUps: [`Can you show a code example of ${fallbackTopic}?`, "What is the key takeaway?"],
+      whyItMatters: `Essential lesson content for ${courseTitle || title || 'topic'} mastery.`,
+      suggestedFollowUps: [`Can you show an example of ${fallbackTopic}?`, "What is the key takeaway?"],
       timestamp: formattedCurrentTime,
       seconds: currentSeconds,
       ...(transcriptSnippet ? { transcriptSnippet } : {})

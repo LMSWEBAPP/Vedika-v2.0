@@ -285,14 +285,24 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     setExplainerLoading(true);
 
     try {
+      const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (jwtToken) {
+        headers['Authorization'] = `Bearer ${jwtToken}`;
+      }
+
       // 1. Query explain API for structured in-depth breakdown at exact timestamp
       const res = await fetch('/api/youtube/explain', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           videoId: vId,
           timestamp: targetSecs,
-          title: lesson?.title || ''
+          title: lesson?.title || '',
+          courseTitle: lesson?.courseTitle || COURSE?.title || '',
+          moduleTitle: mod?.title || '',
+          overview: lesson?.overview || '',
+          keyPoints: lesson?.pts || []
         })
       });
 
@@ -452,6 +462,23 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
     setNewNoteText('');
     setRecentNoteAlert(noteObj);
+    try {
+      const bridge = getMascotBridge();
+      bridge.send({
+        type: 'SAVE_STUDY_NOTE',
+        payload: {
+          noteText: noteObj.noteText,
+          courseId: lesson?.courseId || '',
+          courseTitle: lesson?.courseTitle || COURSE?.title || '',
+          lessonId: lesson?.id || '',
+          lessonTitle: lesson?.title || '',
+          timestampSeconds: Math.floor(videoCurrentTime || 0),
+          timestampFormatted: formatTimestamp(videoCurrentTime),
+          topic: lesson?.title || '',
+          source: isDictating ? 'dictated' : 'manual'
+        }
+      });
+    } catch (_) {}
   };
 
   const handleDeleteNoteById = (id) => {
@@ -563,7 +590,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
       if (res.ok) {
         const data = await res.json();
-        setChatHistory([...newHist, { role: 'ai', text: data.reply || data.text || 'Explanation provided.' }]);
+        setChatHistory([...newHist, { role: 'ai', text: data.answer || data.reply || data.text || 'Explanation provided.' }]);
       } else {
         throw new Error('Chat failed');
       }
@@ -599,11 +626,76 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     setAiQuizAns(null);
     setAiQuizIdx(0);
     try {
-      const prompt = buildQuizPrompt(lesson);
-      const res = await geminiCall(prompt);
-      const parsed = parseQuizOutput(res);
-      setAiQuiz(parsed);
+      const topicTitle = lesson?.title || 'This Lesson';
+      const courseTitle = lesson?.courseTitle || COURSE?.title || 'Course';
+      const prompt = `Create 4 multiple-choice practice quiz questions on "${topicTitle}" in the course "${courseTitle}".
+Overview: "${lesson?.overview || ''}".
+Key Syllabus Points: "${(lesson?.pts || []).join(', ')}".
+
+Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO extra text:
+[
+  { "q": "Question text here?", "opts": ["Option A", "Option B", "Option C", "Option D"], "ans": 0 }
+]
+"ans" is the 0-based integer index of the correct option.`;
+
+      const res = await geminiCall(
+        "You are an expert academic tutor. Output ONLY a valid JSON array of 4 multiple-choice quiz questions based on the lesson.",
+        prompt,
+        2000
+      );
+
+      let parsedQuestions = [];
+      try {
+        const clean = (res || '').replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+        const jsonMatch = clean.match(/\[[\s\S]*\]/);
+        const data = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+        if (Array.isArray(data)) {
+          parsedQuestions = data.map(item => ({
+            q: item.q || item.question || 'Question',
+            opts: Array.isArray(item.opts) ? item.opts : (Array.isArray(item.options) ? item.options : ['A', 'B', 'C', 'D']),
+            ans: typeof item.ans === 'number' ? item.ans : (typeof item.correct === 'number' ? item.correct : 0)
+          }));
+        }
+      } catch (parseErr) {
+        console.warn("Direct JSON quiz parse failed, using fallback parsing:", parseErr);
+        const fb = parseQuizOutput(res);
+        if (Array.isArray(fb) && fb.length > 0) {
+          parsedQuestions = fb.map(item => ({
+            q: item.question || item.q,
+            opts: item.options || item.opts,
+            ans: item.correct ?? item.ans ?? 0
+          }));
+        }
+      }
+
+      if (parsedQuestions.length === 0) {
+        parsedQuestions = [
+          {
+            q: `What is the primary conceptual focus of "${topicTitle}"?`,
+            opts: [
+              lesson?.overview?.slice(0, 50) || 'Understanding foundational mechanisms and practical implementation',
+              'Memorizing irrelevant historical trivia',
+              'Ignoring error handling and type verification',
+              'Skipping core algorithmic principles entirely'
+            ],
+            ans: 0
+          },
+          {
+            q: `Which approach is considered best practice when working on ${topicTitle}?`,
+            opts: [
+              'Writing modular, readable, and well-structured solutions',
+              'Hardcoding arbitrary values and omitting unit tests',
+              'Combining all logic into an unbounded single block',
+              'Ignoring documentation and input validation rules'
+            ],
+            ans: 0
+          }
+        ];
+      }
+
+      setAiQuiz({ questions: parsedQuestions });
     } catch (err) {
+      console.error("Practice quiz generation error:", err);
       setAiErr(err.message || 'Could not generate quiz. Please retry.');
     } finally {
       setAiLoading(false);
@@ -869,8 +961,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
         }}>
           {/* Left: Video Player */}
           <div style={{
-            flex: isStackedLayout ? 'none' : (isExpanded ? '0 0 calc(62% - 7px)' : '0 0 calc(94% - 7px)'),
-            width: isStackedLayout ? '100%' : (isExpanded ? 'calc(62% - 7px)' : 'calc(94% - 7px)'),
+            flex: isStackedLayout ? 'none' : (isExpanded ? '0 0 calc(52% - 7px)' : '0 0 calc(94% - 7px)'),
+            width: isStackedLayout ? '100%' : (isExpanded ? 'calc(52% - 7px)' : 'calc(94% - 7px)'),
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             flexDirection: 'column',
@@ -973,13 +1065,13 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           <div style={{
             flex: isStackedLayout
               ? 'none'
-              : (isExpanded ? '0 0 calc(38% - 7px)' : '0 0 calc(6% - 7px)'),
+              : (isExpanded ? '0 0 calc(48% - 7px)' : '0 0 calc(6% - 7px)'),
             width: isStackedLayout
               ? '100%'
-              : (isExpanded ? 'calc(38% - 7px)' : 'calc(6% - 7px)'),
+              : (isExpanded ? 'calc(48% - 7px)' : 'calc(6% - 7px)'),
             maxWidth: isStackedLayout
               ? '100%'
-              : (isExpanded ? 'calc(38% - 7px)' : 'calc(6% - 7px)'),
+              : (isExpanded ? 'calc(48% - 7px)' : 'calc(6% - 7px)'),
             flexShrink: 0,
             display: 'flex',
             flexDirection: isStackedLayout ? 'column-reverse' : 'row',
