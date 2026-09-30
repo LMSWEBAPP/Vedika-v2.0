@@ -21,6 +21,32 @@ def scrub_pii(text: str) -> str:
         cleaned = pattern.sub("[REDACTED]", cleaned)
     return cleaned
 
+def format_text_as_bullets(text: str) -> str:
+    """Normalizes multi-point or sentence text into clean bullet points with dots, each on its own line."""
+    if not text:
+        return ""
+    import re
+    cleaned = text.replace("**", "").replace("__", "").strip()
+    raw_lines = re.split(r'[\r\n]+', cleaned)
+    bullets = []
+    for line in raw_lines:
+        trimmed = line.strip()
+        if not trimmed:
+            continue
+        items = re.split(r'(?:^|\s+)(?:[•\-\*]|\d+[\.\)])\s+', trimmed)
+        for item in items:
+            it = item.strip()
+            if it:
+                it = re.sub(r'^[•\-\*\d\.\)\s]+', '', it).strip()
+                if it:
+                    bullets.append(f"• {it}")
+    if not bullets:
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', cleaned) if s.strip()]
+        if len(sentences) > 1:
+            return "\n".join(f"• {s}" for s in sentences)
+        return f"• {cleaned}"
+    return "\n".join(bullets)
+
 
 class MemoryManager:
     """
@@ -409,32 +435,6 @@ class MemoryManager:
                 clean_text, topic or lesson_title or "", source or "vedika_voice"
             ))
             return cursor.lastrowid
-
-def format_text_as_bullets(text: str) -> str:
-    """Normalizes multi-point or sentence text into clean bullet points with dots, each on its own line."""
-    if not text:
-        return ""
-    import re
-    cleaned = text.replace("**", "").replace("__", "").strip()
-    raw_lines = re.split(r'[\r\n]+', cleaned)
-    bullets = []
-    for line in raw_lines:
-        trimmed = line.strip()
-        if not trimmed:
-            continue
-        items = re.split(r'(?:^|\s+)(?:[•\-\*]|\d+[\.\)])\s+', trimmed)
-        for item in items:
-            it = item.strip()
-            if it:
-                it = re.sub(r'^[•\-\*\d\.\)\s]+', '', it).strip()
-                if it:
-                    bullets.append(f"• {it}")
-    if not bullets:
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', cleaned) if s.strip()]
-        if len(sentences) > 1:
-            return "\n".join(f"• {s}" for s in sentences)
-        return f"• {cleaned}"
-    return "\n".join(bullets)
 
     def append_or_create_notebook_note(
         self,

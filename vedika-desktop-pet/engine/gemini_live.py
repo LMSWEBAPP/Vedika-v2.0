@@ -698,7 +698,8 @@ class GeminiLiveWorker(QThread):
             "10. RECALL PREVIOUS QUESTIONS & MEMORY SEARCH: Call 'recall_previous_questions(limit)' when the student asks what was previously asked, or 'search_learning_memory(query, category)' to search stored academic insights and past discussions.\n"
             "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, 'update_student_profile(name, stage, field_of_study, hobbies, favorite_topics)' to remember student details, or 'clear_student_memory' to clear history.\n"
             "12. STUDY TIMER: Call 'set_study_timer(duration_seconds, label)' when the student asks to set a timer, reminder, or study countdown (e.g. 'set a 10 min timer', 'remind me in 5 minutes').\n"
-            "13. PERSONAL STUDY NOTEPAD: Call 'add_study_note(note_content, topic, timestamp, create_new)' whenever the student asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', or asks to note down points on a topic. ACCUMULATION RULE: Always compile and append points into the single active note unless the student explicitly says 'create a new note' or 'in a new note' (only then set create_new=True)."
+            "13. PERSONAL STUDY NOTEPAD & ADDING POINTS: Call 'add_study_note(note_content, topic, timestamp, create_new)' whenever the student asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', 'add a few points', 'add points to my notes', 'write points in my personal notes', or in any language (Hindi: 'नोट्स में पॉइंट्स जोड़ दो', Telugu: 'నోట్స్ లో పాయింట్స్ యాడ్ చేయి'). "
+            "CRITICAL NOTE-TAKING MANDATE: You have 100% active, full access to their study notebook through this tool! NEVER tell the student that this functionality is unavailable or that you cannot take notes. Always execute 'add_study_note' immediately, and warmly confirm in the student's active language that the points have been added to their personal notes!"
         )
 
         config = types.LiveConnectConfig(
@@ -1417,7 +1418,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response=res
                                     )
                                 )
