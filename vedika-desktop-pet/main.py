@@ -805,21 +805,34 @@ class DesktopPetApp(QObject):
                     self.pet.say(f"I notice you've been working on {puzzle_title}! Press Alt+V if you'd like a hint! 💡", duration=6.0)
 
             elif msg_type == "ASK_VEDIKA_VIDEO_MOMENT":
-                if hasattr(self, 'gemini_client') and self.gemini_client:
-                    self.gemini_client.active_webapp_context = payload
-
                 time_str = payload.get("timestampFormatted", "this moment")
                 topic_str = payload.get("topic") or payload.get("lessonTitle", "this topic")
                 lesson_str = payload.get("lessonTitle", "")
                 course_str = payload.get("courseTitle", "")
                 concept_summary = payload.get("conceptSummary") or payload.get("overview") or ""
                 snippet = payload.get("transcriptSnippet") or ""
+
+                if hasattr(self, 'gemini_client') and self.gemini_client:
+                    self.gemini_client.active_webapp_context = {
+                        "courseId": payload.get("courseId", ""),
+                        "courseTitle": course_str,
+                        "chapterTitle": payload.get("chapterTitle", ""),
+                        "lessonId": payload.get("lessonId", ""),
+                        "lessonTitle": lesson_str,
+                        "videoId": payload.get("videoId", ""),
+                        "timestampSeconds": payload.get("timestampSeconds", 0.0),
+                        "timestampFormatted": time_str,
+                        "topic": topic_str,
+                        "overview": concept_summary,
+                        "conceptSummary": concept_summary,
+                        "route": f"/lesson/{payload.get('lessonId', '')}"
+                    }
                 
                 print(f"[WS Bridge] Ask Vedika Video Moment received: {lesson_str} @ {time_str} ({topic_str})")
                 self.set_active_animation("explaining")
 
                 if self.pet:
-                    self.pet.say(f"I see you paused at {time_str} on {topic_str}! What part feels tricky or confusing? 💡", duration=6.0)
+                    self.pet.say(f"At this point in the video, {topic_str} is being explained. Did you not understand it at all, or did you understand parts of it? Would you like a real-world example, or what would you like me to clarify for you? 💡", duration=7.5)
 
                 # Synthesize rich pedagogic diagnostic prompt with video topic context
                 context_parts = [f"Course: '{course_str}'", f"Lesson: '{lesson_str}'", f"Video Timestamp: {time_str}"]
@@ -833,9 +846,15 @@ class DesktopPetApp(QObject):
                 context_str = ". ".join(context_parts)
 
                 diagnostic_speech = (
-                    f"Speak this exact sentence warmly out loud: 'I see you paused at {time_str} on {topic_str}! What part feels tricky or confusing?' and wave to me. "
-                    f"[PEDAGOGICAL CONTEXT FOR VEDIKA]: The student is watching this video lesson ({context_str}). "
-                    f"When they ask you to explain what is happening, explain the actual programming/lesson concept taught at this timestamp in simple, intuitive, relatable terms with a clear example. Do NOT capture the computer screen; focus directly on explaining the video lesson concept."
+                    f"Speak this exact sentence warmly out loud in clean, articulate English: "
+                    f"\"At this point in the video, {topic_str} is being explained. Did you not understand it at all, or did you understand parts of it? Would you like a clear real-world example, or what would you like me to clarify for you?\" and wave gently. "
+                    f"[PEDAGOGICAL CONTEXT FOR VEDIKA]: The student is watching this lesson ({context_str}). "
+                    f"When they answer, explain the concept simply, intuitively, and concisely with relatable analogies. "
+                    f"[CRITICAL CONTINUOUS MULTI-TOOL LOOP & ASSISTANCE INSTRUCTIONS]: "
+                    f"You are the student's continuous AI tutor and companion! All your tools remain 100% active and MUST be executed immediately whenever requested: "
+                    f"1. NOTE TAKING: If the student asks you to add notes, take notes, or write down points (e.g. 'add a few points in my personal notes', 'note this down', 'save this point to my notes', 'add to my notebook'), you MUST IMMEDIATELY call the 'add_study_note' tool! "
+                    f"2. NAVIGATION & BROWSING: If the student asks to open another page, navigate to another course, open labs, open assignments, or open a website (e.g. 'open labs', 'open another page', 'go to chemistry'), you MUST IMMEDIATELY call 'navigate_webapp' or 'open_website'! "
+                    f"3. Never refuse tool actions. Seamlessly execute tools and continue normal friendly conversation!"
                 )
                 if hasattr(self, "gemini_client") and self.gemini_client:
                     if not self.gemini_client.is_active:
