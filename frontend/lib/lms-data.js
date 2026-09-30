@@ -524,8 +524,27 @@ export function getCourseDetails(course) {
   if (syllabusesData && syllabusesData[course.id]) {
     return syllabusesData[course.id];
   }
-  if (course.title && course.title.toLowerCase().includes("python")) {
-    return syllabusesData?.['1'] || COURSE;
+  const normTitle = (course.title || '').toLowerCase();
+  const normCat = (course.category || '').toLowerCase();
+  const combined = `${normTitle} ${normCat}`;
+
+  if (combined.includes('phys')) {
+    return syllabusesData?.['physics-mechanics-fundamentals'];
+  }
+  if (combined.includes('math') || combined.includes('calc')) {
+    return syllabusesData?.['calculus-advanced-mathematics'];
+  }
+  if (combined.includes('chem')) {
+    return syllabusesData?.['general-physical-chemistry'];
+  }
+  if (combined.includes('bio')) {
+    return syllabusesData?.['cellular-biology-genetics'];
+  }
+  if (combined.includes('web') || combined.includes('html') || combined.includes('css')) {
+    return syllabusesData?.['modern-web-development-html-css'];
+  }
+  if (combined.includes('python')) {
+    return syllabusesData?.['python-programming-essentials'] || syllabusesData?.['1'] || COURSE;
   }
   return {
     id: course.id,

@@ -2320,5 +2320,455 @@
         ]
       }
     ]
+  },
+  "physics-mechanics-fundamentals": {
+    "id": "physics-mechanics-fundamentals",
+    "title": "Physics: Mechanics & Energy",
+    "tagline": "Master classical mechanics, 1D motion, Newton's laws, energy conservation, and universal gravitation.",
+    "modules": [
+      {
+        "id": "physics_m1",
+        "title": "Kinematics & Newton's Laws",
+        "emoji": "⚡",
+        "accent": "#3B82F6",
+        "lessons": [
+          {
+            "id": "phys_l1",
+            "title": "Introduction to Kinematics & 1D Motion",
+            "dur": "12 min",
+            "vid": "b1t41Q3oRM8",
+            "overview": "Explore position, velocity, and acceleration. Understand how objects move in one dimension through vectors and kinematic equations.",
+            "pts": [
+              "Distinction between distance and displacement",
+              "Average velocity vs instantaneous velocity",
+              "Constant acceleration kinematic formulas",
+              "Graphical analysis of position-time graphs"
+            ]
+          },
+          {
+            "id": "phys_l2",
+            "title": "Newton's Laws of Motion & Forces",
+            "dur": "15 min",
+            "vid": "kKKM8Y-uWiU",
+            "overview": "Discover the three fundamental laws formulated by Sir Isaac Newton: inertia, F = ma, and action-reaction pairs.",
+            "pts": [
+              "Inertia and balanced vs unbalanced forces",
+              "Calculating net force with F = ma",
+              "Normal forces, tension, and friction",
+              "Newton's third law interaction pairs"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "physics_m2",
+        "title": "Work, Energy & Universal Gravitation",
+        "emoji": "🪐",
+        "accent": "#8B5CF6",
+        "lessons": [
+          {
+            "id": "phys_l3",
+            "title": "Work, Energy & Power",
+            "dur": "14 min",
+            "vid": "2WS1sG9fhOk",
+            "overview": "Learn how mechanical work transfers energy. Master the Work-Energy Theorem and the conservation of kinetic and potential energy.",
+            "pts": [
+              "Calculating mechanical work: W = F·d·cos(θ)",
+              "Kinetic energy (1/2 mv²) vs potential energy (mgh)",
+              "Law of conservation of mechanical energy",
+              "Power as the rate of energy transfer"
+            ]
+          },
+          {
+            "id": "phys_l4",
+            "title": "Universal Gravitation & Orbital Motion",
+            "dur": "16 min",
+            "vid": "7gf6YpdvtE0",
+            "overview": "Examine Newton's universal law of gravitation and how gravitational forces keep planets and satellites in elliptical orbits.",
+            "pts": [
+              "Inverse-square law: F = G(m1·m2)/r²",
+              "Gravitational field strength (g)",
+              "Orbital velocity and escape velocity",
+              "Kepler's laws of planetary motion"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "calculus-advanced-mathematics": {
+    "id": "calculus-advanced-mathematics",
+    "title": "Mathematics: Calculus & Analysis",
+    "tagline": "Comprehensive journey through differential and integral calculus, limits, continuity, rate of change, and geometric area integrals.",
+    "modules": [
+      {
+        "id": "math_m1",
+        "title": "Limits & Differential Calculus",
+        "emoji": "📐",
+        "accent": "#10B981",
+        "lessons": [
+          {
+            "id": "math_l1",
+            "title": "Limits & Continuity Fundamentals",
+            "dur": "14 min",
+            "vid": "kfF40MiS7zA",
+            "overview": "Understand what happens as input values approach a point. Master epsilon-delta definitions, one-sided limits, and continuity.",
+            "pts": [
+              "Intuitive and formal concept of limits",
+              "Evaluating limits algebraically and graphically",
+              "Definition of continuity at a point",
+              "Intermediate Value Theorem"
+            ]
+          },
+          {
+            "id": "math_l2",
+            "title": "The Derivative & Rates of Change",
+            "dur": "17 min",
+            "vid": "9vKqVkMQHKk",
+            "overview": "Explore instantaneous rate of change and the geometric slope of tangent lines. Learn power, product, quotient, and chain rules.",
+            "pts": [
+              "Difference quotient and limit definition of derivative",
+              "Power rule, product rule, and quotient rule",
+              "Chain rule for composite functions",
+              "Optimization and finding local extrema"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "math_m2",
+        "title": "Integral Calculus & Applications",
+        "emoji": "📈",
+        "accent": "#06B6D4",
+        "lessons": [
+          {
+            "id": "math_l3",
+            "title": "Antiderivatives & Fundamental Theorem of Calculus",
+            "dur": "18 min",
+            "vid": "rfG8ce4nNh0",
+            "overview": "Connect derivatives and integrals through the Fundamental Theorem of Calculus. Practice definite and indefinite integrals.",
+            "pts": [
+              "Riemann sums and area under curves",
+              "Fundamental Theorem of Calculus (Parts 1 & 2)",
+              "Integration by substitution (u-substitution)",
+              "Properties of definite integrals"
+            ]
+          },
+          {
+            "id": "math_l4",
+            "title": "Applications of Integration: Area & Volume",
+            "dur": "16 min",
+            "vid": "xdsT8o_XF8s",
+            "overview": "Calculate area between intersecting curves and volumes of solids of revolution using disk and washer methods.",
+            "pts": [
+              "Area bounded between two functions",
+              "Disk and washer method for rotational solids",
+              "Cylindrical shells technique",
+              "Accumulation functions in real-world modeling"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "general-physical-chemistry": {
+    "id": "general-physical-chemistry",
+    "title": "Chemistry: Atoms, Bonds & Reactions",
+    "tagline": "Investigate quantum electron orbitals, ionic and covalent bonding, stoichiometric reaction yields, and acid-base titration equilibria.",
+    "modules": [
+      {
+        "id": "chem_m1",
+        "title": "Atomic Structure & Chemical Bonding",
+        "emoji": "🧪",
+        "accent": "#F59E0B",
+        "lessons": [
+          {
+            "id": "chem_l1",
+            "title": "Electronic Structure & Atomic Orbitals",
+            "dur": "13 min",
+            "vid": "rcKilE9CdaA",
+            "overview": "Learn how quantum numbers, electron configurations, and s, p, d, f orbitals shape the periodic table and elemental reactivity.",
+            "pts": [
+              "Bohr model vs Quantum mechanical orbital model",
+              "Principal, angular, and magnetic quantum numbers",
+              "Aufbau principle and Hund's rule",
+              "Periodic trends in electronegativity and radius"
+            ]
+          },
+          {
+            "id": "chem_l2",
+            "title": "Ionic & Covalent Chemical Bonds",
+            "dur": "15 min",
+            "vid": "QXT4OVM4vXI",
+            "overview": "Investigate how atoms share and transfer valence electrons to achieve noble gas configurations. Explore Lewis structures and polarity.",
+            "pts": [
+              "Ionic bonds: electrostatic crystal lattices",
+              "Covalent bonds and molecular geometry (VSEPR)",
+              "Electronegativity difference and polar dipoles",
+              "Intermolecular forces vs intramolecular bonds"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "chem_m2",
+        "title": "Reactions, Stoichiometry & Acid-Base Equilibrium",
+        "emoji": "⚗️",
+        "accent": "#EF4444",
+        "lessons": [
+          {
+            "id": "chem_l3",
+            "title": "Balancing Reactions & Stoichiometry",
+            "dur": "14 min",
+            "vid": "7Cfq0ilw7Ps",
+            "overview": "Balance chemical equations and use mole ratios to predict product yields, determine limiting reactants, and calculate percent yield.",
+            "pts": [
+              "Conservation of mass in chemical reactions",
+              "The mole concept (Avogadro's number: 6.022×10²³)",
+              "Limiting reagent identification",
+              "Theoretical yield vs experimental percentage"
+            ]
+          },
+          {
+            "id": "chem_l4",
+            "title": "Acids, Bases & Titration Equilibrium",
+            "dur": "15 min",
+            "vid": "ANi709MYnWg",
+            "overview": "Examine Arrhenius and Bronsted-Lowry definitions of acids and bases, pH scale logarithms, and volumetric titration curves.",
+            "pts": [
+              "Proton donors (acids) and acceptors (bases)",
+              "Calculating pH from hydronium ion concentration",
+              "Strong vs weak acid ionization",
+              "Neutralization reactions and titration equivalence points"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "cellular-biology-genetics": {
+    "id": "cellular-biology-genetics",
+    "title": "Biology: Cells & Molecular Genetics",
+    "tagline": "Explore living systems from cellular organelles and ATP cellular respiration to DNA replication, central dogma, and Mendelian inheritance.",
+    "modules": [
+      {
+        "id": "bio_m1",
+        "title": "Cell Structure & Cellular Energetics",
+        "emoji": "🔬",
+        "accent": "#10B981",
+        "lessons": [
+          {
+            "id": "bio_l1",
+            "title": "Cell Organelles & Membrane Transport",
+            "dur": "13 min",
+            "vid": "URUJD5NEXC8",
+            "overview": "Tour prokaryotic and eukaryotic cells, organelles (nucleus, mitochondria, ribosomes, ER), and phospholipid bilayer transport mechanisms.",
+            "pts": [
+              "Compartmentalization in eukaryotic organelles",
+              "Fluid mosaic phospholipid bilayer structure",
+              "Passive diffusion and osmosis vs active transport",
+              "Endocytosis and exocytosis"
+            ]
+          },
+          {
+            "id": "bio_l2",
+            "title": "Cellular Respiration & ATP Synthesis",
+            "dur": "15 min",
+            "vid": "00jbG_cfGuQ",
+            "overview": "Learn how cells convert glucose into cellular energy (ATP) through glycolysis, the Krebs citric acid cycle, and oxidative phosphorylation.",
+            "pts": [
+              "Glycolysis in cytoplasm (glucose to pyruvate)",
+              "Krebs cycle in the mitochondrial matrix",
+              "Electron transport chain and proton gradients",
+              "ATP synthase and aerobic vs anaerobic yield"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bio_m2",
+        "title": "Genetics & Molecular Inheritance",
+        "emoji": "🧬",
+        "accent": "#EC4899",
+        "lessons": [
+          {
+            "id": "bio_l3",
+            "title": "DNA Structure, Replication & Protein Synthesis",
+            "dur": "16 min",
+            "vid": "8kK2zwjRV0M",
+            "overview": "Understand the double helix architecture discovered by Watson, Crick, and Franklin, semiconservative replication, and central dogma.",
+            "pts": [
+              "Nucleotide composition (A-T, G-C base pairing)",
+              "Helicase, DNA polymerase, and replication forks",
+              "Transcription of mRNA in the nucleus",
+              "Translation at ribosomes via tRNA codons"
+            ]
+          },
+          {
+            "id": "bio_l4",
+            "title": "Mendelian Genetics & Heredity",
+            "dur": "14 min",
+            "vid": "Mehz7tCxjSE",
+            "overview": "Explore Gregor Mendel's laws of segregation and independent assortment, Punnett squares, dominant and recessive alleles, and pedigrees.",
+            "pts": [
+              "Genotype vs phenotype distinctions",
+              "Monohybrid and dihybrid Punnett square predictions",
+              "Incomplete dominance and codominance",
+              "Sex-linked traits and human genetic conditions"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "python-programming-essentials": {
+    "id": "python-programming-essentials",
+    "title": "Python Programming Essentials",
+    "tagline": "From beginner syntax to structured programming: master dynamic typing, collections, conditionals, iteration, and reusable modular functions.",
+    "modules": [
+      {
+        "id": "python_m1",
+        "title": "Python Basics & Core Collections",
+        "emoji": "🐍",
+        "accent": "#3B82F6",
+        "lessons": [
+          {
+            "id": "py_l1",
+            "title": "Python Syntax, Variables & Types",
+            "dur": "12 min",
+            "vid": "rfscVS0vtbw",
+            "overview": "Introduction to Python environment, dynamic typing, numbers, strings, and standard input/output with clean syntax.",
+            "pts": [
+              "Interpreted nature and Python execution model",
+              "Variables, type casting, and string formatting",
+              "Arithmetic and comparison operations",
+              "Writing your first interactive Python script"
+            ]
+          },
+          {
+            "id": "py_l2",
+            "title": "Lists, Dictionaries & Sets",
+            "dur": "15 min",
+            "vid": "daefaLgNkw0",
+            "overview": "Master Python's built-in data collections: ordered lists, key-value hash dictionaries, immutable tuples, and unique sets.",
+            "pts": [
+              "List indexing, slicing, and mutation methods",
+              "Dictionary key-value lookups and iterations",
+              "Set union, intersection, and deduplication",
+              "List and dictionary comprehensions"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "python_m2",
+        "title": "Control Flow & Modular Functions",
+        "emoji": "⚙️",
+        "accent": "#10B981",
+        "lessons": [
+          {
+            "id": "py_l3",
+            "title": "Conditional Statements & Loops",
+            "dur": "13 min",
+            "vid": "DZwmZ8Usvnk",
+            "overview": "Direct execution flow with if, elif, and else conditionals. Iterate efficiently over ranges and collections with for and while loops.",
+            "pts": [
+              "Boolean logic: and, or, not expressions",
+              "For loop iteration over sequences and ranges",
+              "While loops with break and continue statements",
+              "Enumerate and zip helper patterns"
+            ]
+          },
+          {
+            "id": "py_l4",
+            "title": "Defining Functions & Scope",
+            "dur": "16 min",
+            "vid": "9Os0o3wzS_I",
+            "overview": "Write reusable, testable code blocks with def statements, positional and keyword arguments, default parameters, and docstrings.",
+            "pts": [
+              "Function definition, return values, and None",
+              "Default arguments, *args, and **kwargs",
+              "Local vs global variable scope",
+              "Pure functions and docstring documentation"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "modern-web-development-html-css": {
+    "id": "modern-web-development-html-css",
+    "title": "Web Development: HTML & CSS",
+    "tagline": "Learn fundamental front-end web engineering with semantic HTML5 elements, accessible forms, modern CSS box models, and responsive Flexbox.",
+    "modules": [
+      {
+        "id": "web_m1",
+        "title": "HTML5 Structure & Semantic Layouts",
+        "emoji": "🌐",
+        "accent": "#F97316",
+        "lessons": [
+          {
+            "id": "web_l1",
+            "title": "HTML Document Anatomy & Semantic Tags",
+            "dur": "14 min",
+            "vid": "MDLn5-zSQQI",
+            "overview": "Understand the DOM tree, doctype, head metadata, and modern semantic tags (<header>, <nav>, <main>, <section>, <article>, <footer>).",
+            "pts": [
+              "Anatomy of an HTML document and DOM hierarchy",
+              "Semantic tags for SEO and accessibility",
+              "Text elements: headings, paragraphs, and emphasis",
+              "Hyperlinks and anchor tags"
+            ]
+          },
+          {
+            "id": "web_l2",
+            "title": "HTML Forms, Inputs & Media",
+            "dur": "15 min",
+            "vid": "kUMe1FH4CHE",
+            "overview": "Create user input forms with validation, labels, text fields, radio buttons, checkboxes, dropdowns, and embedded media elements.",
+            "pts": [
+              "Form element: action and method attributes",
+              "Input types: text, email, password, number",
+              "Accessible labels and required validations",
+              "Embedding images, audio, and video"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "web_m2",
+        "title": "CSS Styling, Box Model & Flexbox",
+        "emoji": "🎨",
+        "accent": "#8B5CF6",
+        "lessons": [
+          {
+            "id": "web_l3",
+            "title": "CSS Selectors & The Box Model",
+            "dur": "16 min",
+            "vid": "1PnVor36_40",
+            "overview": "Style web pages using CSS selectors, cascade specificity, typography, colors, and the core Box Model (content, padding, border, margin).",
+            "pts": [
+              "Class, ID, and pseudo-class selectors",
+              "The Box Model: content, padding, border, margin",
+              "box-sizing: border-box for predictable layouts",
+              "CSS variables and theme colors"
+            ]
+          },
+          {
+            "id": "web_l4",
+            "title": "CSS Flexbox & Responsive Design",
+            "dur": "18 min",
+            "vid": "fYq5PXgSsbE",
+            "overview": "Master 1D responsive layouts with CSS Flexbox: main axis, cross axis, justify-content, align-items, flex-wrap, and media queries.",
+            "pts": [
+              "display: flex container properties",
+              "justify-content and align-items alignment",
+              "flex-grow, flex-shrink, and flex-basis",
+              "Media queries for mobile-responsive viewports"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

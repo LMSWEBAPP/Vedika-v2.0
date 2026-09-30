@@ -26,95 +26,82 @@ export function sanitizeTitle(title) {
 // Default demo courses fallback
 export const DEFAULT_COURSES = [
   {
-    id: "class-10-biology-2",
-    name: "class-10-biology-2",
-    title: "CLASS 10 Biology",
-    instructor: "Administrator",
-    category: "Personal Development",
-    enrolled: 25,
-    lessonsCount: 3,
-    status: "Published",
-    description: "CLASS 10 Biology course introduction.",
-    image: null,
-    date: "Jul 1, 2026"
-  },
-  {
-    id: "python-3",
-    name: "python-3",
-    title: "python",
-    instructor: "Administrator",
-    category: "Web Development",
-    enrolled: 25,
-    lessonsCount: 0,
-    status: "Published",
-    description: "python course introduction.",
-    image: null,
-    date: "Jun 27, 2026"
-  },
-  {
-    id: "10-hour-full-financial-education-course",
-    name: "10-hour-full-financial-education-course",
-    title: "10 Hour Full Financial Education Course",
-    instructor: "Administrator",
-    category: "Web Development",
-    enrolled: 25,
-    lessonsCount: 28,
-    status: "Published",
-    description: "Your comprehensive guide to financial freedom.",
-    image: null,
-    date: "Jun 27, 2026"
-  },
-  {
-    id: "financial-literacy-full-course",
-    name: "financial-literacy-full-course",
-    title: "Financial Literacy (Full Course)",
-    instructor: "Administrator",
-    category: "Web Development",
-    enrolled: 25,
-    lessonsCount: 15,
-    status: "Published",
-    description: "Master the fundamentals of personal finance.",
-    image: null,
-    date: "Jun 26, 2026"
-  },
-  {
-    id: "learn-python-full-course-for-beginners-tutorial",
-    name: "learn-python-full-course-for-beginners-tutorial",
-    title: "Learn Python - Full Course for Beginners [Tutorial]",
-    instructor: "Administrator",
-    category: "Web Development",
-    enrolled: 25,
-    lessonsCount: 34,
-    status: "Published",
-    description: "Master Python from scratch! A complete beginner-friendly tutorial covering basics, data structures, and OOP logic.",
-    image: null,
-    date: "Jun 18, 2026"
-  },
-  {
-    id: "sql-tutorial-full-database-course-for-beginners",
-    name: "sql-tutorial-full-database-course-for-beginners",
-    title: "SQL Tutorial - Full Database Course for Beginners",
-    instructor: "Administrator",
-    category: "Web Development",
-    enrolled: 25,
-    lessonsCount: 24,
-    status: "Published",
-    description: "Learn the fundamentals of SQL and relational databases in this comprehensive, beginner-friendly course.",
-    image: null,
-    date: "Jun 17, 2026"
-  },
-  {
-    id: "a-guide-to-frappe-learning",
-    name: "a-guide-to-frappe-learning",
-    title: "A guide to Python Learning",
-    instructor: "Administrator",
-    category: "Business",
-    enrolled: 25,
+    id: "physics-mechanics-fundamentals",
+    name: "physics-mechanics-fundamentals",
+    title: "Physics: Mechanics & Energy",
+    instructor: "Dr. Angela Thorne",
+    category: "Physics",
+    enrolled: 38,
     lessonsCount: 4,
     status: "Published",
-    description: "Learn the basics of Frappe Learning and how to get started with your very first course.",
-    image: "/assets/lms/images/course_card.jpeg",
-    date: "Jun 17, 2026"
+    description: "Master classical mechanics, 1D motion, Newton's laws of motion, conservation of mechanical energy, and universal gravitation.",
+    image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 15, 2026"
+  },
+  {
+    id: "calculus-advanced-mathematics",
+    name: "calculus-advanced-mathematics",
+    title: "Mathematics: Calculus & Analysis",
+    instructor: "Prof. David Miller",
+    category: "Maths",
+    enrolled: 42,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Comprehensive journey through differential and integral calculus, limits, continuity, rate of change, and geometric area integrals.",
+    image: "https://images.unsplash.com/photo-1509228468518-180dd4864904?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 14, 2026"
+  },
+  {
+    id: "general-physical-chemistry",
+    name: "general-physical-chemistry",
+    title: "Chemistry: Atoms, Bonds & Reactions",
+    instructor: "Dr. Maya Lin",
+    category: "Chemistry",
+    enrolled: 35,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Investigate quantum electron orbitals, ionic and covalent bonding, stoichiometric reaction yields, and acid-base titration equilibria.",
+    image: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 12, 2026"
+  },
+  {
+    id: "cellular-biology-genetics",
+    name: "cellular-biology-genetics",
+    title: "Biology: Cells & Molecular Genetics",
+    instructor: "Dr. Sarah Jenkins",
+    category: "Biology",
+    enrolled: 40,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Explore living systems from cellular organelles and ATP cellular respiration to DNA replication, central dogma, and Mendelian inheritance.",
+    image: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 10, 2026"
+  },
+  {
+    id: "python-programming-essentials",
+    name: "python-programming-essentials",
+    title: "Python Programming Essentials",
+    instructor: "Alex Mercer",
+    category: "Python",
+    enrolled: 65,
+    lessonsCount: 4,
+    status: "Published",
+    description: "From beginner syntax to structured programming: master dynamic typing, collections, conditionals, iteration, and reusable modular functions.",
+    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Jul 28, 2026"
+  },
+  {
+    id: "modern-web-development-html-css",
+    name: "modern-web-development-html-css",
+    title: "Web Development: HTML & CSS",
+    instructor: "Elena Rostova",
+    category: "Web Development",
+    enrolled: 52,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Learn fundamental front-end web engineering with semantic HTML5 elements, accessible forms, modern CSS box models, and responsive Flexbox.",
+    image: "https://images.unsplash.com/photo-1547658719-da2b51169166?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Jul 25, 2026"
   }
 ];
 
@@ -1563,10 +1550,71 @@ export async function getStudentEnrollments(studentEmail) {
 
 export const DEFAULT_QUIZZES = [
   {
+    id: 'quiz-physics-mechanics',
+    title: 'Kinematics & Newton\'s Laws Quiz',
+    course: 'physics-mechanics-fundamentals',
+    courseTitle: 'Physics: Mechanics & Energy',
+    lesson: 'phys_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What is Newton\'s Second Law of Motion?', options: ['F = m / a', 'F = m · a', 'E = mc²', 'W = F · d'], correct: 1 },
+      { question: 'If an object moves with constant velocity, what is its net acceleration?', options: ['9.8 m/s²', '0 m/s²', 'Variable', 'Infinite'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-calculus-derivatives',
+    title: 'Limits & Differential Calculus Quiz',
+    course: 'calculus-advanced-mathematics',
+    courseTitle: 'Mathematics: Calculus & Analysis',
+    lesson: 'math_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What is the derivative of f(x) = x³ with respect to x?', options: ['3x', '3x²', 'x²', '3x³'], correct: 1 },
+      { question: 'Geometrically, what does the first derivative f\'(x) represent?', options: ['The area under the curve', 'The slope of the tangent line', 'The x-intercept', 'The function volume'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-chemistry-bonding',
+    title: 'Atomic Structure & Chemical Bonding Quiz',
+    course: 'general-physical-chemistry',
+    courseTitle: 'Chemistry: Atoms, Bonds & Reactions',
+    lesson: 'chem_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What type of bond forms when electrons are shared between two nonmetals?', options: ['Ionic bond', 'Covalent bond', 'Metallic bond', 'Hydrogen bond'], correct: 1 },
+      { question: 'What is the maximum number of electrons an s-orbital can hold?', options: ['2', '6', '10', '14'], correct: 0 }
+    ]
+  },
+  {
+    id: 'quiz-biology-cell',
+    title: 'Cell Organelles & Respiration Quiz',
+    course: 'cellular-biology-genetics',
+    courseTitle: 'Biology: Cells & Molecular Genetics',
+    lesson: 'bio_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'Which organelle is considered the powerhouse of eukaryotic cells?', options: ['Ribosome', 'Mitochondria', 'Golgi apparatus', 'Lysosome'], correct: 1 },
+      { question: 'What molecule carries genetic instructions for building proteins?', options: ['Lipids', 'DNA', 'Glucose', 'Hemoglobin'], correct: 1 }
+    ]
+  },
+  {
     id: 'quiz-python-intro',
     title: 'Python Syntax & Variables Quiz',
-    course: '1',
-    lesson: 'l2',
+    course: 'python-programming-essentials',
+    courseTitle: 'Python Programming Essentials',
+    lesson: 'py_l2',
     max_attempts: 3,
     passing_percentage: 75,
     total_marks: 10,
@@ -1577,16 +1625,18 @@ export const DEFAULT_QUIZZES = [
     ]
   },
   {
-    id: 'quiz-dsa-trees',
-    title: 'Binary Tree Operations Quiz',
-    course: '2',
-    lesson: 'l1',
-    max_attempts: 2,
-    passing_percentage: 80,
-    total_marks: 20,
-    duration: '15 mins',
+    id: 'quiz-web-html-css',
+    title: 'HTML & CSS Fundamentals Quiz',
+    course: 'modern-web-development-html-css',
+    courseTitle: 'Web Development: HTML & CSS',
+    lesson: 'web_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
     questions: [
-      { question: 'What is the time complexity of searching in a Balanced Binary Search Tree?', options: ['O(1)', 'O(n)', 'O(log n)', 'O(n log n)'], correct: 2 }
+      { question: 'Which HTML5 element represents the primary navigation links of a page?', options: ['<header>', '<nav>', '<section>', '<aside>'], correct: 1 },
+      { question: 'In the CSS box model, which layer sits between padding and margin?', options: ['Content', 'Border', 'Outline', 'Shadow'], correct: 1 }
     ]
   }
 ];
@@ -2027,12 +2077,120 @@ function setStoredAiEval(subId, score, aiEval) {
 
 export const DEFAULT_ASSIGNMENTS = [
   {
+    id: 'assign-physics-mechanics',
+    title: 'Kinematic Trajectory & Forces Analysis',
+    course: 'physics-mechanics-fundamentals',
+    courseTitle: 'Physics: Mechanics & Energy',
+    chapter: 'physics_m1',
+    chapterTitle: 'Kinematics & Newton\'s Laws',
+    type: 'Text',
+    question: '<p>A projectile is launched with an initial velocity of 20 m/s at an angle of 30° above the horizontal. Assuming g = 9.8 m/s² and negligible air resistance, calculate the maximum height reached and horizontal range. Show equations and steps.</p>',
+    show_answer: true,
+    answer: 'v0y = 20 * sin(30°) = 10 m/s\nv0x = 20 * cos(30°) = 17.32 m/s\nTime to peak t = 10 / 9.8 = 1.02 s\nMax Height H = (10^2) / (2 * 9.8) = 5.10 m\nTotal flight time T = 2 * 1.02 = 2.04 s\nRange R = 17.32 * 2.04 = 35.35 m',
+    evaluation_criteria: [
+      'Decomposes initial velocity into horizontal and vertical vector components',
+      'Applies kinematic equation for maximum vertical height',
+      'Calculates total flight duration correctly',
+      'Determines total horizontal range with appropriate physical units'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>A projectile is launched with an initial velocity of 20 m/s at an angle of 30° above the horizontal. Assuming g = 9.8 m/s² and negligible air resistance, calculate the maximum height reached and horizontal range. Show equations and steps.</p>',
+        sample_answer: 'v0y = 10 m/s, v0x = 17.32 m/s. Max height H = 5.10 m, Total range R = 35.35 m.'
+      }
+    ]
+  },
+  {
+    id: 'assign-calculus-derivatives',
+    title: 'Derivative Optimization & Tangent Analysis',
+    course: 'calculus-advanced-mathematics',
+    courseTitle: 'Mathematics: Calculus & Analysis',
+    chapter: 'math_m1',
+    chapterTitle: 'Limits & Differential Calculus',
+    type: 'Text',
+    question: '<p>Given the cubic polynomial f(x) = 2x³ - 9x² + 12x + 1, find all critical points, determine whether each is a local maximum or minimum using the second derivative test, and state intervals of concavity.</p>',
+    show_answer: true,
+    answer: 'f\'(x) = 6x² - 18x + 12 = 6(x - 1)(x - 2) = 0 => Critical points at x = 1 and x = 2.\nf\'\'(x) = 12x - 18.\nAt x = 1: f\'\'(1) = -6 < 0 => Local Maximum at (1, 6).\nAt x = 2: f\'\'(2) = +6 > 0 => Local Minimum at (2, 5).\nf\'\'(x) = 0 at x = 1.5. Concave down on (-inf, 1.5), concave up on (1.5, +inf).',
+    evaluation_criteria: [
+      'Computes the first derivative f\'(x) accurately',
+      'Solves for critical points x = 1 and x = 2',
+      'Applies second derivative test f\'\'(x) to classify extrema',
+      'Determines inflection point and concavity intervals'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Given the cubic polynomial f(x) = 2x³ - 9x² + 12x + 1, find all critical points, determine whether each is a local maximum or minimum using the second derivative test, and state intervals of concavity.</p>',
+        sample_answer: 'Critical points at x = 1 (local max, 6) and x = 2 (local min, 5). Inflection point at x = 1.5.'
+      }
+    ]
+  },
+  {
+    id: 'assign-chemistry-stoichiometry',
+    title: 'Stoichiometric Yield & Limiting Reactant Analysis',
+    course: 'general-physical-chemistry',
+    courseTitle: 'Chemistry: Atoms, Bonds & Reactions',
+    chapter: 'chem_m2',
+    chapterTitle: 'Reactions, Stoichiometry & Acid-Base Equilibrium',
+    type: 'Text',
+    question: '<p>Consider the reaction: 2 Al + 3 Cl2 -> 2 AlCl3. If 54.0 g of aluminum reacts with 142.0 g of chlorine gas, identify the limiting reactant, calculate the theoretical yield of aluminum chloride in grams, and determine the mass of excess reactant remaining.</p>',
+    show_answer: true,
+    answer: 'Molar masses: Al = 27.0 g/mol, Cl2 = 71.0 g/mol, AlCl3 = 133.5 g/mol.\nMoles of Al = 54.0 / 27.0 = 2.00 mol.\nMoles of Cl2 = 142.0 / 71.0 = 2.00 mol.\nStoichiometric requirement: 2.00 mol Al requires 3.00 mol Cl2. Since only 2.00 mol Cl2 is available, Cl2 is the limiting reactant.\nMoles of AlCl3 produced = 2.00 * (2/3) = 1.33 mol.\nTheoretical yield = 1.33 mol * 133.5 g/mol = 178.0 g.\nMoles of Al consumed = 2.00 * (2/3) = 1.33 mol. Remaining Al = 2.00 - 1.33 = 0.67 mol = 18.0 g.',
+    evaluation_criteria: [
+      'Converts given masses to moles using molar masses',
+      'Correctly identifies Cl2 as the limiting reagent',
+      'Calculates theoretical yield of AlCl3 in grams',
+      'Determines remaining unreacted mass of excess Al'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Calculate the limiting reactant, theoretical yield of AlCl3, and excess reactant remaining when 54.0 g Al reacts with 142.0 g Cl2.</p>',
+        sample_answer: 'Limiting reactant is Cl2. Theoretical yield of AlCl3 is 178.0 g. Excess Al remaining is 18.0 g.'
+      }
+    ]
+  },
+  {
+    id: 'assign-biology-respiration',
+    title: 'Cellular Respiration Pathways Comparison',
+    course: 'cellular-biology-genetics',
+    courseTitle: 'Biology: Cells & Molecular Genetics',
+    chapter: 'bio_m1',
+    chapterTitle: 'Cell Structure & Cellular Energetics',
+    type: 'Text',
+    question: '<p>Compare glycolysis, the citric acid (Krebs) cycle, and oxidative phosphorylation in terms of cellular location, input substrates, net ATP yield, and primary electron carriers produced.</p>',
+    show_answer: true,
+    answer: '1. Glycolysis: Cytoplasm, Input: 1 Glucose, Net ATP: 2 ATP (substrate-level), Electron carriers: 2 NADH.\n2. Citric Acid Cycle: Mitochondrial matrix, Input: 2 Acetyl-CoA, Net ATP: 2 ATP/GTP, Electron carriers: 6 NADH + 2 FADH2.\n3. Oxidative Phosphorylation: Inner mitochondrial membrane (cristae), Input: NADH, FADH2, O2, Net ATP: ~28-32 ATP, Electron carriers: NAD+ and FAD regenerated, H2O formed.',
+    evaluation_criteria: [
+      'Identifies intracellular organelle locations correctly',
+      'Specifies input molecules and products for all three stages',
+      'Contrasts substrate-level vs oxidative ATP synthesis yields',
+      'Explains roles of NADH and FADH2 in electron transport'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Compare glycolysis, the citric acid cycle, and oxidative phosphorylation in terms of location, net ATP, and electron carriers.</p>',
+        sample_answer: 'Glycolysis (cytoplasm, 2 ATP, 2 NADH); Krebs cycle (matrix, 2 ATP, 6 NADH, 2 FADH2); Oxidative phosphorylation (cristae, ~28 ATP, regenerates NAD+/FAD).'
+      }
+    ]
+  },
+  {
     id: 'assign-python-fibonacci',
     title: 'Implementing Fibonacci Sequence Generator',
-    course: '1',
-    courseTitle: 'Python Fundamentals',
-    chapter: '1_m1',
-    chapterTitle: 'Introduction',
+    course: 'python-programming-essentials',
+    courseTitle: 'Python Programming Essentials',
+    chapter: 'python_m1',
+    chapterTitle: 'Python Basics & Core Collections',
     type: 'Text',
     question: '<p>Write a Python function <code>fibonacci(n)</code> that returns the first <code>n</code> Fibonacci numbers as a list. Hand in the source code file or code text.</p>',
     show_answer: true,
@@ -2054,29 +2212,29 @@ export const DEFAULT_ASSIGNMENTS = [
     ]
   },
   {
-    id: 'assign-dsa-sorting',
-    title: 'Custom Merge Sort Complexity Analysis',
-    course: '2',
-    courseTitle: 'Data Structures & Algorithms',
-    chapter: '2_m1',
-    chapterTitle: 'Sorting Algorithms',
-    type: 'PDF',
-    question: '<p>Compare the computational complexity and space requirements of Merge Sort and In-place Quicksort. Submit a PDF report explaining edge cases.</p>',
-    show_answer: false,
-    answer: '',
+    id: 'assign-web-responsive-card',
+    title: 'Responsive Flexbox Product Card Implementation',
+    course: 'modern-web-development-html-css',
+    courseTitle: 'Web Development: HTML & CSS',
+    chapter: 'web_m2',
+    chapterTitle: 'CSS Styling, Box Model & Flexbox',
+    type: 'Text',
+    question: '<p>Write semantic HTML5 markup and modern CSS using Flexbox to build a responsive profile or product card. Ensure proper padding, border-radius, box-shadow, and a hover transition effect.</p>',
+    show_answer: true,
+    answer: '<article class="card">\n  <img src="avatar.jpg" alt="Profile avatar" class="card-img" />\n  <div class="card-body">\n    <h2>Alex Mercer</h2>\n    <p>Senior Full-Stack Developer</p>\n    <button class="btn">Connect</button>\n  </div>\n</article>\n\n<style>\n.card { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; overflow: hidden; }\n.card:hover { transform: translateY(-4px); }\n.card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }\n</style>',
     evaluation_criteria: [
-      'Accurate comparison of Time Complexity (Best, Average, Worst)',
-      'Detailed explanation of Space Complexity differences',
-      'Discussion of stability and real-world trade-offs',
-      'Edge cases (duplicate elements, sorted array, empty array)'
+      'Uses semantic HTML elements (<article>, <h2>, <button>)',
+      'Applies CSS Flexbox alignment properties',
+      'Implements clean spacing via padding and margin',
+      'Demonstrates interactive hover transition'
     ],
-    pass_threshold: 75,
+    pass_threshold: 70,
     min_char_count: 20,
     questions: [
       {
         id: 1,
-        prompt: '<p>Compare the computational complexity and space requirements of Merge Sort and In-place Quicksort. Submit a PDF report explaining edge cases.</p>',
-        sample_answer: ''
+        prompt: '<p>Write semantic HTML5 and CSS Flexbox code for a responsive card component with hover transition.</p>',
+        sample_answer: 'Semantic <article> with display: flex, padding, border-radius, and transform transition on hover.'
       }
     ]
   }

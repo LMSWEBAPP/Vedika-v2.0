@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Brain, CheckCircle, Circle, ChevronRight, Clock,
+  Brain, CheckCircle, Circle, ChevronRight, ChevronDown, ChevronUp, Clock,
   Loader2, Sparkles, RotateCcw, ArrowLeft, Send,
   FileText, Award, AlertCircle, ThumbsUp, HelpCircle, Terminal,
   BookOpen, Bot, MessageSquare, Mic, MicOff, BookMarked,
@@ -44,6 +44,18 @@ function extractYoutubeId(urlOrId) {
   return match ? match[1] : urlOrId;
 }
 
+function renderCleanFormattedText(text) {
+  if (!text || typeof text !== 'string') return null;
+  const clean = text.replace(/#{1,6}\s+/g, '');
+  const parts = clean.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} style={{ fontWeight: 700, color: 'inherit' }}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const router  = useRouter();
   const [next, setNext] = useState(null);
@@ -59,6 +71,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [activeCompanionTab, setActiveCompanionTab] = useState('ask_vedika'); // 'ask_vedika' | 'notes' | 'qa' | 'quiz'
   const [isOverviewModalOpen, setIsOverviewModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false); // 90-10 collapsed by default, 50-50 when expanded
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false); // Collapsed initially until user clicks
 
   // Q&A Chat states
   const [chatQuestion, setChatQuestion] = useState('');
@@ -113,17 +126,47 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [submittingAss, setSubmittingAss] = useState(false);
   const [assSuccessMsg, setAssSuccessMsg] = useState('');
 
-  // 24/7 Desktop Mascot Connection State
+  // 24/7 Desktop Mascot Connection State & Realtime Study Notes Sync
   const [isMascotConnected, setIsMascotConnected] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const bridge = getMascotBridge();
-    const unsub = bridge.onStatusChange((status) => {
+    const unsubStatus = bridge.onStatusChange((status) => {
       setIsMascotConnected(status);
     });
-    return () => unsub();
-  }, []);
+
+    const unsubMsg = bridge.subscribe((msg) => {
+      if (!msg) return;
+      const type = msg.type || msg.event;
+      if (type === 'STUDY_NOTE_ADDED' || type === 'STUDY_NOTE_UPDATED') {
+        const note = msg.payload;
+        if (!note) return;
+        setNotes((prev) => {
+          const exists = prev.some((n) => n.id === note.id);
+          const updated = exists ? prev.map((n) => (n.id === note.id ? note : n)) : [note, ...prev];
+          try {
+            localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+          } catch (_) {}
+          return updated;
+        });
+        setAllCourseNotes((prev) => {
+          const exists = prev.some((n) => n.id === note.id);
+          const updated = exists ? prev.map((n) => (n.id === note.id ? note : n)) : [note, ...prev];
+          try {
+            localStorage.setItem(`vedika_course_notes_${lesson?.courseId || 'general'}`, JSON.stringify(updated));
+          } catch (_) {}
+          return updated;
+        });
+        setRecentNoteAlert(note);
+      }
+    });
+
+    return () => {
+      unsubStatus();
+      unsubMsg();
+    };
+  }, [lesson?.id, lesson?.courseId]);
 
   // Load current user & notes
   useEffect(() => {
@@ -249,9 +292,12 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
         videoId: vId,
         timestampSeconds: targetSecs,
         timestampFormatted: formatTimestamp(targetSecs),
+        courseId: lesson?.courseId || lesson?.course || '',
+        lessonId: lesson?.id || '',
         lessonTitle: lesson?.title || '',
-        chapterTitle: lesson?.chapterTitle || lesson?.chapter || '',
+        chapterTitle: lesson?.chapterTitle || lesson?.chapter || lesson?.moduleTitle || '',
         courseTitle: lesson?.courseTitle || '',
+        topic: lesson?.title || '',
         overview: lesson?.overview || '',
         conceptSummary: lesson?.overview || ''
       });
@@ -307,6 +353,51 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   // --------------------------------------------------------------------------
   // TAB 2: PERSONAL NOTES HANDLERS
   // --------------------------------------------------------------------------
+  const handleSaveQuickNote = (noteText, timeFormatted) => {
+    if (!noteText || !noteText.trim()) return;
+    const cleanText = noteText.replace(/\*\*/g, '').trim();
+    const noteObj = {
+      id: Date.now().toString(),
+      lessonId: lesson?.id,
+      lessonTitle: lesson?.title,
+      courseId: lesson?.courseId || 'general',
+      courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
+      noteText: cleanText,
+      timestampSeconds: Math.floor(videoCurrentTime || 0),
+      timestampFormatted: timeFormatted || formatTimestamp(videoCurrentTime),
+      source: 'ai_explainer',
+      createdAt: new Date().toISOString()
+    };
+    const updated = [noteObj, ...notes];
+    setNotes(updated);
+    try {
+      localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+      const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
+      const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
+      const updatedCourse = [noteObj, ...curCourseNotes];
+      localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
+      setAllCourseNotes(updatedCourse);
+    } catch (err) {}
+    setRecentNoteAlert(noteObj);
+    try {
+      const bridge = getMascotBridge();
+      bridge.send({
+        type: 'SAVE_STUDY_NOTE',
+        payload: {
+          noteText: cleanText,
+          courseId: lesson?.courseId || '',
+          courseTitle: lesson?.courseTitle || '',
+          lessonId: lesson?.id || '',
+          lessonTitle: lesson?.title || '',
+          timestampSeconds: Math.floor(videoCurrentTime || 0),
+          timestampFormatted: timeFormatted || formatTimestamp(videoCurrentTime),
+          topic: lesson?.title || '',
+          source: 'webapp_summary'
+        }
+      });
+    } catch (_) {}
+  };
+
   const handleSaveManualNote = (e) => {
     if (e) e.preventDefault();
     if (!newNoteText.trim()) return;
@@ -1052,32 +1143,112 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
                         {aiExplainerData && (
                           <div style={{
-                            padding: 14,
                             borderRadius: 12,
                             background: T.s2,
                             border: `1px solid ${T.border}`,
+                            overflow: 'hidden',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 10,
-                            fontSize: 12.5,
-                            lineHeight: 1.5
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                           }}>
-                            <div style={{ fontWeight: 700, color: panelColor, display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <Sparkles size={14} />
-                              <span>Lecture Concept Breakdown</span>
-                            </div>
-                            <div style={{ color: T.text }}>
-                              {aiExplainerData.coreExplanation}
-                            </div>
-                            {aiExplainerData.keyTakeaways?.length > 0 && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <span style={{ fontWeight: 700, fontSize: 11.5, color: T.muted }}>Key Takeaways:</span>
-                                {aiExplainerData.keyTakeaways.map((point, i) => (
-                                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                                    <span style={{ color: panelColor }}>•</span>
-                                    <span style={{ color: T.muted }}>{point}</span>
+                            {/* Collapsible Header Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                              style={{
+                                width: '100%',
+                                padding: '12px 14px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'background 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = `${panelColor}0c`; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Sparkles size={15} style={{ color: panelColor, flexShrink: 0 }} />
+                                <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ fontWeight: 700, color: T.text, fontSize: 12.5 }}>
+                                    Lecture Summary & Concepts
+                                  </span>
+                                  <span style={{
+                                    fontSize: 10.5,
+                                    fontWeight: 600,
+                                    color: panelColor,
+                                    background: `${panelColor}15`,
+                                    padding: '2px 6px',
+                                    borderRadius: 6
+                                  }}>
+                                    at {aiExplainerData.timestamp || formatTimestamp(videoCurrentTime)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: panelColor, fontSize: 12, fontWeight: 600 }}>
+                                <span>{isSummaryExpanded ? 'Hide Summary' : 'View Summary'}</span>
+                                {isSummaryExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </div>
+                            </button>
+
+                            {/* Collapsible Body */}
+                            {isSummaryExpanded && (
+                              <div style={{
+                                padding: '0 14px 14px 14px',
+                                borderTop: `1px solid ${T.border}`,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 10,
+                                fontSize: 12.5,
+                                lineHeight: 1.55,
+                                paddingTop: 12
+                              }}>
+                                <div style={{ color: T.text, lineHeight: 1.6 }}>
+                                  {renderCleanFormattedText(aiExplainerData.coreExplanation || aiExplainerData.summary)}
+                                </div>
+                                {aiExplainerData.keyTakeaways?.length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                                    <span style={{ fontWeight: 700, fontSize: 11.5, color: T.muted }}>Key Takeaways:</span>
+                                    {aiExplainerData.keyTakeaways.map((point, i) => (
+                                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                        <span style={{ color: panelColor, fontWeight: 700, lineHeight: 1.2 }}>•</span>
+                                        <span style={{ color: T.muted, lineHeight: 1.45 }}>
+                                          {renderCleanFormattedText(point)}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const noteContent = `${aiExplainerData.coreExplanation || ''}\n\nKey Takeaways:\n${(aiExplainerData.keyTakeaways || []).map(p => `• ${p}`).join('\n')}`;
+                                    handleSaveQuickNote(noteContent, aiExplainerData.timestamp || formatTimestamp(videoCurrentTime));
+                                  }}
+                                  style={{
+                                    marginTop: 8,
+                                    padding: '7px 12px',
+                                    borderRadius: 8,
+                                    background: `${panelColor}15`,
+                                    border: `1px solid ${panelColor}40`,
+                                    color: panelColor,
+                                    fontSize: 11.5,
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = panelColor; e.currentTarget.style.color = '#fff'; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = `${panelColor}15`; e.currentTarget.style.color = panelColor; }}
+                                >
+                                  <BookMarked size={13} />
+                                  <span>Save Points to Personal Notes</span>
+                                </button>
                               </div>
                             )}
                           </div>

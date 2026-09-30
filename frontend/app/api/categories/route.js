@@ -9,15 +9,12 @@ const categoriesFilePath = path.join(process.cwd(), 'data', 'categories.json');
 const coursesFilePath = path.join(process.cwd(), 'data', 'courses.json');
 
 const DEFAULT_CATEGORIES = [
-  "Web Development",
-  "Frontend",
-  "Framework",
-  "Data Structures & Algorithms",
-  "Python Programming",
-  "Finance",
-  "Business",
-  "Design",
-  "Personal Development"
+  "Physics",
+  "Maths",
+  "Chemistry",
+  "Biology",
+  "Python",
+  "Web Development"
 ];
 
 async function readCategories() {
