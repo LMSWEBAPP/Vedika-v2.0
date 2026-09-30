@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Star, ArrowUpRight } from 'lucide-react';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import CourseInteractiveCanvas from './CourseInteractiveCanvas';
 import './emotions-slider.css';
 
@@ -46,6 +47,9 @@ export default function CourseEmotionsSlider({
   const { activeIdx } = state;
   const trackRef = useRef(null);
 
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+
   // By default, make the middle item show and set initial index
   useEffect(() => {
     if (items && items.length > 0) {
@@ -70,8 +74,8 @@ export default function CourseEmotionsSlider({
     dispatch({ type: 'SET_INDEX', payload: idx });
   };
 
-  const CARD_WIDTH = 380;
-  const CARD_GAP = 28;
+  const CARD_WIDTH = isMobile ? (typeof window !== 'undefined' ? Math.min(window.innerWidth - 48, 330) : 310) : (isTablet ? 340 : 380);
+  const CARD_GAP = isMobile ? 16 : (isTablet ? 20 : 28);
   const slideStep = CARD_WIDTH + CARD_GAP;
 
   return (

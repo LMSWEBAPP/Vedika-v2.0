@@ -20,6 +20,8 @@ import { EditorView, Decoration, WidgetType } from "@codemirror/view";
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
+import { getMascotBridge } from '@/lib/mascotBridge';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 
 // ── CodeMirror Error Widget ──────────────────────────────────────────────────
 const setErrorEffect = StateEffect.define();
@@ -821,14 +823,74 @@ export default function CodePuzzle() {
   const debounceTimerRef = useRef(null);
 
   // Resizable split percentages
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const [mobileActiveView, setMobileActiveView] = useState('editor'); // 'editor' | 'panel'
   const [bottomSplitPercent, setBottomSplitPercent] = useState(38);
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(460);
   const isDraggingBottomRef = useRef(false);
   const isDraggingRightRef = useRef(false);
   const centerContainerRef = useRef(null);
-
   const validateStepRef = useRef(null);
+
+  // ── Synchronize active code, errors, and puzzle state with Desktop Mascot ──
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const bridge = getMascotBridge();
+        const err = validationError?.message || traceError || '';
+        bridge.send({
+          type: 'WEBAPP_STATE_UPDATE',
+          payload: {
+            page: '/code-puzzle',
+            activity: 'dsa_puzzle',
+            puzzleTitle: activePuzzle?.title || '',
+            puzzleDifficulty: activePuzzle?.difficulty || '',
+            puzzleDescription: activePuzzle?.description || '',
+            sampleInput: activePuzzle?.sampleInput || '',
+            sampleOutput: activePuzzle?.sampleOutput || '',
+            starterCode: activePuzzle?.starterCode || '',
+            studentCode: activeFile?.content || '',
+            activeFileName: activeFileName || 'main.py',
+            cursorLine: cursorPos?.line || 1,
+            cursorCol: cursorPos?.col || 1,
+            lastError: err,
+            consoleOutput: rawOutputLog?.slice(-500) || '',
+            stepPassed,
+            currentStepIndex
+          }
+        });
+      } catch (_) {}
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [activePuzzle?.title, activeFile?.content, validationError, traceError, rawOutputLog, cursorPos, stepPassed, currentStepIndex]);
+
+  const handleAskVedikaCodeCheck = useCallback(() => {
+    try {
+      const bridge = getMascotBridge();
+      const err = validationError?.message || traceError || '';
+      bridge.send({
+        type: 'CHECK_STUDENT_CODE',
+        payload: {
+          puzzleTitle: activePuzzle?.title || 'Coding Problem',
+          studentCode: activeFile?.content || '',
+          lastError: err,
+          line: cursorPos?.line || 1
+        }
+      });
+      bridge.send({
+        type: 'PUZZLE_STUCK',
+        payload: {
+          puzzleTitle: activePuzzle?.title || 'Coding Problem',
+          studentCode: activeFile?.content || '',
+          lastError: err,
+          line: cursorPos?.line || 1
+        }
+      });
+    } catch (_) {}
+  }, [activePuzzle?.title, activeFile?.content, validationError, traceError, cursorPos]);
 
   // ── Code Change Handler (Updates Active File) ───────────────────────────────
   const handleCodeChange = useCallback((val) => {
@@ -1974,22 +2036,26 @@ export default function CodePuzzle() {
 
       {/* ── TOP HEADER BAR ── */}
       <div style={{
-        height: 48,
+        height: isMobile ? 'auto' : 48,
+        minHeight: 48,
         background: '#07090F',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 16px',
+        padding: isMobile ? '8px 12px' : '0 16px',
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
+        gap: 8,
         flexShrink: 0,
         zIndex: 20
       }}>
         {/* Left: Back Button & Breadcrumbs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12, flexWrap: 'wrap' }}>
           {/* Back Button */}
           <button
-            onClick={() => router.push('/vedika-ai')}
-            title="Back to Vedika AI"
+            onClick={() => router.push('/courses')}
+            title="Return to Courses"
+            aria-label="Return to Courses"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -2007,17 +2073,39 @@ export default function CodePuzzle() {
             <ChevronLeft size={16} />
           </button>
 
-          {/* Breadcrumb Path */}
+          {/* Breadcrumb Path with Clickable Destinations */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
-            <span style={{ color: '#64748B' }}>Workspace Sandbox</span>
+            <button
+              onClick={() => router.push('/courses')}
+              style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#38BDF8'}
+              onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
+              title="Navigate to Courses"
+            >
+              Courses
+            </button>
             <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
+            {!isMobile && (
+              <>
+                <button
+                  onClick={() => router.push('/vedika-ai')}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#A855F7'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
+                  title="Navigate to Vedika AI"
+                >
+                  Vedika AI
+                </button>
+                <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
+              </>
+            )}
             
             {/* Category Selector (Python vs HTML / Web) */}
             <CustomDropdown
               value={category}
               onChange={handleCategoryChange}
               color={category === 'html' ? '#38BDF8' : '#A855F7'}
-              minWidth={125}
+              minWidth={isMobile ? 110 : 125}
               options={[
                 { value: 'programming', label: 'Python 3.11' },
                 { value: 'html', label: 'HTML / Web' }
@@ -2046,8 +2134,8 @@ export default function CodePuzzle() {
                   setCompiledWebTime(Date.now());
                 }}
                 color="#38BDF8"
-                minWidth={180}
-                maxWidth={360}
+                minWidth={isMobile ? 140 : 180}
+                maxWidth={isMobile ? 220 : 360}
                 options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
               />
             ) : (
@@ -2063,16 +2151,82 @@ export default function CodePuzzle() {
                   setValidationError(null);
                 }}
                 color="#A855F7"
-                minWidth={180}
-                maxWidth={360}
+                minWidth={isMobile ? 140 : 180}
+                maxWidth={isMobile ? 220 : 360}
                 options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
               />
             )}
           </div>
         </div>
 
+        {/* Mobile View Selector */}
+        {isMobile && (
+          <div style={{ display: 'flex', width: '100%', background: 'rgba(255, 255, 255, 0.06)', borderRadius: 8, padding: 2, gap: 2, order: 3 }}>
+            <button
+              onClick={() => setMobileActiveView('editor')}
+              style={{
+                flex: 1,
+                background: mobileActiveView === 'editor' ? '#A855F7' : 'transparent',
+                color: mobileActiveView === 'editor' ? '#fff' : '#94A3B8',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              💻 Code Editor
+            </button>
+            <button
+              onClick={() => setMobileActiveView('panel')}
+              style={{
+                flex: 1,
+                background: mobileActiveView === 'panel' ? '#A855F7' : 'transparent',
+                color: mobileActiveView === 'panel' ? '#fff' : '#94A3B8',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {category === 'html' ? (activeRightTab === 'preview' ? '🌐 Live Preview' : '📖 Guide') : (activeRightTab === 'visualizer' ? '⚡ Visualizer' : '📖 Guide')}
+            </button>
+          </div>
+        )}
+
         {/* Right: Actions (Save, Reset, Run Code) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Courses Quick Navigation Button */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('selected_course_id');
+                window.dispatchEvent(new CustomEvent('reset_courses_view'));
+              }
+              router.push('/courses');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              borderRadius: 8,
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#CBD5E1',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            title="Browse all courses"
+          >
+            <BookOpen size={14} color="#38BDF8" />
+            <span>Courses</span>
+          </button>
           {/* Save Button */}
           <button
             onClick={handleSaveCode}
@@ -2117,6 +2271,30 @@ export default function CodePuzzle() {
           >
             <RotateCcw size={14} />
             <span>Reset</span>
+          </button>
+
+          {/* Ask Vedika Code Help Button */}
+          <button
+            onClick={handleAskVedikaCodeCheck}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 13px',
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.22))',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
+              color: '#FBBF24',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
+              transition: 'all 0.15s ease'
+            }}
+            title="Ask Vedika AI Tutor to inspect your code, explain errors, and guide your fix"
+          >
+            <Sparkles size={13} color="#FBBF24" />
+            <span>Ask Vedika</span>
           </button>
 
           {/* Run Code Button */}
@@ -2439,7 +2617,7 @@ export default function CodePuzzle() {
           ref={centerContainerRef}
           style={{
             flex: 1,
-            display: 'flex',
+            display: (isMobile && mobileActiveView === 'panel') ? 'none' : 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             minHeight: 0,
@@ -2777,38 +2955,40 @@ export default function CodePuzzle() {
         </div>
 
         {/* Vertical Resizer Bar for Right Panel */}
-        <div
-          onMouseDown={(e) => {
-            e.preventDefault();
-            isDraggingRightRef.current = true;
-            const onMouseMove = (moveEvent) => {
-              if (!isDraggingRightRef.current) return;
-              const newW = window.innerWidth - moveEvent.clientX;
-              setRightPanelWidth(Math.max(340, Math.min(700, newW)));
-            };
-            const onMouseUp = () => {
-              isDraggingRightRef.current = false;
-              document.removeEventListener('mousemove', onMouseMove);
-              document.removeEventListener('mouseup', onMouseUp);
-            };
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-          }}
-          style={{
-            width: 5,
-            background: 'rgba(255, 255, 255, 0.08)',
-            cursor: 'col-resize',
-            flexShrink: 0,
-            zIndex: 10
-          }}
-        />
+        {!isMobile && (
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              isDraggingRightRef.current = true;
+              const onMouseMove = (moveEvent) => {
+                if (!isDraggingRightRef.current) return;
+                const newW = window.innerWidth - moveEvent.clientX;
+                setRightPanelWidth(Math.max(340, Math.min(700, newW)));
+              };
+              const onMouseUp = () => {
+                isDraggingRightRef.current = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+              };
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            }}
+            style={{
+              width: 5,
+              background: 'rgba(255, 255, 255, 0.08)',
+              cursor: 'col-resize',
+              flexShrink: 0,
+              zIndex: 10
+            }}
+          />
+        )}
 
         {/* ── 5. RIGHT MULTI-TAB PANEL ── */}
         <div style={{
-          width: rightPanelWidth,
+          width: isMobile ? '100%' : (isTablet ? 360 : rightPanelWidth),
           background: '#090C15',
-          borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
+          borderLeft: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+          display: (isMobile && mobileActiveView === 'editor') ? 'none' : 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
           flexShrink: 0

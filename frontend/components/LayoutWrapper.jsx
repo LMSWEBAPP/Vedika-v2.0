@@ -132,6 +132,14 @@ export default function LayoutWrapper({ children }) {
           }
         }
       }
+
+      if (targetRoute.includes('/courses') && targetRoute.includes('category=')) {
+        const match = targetRoute.match(/category=([^&]+)/);
+        if (match && match[1]) {
+          const cat = decodeURIComponent(match[1]);
+          window.dispatchEvent(new CustomEvent('change_course_category', { detail: { category: cat } }));
+        }
+      }
     });
 
     // Notify mascot of page changes

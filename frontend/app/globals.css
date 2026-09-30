@@ -159,28 +159,64 @@ body, button, input, textarea, select {
 button,
 button:hover,
 button:active,
-button:focus,
-button:focus-visible,
 [type="button"],
 [type="button"]:hover,
 [type="button"]:active,
-[type="button"]:focus,
 [type="submit"],
 [type="submit"]:hover,
 [type="submit"]:active,
-[type="submit"]:focus,
 [type="reset"],
 [type="reset"]:hover,
 [type="reset"]:active,
-[type="reset"]:focus,
 .btn,
 .btn:hover,
-.btn:active,
-.btn:focus {
+.btn:active {
   transition: none !important;
   box-shadow: none !important;
   filter: none !important;
   text-shadow: none !important;
+}
+
+/* Accessible Keyboard Focus Rings */
+:focus-visible {
+  outline: 2px solid var(--accent, #4F83F6) !important;
+  outline-offset: 2px !important;
+}
+
+button:focus-visible,
+[type="button"]:focus-visible,
+[type="submit"]:focus-visible,
+[type="reset"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent, #4F83F6) !important;
+  outline-offset: 2px !important;
+}
+
+/* Screen Reader Utility */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+.not-sr-only {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
 }
 
 button:not(.carousel-nav-arrow):not(.showcase-nav-btn),

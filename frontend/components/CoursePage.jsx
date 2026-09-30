@@ -13,6 +13,7 @@ import CourseEmotionsSlider from './CourseEmotionsSlider';
 import PacmanPagination from './PacmanPagination';
 import PracticePlaygroundModal from './PracticePlaygroundModal';
 import { getSubjectArtwork } from '@/lib/artwork';
+import { getMascotBridge } from '@/lib/mascotBridge';
 const Playground = dynamic(() => import('./Playground'), { ssr: false });
 
 const DECK_ROTATIONS = ['4deg', '-2deg', '-9deg', '7deg', '3deg', '-5deg', '6deg'];
@@ -262,6 +263,73 @@ export default function CoursePage() {
       behavior: 'smooth'
     });
   };
+
+  const handleCategorySelection = useCallback((catName) => {
+    if (!catName) return;
+    const target = catName.trim().toLowerCase();
+    let matched = allCategories.find(c => c.toLowerCase() === target);
+    if (!matched) {
+      matched = allCategories.find(c => c.toLowerCase().includes(target) || target.includes(c.toLowerCase()));
+    }
+    const finalCat = matched || catName;
+    setSelectedCategory(finalCat);
+    setActiveDrilldownCategory(finalCat);
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        const el = document.getElementById('courses-section') || document.getElementById('all-courses-grid') || categoriesContainerRef.current;
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [allCategories]);
+
+  // Sync category & course from URL query params and Desktop Mascot bridge commands
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const parseParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get('category');
+      if (cat) {
+        handleCategorySelection(cat);
+      }
+      const courseId = params.get('course') || params.get('courseId');
+      if (courseId) {
+        const targetCourse = courses.find(c => String(c.id) === String(courseId) || String(c.name) === String(courseId));
+        if (targetCourse) handleSelectCourse(targetCourse);
+      }
+    };
+
+    parseParams();
+
+    const handleCustomCatEvent = (e) => {
+      const cat = e?.detail?.category;
+      if (cat) handleCategorySelection(cat);
+    };
+    window.addEventListener('change_course_category', handleCustomCatEvent);
+
+    let unsubBridge = () => {};
+    try {
+      const bridge = getMascotBridge();
+      unsubBridge = bridge.onAction((action, target) => {
+        if (action === 'select_category' || action === 'filter_category') {
+          if (target) handleCategorySelection(target);
+        } else if (action === 'select_course' || action === 'open_course') {
+          if (target) {
+            const found = courses.find(c =>
+              String(c.id).toLowerCase() === target.toLowerCase() ||
+              (c.title && c.title.toLowerCase().includes(target.toLowerCase()))
+            );
+            if (found) handleSelectCourse(found);
+          }
+        }
+      });
+    } catch (_) {}
+
+    return () => {
+      window.removeEventListener('change_course_category', handleCustomCatEvent);
+      unsubBridge();
+    };
+  }, [handleCategorySelection, courses]);
 
   // Fetch courses and load completion progress
   useEffect(() => {

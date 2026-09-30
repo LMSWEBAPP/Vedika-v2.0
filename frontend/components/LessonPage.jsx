@@ -10,7 +10,7 @@ import {
   Trash2, Plus, Play, Download, Bell, Megaphone, X
 } from 'lucide-react';
 import { T, COURSE, geminiCall, buildQuizPrompt, parseQuizOutput, getCourseDetails } from '@/lib/lms-data';
-import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import dynamic from 'next/dynamic';
 import {
   getCourses, getQuizzes, submitQuizResponse, getQuizSubmissions,
@@ -58,6 +58,9 @@ function renderCleanFormattedText(text) {
 
 export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const router  = useRouter();
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const isStackedLayout = isMobile || isTablet;
   const [next, setNext] = useState(null);
   const [isPlaygroundOpen, setIsPlaygroundOpen] = useState(false);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
@@ -97,7 +100,6 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
   // System states
   const [currentUser, setCurrentUser] = useState(null);
-  const isMobile = useMediaQuery(isMobileMQ);
   const isTabletOrSmallDesktop = useMediaQuery('(max-width: 1150px)');
   const rPad = isMobile ? 16 : 32;
 
@@ -282,31 +284,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     const vId = extractYoutubeId(lesson?.vid);
     setExplainerLoading(true);
 
-    // 1. Dispatch directly to 24/7 Desktop Mascot via local WebSocket bridge
     try {
-      const bridge = getMascotBridge();
-      const isMascotAlive = bridge.isMascotConnected();
-      setIsMascotConnected(isMascotAlive);
-
-      bridge.sendVideoMoment({
-        videoId: vId,
-        timestampSeconds: targetSecs,
-        timestampFormatted: formatTimestamp(targetSecs),
-        courseId: lesson?.courseId || lesson?.course || '',
-        lessonId: lesson?.id || '',
-        lessonTitle: lesson?.title || '',
-        chapterTitle: lesson?.chapterTitle || lesson?.chapter || lesson?.moduleTitle || '',
-        courseTitle: lesson?.courseTitle || '',
-        topic: lesson?.title || '',
-        overview: lesson?.overview || '',
-        conceptSummary: lesson?.overview || ''
-      });
-    } catch (mascotErr) {
-      console.warn('[MascotBridge] Video moment dispatch notice:', mascotErr);
-    }
-
-    // 2. Query explain API for structured in-drawer breakdown
-    try {
+      // 1. Query explain API for structured in-depth breakdown at exact timestamp
       const res = await fetch('/api/youtube/explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -317,11 +296,41 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
         })
       });
 
+      let explainedData = null;
       if (res.ok) {
-        const data = await res.json();
-        setAiExplainerData(data);
+        explainedData = await res.json();
+        setAiExplainerData(explainedData);
       } else {
         throw new Error('Explain request failed');
+      }
+
+      // 2. Dispatch verified timeline moment to Desktop Mascot via local WebSocket bridge
+      try {
+        const bridge = getMascotBridge();
+        const isMascotAlive = bridge.isMascotConnected();
+        setIsMascotConnected(isMascotAlive);
+
+        const verifiedTopic = explainedData?.topic || explainedData?.chapterTitle || lesson?.title || '';
+        const verifiedConcept = explainedData?.coreExplanation || explainedData?.summary || '';
+        const verifiedSnippet = explainedData?.transcriptSnippet || '';
+
+        bridge.sendVideoMoment({
+          videoId: vId,
+          timestampSeconds: targetSecs,
+          timestampFormatted: formatTimestamp(targetSecs),
+          courseId: lesson?.courseId || lesson?.course || '',
+          lessonId: lesson?.id || '',
+          lessonTitle: lesson?.title || '',
+          chapterTitle: explainedData?.chapterTitle || lesson?.chapterTitle || lesson?.chapter || lesson?.moduleTitle || '',
+          courseTitle: lesson?.courseTitle || '',
+          topic: verifiedTopic,
+          overview: verifiedConcept,
+          conceptSummary: verifiedConcept,
+          transcriptSnippet: verifiedSnippet,
+          keyTakeaways: explainedData?.keyTakeaways || []
+        });
+      } catch (mascotErr) {
+        console.warn('[MascotBridge] Video moment dispatch notice:', mascotErr);
       }
     } catch (err) {
       console.warn('Explain moment fallback:', err);
@@ -331,18 +340,33 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system: `You are Vedika, an expert AI tutor for the lesson "${lesson.title}". Explain the key concept at timestamp ${formatTimestamp(targetSecs)} clearly with key takeaways.`,
+            system: `You are Vedika, an expert AI tutor for the lesson "${lesson.title}". Explain the key concept at timestamp ${formatTimestamp(targetSecs)} clearly with key takeaways. Do not treat mid-lecture as introduction.`,
             user: `Explain the concept being taught at ${formatTimestamp(targetSecs)} in ${lesson.title}. Overview: ${lesson.overview}`
           })
         });
         if (gemRes.ok) {
           const gemData = await gemRes.json();
-          setAiExplainerData({
+          const fallbackData = {
             timestamp: formatTimestamp(targetSecs),
             coreExplanation: gemData.text || 'Key learning moment.',
             keyTakeaways: [lesson.overview?.slice(0, 80) || 'Core conceptual point.'],
             transcriptSnippet: `Video paused at ${formatTimestamp(targetSecs)}.`
-          });
+          };
+          setAiExplainerData(fallbackData);
+          try {
+            const bridge = getMascotBridge();
+            bridge.sendVideoMoment({
+              videoId: vId,
+              timestampSeconds: targetSecs,
+              timestampFormatted: formatTimestamp(targetSecs),
+              courseId: lesson?.courseId || '',
+              lessonId: lesson?.id || '',
+              lessonTitle: lesson?.title || '',
+              topic: lesson?.title || '',
+              overview: fallbackData.coreExplanation,
+              conceptSummary: fallbackData.coreExplanation
+            });
+          } catch (_) {}
         }
       } catch (e) {}
     } finally {
@@ -834,17 +858,19 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           display: 'flex',
           flex: 1,
           minHeight: 0,
-          height: 'calc(100% - 46px)',
-          gap: 12,
+          height: isStackedLayout ? 'auto' : 'calc(100% - 46px)',
+          flexDirection: isStackedLayout ? 'column' : 'row',
+          gap: isStackedLayout ? 16 : 14,
           alignItems: 'stretch',
-          overflow: 'hidden',
+          overflow: isStackedLayout ? 'visible' : 'hidden',
+          overflowY: isStackedLayout ? 'auto' : 'hidden',
           width: '100%',
           boxSizing: 'border-box'
         }}>
           {/* Left: Video Player */}
           <div style={{
-            flex: isExpanded ? '0 0 calc(50% - 6px)' : '0 0 calc(90% - 6px)',
-            width: isExpanded ? 'calc(50% - 6px)' : 'calc(90% - 6px)',
+            flex: isStackedLayout ? 'none' : (isExpanded ? '0 0 calc(62% - 7px)' : '0 0 calc(94% - 7px)'),
+            width: isStackedLayout ? '100%' : (isExpanded ? 'calc(62% - 7px)' : 'calc(94% - 7px)'),
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             flexDirection: 'column',
@@ -853,7 +879,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             background: T.s1,
             overflow: 'hidden',
             minWidth: 0,
-            height: '100%',
+            height: isStackedLayout ? 'auto' : '100%',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
             boxSizing: 'border-box'
           }}>
@@ -920,7 +946,14 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
               </div>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, height: 'calc(100% - 40px)', background: '#000', overflow: 'hidden' }}>
+            <div style={{
+              flex: 1,
+              minHeight: isStackedLayout ? 240 : 0,
+              height: isStackedLayout ? 'auto' : 'calc(100% - 40px)',
+              aspectRatio: isStackedLayout ? '16/9' : 'unset',
+              background: '#000',
+              overflow: 'hidden'
+            }}>
               <VideoPlayerWithAI
                 videoId={extractYoutubeId(lesson.vid)}
                 onTimeUpdate={(secs) => setVideoCurrentTime(secs)}
@@ -938,18 +971,25 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
           {/* Right Section: Companion Drawer Panel + 4 Tabs Column */}
           <div style={{
-            flex: isExpanded ? '0 0 calc(50% - 6px)' : '0 0 calc(10% - 6px)',
-            width: isExpanded ? 'calc(50% - 6px)' : 'calc(10% - 6px)',
-            maxWidth: isExpanded ? 'calc(50% - 6px)' : 'calc(10% - 6px)',
+            flex: isStackedLayout
+              ? 'none'
+              : (isExpanded ? '0 0 calc(38% - 7px)' : '0 0 calc(6% - 7px)'),
+            width: isStackedLayout
+              ? '100%'
+              : (isExpanded ? 'calc(38% - 7px)' : 'calc(6% - 7px)'),
+            maxWidth: isStackedLayout
+              ? '100%'
+              : (isExpanded ? 'calc(38% - 7px)' : 'calc(6% - 7px)'),
             flexShrink: 0,
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: isStackedLayout ? 'column-reverse' : 'row',
             alignItems: 'stretch',
-            height: '100%',
+            height: isStackedLayout ? 'auto' : '100%',
+            minHeight: isStackedLayout && isExpanded ? 500 : 'auto',
             minWidth: 0,
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            gap: 0
+            gap: isStackedLayout ? 10 : 0
           }}>
             {/* Opening Companion Tab Drawer Panel */}
             {isExpanded && (() => {
@@ -1432,8 +1472,24 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
                                     </button>
                                   </div>
                                 </div>
-                                <div style={{ fontSize: 12.5, color: T.text }}>
-                                  {n.noteText}
+                                <div style={{
+                                  fontSize: 12.5,
+                                  color: T.text,
+                                  whiteSpace: 'pre-line',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 5
+                                }}>
+                                  {(n.noteText || '').split('\n').filter(Boolean).map((line, lIdx) => {
+                                    const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
+                                    const cleanLine = isBullet ? line.replace(/^[•\-*]\s*/, '').trim() : line.trim();
+                                    return (
+                                      <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, lineHeight: 1.55 }}>
+                                        <span style={{ color: panelColor, fontSize: 13, lineHeight: '18px', userSelect: 'none', flexShrink: 0 }}>•</span>
+                                        <span style={{ flex: 1, wordBreak: 'break-word' }}>{cleanLine}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             ))

@@ -14,15 +14,11 @@ export default function Header() {
   const pathname = usePathname();
 
   const [coursesDropdownOpen, setCoursesDropdownOpen] = useState(false);
-  const [aiDropdownOpen, setAiDropdownOpen] = useState(false);
-  const [labsDropdownOpen, setLabsDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
   const coursesDropdownTimer = useRef(null);
-  const aiDropdownTimer = useRef(null);
-  const labsDropdownTimer = useRef(null);
   const profileRef = useRef(null);
 
   const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
@@ -35,25 +31,25 @@ export default function Header() {
   }, []);
 
   const handleScheduleHideTopNav = useCallback(() => {
-    if (coursesDropdownOpen || aiDropdownOpen || labsDropdownOpen || profileDropdownOpen) return;
+    if (coursesDropdownOpen || profileDropdownOpen) return;
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
       setIsTopNavVisible(false);
     }, 850);
-  }, [coursesDropdownOpen, aiDropdownOpen, labsDropdownOpen, profileDropdownOpen]);
+  }, [coursesDropdownOpen, profileDropdownOpen]);
 
   useEffect(() => {
     if (!isAskVedika) return;
     const handleMouseMove = (e) => {
       if (e.clientY <= 55) {
         handleShowTopNav();
-      } else if (e.clientY > 135 && !coursesDropdownOpen && !aiDropdownOpen && !labsDropdownOpen && !profileDropdownOpen) {
+      } else if (e.clientY > 135 && !coursesDropdownOpen && !profileDropdownOpen) {
         handleScheduleHideTopNav();
       }
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isAskVedika, coursesDropdownOpen, aiDropdownOpen, labsDropdownOpen, profileDropdownOpen, handleShowTopNav, handleScheduleHideTopNav]);
+  }, [isAskVedika, coursesDropdownOpen, profileDropdownOpen, handleShowTopNav, handleScheduleHideTopNav]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -70,8 +66,6 @@ export default function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
     setCoursesDropdownOpen(false);
-    setAiDropdownOpen(false);
-    setLabsDropdownOpen(false);
     setProfileDropdownOpen(false);
   }, [pathname]);
 
@@ -96,28 +90,6 @@ export default function Header() {
     }, 200);
   };
 
-  const handleAiMouseEnter = () => {
-    if (aiDropdownTimer.current) clearTimeout(aiDropdownTimer.current);
-    setAiDropdownOpen(true);
-  };
-  const handleAiMouseLeave = () => {
-    if (aiDropdownTimer.current) clearTimeout(aiDropdownTimer.current);
-    aiDropdownTimer.current = setTimeout(() => {
-      setAiDropdownOpen(false);
-    }, 200);
-  };
-
-  const handleLabsMouseEnter = () => {
-    if (labsDropdownTimer.current) clearTimeout(labsDropdownTimer.current);
-    setLabsDropdownOpen(true);
-  };
-  const handleLabsMouseLeave = () => {
-    if (labsDropdownTimer.current) clearTimeout(labsDropdownTimer.current);
-    labsDropdownTimer.current = setTimeout(() => {
-      setLabsDropdownOpen(false);
-    }, 200);
-  };
-
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('frappe_user');
@@ -137,22 +109,6 @@ export default function Header() {
     { label: 'Quizzes', desc: 'Test knowledge with domain quizzes', path: '/quizzes', Icon: Award, color: '#a855f7' },
     { label: 'Assignments', desc: 'Hands-on projects & evaluations', path: '/assignments', Icon: FileText, color: '#00f298' },
     { label: 'Resource Hub', desc: 'Library, cheat sheets & DSA sheets', path: '/resources', Icon: FolderOpen, color: '#ff9900' },
-  ];
-
-  const vedikaAiSublinks = [
-    { label: 'Vedika AI Hub', desc: 'All interactive learning tutors', path: '/vedika-ai', Icon: Brain, color: '#38bdf8' },
-    { label: 'Ask Vedika', desc: 'General tutor, quizzes & infographics', path: '/general-tutor', Icon: Sparkles, color: '#a855f7' },
-    { label: 'Code with Vedika', desc: 'Coding tutor, analysis & debugger', path: '/coding-tutor', Icon: FileText, color: '#00f298' },
-    { label: 'Code Puzzle', desc: 'Interactive coding puzzles & tests', path: '/code-puzzle', Icon: Award, color: '#ff9900' },
-    { label: 'Viva & Interview', desc: 'AI mock interviews & voice practice', path: '/viva-interview', Icon: Briefcase, color: '#f43f5e' },
-  ];
-
-  const labsSublinks = [
-    { label: 'All Virtual Labs', desc: 'Interactive science simulations', path: '/vedika-labs', Icon: FlaskConical, color: '#38bdf8' },
-    { label: 'Physics Lab', desc: 'PhET interactive physics experiments', path: '/vedika-labs/physics', Icon: FlaskConical, color: '#818cf8' },
-    { label: 'Chemistry Lab', desc: 'Molecular & chemical reactions', path: '/vedika-labs/chemistry', Icon: FlaskConical, color: '#a855f7' },
-    { label: 'Biology Lab', desc: 'Cellular & anatomical models', path: '/vedika-labs/biology', Icon: FlaskConical, color: '#00f298' },
-    { label: 'Math Lab', desc: 'Calculus, geometry & graph plots', path: '/vedika-labs/math', Icon: FlaskConical, color: '#ff9900' },
   ];
 
   const isCoursesActive = pathname.startsWith('/courses') || pathname.startsWith('/quizzes') || pathname.startsWith('/assignments') || pathname.startsWith('/resources') || pathname.startsWith('/lesson');
@@ -247,83 +203,23 @@ export default function Header() {
             )}
           </div>
 
-          {/* 4. Vedika AI (with Submenu) */}
-          <div
-            className={styles.navItemWrapper}
-            onMouseEnter={handleAiMouseEnter}
-            onMouseLeave={handleAiMouseLeave}
+          {/* 4. Vedika AI (Direct Link, No Dropdown) */}
+          <button
+            type="button"
+            className={`${styles.navLink} ${isAiActive ? styles.activeNavLink : ''}`}
+            onClick={() => router.push('/vedika-ai')}
           >
-            <button
-              type="button"
-              className={`${styles.navLink} ${isAiActive ? styles.activeNavLink : ''}`}
-              onClick={() => router.push('/vedika-ai')}
-            >
-              <span>Vedika AI</span>
-              <ChevronDown size={13} style={{ opacity: 0.7, transform: aiDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
+            <span>Vedika AI</span>
+          </button>
 
-            {aiDropdownOpen && (
-              <div className={styles.dropdownMenu} style={{ width: 300 }}>
-                <div className={styles.dropdownHeading}>AI Learning Suite</div>
-                {vedikaAiSublinks.map((item) => (
-                  <button
-                    key={item.path}
-                    type="button"
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setAiDropdownOpen(false);
-                      router.push(item.path);
-                    }}
-                  >
-                    <item.Icon size={16} color={item.color} />
-                    <div className={styles.dropdownItemContent}>
-                      <span className={styles.dropdownItemLabel}>{item.label}</span>
-                      <span className={styles.dropdownItemDesc}>{item.desc}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 5. Labs (with Submenu) */}
-          <div
-            className={styles.navItemWrapper}
-            onMouseEnter={handleLabsMouseEnter}
-            onMouseLeave={handleLabsMouseLeave}
+          {/* 5. Vedika Labs (Direct Link, No Dropdown) */}
+          <button
+            type="button"
+            className={`${styles.navLink} ${isLabsActive ? styles.activeNavLink : ''}`}
+            onClick={() => router.push('/vedika-labs')}
           >
-            <button
-              type="button"
-              className={`${styles.navLink} ${isLabsActive ? styles.activeNavLink : ''}`}
-              onClick={() => router.push('/vedika-labs')}
-            >
-              <span>Labs</span>
-              <ChevronDown size={13} style={{ opacity: 0.7, transform: labsDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-
-            {labsDropdownOpen && (
-              <div className={styles.dropdownMenu}>
-                <div className={styles.dropdownHeading}>Virtual Science Labs</div>
-                {labsSublinks.map((item) => (
-                  <button
-                    key={item.path}
-                    type="button"
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setLabsDropdownOpen(false);
-                      router.push(item.path);
-                    }}
-                  >
-                    <item.Icon size={16} color={item.color} />
-                    <div className={styles.dropdownItemContent}>
-                      <span className={styles.dropdownItemLabel}>{item.label}</span>
-                      <span className={styles.dropdownItemDesc}>{item.desc}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <span>Vedika Labs</span>
+          </button>
 
           {/* 6. Jobs */}
           <button

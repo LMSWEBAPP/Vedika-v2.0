@@ -679,3 +679,68 @@
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   RESPONSIVE DESIGN BREAKPOINTS & ACCESSIBILITY (a11y)
+   ========================================================================== */
+
+/* Tablet & Smaller Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+  .vedika-notes-composer {
+    gap: 8px;
+  }
+  .vedika-notes-input {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+  .vedika-notes-dictate-btn {
+    min-width: 42px;
+    min-height: 42px;
+  }
+  .lesson-overview-modal-dialog {
+    max-width: 92vw;
+    max-height: 90vh;
+  }
+}
+
+/* Mobile Devices (<= 768px) */
+@media (max-width: 768px) {
+  .vedika-notes-filters {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .vedika-notes-filter-btn {
+    padding: 7px 10px;
+    font-size: 11px;
+    min-height: 38px;
+  }
+  .vedika-notes-composer {
+    flex-direction: row;
+  }
+  .vedika-notes-input {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .vedika-notes-dictate-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .lesson-keypoint-item {
+    font-size: 12.5px;
+    gap: 8px;
+  }
+  .lesson-keypoint-badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+}
+
+/* Accessible Focus Indicators */
+.vedika-notes-filter-btn:focus-visible,
+.vedika-notes-input:focus-visible,
+.vedika-notes-dictate-btn:focus-visible,
+.lesson-overview-done-btn:focus-visible {
+  outline: 2px solid var(--accent, #6366f1);
+  outline-offset: 2px;
+}
+
