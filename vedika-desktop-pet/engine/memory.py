@@ -478,7 +478,7 @@ class MemoryManager:
                     
                     if formatted_bullets in existing_text or clean_text in existing_text:
                         note_dict = {
-                            "id": note_id,
+                            "id": str(note_id),
                             "courseId": row["course_id"],
                             "courseTitle": row["course_title"],
                             "chapterTitle": row["chapter_title"],
@@ -492,7 +492,7 @@ class MemoryManager:
                             "source": source,
                             "createdAt": row["created_at"]
                         }
-                        return (note_id, True, existing_text, note_dict)
+                        return (str(note_id), True, existing_text, note_dict)
 
                     combined = f"{existing_text}\n{formatted_bullets}" if existing_text else formatted_bullets
 
@@ -503,7 +503,7 @@ class MemoryManager:
                     """, (combined, note_id))
 
                     note_dict = {
-                        "id": note_id,
+                        "id": str(note_id),
                         "courseId": row["course_id"],
                         "courseTitle": row["course_title"],
                         "chapterTitle": row["chapter_title"],
@@ -517,7 +517,7 @@ class MemoryManager:
                         "source": source,
                         "createdAt": row["created_at"]
                     }
-                    return (note_id, True, combined, note_dict)
+                    return (str(note_id), True, combined, note_dict)
 
             # Otherwise create a new note
             cursor = conn.execute("""
@@ -532,7 +532,7 @@ class MemoryManager:
             ))
             new_id = cursor.lastrowid
             note_dict = {
-                "id": new_id,
+                "id": str(new_id),
                 "courseId": course_id,
                 "courseTitle": course_title,
                 "chapterTitle": chapter_title,
@@ -546,7 +546,7 @@ class MemoryManager:
                 "source": source or "vedika_voice",
                 "createdAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-            return (new_id, False, clean_text, note_dict)
+            return (str(new_id), False, clean_text, note_dict)
 
     def get_notebook_notes(
         self,

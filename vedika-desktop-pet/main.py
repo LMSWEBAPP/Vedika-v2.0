@@ -348,6 +348,11 @@ class DesktopPetApp(QObject):
         self.voice_failsafe_timer.setSingleShot(True)
         self.voice_failsafe_timer.timeout.connect(self.on_voice_failsafe_timeout)
 
+        # Watchdog timer for stalled model turns (>12s stuck in thinking)
+        self.turn_watchdog_timer = QTimer()
+        self.turn_watchdog_timer.setSingleShot(True)
+        self.turn_watchdog_timer.timeout.connect(self.on_turn_watchdog_timeout)
+
         # Start game loop timer (60 FPS)
         self.last_time = time.time()
         self.timer = QTimer()
@@ -704,33 +709,37 @@ class DesktopPetApp(QObject):
             print("[WS Server] No active browser tabs connected. (has_active_web_tab=False)")
 
     def is_webapp_connected(self) -> bool:
-        """Returns True if at least one active Vyomanta WebApp browser tab is connected via WebSocket."""
-        return any(c.isValid() and c.state() == QAbstractSocket.SocketState.ConnectedState for c in getattr(self, 'web_clients', []))
+        """Returns True if at least one active Vedika WebApp browser tab is connected via local WebSocket or Cloud Relay."""
+        has_local = any(c.isValid() and c.state() == QAbstractSocket.SocketState.ConnectedState for c in getattr(self, 'web_clients', []))
+        return has_local or getattr(self, 'has_active_web_tab', False)
 
     @Slot(dict)
     def broadcast_to_webapp(self, message_dict) -> bool:
-        """Broadcasts JSON payload to all connected active browser tabs."""
-        if not hasattr(self, 'web_clients') or not self.web_clients:
-            return False
+        """Broadcasts JSON payload to all connected active browser tabs across local WebSocket and Cloud Relay."""
         msg_str = json.dumps(message_dict)
         sent_count = 0
-        for c in list(self.web_clients):
-            if c.isValid() and c.state() == QAbstractSocket.SocketState.ConnectedState:
-                c.sendTextMessage(msg_str)
-                sent_count += 1
-        return sent_count > 0
+        if hasattr(self, 'web_clients') and self.web_clients:
+            for c in list(self.web_clients):
+                if c.isValid() and c.state() == QAbstractSocket.SocketState.ConnectedState:
+                    try:
+                        c.sendTextMessage(msg_str)
+                        sent_count += 1
+                    except Exception:
+                        pass
+        # Always mirror non-navigation broadcasts to Cloud Relay so HTTPS tabs receive it instantly
+        if message_dict.get("type") != "NAVIGATE_WEBAPP":
+            self.send_to_cloud_relay(message_dict)
+        return sent_count > 0 or getattr(self, 'has_active_web_tab', False)
 
     @Slot(bool)
     def _on_web_tab_presence_changed(self, has_tab: bool):
-        # Local WebSocket connection is the authoritative ground truth for desktop environment
-        if self.is_webapp_connected():
-            self.has_active_web_tab = True
-        else:
-            self.has_active_web_tab = False
+        # Local WebSocket connection or Cloud Relay poller informs active browser tab presence
+        has_local = any(c.isValid() and c.state() == QAbstractSocket.SocketState.ConnectedState for c in getattr(self, 'web_clients', []))
+        self.has_active_web_tab = bool(has_tab or has_local)
 
     def is_browser_launching_grace_period(self) -> bool:
-        """Returns True if the browser was launched recently (within 5s) to prevent duplicate tabs during initial load."""
-        return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 5.0
+        """Returns True if the browser was launched recently (within 15s) to prevent duplicate tabs during initial load."""
+        return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 15.0
 
     def send_to_cloud_relay(self, message_dict: dict) -> bool:
         """Asynchronously dispatches a command to the cloud relay for delivery to the active browser tab."""
@@ -990,25 +999,24 @@ class DesktopPetApp(QObject):
         base_url = self.get_vyomanta_base_url()
         target_url = f"{base_url}{route}" if route.startswith("/") else route
         
-        # 1. Try seamless in-tab WebSocket navigation if an active local browser tab is connected
-        if self.is_webapp_connected():
-            if self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}}):
-                print(f"[Main] Seamless in-tab WebSocket navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
-                if self.pet:
-                    self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
-                # Background mirror to cloud relay
-                self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
-                return
+        # 1. Seamless in-tab navigation if an active browser tab is already open (Local WS or Cloud Relay)
+        if self.has_active_web_tab or self.is_webapp_connected():
+            print(f"[Main] Seamless in-tab navigation dispatched to active browser tab for route: '{route}' (No new tab opened).")
+            if self.pet:
+                self.pet.say(f"Navigating to {route}! 🚀", duration=2.5)
+            self.broadcast_to_webapp({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
+            self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
+            return
 
-        # 2. If browser was just launched within the last 5 seconds, wait for it rather than opening duplicate windows
+        # 2. If browser was just launched within the last 15 seconds, wait for it rather than opening duplicate windows
         if self.is_browser_launching_grace_period():
-            print(f"[Main] Browser was recently launched (grace period active). Dispatching target route '{route}' to cloud relay.")
+            print(f"[Main] Browser was recently launched (grace period active). Dispatching target route '{route}' without opening new tab.")
             self.send_to_cloud_relay({"type": "NAVIGATE_WEBAPP", "payload": {"route": route, "url": target_url}})
             if self.pet:
                 self.pet.say(f"Opening {route}! 🚀", duration=2.5)
             return
 
-        # 3. No active browser tab detected. Launch the browser once for target route!
+        # 3. No active browser tab detected anywhere. Launch the browser once for target route!
         print(f"[Main] No active browser tab detected. Launching browser once for target route: '{route}' -> URL: '{target_url}'")
         self.last_browser_launch_time = time.time()
         self.has_active_web_tab = True
@@ -1369,11 +1377,20 @@ class DesktopPetApp(QObject):
     def stop_voice_failsafe(self):
         if hasattr(self, "voice_failsafe_timer"):
             self.voice_failsafe_timer.stop()
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
 
     def on_voice_failsafe_timeout(self):
-        print("[Engine] Inactivity timeout: 3 minutes of silence reached. Automatically stopping voice chat.")
+        """Periodic keep-alive check. We intentionally DO NOT kill the client on silence."""
+        print("[Engine] Voice session active and listening (silence keep-alive).")
+
+    def on_turn_watchdog_timeout(self):
+        """Triggered if Gemini Live is stuck thinking for >12s without speaking or completing turn."""
+        print("[Engine] Turn watchdog: Vedika appears stalled in thinking state. Triggering failsafe reconnection...")
+        if self.pet:
+            self.pet.say("Just give me a moment... 🔄", duration=3.5)
         if hasattr(self, "gemini_client") and self.gemini_client and self.gemini_client.is_active:
-            self.gemini_client.stop()
+            self.gemini_client.reconnect_session()
 
     def on_gemini_session_activated(self):
         """Slot to safely initialize active voice chat session."""
@@ -1391,9 +1408,13 @@ class DesktopPetApp(QObject):
             thinking_state = "searching" if "searching" in self.pet.sprite.animations else "review"
             self.pet.state_machine.change_state(thinking_state)
             self.start_voice_failsafe()
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.start(12000)
 
     def on_gemini_speaking(self):
         """Transition pet to speak animation when Gemini starts outputting speech audio."""
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
         if self.pet:
             speaking_anim = "speak" if "speak" in self.pet.sprite.animations else "wave"
             if self.static_mode:
@@ -1403,6 +1424,8 @@ class DesktopPetApp(QObject):
 
     def on_gemini_speaking_stopped(self):
         """Transition pet to waiting or idle when speaker output finishes."""
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
         if self.pet:
             is_voice_active = hasattr(self, 'gemini_client') and self.gemini_client and self.gemini_client.is_active
             target_state = "waiting" if is_voice_active else "idle"
@@ -1413,6 +1436,8 @@ class DesktopPetApp(QObject):
 
     def on_gemini_turn_completed(self):
         """Mark model turn completed; revert to waiting/idle if audio playback already finished."""
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
         if self.pet:
             is_speaking = hasattr(self, 'gemini_client') and self.gemini_client and self.gemini_client.is_speaking
             if not is_speaking:
@@ -1425,6 +1450,8 @@ class DesktopPetApp(QObject):
 
     def on_gemini_interrupted(self):
         """Transition pet to Line 10 (failed) state when user interrupts."""
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
         if self.pet:
             failed_state = "failed" if "failed" in self.pet.sprite.animations else "idle"
             self.pet.state_machine.change_state(failed_state)
@@ -1453,6 +1480,8 @@ class DesktopPetApp(QObject):
 
     def on_gemini_state_changed(self, status):
         """Cleanly disable failsafe timer and revert state when voice chat stops."""
+        if hasattr(self, "turn_watchdog_timer"):
+            self.turn_watchdog_timer.stop()
         if status in ("disconnected", "error"):
             self.stop_voice_failsafe()
             if self.pet:
@@ -1468,6 +1497,14 @@ class DesktopPetApp(QObject):
                 client.start()
             elif client.status == "connected":
                 client.stop()
+
+    def refresh_voice_session(self):
+        """User-triggered or automated failsafe to reconnect/unfreeze Vedika voice chat."""
+        print("[Engine] Refreshing Vedika voice session failsafe requested...")
+        if self.pet:
+            self.pet.say("Just give me a moment... 🔄", duration=3.0)
+        if hasattr(self, "gemini_client") and self.gemini_client:
+            self.gemini_client.reconnect_session()
 
     def exit_application(self):
         """Saves settings and shuts down the pet engine."""

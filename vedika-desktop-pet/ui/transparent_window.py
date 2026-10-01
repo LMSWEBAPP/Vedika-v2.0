@@ -279,6 +279,10 @@ class TransparentWindow(QWidget):
             pause_act = menu.addAction(pause_label)
             pause_act.triggered.connect(self.main_app.toggle_gemini_pause_f9)
 
+        # 3c-3. Refresh Voice Chat Failsafe
+        refresh_act = menu.addAction("🔄 Refresh Vedika (Voice Failsafe)")
+        refresh_act.triggered.connect(self.main_app.refresh_voice_session)
+
         # 3d. Voice Interruption (Barge-In) toggle
         barge_act = QAction("Enable Voice Interruption (Barge-In)", self, checkable=True)
         barge_act.setChecked(client.enable_barge_in)

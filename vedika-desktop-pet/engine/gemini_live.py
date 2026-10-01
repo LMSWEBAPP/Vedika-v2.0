@@ -321,6 +321,8 @@ class GeminiLiveWorker(QThread):
             )
 
             msg_type = "STUDY_NOTE_UPDATED" if is_updated else "STUDY_NOTE_ADDED"
+            if isinstance(note_data, dict):
+                note_data["id"] = str(note_id)
             # Safely broadcast to webapp via Qt signal to Main Thread
             if hasattr(self.client, "broadcast_webapp_requested"):
                 self.client.broadcast_webapp_requested.emit({
@@ -343,7 +345,7 @@ class GeminiLiveWorker(QThread):
             return {
                 "status": "success",
                 "is_updated": is_updated,
-                "note_id": note_id,
+                "note_id": str(note_id),
                 "saved_note": combined_text,
                 "timestamp": final_time_fmt,
                 "lesson": webapp_ctx.get("lessonTitle", "")
@@ -594,6 +596,11 @@ class GeminiLiveWorker(QThread):
             "4. STUDENT PERSONALIZATION: When the student shares their name, grade level, school/college, field of study, or hobbies, call 'update_student_profile()' to remember it.\n"
             "5. LEARNING MEMORY: Whenever the student reveals a recurring struggle, masters a topic, or expresses a study preference, call 'save_student_memory(category, subject, topic, note)'.\n"
             "6. If the student asks to clear/forget their study history, call 'clear_student_memory()'.\n"
+            "\nNAME CALLING & WAKE ATTENTION DIRECTIVE:\n"
+            "When the student calls your name ('Vedika', 'Vedika, Vedika', 'Vedika, Vedika, Vedika', 'Hey Vedika', or 'Vedika are you there?'):\n"
+            "Immediately respond with warm, attentive readiness like:\n"
+            "'Hey! Yeah tell me?', 'Hey, I am right here! Tell me?', 'Yes, tell me! How can I help you?', or 'Hey, yeah tell me, what is on your mind?'.\n"
+            "Keep it immediate, crisp, lively, and welcoming!\n"
         )
 
         # Instant Multilingual Language Mirroring Directive
@@ -1072,8 +1079,12 @@ class GeminiLiveWorker(QThread):
                                 self.last_user_sentiment = sentiment
                                 self.client.user_dialogue_buffer = user_text
                                 self.client.user_sentiment_detected.emit(user_text, sentiment)
+                                
+                                clean_call = re.sub(r'[^a-zA-Z\s]', '', user_text).strip().lower()
+                                is_calling_name = clean_call in ("vedika", "vedika vedika", "vedika vedika vedika", "hey vedika", "hi vedika", "vedika are you there")
+                                status_preview = "Hey! Yeah tell me? 😊" if is_calling_name else "Thinking... 🤔"
                                 # Live chunk by chunk user transcript preview on Line 1, status on Line 2
-                                self.client.say_dialogue_requested.emit(user_text, "Thinking... 🤔", 6.0)
+                                self.client.say_dialogue_requested.emit(user_text, status_preview, 6.0)
                             self.client.thinking_started.emit()
                         
                         # Extract incoming streaming AI spoken audio & transcript chunks
@@ -1737,30 +1748,49 @@ class GeminiLiveClient(QObject):
     @Slot()
     def on_connection_established(self):
         print("[GeminiLive] Connected to Gemini Live API directly!")
+        self.reconnect_count = 0
         self.status = "connected"
         self.state_changed.emit("connected")
-        self.say_requested.emit("Voice chat connected!", 2.5)
+        self.say_requested.emit("Voice chat connected! 🎙️", 2.5)
         
         self.initialize_active_session()
 
     @Slot(str)
     def on_connection_failed(self, error_message):
-        print(f"[GeminiLive] Connection failed: {error_message}")
-        # Dynamically rotate key randomly (excluding the failed key) and retry if connecting fails or disconnects
-        if self.status in ["connecting", "connected"] and self.gemini_keys and len(self.gemini_keys) > 1:
-            old_index = self.current_key_index
-            import random
-            available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
-            self.current_key_index = random.choice(available_indices)
-            print(f"[GeminiLive] Dynamic key rotation: Key index {old_index} failed. Switched to random key index {self.current_key_index} (Key ending ...{self.gemini_keys[self.current_key_index][-4:]})")
+        print(f"[GeminiLive] Connection dropped or failed: {error_message}")
+        self.reconnect_count = getattr(self, 'reconnect_count', 0) + 1
+        
+        if self.reconnect_count <= 5:
+            print(f"[GeminiLive] Auto-reconnecting session (attempt {self.reconnect_count}/5)...")
+            if hasattr(self, 'say_requested'):
+                self.say_requested.emit("Just give me a moment... 🔄", 2.5)
+            # Dynamically rotate key if multiple keys exist
+            if self.gemini_keys and len(self.gemini_keys) > 1:
+                old_index = self.current_key_index
+                import random
+                available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
+                self.current_key_index = random.choice(available_indices)
+                print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
             self.is_active = False
             self.cleanup_audio()
-            QTimer.singleShot(1000, self.start)
+            QTimer.singleShot(1500, self.start)
         else:
             self.status = "error"
             self.state_changed.emit("error")
-            self.say_requested.emit(f"Connection Error: {error_message}", 3.0)
+            fail_msg = "Refresh me once so that I can close it and open it again. You can press Alt+V to refresh me!"
+            if hasattr(self, 'say_requested'):
+                self.say_requested.emit(fail_msg, 6.0)
             self.stop()
+
+    def reconnect_session(self):
+        """Clean failsafe method to instantly refresh/reboot the Gemini Live voice session."""
+        print("[GeminiLive] Session refresh requested (Failsafe triggered).")
+        self.reconnect_count = 0
+        if hasattr(self, 'say_requested'):
+            self.say_requested.emit("Just give me a moment... 🔄", 2.5)
+        self.is_active = False
+        self.cleanup_audio()
+        QTimer.singleShot(1200, self.start)
 
     def initialize_active_session(self):
         self.session_activated.emit()
