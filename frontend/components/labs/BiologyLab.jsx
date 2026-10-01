@@ -28,6 +28,32 @@ export default function BiologyLab() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [timeScale, setTimeScale] = useState(1);
 
+  // --- 1. Animal Cell States ---
+  const [selectedOrganelleId, setSelectedOrganelleId] = useState('nucleus');
+  const activeOrganelle = ORGANELLES.find(o => o.id === selectedOrganelleId) || ORGANELLES[0];
+  const [highlightTrigger, setHighlightTrigger] = useState(null);
+
+  // --- 2. Ecosystem Food Web States ---
+  const [initPlants, setInitPlants] = useState(50);
+  const [initRabbits, setInitRabbits] = useState(15);
+  const [initFoxes, setInitFoxes] = useState(5);
+  const [populationRates, setPopulationRates] = useState({ plants: 50, rabbits: 15, foxes: 5 });
+  
+  // Plot History
+  const [historyData, setHistoryData] = useState([]);
+
+  // DOM Mount Ref & Simulation States Reference
+  const mountRef = useRef(null);
+  const simStateRef = useRef({
+    isPlaying: true,
+    timeScale: 1,
+    selectedExperiment: 'cell',
+    // Cell Click selection
+    cell: { selectedId: 'nucleus', lastSelectedId: 'nucleus' },
+    // Ecosystem dynamic populations
+    ecosystem: { plants: 50, rabbits: 15, foxes: 5, t: 0 }
+  });
+
   // URL Query Parameters & Mascot Bridge Inner Page Controller
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -125,32 +151,6 @@ export default function BiologyLab() {
       phetSim: activePhetSim
     });
   }, [selectedExperiment, selectedOrganelleId, labMode, activePhetSim]);
-
-  // --- 1. Animal Cell States ---
-  const [selectedOrganelleId, setSelectedOrganelleId] = useState('nucleus');
-  const activeOrganelle = ORGANELLES.find(o => o.id === selectedOrganelleId) || ORGANELLES[0];
-  const [highlightTrigger, setHighlightTrigger] = useState(null);
-
-  // --- 2. Ecosystem Food Web States ---
-  const [initPlants, setInitPlants] = useState(50);
-  const [initRabbits, setInitRabbits] = useState(15);
-  const [initFoxes, setInitFoxes] = useState(5);
-  const [populationRates, setPopulationRates] = useState({ plants: 50, rabbits: 15, foxes: 5 });
-  
-  // Plot History
-  const [historyData, setHistoryData] = useState([]);
-
-  // DOM Mount Ref & Simulation States Reference
-  const mountRef = useRef(null);
-  const simStateRef = useRef({
-    isPlaying: true,
-    timeScale: 1,
-    selectedExperiment: 'cell',
-    // Cell Click selection
-    cell: { selectedId: 'nucleus', lastSelectedId: 'nucleus' },
-    // Ecosystem dynamic populations
-    ecosystem: { plants: 50, rabbits: 15, foxes: 5, t: 0 }
-  });
 
   // Sync React states to ref
   useEffect(() => {

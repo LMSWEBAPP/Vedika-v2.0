@@ -603,6 +603,49 @@ export default function MathLab() {
   const [activeTab, setActiveTab] = useState('whiteboard');
   const [visualizerSubTab, setVisualizerSubTab] = useState('pythagoras');
 
+  // Whiteboard State
+  const canvasRef = useRef(null);
+  const cropStartRef = useRef({ x: 0, y: 0 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawTool, setDrawTool] = useState('pen');
+  const [penColor, setPenColor] = useState('#FFFFFF');
+  const [penWidth, setPenWidth] = useState(4);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 0, h: 0, isSelecting: false, isSelected: false });
+
+  // Equation State
+  const [equationText, setEquationText] = useState('y = x + 1');
+  const [recognizedText, setRecognizedText] = useState('');
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+
+  // Graph State
+  const [paramA, setParamA] = useState(1);
+  const [paramB, setParamB] = useState(0);
+  const [paramC, setParamC] = useState(1);
+  const [paramD, setParamD] = useState(0);
+  const [plotMode, setPlotMode] = useState('linear');
+  const graphCanvasRef = useRef(null);
+  const [zoomScale, setZoomScale] = useState(30);
+  const [hoverCoord, setHoverCoord] = useState(null);
+
+  // AI Tutor & Continuous Voice State
+  const [tutorQuery, setTutorQuery] = useState('');
+  const [tutorResponse, setTutorResponse] = useState('');
+  const [isTutorThinking, setIsTutorThinking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [parsedVisualSpec, setParsedVisualSpec] = useState(null);
+  const recognitionRef = useRef(null);
+
+  // Visualizer Parameters
+  const [pythA, setPythA] = useState(6);
+  const [pythB, setPythB] = useState(8);
+  const [trigAngle, setTrigAngle] = useState(45);
+  const [calcX0, setCalcX0] = useState(1.5);
+  const [calcFunc, setCalcFunc] = useState('quadratic');
+  const [vecU, setVecU] = useState({ x: 4, y: 3 });
+  const [vecV, setVecV] = useState({ x: -2, y: 5 });
+
   // URL Query Parameters & Mascot Bridge Controller
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -701,49 +744,6 @@ export default function MathLab() {
       plotMode: activeTab === 'graph' ? plotMode : undefined
     });
   }, [activeTab, visualizerSubTab, plotMode]);
-
-  // Whiteboard State
-  const canvasRef = useRef(null);
-  const cropStartRef = useRef({ x: 0, y: 0 });
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawTool, setDrawTool] = useState('pen');
-  const [penColor, setPenColor] = useState('#FFFFFF');
-  const [penWidth, setPenWidth] = useState(4);
-  const [hasDrawn, setHasDrawn] = useState(false);
-  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 0, h: 0, isSelecting: false, isSelected: false });
-
-  // Equation State
-  const [equationText, setEquationText] = useState('y = x + 1');
-  const [recognizedText, setRecognizedText] = useState('');
-  const [isRecognizing, setIsRecognizing] = useState(false);
-  const [aiExplanation, setAiExplanation] = useState('');
-
-  // Graph State
-  const [paramA, setParamA] = useState(1);
-  const [paramB, setParamB] = useState(0);
-  const [paramC, setParamC] = useState(1);
-  const [paramD, setParamD] = useState(0);
-  const [plotMode, setPlotMode] = useState('linear');
-  const graphCanvasRef = useRef(null);
-  const [zoomScale, setZoomScale] = useState(30);
-  const [hoverCoord, setHoverCoord] = useState(null);
-
-  // AI Tutor & Continuous Voice State
-  const [tutorQuery, setTutorQuery] = useState('');
-  const [tutorResponse, setTutorResponse] = useState('');
-  const [isTutorThinking, setIsTutorThinking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [parsedVisualSpec, setParsedVisualSpec] = useState(null);
-  const recognitionRef = useRef(null);
-
-  // Visualizer Parameters
-  const [pythA, setPythA] = useState(6);
-  const [pythB, setPythB] = useState(8);
-  const [trigAngle, setTrigAngle] = useState(45);
-  const [calcX0, setCalcX0] = useState(1.5);
-  const [calcFunc, setCalcFunc] = useState('quadratic');
-  const [vecU, setVecU] = useState({ x: 4, y: 3 });
-  const [vecV, setVecV] = useState({ x: -2, y: 5 });
 
   // ----------------------------------------------------
   // WHITEBOARD & CROPPING

@@ -197,22 +197,24 @@ button:active,
   text-shadow: none !important;
 }
 
-/* Accessible Keyboard Focus Rings */
-:focus-visible {
-  outline: 2px solid var(--accent, #4F83F6) !important;
-  outline-offset: 2px !important;
-}
-
+/* Accessible Keyboard Focus Rings for Interactive Controls (Buttons, Links) */
 button:focus-visible,
 [type="button"]:focus-visible,
 [type="submit"]:focus-visible,
 [type="reset"]:focus-visible,
 a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--accent, #4F83F6) !important;
-  outline-offset: 2px !important;
+  outline: 2px solid var(--accent, #4F83F6);
+  outline-offset: 2px;
+}
+
+/* Text inputs and textareas handle their own border styling and must not show a browser rectangle box */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 /* Screen Reader Utility */
