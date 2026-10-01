@@ -1772,9 +1772,16 @@ class GeminiLiveClient(QObject):
                 available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
                 self.current_key_index = random.choice(available_indices)
                 print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
+            # Preserve greeting flag so auto-reconnect resumes mid-session without re-greeting
+            _greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
             self.is_active = False
             self.cleanup_audio()
-            QTimer.singleShot(1500, self.start)
+            def _reconnect_preserving_greeting():
+                self.start()
+                # Restore greeting flag immediately after start() resets it
+                if _greeting_was_sent:
+                    self.initial_greeting_sent = True
+            QTimer.singleShot(1500, _reconnect_preserving_greeting)
         else:
             self.status = "error"
             self.state_changed.emit("error")
@@ -1784,14 +1791,20 @@ class GeminiLiveClient(QObject):
             self.stop()
 
     def reconnect_session(self):
-        """Clean failsafe method to instantly refresh/reboot the Gemini Live voice session."""
+        """Clean failsafe method to instantly refresh/reboot the Gemini Live voice session without re-greeting."""
         print("[GeminiLive] Session refresh requested (Failsafe triggered).")
         self.reconnect_count = 0
         if hasattr(self, 'say_requested'):
             self.say_requested.emit("Just give me a moment... 🔄", 2.5)
+        # Preserve the greeting flag so reconnect resumes the session (no repeated 'Hi how is your day')
+        _greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
         self.is_active = False
         self.cleanup_audio()
-        QTimer.singleShot(1200, self.start)
+        def _start_preserving_greeting():
+            self.start()
+            if _greeting_was_sent:
+                self.initial_greeting_sent = True
+        QTimer.singleShot(1200, _start_preserving_greeting)
 
     def initialize_active_session(self):
         self.session_activated.emit()

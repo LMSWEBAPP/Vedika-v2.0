@@ -1409,7 +1409,8 @@ class DesktopPetApp(QObject):
             self.pet.state_machine.change_state(thinking_state)
             self.start_voice_failsafe()
         if hasattr(self, "turn_watchdog_timer"):
-            self.turn_watchdog_timer.start(12000)
+            # 45 seconds: generous enough for long model responses, fires only on genuine stalls
+            self.turn_watchdog_timer.start(45000)
 
     def on_gemini_speaking(self):
         """Transition pet to speak animation when Gemini starts outputting speech audio."""
