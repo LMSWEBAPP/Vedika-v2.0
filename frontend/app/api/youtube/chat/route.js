@@ -61,7 +61,8 @@ export async function POST(request) {
     await authenticateRequest(request, { requireAuth: false });
 
     const body = await request.json().catch(() => ({}));
-    const { videoId, title = '', question = '', history = [], timestamp = 0 } = body;
+    const { videoId, title = '', question = '', history = [] } = body;
+    const rawTime = body.timestamp !== undefined ? body.timestamp : (body.currentTime !== undefined ? body.currentTime : 0);
 
     if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(String(videoId).trim())) {
       return NextResponse.json({ error: 'Valid 11-character YouTube videoId is required' }, { status: 400 });
@@ -74,7 +75,7 @@ export async function POST(request) {
     }
 
     const cleanId = String(videoId).trim();
-    const currentSeconds = Math.max(0, Math.floor(Number(timestamp || 0)));
+    const currentSeconds = Math.max(0, Math.floor(Number(rawTime || 0)));
     const formattedCurrentTime = formatTimestamp(currentSeconds);
 
     // 1. Retrieve full video transcript (or surrounding window)

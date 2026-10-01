@@ -15,16 +15,16 @@ const lightT = {
   text: "#0F1D30", muted: "#4B5E7D", dim: "#8CA2C0",
 };
 
-const currentTheme = (typeof window !== 'undefined' ? localStorage.getItem('theme') : null) || 'light';
-const activeT = currentTheme === 'dark' ? darkT : lightT;
+const currentTheme = (typeof window !== 'undefined' ? localStorage.getItem('theme') : null) || 'dark';
+const activeT = currentTheme === 'light' ? lightT : darkT;
 
 export const T = activeT;
 
 export function getTheme() {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('theme') || 'light';
+    return localStorage.getItem('theme') || 'dark';
   }
-  return 'light';
+  return 'dark';
 }
 
 export function setTheme(theme) {

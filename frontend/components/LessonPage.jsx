@@ -196,16 +196,16 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
         const note = msg.payload;
         if (!note) return;
         setNotes((prev) => {
-          const exists = prev.some((n) => n.id === note.id);
-          const updated = exists ? prev.map((n) => (n.id === note.id ? note : n)) : [note, ...prev];
+          const exists = prev.some((n) => String(n.id) === String(note.id));
+          const updated = exists ? prev.map((n) => (String(n.id) === String(note.id) ? note : n)) : [note, ...prev];
           try {
             localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
           } catch (_) {}
           return updated;
         });
         setAllCourseNotes((prev) => {
-          const exists = prev.some((n) => n.id === note.id);
-          const updated = exists ? prev.map((n) => (n.id === note.id ? note : n)) : [note, ...prev];
+          const exists = prev.some((n) => String(n.id) === String(note.id));
+          const updated = exists ? prev.map((n) => (String(n.id) === String(note.id) ? note : n)) : [note, ...prev];
           try {
             localStorage.setItem(`vedika_course_notes_${lesson?.courseId || 'general'}`, JSON.stringify(updated));
           } catch (_) {}
@@ -642,6 +642,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           videoId: vId,
           title: lesson?.title || '',
           question: userText,
+          timestamp: Math.floor(videoCurrentTime || 0),
           currentTime: Math.floor(videoCurrentTime || 0),
           history: newHist.slice(-6)
         })
