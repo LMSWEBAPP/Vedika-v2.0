@@ -1,0 +1,1438 @@
+I’ll begin with read-only reconnaissance: repository structure, configuration, dependency manifests, application entry points, database/migrations, CI/CD, and existing tests. I’ll then run non-destructive static checks and organize the evidence into a findings register, risk matrix, scorecard, blockers, and phased remediation plan—without modifying the codebase.
+
+The first pass already shows a high-risk configuration issue: both `backend/.env` and `frontend/.env` are present in the working tree, and seed code contains fixed administrator/student passwords. I’ll verify whether these are tracked, inspect their contents without reproducing secret values, and map the actual runtime routes and data-access controls against the architecture documents (which may describe intended rather than implemented behavior).
+
+The implementation differs materially from the planning documents: the frontend directly proxies Frappe REST/method APIs, stores the Frappe session identifier in `localStorage` and also places it in query parameters, and has a hardcoded JWT fallback secret. I’ll now split the detailed review into independent tracks (API/security, data/privacy/ops, and frontend/performance/testing) while I continue the deployment and dependency checks.
+
+The route review confirms multiple launch-blocking authorization gaps beyond the JWT issue: unauthenticated write/delete endpoints for courses, quizzes, assignments, categories and progress; an admin API with no admin check; memory endpoints keyed by caller-supplied IDs; and an SSE status route that accepts bearer tokens in query strings. I’ll now validate these findings with dependency/build checks, inspect the database dump and git history for exposed material, and assess operational controls.
+
+The evidence now includes a committed database dump containing real-looking student/resume/contact PII and vector data, plus no CI workflow, no migration framework, no automated deployment controls, and no production backup/restore evidence. I’ll do one final targeted pass for diagnostics, test inventory, headers/cookies/CSRF configuration, and current India-specific regulatory references so the report distinguishes verified technical facts from legal/compliance items that require counsel.
+
+# Production Readiness Audit — Vedika 2.0
+
+**Audit mode:** Read-only reconnaissance and static assessment.  
+**Changes made:** None.  
+**Repository:** `v0.2/vedika-2.0`  
+**Assessment date:** 17 September 2026
+
+## Executive conclusion
+
+## 🔴 NOT SAFE FOR PRODUCTION
+
+The application should **not go live in its current state**.
+
+The most serious blockers are:
+
+1. **Critical authorization gaps on administrative and data-mutating APIs**
+2. **Hardcoded JWT/encryption fallback secrets**
+3. **CSRF explicitly disabled in backend configuration**
+4. **Database credentials and API secrets present in local environment files**
+5. **Real-looking personal data and resume/contact information committed in `backup.sql`**
+6. **Fixed administrator and student passwords embedded in code and exposed in the login UI**
+7. **No production CI/CD security gates, rollback process, backup verification, or observability stack**
+8. **12 npm dependency vulnerabilities, including a critical Next.js advisory**
+9. **Production build failure due to `.next/trace` filesystem permissions**
+10. **No demonstrated account deletion, privacy rights, retention, consent, or child-safety controls**
+
+The codebase is a partially integrated LMS prototype with several fallback/demo paths still reachable from production-facing routes. It contains a useful feature set, but security boundaries and operational controls are not mature enough for public launch.
+
+---
+
+# 1. System reconnaissance
+
+## 1.1 Technology stack
+
+### Frontend and application server
+
+- Next.js `14.2.x`
+- React `18.3.1`
+- JavaScript/JSX
+- Next.js App Router
+- Custom Node server using:
+  - Express
+  - `ws`
+  - Next.js custom server integration
+- Client-side local storage for session and application state
+- WebSocket voice tutor
+- Server-Sent Events for document ingestion status
+- CodeMirror
+- Three.js
+- Framer Motion
+- Pyodide/WASM
+- KaTeX
+- Mermaid
+- React Markdown
+
+### Backend
+
+- Frappe Framework / Frappe LMS
+- Python scripts and workers
+- MariaDB-compatible database and TiDB references
+- Redis
+- Upstash Redis REST API
+- Backblaze B2 S3-compatible object storage
+- Gemini APIs for text generation, embeddings, and live voice
+- Google OAuth integration
+
+### Database
+
+The repository includes:
+
+- Frappe tables such as:
+  - `tabLMS Course`
+  - `tabCourse Chapter`
+  - `tabCourse Lesson`
+  - `tabLMS Enrollment`
+  - `tabUser`
+- Custom tables:
+  - `LMS Session Document`
+  - `LMS Document Chunk`
+  - `LMS Background Job Queue`
+  - `LMS RAG Audit Log`
+- Vector column:
+  - `embedding vector(768)`
+
+### External services
+
+- Google Gemini
+- Google OAuth
+- Upstash Redis
+- Backblaze B2
+- PhET simulation CDN
+- YouTube transcript/content services
+- Render
+- Vercel configuration is also present
+
+### Infrastructure/configuration
+
+- Docker Compose for development
+- Custom Render Dockerfile
+- Render service definition for voice server
+- Vercel configuration
+- No GitHub Actions or equivalent CI workflow found
+- No visible infrastructure-as-code for production networking, firewall, DNS, CDN, backups, or monitoring
+
+---
+
+# 2. Implemented architecture map
+
+```mermaid
+flowchart TD
+    U[User Browser] --> FE[Next.js Frontend]
+    FE --> LS[localStorage session state]
+    FE --> API[Next.js API Routes]
+    FE --> FREST[Frappe REST and Method APIs]
+    FE --> WS[Voice WebSocket]
+    FE --> SSE[Document Status SSE]
+
+    API --> JWT[Custom HMAC JWT Verification]
+    API --> DB[(MySQL/MariaDB/TiDB)]
+    API --> REDIS[Upstash Redis]
+    API --> B2[Backblaze B2]
+    API --> GEMINI[Google Gemini APIs]
+    API --> PHET[PhET CDN Proxy]
+
+    FREST --> FRAPPE[Frappe LMS]
+    FRAPPE --> DB
+    FRAPPE --> REDIS
+
+    WS --> GEMINI
+    WS --> REDIS
+    SSE --> DB
+
+    WORKER[Python Queue Worker] --> DB
+    WORKER --> B2
+    WORKER --> REDIS
+    WORKER --> GEMINI
+```
+
+## Trust boundaries
+
+1. Browser to Next.js
+2. Browser to Frappe backend
+3. Browser-held session identifier to server
+4. JWT issuance and verification boundary
+5. Next.js to database
+6. Next.js to object storage
+7. Next.js to Gemini
+8. Next.js to Redis
+9. Worker to database and object storage
+10. Imported document content to RAG/LLM context
+11. Admin UI to write-capable APIs
+12. Third-party PhET HTML to the browser
+
+## Main data flows
+
+### Authentication
+
+- Frappe login creates a session identifier.
+- Frontend stores `frappe_sid` in `localStorage`.
+- The session ID is appended to query strings for Frappe calls.
+- Next.js exchanges the session for a custom JWT.
+- Custom JWT is HMAC-SHA256 signed using an environment value or fallback secret.
+
+### Document ingestion
+
+- User uploads PDF to Next.js.
+- File is copied to Backblaze B2.
+- Metadata is inserted into the database.
+- Queue row is inserted.
+- Python worker downloads the file, extracts text, generates embeddings, and writes vector chunks.
+- SSE polls database status.
+
+### AI/RAG
+
+- User input is sent to Next.js.
+- Embedding is generated using Gemini.
+- Vector search is executed against database tables.
+- Conversation history is loaded from Redis.
+- Prompt, memory, and retrieved document chunks are sent to Gemini.
+- Conversation data and token counters are written to Redis.
+
+---
+
+# 3. Key evidence summary
+
+| Area | Evidence | Assessment |
+|---|---|---|
+| Authentication | Custom JWT, hardcoded fallback key in `frontend/lib/auth.js` | Unsafe |
+| Session security | `frappe_sid` stored in `localStorage` and query parameters | High risk |
+| Authorization | File-backed admin mutation APIs have no authorization | Critical |
+| CSRF | `ignore_csrf 1` in `backend/init-render-web.sh` and `backend/init.sh` | Critical |
+| CORS | Defaults to wildcard `*` | High risk |
+| Secrets | Local `.env` files contain database, Redis, Gemini, OAuth and service credentials | Critical operational exposure |
+| Passwords | Fixed admin/student passwords in `create_students.py` and UI | Critical |
+| PII | `backup.sql` includes personal names, email addresses, phone numbers, locations and resumes | Critical privacy issue |
+| Dependencies | `npm audit` reports 12 vulnerabilities, including critical Next.js advisory | High/Critical |
+| CI/CD | No CI workflow found | High operational risk |
+| Build | `npm run build` fails with `EPERM` on `.next/trace` | High release risk |
+| Testing | Only one RAG test script; no frontend/API/E2E/load/security suite | High |
+| Monitoring | No structured logging, tracing, metrics or alert definitions found | High |
+| Backups | SQL dump exists, but no restore procedure or restore test | High |
+| Privacy | No privacy policy, retention, deletion or consent implementation found | High/Critical |
+
+---
+
+# 4. Findings register
+
+## Critical findings
+
+### F-001 — Unauthenticated administrative mutation APIs
+
+- **Category:** Authorization / API security
+- **Severity:** CRITICAL
+- **Component:** Next.js API routes
+- **Locations:**
+  - `frontend/app/api/courses/route.js`
+  - `frontend/app/api/courses/[id]/syllabus/route.js`
+  - `frontend/app/api/assignments/route.js`
+  - `frontend/app/api/quizzes/route.js`
+  - `frontend/app/api/categories/route.js`
+  - `frontend/app/api/admin/courses/import/route.js`
+- **Evidence:** `POST`, `PUT`, and `DELETE` handlers do not authenticate the caller or verify an administrator role.
+- **Problem:** Any network client able to reach the application may create, modify, replace, or delete course, syllabus, assignment, quiz, and category data.
+- **Impact:** Complete content tampering, destructive deletion, unauthorized publishing, privilege abuse.
+- **Likelihood:** High
+- **Risk:** Critical
+- **Recommended fix:** Centralize server-side authentication and authorization middleware. Require Frappe role verification or a server-side admin permission check for every administrative operation. Do not rely on UI route protection or local storage.
+- **Complexity:** Medium
+- **Pre-launch required:** YES
+
+### F-002 — Unauthenticated progress and memory access
+
+- **Category:** Authorization / Privacy
+- **Severity:** CRITICAL
+- **Locations:**
+  - `frontend/app/api/progress/route.js`
+  - `frontend/app/api/memory/route.js`
+- **Evidence:** `progress` accepts caller-supplied `email`; no authentication is checked. The no-email branch enumerates all Redis keys matching `completed_lessons:*`. Memory operations accept caller-supplied `sessionId` and `userId`.
+- **Problem:** A user can retrieve or overwrite another student’s progress and potentially access another user’s conversation memory.
+- **Impact:** Cross-user disclosure, academic record manipulation, privacy violation.
+- **Likelihood:** High
+- **Recommended fix:** Derive user identity exclusively from the authenticated server session/JWT. Remove caller-controlled user identifiers from authorization decisions. Add object-level authorization tests.
+- **Complexity:** Medium
+- **Pre-launch required:** YES
+
+### F-003 — Hardcoded authentication fallback secret
+
+- **Category:** Authentication / Secrets
+- **Severity:** CRITICAL
+- **Locations:**
+  - `frontend/lib/auth.js:25`
+  - `frontend/app/api/auth/jwt/route.js:6`
+  - `backend/init-render-web.sh:83`
+  - `backend/init.sh:23`
+  - `backend/patch_api.py:436`
+- **Evidence:** Authentication falls back to a fixed secret when environment configuration is missing.
+- **Problem:** Anyone knowing the source can forge valid JWTs. Misconfigured environments silently become forgeable.
+- **Impact:** Account impersonation, tenant bypass, document access, administrator impersonation.
+- **Likelihood:** High
+- **Recommended fix:** Fail closed if the secret is missing. Use a single managed secret. Rotate the currently exposed value. Prefer Frappe/OIDC-signed tokens or asymmetric JWT validation. Validate issuer, audience, subject, expiration, not-before, and tenant claims.
+- **Complexity:** Medium
+- **Pre-launch required:** YES
+
+### F-004 — Fixed production credentials
+
+- **Category:** Authentication / Secrets
+- **Severity:** CRITICAL
+- **Locations:**
+  - `backend/create_students.py:145-146`
+  - `backend/create_students.py:173-174`
+  - `backend/init-render-web.sh:152`
+  - `backend/init.sh:196-197`
+  - `frontend/app/login/page.jsx:97-104`
+  - `frontend/app/login/page.jsx:415`
+- **Evidence:** Administrator and student passwords are hardcoded and displayed in the login UI.
+- **Problem:** All seeded users share predictable credentials. Startup scripts reset passwords on every deployment.
+- **Impact:** Immediate unauthorized account access and administrator takeover.
+- **Recommended fix:** Remove demo credentials and password display. Generate one-time bootstrap credentials through a secure secret manager. Require password reset on first login. Never reset production passwords during startup.
+- **Complexity:** Low/Medium
+- **Pre-launch required:** YES
+
+### F-005 — CSRF protection disabled
+
+- **Category:** Web security
+- **Severity:** CRITICAL
+- **Locations:**
+  - `backend/init-render-web.sh:68`
+  - `backend/init.sh:130`
+- **Evidence:** `bench set-config -g ignore_csrf 1`
+- **Problem:** Cookie-authenticated state-changing operations can be triggered cross-site.
+- **Impact:** Unauthorized course modification, account actions, data changes, and potentially administrative actions.
+- **Recommended fix:** Re-enable CSRF protection. Use same-site cookies where possible. For cross-site OAuth/session flows, implement explicit CSRF state validation and origin checks. Add CSRF tests for all cookie-authenticated mutations.
+- **Complexity:** Medium
+- **Pre-launch required:** YES
+
+### F-006 — Real PII and user content committed in database dump
+
+- **Category:** Privacy / Data protection / Secrets
+- **Severity:** CRITICAL
+- **Location:** `backup.sql`
+- **Evidence:** Dump contains real-looking email addresses, phone numbers, locations, education and employment history, resumes, uploaded document content, and embeddings.
+- **Problem:** The repository contains production-like personal data and potentially sensitive educational material.
+- **Impact:** Privacy breach, regulatory exposure, unauthorized disclosure, accidental redistribution through source control.
+- **Recommended fix:** Remove the dump from the repository and all history where applicable. Rotate credentials if dump access includes secrets. Purge or anonymize PII. Establish a sanitized fixture policy. Verify database dump access controls and encryption.
+- **Complexity:** Medium/High
+- **Pre-launch required:** YES
+
+### F-007 — Secrets present in local environment files
+
+- **Category:** Secrets management
+- **Severity:** CRITICAL
+- **Locations:**
+  - `backend/.env`
+  - `frontend/.env`
+- **Evidence:** Files contain database credentials, Redis tokens, Gemini keys, OAuth client secret, internal service token, and encryption/JWT material. They are ignored by Git but present in the workspace.
+- **Problem:** Ignoring a file does not protect secrets from local compromise, accidental packaging, logs, backups, or developer sharing.
+- **Recommended fix:** Revoke and rotate all exposed values. Use a secret manager. Add pre-commit and CI secret scanning. Verify build artifacts do not contain secrets. Maintain only redacted `.env.example` files.
+- **Complexity:** Low/Medium
+- **Pre-launch required:** YES
+
+---
+
+## High findings
+
+### F-008 — Session identifier stored in localStorage and query parameters
+
+- **Category:** Session management
+- **Severity:** HIGH
+- **Locations:**
+  - `frontend/lib/frappe.js:130-138`
+  - `frontend/lib/frappe.js:161-169`
+  - `frontend/lib/frappe.js:220-228`
+  - `frontend/app/api/documents/status-stream/route.js:9`
+- **Problem:** Session identifiers and JWTs can leak through XSS, browser history, proxy logs, analytics, referrers, screenshots, and server logs.
+- **Fix:** Use Secure, HttpOnly, SameSite cookies. Never put credentials in URLs. Remove query-string token support from SSE.
+
+### F-009 — Wildcard CORS and cross-site cookies
+
+- **Category:** Web security
+- **Severity:** HIGH
+- **Locations:**
+  - `backend/init-render-web.sh:67-68`
+  - `backend/init-render-web.sh:84-85`
+  - `backend/init.sh`
+- **Problem:** CORS defaults to `*`, while cookies are configured with `SameSite=None`.
+- **Fix:** Allow only explicit production origins. Use `Secure`, `HttpOnly`, and appropriate `SameSite`. Validate `Origin` for sensitive requests.
+
+### F-010 — Missing authorization on API consumption endpoint
+
+- **Category:** Authorization / Privacy
+- **Severity:** HIGH
+- **Location:** `frontend/app/api/admin/api-consumption/route.js`
+- **Problem:** Anyone can retrieve token usage statistics, including per-user identifiers.
+- **Fix:** Require an administrator role and return aggregated data where possible.
+
+### F-011 — Unbounded AI endpoints and cost abuse
+
+- **Category:** Abuse prevention / Cost
+- **Severity:** HIGH
+- **Locations:**
+  - `frontend/app/api/gemini/route.js`
+  - `frontend/app/api/gemini/stream/route.js`
+  - `frontend/app/api/labs/tutor/route.js`
+  - `frontend/app/api/youtube/chat/route.js`
+  - `frontend/app/api/youtube/explain/route.js`
+  - `frontend/app/api/generate-aptitude/route.js`
+  - `frontend/app/api/viva-interview/route.js`
+- **Problem:** Several AI routes do not authenticate users or enforce meaningful per-user, IP, token, concurrency, or cost limits.
+- **Impact:** API-key abuse, denial of service, unexpected Gemini bills.
+- **Fix:** Require authenticated identity, enforce request body size, input length, output-token ceilings, concurrency limits, per-user quotas, IP throttling, and global spend alerts.
+
+### F-012 — File upload validation is insufficient
+
+- **Category:** File security
+- **Severity:** HIGH
+- **Location:** `frontend/app/api/documents/upload/route.js:72-87`
+- **Problem:** Validation relies on MIME type or filename suffix. PDF structure is not robustly validated, and the full multipart body is parsed before size enforcement.
+- **Fix:** Enforce request/body limits at the reverse proxy and application server. Validate magic bytes, parse safely in a sandbox, reject encrypted/active-content PDFs where appropriate, sanitize metadata, and scan uploads. Use object-storage quarantine and lifecycle rules.
+
+### F-013 — Document deletion is not transactionally consistent with B2
+
+- **Category:** Reliability / Data lifecycle
+- **Severity:** HIGH
+- **Location:** `frontend/app/api/documents/delete/route.js`
+- **Problem:** B2 deletion errors are logged and ignored, while database metadata is deleted.
+- **Impact:** Orphaned personal files, retention failures, storage cost, inability to honor deletion requests.
+- **Fix:** Use a deletion state machine/outbox job, retry object deletion, verify completion, and periodically reconcile database/object storage.
+
+### F-014 — Worker startup can destroy the database
+
+- **Category:** Reliability / Infrastructure
+- **Severity:** HIGH
+- **Location:** `backend/init-render-web.sh:134-156`
+- **Problem:** If initialization checks fail, the script drops all database tables and creates a new site.
+- **Impact:** Catastrophic production data loss caused by transient DB connectivity or schema-check failure.
+- **Fix:** Never automatically wipe a production database. Separate initialization from deployment. Require an explicit, impossible-to-miss development-only flag for destructive resets.
+
+### F-015 — No health/readiness distinction
+
+- **Category:** SRE
+- **Severity:** HIGH
+- **Locations:**
+  - `frontend/server-with-ws.js:101-104`
+  - `frontend/voice-server.js:75-82`
+- **Problem:** Health endpoints return `healthy` even when Gemini, Redis, database, worker, or storage dependencies may be unavailable.
+- **Fix:** Add liveness and readiness endpoints with dependency checks, timeouts, and deployment integration.
+
+### F-016 — No CI/CD security gates
+
+- **Category:** DevSecOps
+- **Severity:** HIGH
+- **Evidence:** No `.github/workflows`, GitLab pipeline, Jenkinsfile, or equivalent was found.
+- **Fix:** Add protected CI with tests, linting, type/static checks, dependency scanning, secret scanning, SAST, container scanning, migration validation, staging deployment, approval, and rollback.
+
+### F-017 — Dependency vulnerabilities
+
+- **Category:** Dependencies
+- **Severity:** HIGH
+- **Evidence:** `npm audit --omit=dev --audit-level=moderate` reported **12 vulnerabilities**:
+  - 1 critical
+  - 2 high
+  - 5 moderate
+  - 4 low
+- **Important packages affected:** Next.js, PostCSS, `mysql2`, `nanoid`, `qs`, `body-parser`, AI SDK transitive dependencies.
+- **Fix:** Upgrade deliberately in a branch, run regression tests, verify Next.js compatibility, and avoid blindly using `npm audit fix --force`, which proposes a breaking Next.js major upgrade.
+
+### F-018 — Production build failure
+
+- **Category:** Release engineering
+- **Severity:** HIGH
+- **Evidence:** `npm run build` failed with `EPERM` opening `frontend/.next/trace`.
+- **Fix:** Clean/recreate build output, identify file ownership/locking or antivirus interference, ensure CI uses a clean workspace, and make a successful production build a release gate.
+
+---
+
+## Medium findings
+
+### F-019 — No request correlation IDs
+
+- **Category:** Observability
+- **Severity:** MEDIUM
+- **Evidence:** Logging contains ad hoc messages but no consistent request ID or trace ID.
+- **Fix:** Add request IDs at the edge and propagate them through Next.js, Frappe, workers, Redis, Gemini and storage calls.
+
+### F-020 — Sensitive data logged
+
+- **Category:** Privacy / Logging
+- **Severity:** MEDIUM
+- **Locations:**
+  - `frontend/lib/memory.js`
+  - `frontend/app/api/tutor/chat/route.js`
+  - `backend/queue_worker.py`
+- **Problem:** Logs include user IDs, session IDs, document keys, prompt excerpts and operational identifiers.
+- **Fix:** Apply structured logging with redaction and data classification. Never log prompts, tokens, document keys, or PII by default.
+
+### F-021 — RAG authorization is duplicated and inconsistent
+
+- **Category:** Architecture / Authorization
+- **Severity:** MEDIUM
+- **Locations:**
+  - `frontend/app/api/tutor/chat/route.js`
+  - `backend/patch_api.py`
+  - `backend/test_rag_rls.py`
+- **Problem:** Authorization logic exists in Next.js and Frappe paths with different rules. The frontend route queries vector data directly, bypassing the intended centralized RAG service.
+- **Fix:** Create one authoritative authorization/data-access service. Enforce tenant, session, enrollment, instructor and document ownership constraints in one place.
+
+### F-022 — Redis wildcard deletion is ineffective or dangerous
+
+- **Category:** Reliability / Security
+- **Location:** `frontend/app/api/documents/delete/route.js:90-95`
+- **Problem:** `redis.del('ws_ticket:*')` does not generally delete wildcard-matched keys; if implemented through a key scan, global deletion would be unsafe.
+- **Fix:** Track tickets by user/session or use explicit ticket IDs. Never use global wildcard cleanup in a user deletion path.
+
+### F-023 — File-backed persistence is not production-safe
+
+- **Category:** Data integrity / Scalability
+- **Locations:**
+  - `frontend/app/api/courses/route.js`
+  - `frontend/app/api/courses/[id]/syllabus/route.js`
+  - `frontend/app/api/assignments/route.js`
+  - `frontend/app/api/quizzes/route.js`
+  - `frontend/app/api/categories/route.js`
+- **Problem:** Data is written directly to local JSON files. This is not safe across multiple instances, deploys, crashes or concurrent requests.
+- **Fix:** Use transactional database-backed storage or a proper managed datastore. Remove silent local fallback behavior from production.
+
+### F-024 — Race conditions in file-backed writes
+
+- **Category:** Concurrency
+- **Severity:** MEDIUM
+- **Problem:** Concurrent write requests can overwrite each other because read-modify-write is not locked or transactional.
+- **Fix:** Use database transactions and unique constraints.
+
+### F-025 — Missing timeout and circuit-breaker policies
+
+- **Category:** Reliability
+- **Severity:** MEDIUM
+- **Problem:** External Gemini, B2, Redis and Frappe calls lack consistent timeout, cancellation, retry classification and circuit-breaking.
+- **Fix:** Define per-dependency timeout budgets, bounded retries with jitter, circuit breakers, and fallback behavior.
+
+### F-026 — No pagination on several data access paths
+
+- **Category:** Performance / Abuse
+- **Severity:** MEDIUM
+- **Locations:** course, progress, admin and Frappe data retrieval paths.
+- **Problem:** Some queries and Redis key scans can grow without bound.
+- **Fix:** Enforce pagination, maximum limits and cursor-based retrieval.
+
+### F-027 — Error leakage
+
+- **Category:** API security
+- **Severity:** MEDIUM
+- **Locations:**
+  - `frontend/app/api/gemini/route.js`
+  - `frontend/app/api/assignments/route.js`
+  - `frontend/app/api/quizzes/route.js`
+  - `frontend/app/api/categories/route.js`
+  - several route handlers
+- **Problem:** Some responses return `error.message`, upstream error details, or provider messages.
+- **Fix:** Return stable public error codes/messages and log detailed errors server-side only.
+
+### F-028 — Prompt injection controls are inadequate
+
+- **Category:** AI security
+- **Severity:** MEDIUM
+- **Problem:** Keyword filtering in `queue_worker.py` is not a security boundary. Retrieved documents and user content are inserted into system/context prompts without strong content isolation.
+- **Fix:** Treat documents and user content as untrusted. Separate instructions from data, validate tool calls, constrain output, apply tenant-aware retrieval, and test indirect prompt injection.
+
+---
+
+# 5. Security register
+
+| Vulnerability | Location | Severity | Exploit scenario | Fix |
+|---|---|---:|---|---|
+| Unauthenticated admin writes | Courses, quizzes, assignments, categories APIs | Critical | Anonymous attacker modifies or deletes content | Server-side RBAC middleware |
+| Cross-user progress access | `api/progress/route.js` | Critical | Attacker supplies another email or omits email | Derive identity from session |
+| Memory IDOR | `api/memory/route.js` | Critical | Attacker supplies another `sessionId`/`userId` | Object-level authorization |
+| Forged JWT | `lib/auth.js`, JWT route | Critical | Attacker signs token with known fallback key | Remove fallback; managed secret/asymmetric JWT |
+| Fixed admin password | `create_students.py`, login UI | Critical | Login using publicly shown password | Remove seeded credentials |
+| CSRF disabled | Backend shell scripts | Critical | Cross-site request performs mutation | Re-enable CSRF and origin validation |
+| PII in database dump | `backup.sql` | Critical | Repository access exposes user content | Purge, anonymize, rotate, restrict |
+| Token in URL | SSE status route | High | Token leaks via logs/history/referrer | Cookie/header-only token |
+| Wildcard CORS | Backend startup config | High | Untrusted origin interacts with credentialed APIs | Explicit allowlist |
+| Unauthenticated AI routes | Gemini/lab/YouTube routes | High | Anonymous API-cost abuse | Auth, quotas, throttling |
+| Weak upload validation | PDF upload route | High | Malformed or malicious document upload | Magic-byte validation, scanning, sandbox |
+| SSRF/redirect risk | PhET proxy | Medium/High | Allowed URL redirects to untrusted resource | Parse URL, disable redirects or validate every hop |
+| Admin analytics disclosure | API consumption route | High | Anyone reads per-user token usage | Admin authorization |
+| Error information disclosure | Multiple routes | Medium | Provider/database details exposed to client | Public error envelope |
+| No rate limiting on most endpoints | AI/admin/public APIs | High | Credential stuffing and resource exhaustion | Distributed rate limiting |
+
+---
+
+# 6. Tech-debt register
+
+| Debt | Location | Impact | Complexity | Priority | Fix before launch |
+|---|---|---|---:|---:|---:|
+| Multiple authentication models | Frappe sid, custom JWT, local storage | High | Medium | P0 | Yes |
+| Duplicate RAG authorization logic | Next.js and Frappe | High | High | P0 | Yes |
+| File-backed production data | Courses, quizzes, assignments | High | Medium | P0 | Yes |
+| Silent fallback/demo behavior | Multiple API routes | High | Medium | P1 | Yes |
+| Hardcoded defaults for DB passwords | `lib/db.js`, worker | High | Low | P0 | Yes |
+| Startup script performs migrations and seeding | `init-render-web.sh` | High | Medium | P1 | Yes |
+| Destructive DB reset path | `init-render-web.sh` | Critical | Low | P0 | Yes |
+| Unpinned base image | `FROM frappe/bench:latest` | High | Low | P1 | Yes |
+| Runtime pip installation | `init-render-web.sh` | Medium/High | Medium | P1 | Yes |
+| No dependency lock for Python worker | Backend | Medium | Low | P1 | Yes |
+| No migration/rollback framework | Backend/database | High | High | P1 | Yes |
+| Large UI pages/components | Admin pages, Viva page, tutors | Medium | High | P2 | No |
+| Repeated hook dependency warnings | Many React components | Medium | Medium | P2 | No |
+| Duplicate WebSocket implementations | `voice-server.js`, `server-with-ws.js` | Medium | Medium | P2 | No |
+| Excessive `console.warn` logging | Frontend/backend | Medium | Low | P2 | No |
+| Backup files in source tree | `CodePuzzle.backup.jsx`, image backups | Low/Medium | Low | P3 | No |
+| No formal API schema | All APIs | Medium | Medium | P2 | No |
+| No central validation library usage | API routes | High | Medium | P1 | Yes |
+| Cache invalidation is process-local | `lib/cache.js`, route caches | Medium | Medium | P2 | No |
+| Unbounded JSON body handling | Several routes | High | Medium | P1 | Yes |
+| No idempotency keys | Upload, writes, AI calls | Medium/High | Medium | P1 | Yes |
+
+---
+
+# 7. Database audit
+
+## Positive findings
+
+- Parameterized SQL is used in many queries.
+- Foreign key exists from document chunks to session documents with cascade delete.
+- Several useful indexes exist:
+  - queue status/created time
+  - tenant/user/session lookup
+  - tenant/content hash
+  - document ID
+
+## Problems
+
+### Schema and ownership
+
+- Tenant isolation is implemented through application predicates, not verified database-level RLS.
+- No evidence of database roles that restrict application users to minimum privileges.
+- Next.js directly connects to the database using a broad configured account.
+- Direct SQL references schema `test`, which is unsafe and confusing for production.
+- Table naming is inconsistent between Frappe and custom SQL access.
+
+### Constraints
+
+- No clear unique constraints for:
+  - document ownership/session/file-key combinations
+  - queue idempotency
+  - content hash per tenant/document
+  - duplicate course/lesson relationships
+- Duplicate uploads and queue rows are possible.
+
+### Transactions
+
+- Upload metadata and queue insertion are transactional.
+- Object storage upload occurs before the DB transaction. If DB insertion fails, the object becomes orphaned.
+- Delete metadata can succeed even when object deletion fails.
+- Worker uses `autocommit=True`, increasing partial-update risk.
+
+### Query/performance concerns
+
+- Course route performs a full lesson count aggregation for all courses.
+- Progress route uses Redis `KEYS`, which can block Redis on large keyspaces.
+- SSE opens a database polling loop every two seconds per client.
+- Vector queries and large embeddings are potentially expensive.
+- No observed query-plan or load-test evidence.
+
+### Backup and restore
+
+- `backup.sql` exists.
+- No documented:
+  - backup frequency
+  - retention
+  - encryption
+  - off-site replication
+  - restore test
+  - RPO/RTO
+  - point-in-time recovery procedure
+
+**Database readiness:** 🔴 BLOCKED
+
+---
+
+# 8. Privacy and PII assessment
+
+## Data identified
+
+### Personal data
+
+- Name
+- Email address
+- Phone number
+- Location
+- Education and employment history
+- User account identifiers
+- Course enrollment
+- Progress records
+- Assignment answers
+- Voice/audio-derived transcription
+- Chat history
+- Sentiment classification
+- Uploaded PDFs
+- Extracted document text
+- Embeddings
+- IP address
+- API usage/token consumption
+
+### Potentially sensitive data
+
+- Student academic performance
+- Resume and career information
+- Behavioral learning data
+- Voice and transcription data
+- Children’s educational data
+- Uploaded private documents
+- AI-generated learner profiles or “memories”
+
+## Missing controls
+
+- No privacy notice found
+- No consent-management flow found
+- No clear purpose limitation
+- No retention schedule
+- No data export
+- No correction mechanism
+- No account deletion workflow
+- No verified deletion of object storage and Redis data
+- No child/parent consent workflow
+- No processor/subprocessor register
+- No documented data residency decision
+- PII is logged and committed in the database dump
+
+## DPDP Act / Rules assessment
+
+India’s **Digital Personal Data Protection Act, 2023** defines a child as a person under 18. The officially published **DPDP Rules, 2025** are phased, so the exact launch obligations depend on the effective provision and launch date. The application clearly processes digital personal data and may process children’s data based on its school-student positioning.
+
+The following are not confirmed as implemented:
+
+- Notice specifying categories and purposes
+- Consent or valid lawful-use basis
+- Verifiable parental consent where applicable
+- Consent withdrawal
+- Data principal rights
+- Grievance handling
+- Reasonable security safeguards
+- Breach response
+- Erasure when purpose is complete
+- Processor contractual controls
+- Child-specific restrictions
+
+### Classification
+
+| Item | Classification |
+|---|---|
+| Data minimization | Technical + legal + business requirement |
+| Secure storage | Technical requirement |
+| Consent and child consent | Legal requirement; professional legal review |
+| Retention/deletion | Legal + business requirement |
+| Privacy notice | Legal requirement; professional legal review |
+| Processor agreements | Legal/business requirement |
+| Data breach response | Technical + legal requirement |
+| Data localization/residency | Requires legal and contractual review |
+| AI profiling/sentiment use | Requires privacy and product/legal review |
+
+**Privacy readiness:** 🔴 BLOCKED
+
+---
+
+# 9. India-specific compliance assessment
+
+The repository indicates an educational LMS with AI tutoring, document uploads, analytics, and possibly cohort pricing. The following are conditional.
+
+## Likely applicable
+
+### DPDP Act and DPDP Rules
+
+Likely applicable because the product processes personal data of students, users, instructors and administrators.
+
+Required review areas:
+
+- Data fiduciary/processor roles
+- Notice and consent
+- Children under 18
+- Parent/guardian consent
+- Purpose limitation
+- Retention
+- User rights
+- Breach response
+- Subprocessors including Gemini, Redis, B2, hosting and analytics providers
+
+### CERT-In directions
+
+The official CERT-In directions include:
+
+- Cyber incident reporting obligations
+- Time-sensitive incident reporting
+- Maintenance of logs for the prescribed retention period
+- Designated point of contact and cooperation requirements
+
+The current codebase has no documented:
+
+- Incident response plan
+- CERT-In escalation procedure
+- Centralized tamper-resistant logs
+- 180-day log retention design
+- Security contact owner
+
+### Information Technology Act and rules
+
+Relevant depending on the service model, user base and content moderation responsibilities.
+
+### Consumer Protection / E-Commerce Rules
+
+Applicable only if the business sells services to consumers or operates as an e-commerce entity. The repository includes pricing/batch UI concepts, but no confirmed payment or commercial workflow.
+
+Requires review of:
+
+- Terms of service
+- Pricing disclosures
+- Cancellation/refund rules
+- Grievance officer/contact
+- Customer support
+- Misleading AI or educational claims
+- Auto-renewals if introduced
+
+## Not evidenced as applicable from the repository
+
+- RBI regulations: no payment processing implementation was found
+- Payment aggregator compliance: no gateway integration was found
+- GST: requires tax classification and business-model review
+- Legal Metrology: likely not applicable unless physical goods are sold
+- Sector-specific education regulation: depends on accreditation, certification and claims
+- Marketplace intermediary rules: not established by the codebase
+
+**Compliance status:** 🟡 NEEDS ATTENTION, but launch is blocked until counsel and product ownership classify the model.
+
+---
+
+# 10. Frontend audit
+
+## Strengths
+
+- Responsive UI work exists.
+- Components are reasonably feature-oriented.
+- Lazy-like behavior and visual components are present.
+- Accessibility labels exist in some forms.
+- Loading and empty-state patterns exist in portions of the UI.
+
+## Issues
+
+- Large monolithic pages:
+  - `frontend/app/viva-interview/page.jsx`
+  - admin course pages
+  - tutor components
+- Repeated React hook dependency warnings from lint.
+- `dangerouslySetInnerHTML` appears in admin content rendering.
+- Root layout uses inline `dangerouslySetInnerHTML` script.
+- No Content Security Policy.
+- API responses are not consistently cached or invalidated correctly.
+- Large static assets and 3D/voice features may substantially affect mobile performance.
+- No Lighthouse or Core Web Vitals evidence.
+- No browser matrix testing.
+- No systematic keyboard/screen-reader audit.
+- No clear reduced-motion implementation.
+- No evidence of offline/network retry behavior across critical flows.
+- Login page exposes demo passwords.
+- Public SEO metadata is minimal:
+  - no evidence of sitemap
+  - robots configuration
+  - canonical URLs
+  - structured data
+  - Open Graph coverage
+
+**Frontend readiness:** 🟡 NEEDS ATTENTION
+
+---
+
+# 11. Backend/API audit
+
+## Positive findings
+
+- Many SQL queries use parameters.
+- PDF upload has nominal size/page limits.
+- Upload route attempts transaction handling.
+- RAG tests include cross-student access scenarios.
+- Worker has bounded retry counts.
+
+## Issues
+
+- Authorization is not centralized.
+- Multiple APIs trust caller-supplied `userId`, `email`, `sessionId`, `courseId`, or role-like data.
+- Most AI routes have no authentication or rate limiting.
+- No consistent request size limits.
+- No consistent schema validation with Zod despite Zod being installed.
+- No idempotency keys for uploads, writes or AI operations.
+- No global concurrency controls.
+- No circuit breakers.
+- No consistent timeout policy.
+- No API versioning.
+- No OpenAPI contract or generated client.
+- Errors often expose provider or implementation details.
+- Direct browser-to-Frappe interaction complicates trust boundaries.
+- Frappe permissions and custom API permissions are modified dynamically at startup.
+- Admin behavior is inferred client-side from email strings:
+  - `frontend/app/login/page.jsx:64-75`
+- Server-side admin authorization is not demonstrated.
+
+---
+
+# 12. Performance register
+
+Static evidence was used; no production-like load test or profiling results were available.
+
+| Bottleneck | Evidence | Impact | Recommended optimization |
+|---|---|---|---|
+| AI requests without quotas | Multiple public AI routes | Cost explosion, provider throttling | Per-user/IP/global quotas and token budgets |
+| Redis `KEYS` scan | `api/progress/route.js:31` | Redis blocking and latency spikes | Maintain indexed sets or paginated scans |
+| SSE database polling | `status-stream/route.js:92-94` | Connection and DB amplification | Pub/Sub-driven SSE with bounded lifetime |
+| Full lesson aggregation | `api/courses/route.js:66-70` | Slow course listing as data grows | Precomputed counters or grouped indexed query |
+| Direct embedding on every chat | Tutor routes | High latency and cost | Cache embeddings, enforce max prompt size |
+| In-memory caches | Courses/syllabus/cache modules | Inconsistent behavior across instances | Shared cache with invalidation/versioning |
+| JSON file writes | Courses/quizzes/assignments/categories | Lock contention and lost writes | Database transactions |
+| Voice WebSocket per connection | `voice-server.js`, `server-with-ws.js` | High memory/provider concurrency | Connection caps, idle timeouts, backpressure |
+| PDF parsing/embedding worker | `queue_worker.py` | CPU/memory spikes | Worker isolation, job limits, per-tenant quotas |
+| Large frontend assets | Three.js, labs, media, Pyodide | LCP/INP and mobile bandwidth | Code splitting, lazy loading, asset budgets |
+| Repeated external Frappe calls | `lib/frappe.js` and admin routes | Latency and request amplification | Server-side aggregation and caching |
+
+No reliable Core Web Vitals, p95 latency, throughput, database saturation, or memory data was available.
+
+---
+
+# 13. Reliability/SRE assessment
+
+## Single points of failure
+
+- One Next.js/custom server process
+- Local in-process caches
+- Local JSON persistence
+- Single Redis dependency for memory/rate limiting
+- Single database
+- Runtime worker processes started from web container
+- Gemini availability and API quota
+- B2 object storage operations without reconciliation
+- No demonstrated queue broker durability
+- No deployment rollback automation
+
+## Missing SRE controls
+
+- No SLI/SLO definitions
+- No alerting policy
+- No error budget
+- No readiness probes
+- No worker heartbeat
+- No dead-letter queue
+- No job visibility timeout
+- No operational runbook
+- No chaos/failure testing
+- No tested rollback
+- No tested restore
+- No incident response process
+
+## Suggested initial SLOs
+
+For an initial low-volume launch:
+
+- Availability: 99.5% monthly for core web/API
+- API success rate: ≥99.0%, excluding client validation errors
+- p95 standard API latency: <500 ms
+- p95 AI request acceptance: <2 seconds before provider generation
+- Document status update latency: <10 seconds
+- Queue job completion success: ≥99% after retries
+- RPO: ≤24 hours initially
+- RTO: ≤4 hours initially
+
+These must be validated against actual business requirements.
+
+---
+
+# 14. Testing audit
+
+## Existing testing
+
+- `backend/test_rag_rls.py`
+- No frontend test framework
+- No API integration suite
+- No E2E suite
+- No load testing
+- No automated security testing
+- No restore test
+- No browser compatibility suite
+
+## Existing RAG test limitations
+
+The RAG test is useful but:
+
+- Uses hardcoded internal token material
+- Directly invokes backend functions rather than exercising deployed HTTP boundaries
+- Does not validate the Next.js route authorization
+- Does not test forged JWTs
+- Does not test tenant spoofing through the frontend route
+- Does not test object storage permissions
+- Does not test concurrent deletion/upload/race conditions
+
+## Critical missing tests
+
+Before launch:
+
+- Anonymous access to every API
+- User A accessing User B’s:
+  - progress
+  - memory
+  - documents
+  - SSE status
+  - RAG context
+- Student invoking admin writes
+- Admin boundary and role changes
+- CSRF mutations
+- Session fixation and logout
+- Password reset and account lockout
+- Upload MIME spoofing
+- Oversized multipart body
+- Malformed PDF
+- Duplicate upload idempotency
+- Queue retry and dead-letter behavior
+- B2/database partial failure
+- Account deletion across DB, Redis and B2
+- AI quota exhaustion
+- WebSocket connection exhaustion
+- Prompt injection and document-based indirect injection
+- Database restore
+
+**Testing readiness:** 🔴 BLOCKED
+
+---
+
+# 15. Docker and infrastructure audit
+
+## Findings
+
+- `FROM frappe/bench:latest` is unpinned.
+- Build clones external GitHub repositories at build time without pinned commit/tag.
+- Runtime installs Python dependencies dynamically.
+- Web container starts Redis and background workers in the same container.
+- Dummy server is started to satisfy port scanning.
+- No explicit `HEALTHCHECK` in Dockerfile.
+- No non-root final runtime guarantee was demonstrated.
+- Secrets are written into generated site configuration.
+- Startup scripts contain destructive database reset logic.
+- Environment separation is not formalized.
+- No container image scan.
+- No SBOM.
+- No image provenance or reproducibility controls.
+
+**Docker readiness:** 🔴 BLOCKED
+
+---
+
+# 16. CI/CD audit
+
+No CI/CD workflow was found.
+
+Missing controls:
+
+- Pull request checks
+- Unit/integration tests
+- Lint/type checks as gates
+- Secret scanning
+- SAST
+- Dependency scanning
+- Container scanning
+- Migration dry-run
+- Staging deployment
+- Approval gate
+- Production deployment audit trail
+- Automatic rollback
+- Artifact signing
+- SBOM generation
+- Environment-specific configuration validation
+
+**CI/CD readiness:** 🔴 BLOCKED
+
+---
+
+# 17. Accessibility and UX
+
+## Accessibility concerns
+
+- No formal WCAG audit.
+- Dynamic tutor/voice experiences require explicit focus and screen-reader testing.
+- Inline styles make consistent focus/contrast auditing difficult.
+- 3D and visual laboratory features need non-visual alternatives.
+- Audio features need captions/transcripts and accessible controls.
+- Reduced-motion behavior is not evident.
+- Error messages are not consistently connected to form fields.
+- Keyboard-only user flows are not verified.
+
+## UX concerns
+
+- Password reset is explicitly not configured:
+  - `frontend/app/login/page.jsx:218`
+- Demo login behavior remains visible.
+- Fallback/demo data can appear when backend requests fail.
+- Silent fallbacks can make users believe data was saved when it was only written locally.
+- Network interruption and session expiration handling are inconsistent.
+- AI failure may be presented as successful offline fallback rather than a clearly differentiated degraded state.
+
+**UX/accessibility readiness:** 🟡 NEEDS ATTENTION
+
+---
+
+# 18. Architecture assessment
+
+## Current architecture
+
+The application is best characterized as a **feature-rich modular monolith with an external Frappe LMS backend and several auxiliary services**.
+
+That is appropriate for the current stage. A microservice migration is not required before launch.
+
+## Main architectural problems
+
+1. Two authentication systems
+2. Two sources of truth for course/content data
+3. Database access from both Frappe and Next.js
+4. File storage access from both API and worker
+5. Business logic embedded in route handlers
+6. Inconsistent authorization implementations
+7. Runtime initialization mixed with deployment
+8. Demo fallbacks mixed with production paths
+9. Background workers co-located with web startup
+10. Local JSON storage alongside database storage
+
+## Recommended target architecture
+
+For near-term launch:
+
+- Keep a modular monolith.
+- Make Frappe or a dedicated API layer the authoritative business-data service.
+- Keep Next.js as presentation/BFF.
+- Centralize authentication and authorization.
+- Use database-backed content and transactional writes.
+- Move document ingestion to a separately deployable worker.
+- Use a durable queue.
+- Keep B2 private and access-controlled.
+- Use Redis only for cache, rate limiting and ephemeral state.
+- Remove all silent demo fallbacks in production.
+
+---
+
+# 19. Risk matrix
+
+| Risk | Likelihood | Impact | Severity | Pre-launch? |
+|---|---:|---:|---:|---:|
+| Forged JWT/account takeover | High | Critical | Critical | Yes |
+| Anonymous admin data mutation | High | Critical | Critical | Yes |
+| Cross-user progress/memory disclosure | High | High | Critical | Yes |
+| PII leak through committed dump | High | Critical | Critical | Yes |
+| Fixed admin credentials | High | Critical | Critical | Yes |
+| CSRF-based state changes | High | High | Critical | Yes |
+| AI cost exhaustion | High | High | High | Yes |
+| Database wipe during startup | Medium | Critical | Critical | Yes |
+| Orphaned private documents | Medium | High | High | Yes |
+| Dependency exploit/DoS | Medium | High | High | Yes |
+| Production build failure | Medium | High | High | Yes |
+| Redis/DB saturation from polling/scans | Medium | High | High | Yes |
+| Missing backup restore proof | Medium | Critical | High | Yes |
+| Lack of incident response | Medium | High | High | Yes |
+| Accessibility defects | Medium | Medium | Medium | No, unless regulated/customer requirement |
+| SEO incompleteness | Medium | Low/Medium | Low | No |
+| Large bundle/3D performance | Medium | Medium | Medium | Targeted optimization before broad launch |
+
+---
+
+# 20. Production readiness scorecard
+
+| Category | Status | Reason |
+|---|---|---|
+| Architecture | 🟡 NEEDS ATTENTION | Modular-monolith direction is viable, but trust boundaries are inconsistent |
+| Code quality | 🟡 NEEDS ATTENTION | Large components, duplicated logic, fallback paths |
+| Tech debt | 🔴 BLOCKED | Security debt and production shortcuts affect core flows |
+| Security | 🔴 BLOCKED | Critical authorization, secrets and CSRF issues |
+| Authentication | 🔴 BLOCKED | Forged-token fallback and fixed passwords |
+| Authorization | 🔴 BLOCKED | Unauthenticated writes and IDOR risks |
+| API security | 🔴 BLOCKED | Missing auth, limits, schemas and error controls |
+| Database | 🔴 BLOCKED | Direct broad access, no verified RLS/privileges, destructive startup |
+| Privacy | 🔴 BLOCKED | PII dump, no deletion/consent/retention controls |
+| Compliance | 🔴 BLOCKED | No documented legal classification or privacy operations |
+| Performance | 🟡 NEEDS ATTENTION | Plausible bottlenecks, no production measurements |
+| Reliability | 🔴 BLOCKED | No durable operational controls or tested recovery |
+| Testing | 🔴 BLOCKED | No critical-path automated coverage |
+| Dependencies | 🔴 BLOCKED | 12 vulnerabilities including critical advisory |
+| Infrastructure | 🔴 BLOCKED | No production topology/security evidence |
+| Docker | 🔴 BLOCKED | Unpinned image, runtime installs, destructive startup |
+| CI/CD | 🔴 BLOCKED | No automated pipeline |
+| Monitoring | 🔴 BLOCKED | No metrics, tracing, alerts or structured logs |
+| Backup | 🟡 NEEDS ATTENTION | Dump exists, but restore reliability is unproven |
+| Disaster recovery | 🔴 BLOCKED | No tested RPO/RTO procedure |
+| Accessibility | 🟡 NEEDS ATTENTION | No formal WCAG validation |
+| UX | 🟡 NEEDS ATTENTION | Demo/fallback behavior and incomplete password reset |
+| Documentation | 🟡 NEEDS ATTENTION | Architecture notes exist, but runbooks and operational docs are missing |
+
+---
+
+# 21. 🚨 MUST FIX BEFORE PRODUCTION
+
+## 1. Close all authorization gaps
+
+- **Evidence:** Unauthenticated writes in course, assignment, quiz, category and syllabus APIs; unauthenticated progress/memory access.
+- **Risk:** Full data tampering and cross-user disclosure.
+- **Exact fix:** Add centralized `requireUser` and `requireRole` middleware. Derive identity from a server-controlled session. Require explicit admin permissions for all mutations.
+- **Verification test:** Anonymous requests return `401`; student requests to admin APIs return `403`; User A cannot access User B’s data after modifying all IDs.
+
+## 2. Remove hardcoded credentials and fallback secrets
+
+- **Evidence:** Fixed passwords and hardcoded JWT/encryption fallback.
+- **Risk:** Immediate account takeover.
+- **Exact fix:** Rotate all exposed secrets; remove fallback values; remove demo credentials from UI; implement secure bootstrap and forced password reset.
+- **Verification test:** Application fails closed when secrets are missing; forged JWTs are rejected; old credentials no longer work.
+
+## 3. Re-enable CSRF protection
+
+- **Evidence:** `ignore_csrf 1`.
+- **Risk:** Cross-site authenticated mutations.
+- **Exact fix:** Re-enable CSRF, implement origin validation and secure cookie policy.
+- **Verification test:** Cross-origin mutation without valid CSRF token is rejected.
+
+## 4. Remove PII and secrets from repository/workspace distribution
+
+- **Evidence:** PII in `backup.sql`, secrets in `.env` files.
+- **Risk:** Privacy breach and credential compromise.
+- **Exact fix:** Revoke/rotate secrets; remove database dump or replace with anonymized fixtures; audit history and backups.
+- **Verification test:** Secret scanner returns no active credentials; sanitized dump contains no real personal data.
+
+## 5. Remove destructive production initialization
+
+- **Evidence:** Startup script drops all tables when initialization check fails.
+- **Risk:** Catastrophic data loss.
+- **Exact fix:** Separate provisioning, migration and startup. Require explicit development-only destructive flag.
+- **Verification test:** Simulated transient DB failure never triggers table deletion.
+
+## 6. Implement AI and upload abuse controls
+
+- **Evidence:** Public AI endpoints and partial upload rate limiting.
+- **Risk:** API key compromise, cost explosion and denial of service.
+- **Exact fix:** Authentication, per-user/IP/global limits, request size limits, token ceilings, concurrency caps, timeouts and spend alerts.
+- **Verification test:** Quotas enforce `429`, limits cannot be bypassed by changing user IDs or headers.
+
+## 7. Resolve dependency and build failures
+
+- **Evidence:** 12 npm audit vulnerabilities and failed `npm run build`.
+- **Risk:** Known vulnerabilities and inability to produce a reliable release.
+- **Exact fix:** Upgrade compatible versions, test, lock versions, and resolve `.next/trace` filesystem issue.
+- **Verification test:** Clean checkout passes install, audit policy, lint, tests and production build.
+
+## 8. Establish backups, restore and rollback
+
+- **Evidence:** No restore test, rollback procedure or RPO/RTO documentation.
+- **Risk:** Irrecoverable data loss or prolonged outage.
+- **Exact fix:** Encrypted scheduled backups, off-site retention, restore automation, migration rollback plan and documented runbook.
+- **Verification test:** Restore into isolated environment and execute critical user flows.
+
+---
+
+# 22. ⚡ High-value quick fixes
+
+1. Remove password text from login UI.
+2. Remove hardcoded JWT fallback.
+3. Change default DB password fallbacks to fail closed.
+4. Reject requests without an explicit production origin.
+5. Add a shared authentication helper to every API route.
+6. Add request body size limits.
+7. Stop returning raw `error.message` to clients.
+8. Replace Redis `KEYS` usage with indexed sets.
+9. Add security headers:
+   - HSTS
+   - CSP
+   - `X-Content-Type-Options`
+   - `Referrer-Policy`
+   - `Permissions-Policy`
+   - frame protection
+10. Add a simple structured request logger with correlation IDs.
+11. Pin Docker and Git dependencies.
+12. Remove generated `.next` and local usage data from release artifacts.
+13. Add anonymous/student/admin authorization smoke tests.
+14. Mark all demo fallbacks as development-only.
+15. Add Gemini per-user daily quota and global cost alert.
+
+---
+
+# 23. Post-launch backlog
+
+## Before launch
+
+- Resolve all critical and high security findings.
+- Implement server-side RBAC and object authorization.
+- Rotate secrets.
+- Remove PII dump and credentials.
+- Re-enable CSRF.
+- Add rate limits and body limits.
+- Stabilize database and storage transactions.
+- Pin dependencies and images.
+- Add CI/CD gates.
+- Build a minimum integration/E2E suite.
+- Complete privacy/legal review.
+- Test restore and rollback.
+- Add monitoring and alerting.
+- Verify mobile and accessibility on critical flows.
+
+## First 7 days
+
+- Observe p50/p95/p99 latency.
+- Monitor Gemini cost and quota usage.
+- Verify queue throughput and retry behavior.
+- Review authorization denial logs.
+- Conduct controlled production security smoke tests.
+- Validate backup jobs and storage reconciliation.
+- Review error rates and user support tickets.
+- Confirm no sensitive data is appearing in logs.
+
+## First 30 days
+
+- Run load tests against staging.
+- Establish SLOs and dashboards.
+- Add distributed tracing.
+- Complete WCAG-focused audit.
+- Add formal API schemas/OpenAPI.
+- Add automated dependency update review.
+- Add database query plans and slow-query monitoring.
+- Perform incident response tabletop exercise.
+
+## First 90 days
+
+- Separate worker deployment from web application.
+- Replace custom JWT with a standard identity provider or asymmetric token validation.
+- Remove local JSON fallbacks.
+- Implement lifecycle and deletion reconciliation.
+- Add data export and account deletion workflows.
+- Introduce formal retention policies.
+- Review third-party processor contracts.
+- Consider tenant-aware database design improvements.
+- Perform external penetration test.
+
+## Long-term architecture
+
+- Establish one authoritative domain API.
+- Centralize policy enforcement.
+- Introduce durable queue and dead-letter handling.
+- Add event-driven document ingestion status.
+- Implement data classification and privacy-by-design controls.
+- Establish formal platform engineering ownership.
+- Add artifact signing, SBOM and supply-chain provenance.
+
+---
+
+# 24. Final go-live checklist
+
+## Security
+
+- [ ] Authentication secure
+- [ ] JWT fallback secrets removed
+- [ ] Authorization verified server-side
+- [ ] Admin APIs protected
+- [ ] Object-level authorization tested
+- [ ] Secrets rotated and secured
+- [ ] Rate limiting enabled
+- [ ] Security headers configured
+- [ ] HTTPS enforced
+- [ ] Dependency vulnerabilities addressed
+- [ ] File uploads secured and scanned
+- [ ] Admin access secured
+- [ ] CSRF protection enabled
+- [ ] CORS restricted to production origins
+- [ ] Tokens removed from URLs
+- [ ] Error responses sanitized
+
+## Database
+
+- [ ] Production migrations tested
+- [ ] No destructive startup path
+- [ ] Indexes verified with query plans
+- [ ] Tenant isolation verified
+- [ ] Database privileges least-privilege
+- [ ] RLS/permission model verified
+- [ ] Foreign keys and uniqueness constraints verified
+- [ ] Queue idempotency verified
+- [ ] Backup configured
+- [ ] Restore tested
+- [ ] RPO/RTO documented
+
+## Infrastructure
+
+- [ ] Production environment isolated
+- [ ] Production credentials differ from development
+- [ ] Debug/demo fallbacks disabled
+- [ ] Debug mode disabled
+- [ ] Monitoring active
+- [ ] Alerts active
+- [ ] Liveness checks active
+- [ ] Readiness checks active
+- [ ] Worker health checks active
+- [ ] Rollback tested
+- [ ] Container image pinned and scanned
+- [ ] Non-root runtime verified
+- [ ] DNS/CDN/TLS configuration reviewed
+
+## Application
+
+- [ ] Critical user flows tested
+- [ ] Authentication flows tested
+- [ ] Authorization flows tested
+- [ ] Core course flow tested
+- [ ] Document upload/deletion tested
+- [ ] AI tutor quotas tested
+- [ ] Error handling verified
+- [ ] Network interruption tested
+- [ ] Session expiration tested
+- [ ] Mobile tested
+- [ ] Performance tested
+- [ ] Accessibility checked
+- [ ] Browser compatibility checked
+
+## Compliance
+
+- [ ] Product business model classified
+- [ ] DPDP applicability reviewed
+- [ ] Children’s data assessment completed
+- [ ] Privacy notice reviewed
+- [ ] Consent/parental consent reviewed
+- [ ] Data retention schedule approved
+- [ ] Data deletion/export/correction implemented
+- [ ] Terms of Service reviewed
+- [ ] Privacy Policy reviewed
+- [ ] Refund/cancellation policy reviewed where applicable
+- [ ] Grievance/contact mechanism reviewed
+- [ ] CERT-In incident procedure documented
+- [ ] Tax/payment obligations reviewed where applicable
+- [ ] Third-party processor agreements reviewed
+- [ ] Data residency and transfer reviewed
+
+## Operations
+
+- [ ] Incident response plan
+- [ ] Security incident escalation plan
+- [ ] CERT-In reporting assessment
+- [ ] Backup/restore procedure
+- [ ] Rollback procedure
+- [ ] On-call ownership
+- [ ] Production runbook
+- [ ] Log redaction policy
+- [ ] Cost alerting
+- [ ] Dependency ownership
+- [ ] Post-incident review process
+
+---
+
+## Final decision
+
+**Go-live decision: 🔴 BLOCKED**
+
+The product can become production-ready without a premature microservices rewrite, but the security and operational foundation must be corrected first. The minimum acceptable launch path is:
+
+1. Fix authentication and authorization.
+2. Remove and rotate all credentials/secrets.
+3. Purge PII from source control and backups.
+4. Re-enable CSRF and restrict CORS.
+5. Secure AI, upload, WebSocket and SSE paths.
+6. Remove destructive startup behavior.
+7. Establish CI/CD, dependency gates, monitoring, backups and restore testing.
+8. Complete the India privacy/compliance classification with qualified counsel.
+9. Add automated authorization, critical-flow and restore tests.
+10. Produce a clean, reproducible production build.

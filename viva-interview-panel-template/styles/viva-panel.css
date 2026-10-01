@@ -1,0 +1,371 @@
+/* ==========================================================================
+   VIVA & INTERVIEW DUAL-MODE PANEL DESIGN SYSTEM
+   Supports:
+   - Smooth 74% / 26% split-view sliding panels
+   - Mode 1: Academic Viva Examiner (Theme: Neon Violet / Purple)
+   - Mode 2: Technical Interviewer (Theme: Electric Cyan / Sky Blue)
+   - Interactive Particle Bot container & halo pulse
+   - Step progress bar with animated active indicators
+   - Responsive breakpoints (<960px mobile collapse)
+   ========================================================================== */
+
+:root {
+  /* Viva Theme Tokens */
+  --viva-primary: #7C3AED;
+  --viva-primary-light: #A855F7;
+  --viva-primary-glow: rgba(168, 85, 247, 0.45);
+  --viva-bg-side: linear-gradient(180deg, rgba(20, 16, 44, 0.94) 0%, rgba(9, 13, 26, 0.98) 100%);
+  --viva-border: rgba(124, 58, 237, 0.2);
+
+  /* Technical Interview Theme Tokens */
+  --interview-primary: #0EA5E9;
+  --interview-primary-light: #38BDF8;
+  --interview-primary-glow: rgba(14, 165, 233, 0.45);
+  --interview-bg-side: linear-gradient(180deg, rgba(10, 24, 44, 0.94) 0%, rgba(7, 13, 24, 0.98) 100%);
+  --interview-border: rgba(14, 165, 233, 0.2);
+
+  /* Common Dark Theme Surface Tokens */
+  --surface-dark: #090D18;
+  --surface-panel: #070B14;
+  --text-primary: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+/* Master Outer Container */
+.viva-interview-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  background: var(--surface-dark);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dual Split Screen Container */
+.box-container {
+  width: 100%;
+  flex: 1;
+  max-height: 100%;
+  display: flex;
+  align-items: stretch;
+  border-radius: 0;
+  border: none;
+  background: var(--surface-dark);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  transition: box-shadow 0.45s ease;
+}
+
+.box1-content,
+.box1-side,
+.box2-content,
+.box2-side {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.box1-side,
+.box2-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   DEFAULT STATE: ACADEMIC VIVA ACTIVE
+   - box1-content: expanded (flex 7 / 74%)
+   - box1-side: sidebar active (flex 3 / 26%)
+   - box2-content & box2-side: collapsed to 0% width
+   ========================================================================== */
+.box1-content {
+  background: var(--surface-dark);
+  flex: 7 !important;
+  max-width: 74% !important;
+  display: flex;
+  flex-direction: column;
+  opacity: 1 !important;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 26px 44px;
+  box-sizing: border-box;
+  pointer-events: auto !important;
+}
+
+.box1-side {
+  background: var(--viva-bg-side);
+  border-left: 1px solid var(--viva-border);
+  flex: 3 !important;
+  max-width: 26% !important;
+  opacity: 1 !important;
+  min-width: 0;
+  padding: 24px 22px;
+  pointer-events: auto !important;
+}
+
+.box2-side {
+  background: var(--interview-bg-side);
+  border-right: none !important;
+  flex: 0 0 0% !important;
+  max-width: 0px !important;
+  width: 0px !important;
+  opacity: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.box2-content {
+  background: var(--surface-panel);
+  flex: 0 0 0% !important;
+  max-width: 0px !important;
+  width: 0px !important;
+  opacity: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   RIGHT-OPEN STATE: TECHNICAL INTERVIEW ACTIVE
+   - box1-content & box1-side: collapsed to 0% width
+   - box2-side: sidebar active (flex 3 / 26%)
+   - box2-content: expanded (flex 7 / 74%)
+   ========================================================================== */
+.box-container.right-open .box1-content {
+  flex: 0 0 0% !important;
+  max-width: 0px !important;
+  width: 0px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.box-container.right-open .box1-side {
+  flex: 0 0 0% !important;
+  max-width: 0px !important;
+  width: 0px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.box-container.right-open .box2-side {
+  flex: 3 !important;
+  max-width: 26% !important;
+  opacity: 1 !important;
+  padding: 24px 22px !important;
+  border-right: 1px solid var(--interview-border) !important;
+  pointer-events: auto !important;
+}
+
+.box-container.right-open .box2-content {
+  flex: 7 !important;
+  max-width: 74% !important;
+  opacity: 1 !important;
+  padding: 26px 44px !important;
+  pointer-events: auto !important;
+}
+
+/* ==========================================================================
+   STATUS BADGES & INDICATORS
+   ========================================================================== */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-pill.viva {
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  color: #C4B5FD;
+}
+
+.status-pill.interview {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #38BDF8;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  animation: pulseDot 1.8s infinite ease-in-out;
+}
+
+.pulse-dot.viva {
+  background: #A855F7;
+  box-shadow: 0 0 10px #A855F7;
+}
+
+.pulse-dot.interview {
+  background: #0EA5E9;
+  box-shadow: 0 0 10px #0EA5E9;
+}
+
+/* ==========================================================================
+   PARTICLE BOT HALO AURA
+   ========================================================================== */
+.bot-halo-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 10px 0;
+  z-index: 2;
+}
+
+.bot-ambient-halo {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulseGlowRing 3s infinite ease-in-out;
+}
+
+.bot-ambient-halo.viva {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(124, 58, 237, 0.08) 60%, transparent 80%);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.bot-ambient-halo.interview {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.28) 0%, rgba(37, 99, 235, 0.08) 60%, transparent 80%);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+/* Mode Switcher Buttons */
+.mode-switch-btn {
+  width: 100%;
+  max-width: 290px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.mode-switch-btn.to-interview {
+  background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%);
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.45);
+}
+
+.mode-switch-btn.to-interview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.65);
+}
+
+.mode-switch-btn.to-viva {
+  background: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
+}
+
+.mode-switch-btn.to-viva:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(124, 58, 237, 0.65);
+}
+
+/* Keyframe Animations */
+@keyframes pulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlowRing {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.75;
+  }
+}
+
+@keyframes heroFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1.18);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.22);
+  }
+}
+
+@keyframes botFloatBounce {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.8deg);
+  }
+}
+
+/* ==========================================================================
+   MOBILE & TABLET ADAPTIVE QUERIES
+   ========================================================================== */
+@media (max-width: 960px) {
+  .box-container {
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .box1-side,
+  .box2-side {
+    display: none !important;
+  }
+
+  .box1-content {
+    flex: 1 !important;
+    max-width: 100% !important;
+    padding: 16px 14px !important;
+  }
+
+  .box-container.right-open .box2-content {
+    flex: 1 !important;
+    max-width: 100% !important;
+    padding: 16px 14px !important;
+  }
+}
