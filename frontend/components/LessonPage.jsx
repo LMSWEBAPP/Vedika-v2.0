@@ -121,6 +121,11 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [isExpanded, setIsExpanded] = useState(false); // 90-10 collapsed by default, 50-50 when expanded
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false); // Collapsed initially until user clicks
 
+  // Tab & Color definitions at component scope
+  const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
+  const panelColor = currentTab?.color || '#A855F7';
+  const notesTabColor = TABS.find(t => t.id === 'notes')?.color || '#00D4FF';
+
   // Q&A Chat states
   const [chatQuestion, setChatQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
@@ -2012,8 +2017,8 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
           right: 24,
           zIndex: 9999,
           background: '#0D1424',
-          border: `1px solid ${panelColor}`,
-          boxShadow: `0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px ${panelColor}40`,
+          border: `1px solid ${notesTabColor}`,
+          boxShadow: `0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px ${notesTabColor}40`,
           borderRadius: 12,
           padding: '12px 18px',
           display: 'flex',
@@ -2026,11 +2031,11 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
             width: 28,
             height: 28,
             borderRadius: '50%',
-            background: `${panelColor}20`,
+            background: `${notesTabColor}20`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: panelColor,
+            color: notesTabColor,
             flexShrink: 0
           }}>
             <Check size={16} />
@@ -2052,7 +2057,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               marginLeft: 8,
               padding: '6px 12px',
               borderRadius: 6,
-              background: panelColor,
+              background: notesTabColor,
               color: '#0A0E1A',
               fontSize: 11,
               fontWeight: 700,
