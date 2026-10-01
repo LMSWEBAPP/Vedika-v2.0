@@ -41,68 +41,169 @@ function calcGcd(a, b) {
 }
 
 // Helper parser to dynamically extract slope, quadratic, or general expression parameters
-function parseMathEquation(rawEq, modeFromAI, paramsFromAI) {
-  if (!rawEq) return { eqText: 'y = x + 1', mode: 'linear', a: 1, b: 0, c: 1, d: 0 };
+function parseMathEquation(rawEq, modeFromAI, paramsFromAI, canonicalFromAI) {
+  if (!rawEq) return { eqText: 'y = x + 1', mode: 'linear', a: 1, b: 0, c: 1, d: 0, rawEq: 'y = x + 1' };
 
-  const clean = rawEq.replace(/\s+/g, '').toLowerCase();
+  let clean = String(rawEq).replace(/\s+/g, '').replace(/−/g, '-');
 
-  const linMatch = clean.match(/y=([+\-]?\d*\.?\d*)x([+\-]\d+\.?\d*)?/i);
-  if (linMatch || modeFromAI === 'linear') {
-    let a = 1;
-    let c = 1;
-
-    if (linMatch) {
-      const mStr = linMatch[1];
-      if (mStr === '' || mStr === '+') a = 1;
-      else if (mStr === '-') a = -1;
-      else {
-        const parsedVal = parseFloat(mStr);
-        if (!isNaN(parsedVal)) a = parsedVal;
-      }
-
-      if (linMatch[2]) {
-        const parsedC = parseFloat(linMatch[2]);
-        if (!isNaN(parsedC)) c = parsedC;
-      }
-    } else if (paramsFromAI) {
-      if (paramsFromAI.a !== undefined) a = paramsFromAI.a;
-      if (paramsFromAI.c !== undefined) c = paramsFromAI.c;
-    }
-
-    const formattedEq = `y = ${a === 1 ? '' : a === -1 ? '-' : a}x ${c >= 0 ? '+ ' + c : '- ' + Math.abs(c)}`;
-    return { eqText: formattedEq, mode: 'linear', a, b: 0, c, d: 0 };
+  // If AI gave explicit parameters, prioritize them
+  if (paramsFromAI && (paramsFromAI.a !== undefined || paramsFromAI.c !== undefined)) {
+    const a = paramsFromAI.a !== undefined ? parseFloat(paramsFromAI.a) : 1;
+    const b = paramsFromAI.b !== undefined ? parseFloat(paramsFromAI.b) : 0;
+    const c = paramsFromAI.c !== undefined ? parseFloat(paramsFromAI.c) : 0;
+    const d = paramsFromAI.d !== undefined ? parseFloat(paramsFromAI.d) : 0;
+    const mode = modeFromAI || (clean.includes('x^2') || clean.includes('x²') ? 'quadratic' : clean.includes('sin') ? 'sine' : 'linear');
+    return {
+      eqText: canonicalFromAI || (mode === 'linear' ? (a === 0 ? `y = ${c}` : `y = ${a === 1 ? '' : a === -1 ? '-' : a}x ${c !== 0 ? (c > 0 ? '+ ' + c : '- ' + Math.abs(c)) : ''}`.trim()) : rawEq),
+      mode,
+      a: isNaN(a) ? 1 : a,
+      b: isNaN(b) ? 0 : b,
+      c: isNaN(c) ? 0 : c,
+      d: isNaN(d) ? 0 : d,
+      rawEq
+    };
   }
 
-  const quadMatch = clean.match(/y=([+\-]?\d*\.?\d*)x\^2([+\-]\d*\.?\d*x)?([+\-]\d+\.?\d*)?/i);
-  if (quadMatch || modeFromAI === 'quadratic') {
-    let a = 1, c = -4;
+  // 1. Check for Trigonometric Sine
+  if (clean.includes('sin') || modeFromAI === 'sine') {
+    const sinMatch = clean.match(/y=([+\-]?\d*\.?\d*)?\*?sin\(([+\-]?\d*\.?\d*)?x([+\-]\d+\.?\d*)?\)([+\-]\d+\.?\d*)?/i);
+    let a = 1, b = 1, c = 0, d = 0;
+    if (sinMatch) {
+      if (sinMatch[1] === '-') a = -1;
+      else if (sinMatch[1] && sinMatch[1] !== '+') a = parseFloat(sinMatch[1]);
+      if (sinMatch[2] === '-') b = -1;
+      else if (sinMatch[2] && sinMatch[2] !== '+') b = parseFloat(sinMatch[2]);
+      if (sinMatch[3]) c = parseFloat(sinMatch[3]);
+      if (sinMatch[4]) d = parseFloat(sinMatch[4]);
+    }
+    return {
+      eqText: `y = ${a !== 1 ? (a === -1 ? '-' : a) : ''}sin(${b !== 1 ? b : ''}x)${d !== 0 ? (d > 0 ? ' + ' + d : ' - ' + Math.abs(d)) : ''}`.trim(),
+      mode: 'sine',
+      a: isNaN(a) ? 1 : a,
+      b: isNaN(b) ? 1 : b,
+      c: isNaN(c) ? 0 : c,
+      d: isNaN(d) ? 0 : d,
+      rawEq
+    };
+  }
+
+  // 2. Check for Quadratic (x^2 or x²)
+  if (clean.includes('x^2') || clean.includes('x²') || modeFromAI === 'quadratic') {
+    const std = clean.replace(/x²/g, 'x^2');
+    const quadMatch = std.match(/y=([+\-]?\d*\.?\d*)x\^2([+\-]?\d*\.?\d*x)?([+\-]\d+\.?\d*)?/i);
+    let a = 1, b = 0, c = 0, d = 0;
     if (quadMatch) {
-      const aStr = quadMatch[1];
-      if (aStr === '' || aStr === '+') a = 1;
-      else if (aStr === '-') a = -1;
-      else {
-        const pA = parseFloat(aStr);
-        if (!isNaN(pA)) a = pA;
+      if (quadMatch[1] === '-') a = -1;
+      else if (quadMatch[1] && quadMatch[1] !== '+') a = parseFloat(quadMatch[1]);
+      if (quadMatch[2]) {
+        const bStr = quadMatch[2].replace('x', '');
+        if (bStr === '+' || bStr === '') b = 1;
+        else if (bStr === '-') b = -1;
+        else b = parseFloat(bStr);
       }
-      if (quadMatch[3]) {
-        const pC = parseFloat(quadMatch[3]);
-        if (!isNaN(pC)) c = pC;
+      if (quadMatch[3]) c = parseFloat(quadMatch[3]);
+    } else {
+      const matchA = std.match(/([+\-]?\d*\.?\d*)x\^2/);
+      if (matchA) {
+        if (matchA[1] === '-') a = -1;
+        else if (matchA[1] && matchA[1] !== '+') a = parseFloat(matchA[1]);
       }
-    } else if (paramsFromAI) {
-      if (paramsFromAI.a !== undefined) a = paramsFromAI.a;
-      if (paramsFromAI.c !== undefined) c = paramsFromAI.c;
     }
-    return { eqText: `y = ${a !== 1 ? a : ''}x² ${c >= 0 ? '+ ' + c : '- ' + Math.abs(c)}`, mode: 'quadratic', a, b: 0, c, d: 0 };
+    return {
+      eqText: `y = ${a !== 1 ? (a === -1 ? '-' : a) : ''}x² ${b !== 0 ? (b > 0 ? '+ ' + b + 'x ' : '- ' + Math.abs(b) + 'x ') : ''}${c !== 0 ? (c > 0 ? '+ ' + c : '- ' + Math.abs(c)) : ''}`.trim(),
+      mode: 'quadratic',
+      a: isNaN(a) ? 1 : a,
+      b: isNaN(b) ? 0 : b,
+      c: isNaN(c) ? 0 : c,
+      d: 0,
+      rawEq
+    };
   }
 
-  return {
-    eqText: rawEq,
-    mode: modeFromAI || 'linear',
-    a: paramsFromAI?.a !== undefined ? paramsFromAI.a : 1,
-    b: paramsFromAI?.b !== undefined ? paramsFromAI.b : 0,
-    c: paramsFromAI?.c !== undefined ? paramsFromAI.c : 1,
-    d: paramsFromAI?.d !== undefined ? paramsFromAI.d : 0
-  };
+  // 3. Algebraic Linear Solver for any linear relation with '=' (e.g. x = y + 4, 2x + 3y = 6, y = 4 - x)
+  if (clean.includes('=')) {
+    const [leftRaw, rightRaw] = clean.split('=');
+    function extractCoeffs(str, multiplier = 1) {
+      const tokens = str.match(/([+\-]?[^+\-]+)/g) || [];
+      let coeffX = 0, coeffY = 0, constant = 0;
+      for (let token of tokens) {
+        if (!token) continue;
+        if (token.includes('x')) {
+          let numStr = token.replace('x', '');
+          let num = 1;
+          if (numStr === '' || numStr === '+') num = 1;
+          else if (numStr === '-') num = -1;
+          else num = parseFloat(numStr);
+          if (!isNaN(num)) coeffX += num * multiplier;
+        } else if (token.includes('y')) {
+          let numStr = token.replace('y', '');
+          let num = 1;
+          if (numStr === '' || numStr === '+') num = 1;
+          else if (numStr === '-') num = -1;
+          else num = parseFloat(numStr);
+          if (!isNaN(num)) coeffY += num * multiplier;
+        } else {
+          const num = parseFloat(token);
+          if (!isNaN(num)) constant += num * multiplier;
+        }
+      }
+      return { coeffX, coeffY, constant };
+    }
+
+    const left = extractCoeffs(leftRaw, 1);
+    const right = extractCoeffs(rightRaw, -1);
+
+    const totalA = left.coeffX + right.coeffX; // coeff of x
+    const totalB = left.coeffY + right.coeffY; // coeff of y
+    const totalC = left.constant + right.constant; // constant
+
+    // If totalB is non-zero, solve for y: y = (-totalA / totalB) * x + (-totalC / totalB)
+    if (Math.abs(totalB) > 1e-6) {
+      const slope = -totalA / totalB;
+      const intercept = -totalC / totalB;
+      const roundClean = (v) => Math.abs(v - Math.round(v)) < 1e-4 ? Math.round(v) : parseFloat(v.toFixed(2));
+      const a = roundClean(slope);
+      const c = roundClean(intercept);
+
+      let formatted = 'y = ';
+      if (a === 1) formatted += 'x';
+      else if (a === -1) formatted += '-x';
+      else if (a !== 0) formatted += `${a}x`;
+
+      if (c > 0) {
+        formatted += (a !== 0 ? ' + ' : '') + c;
+      } else if (c < 0) {
+        formatted += (a !== 0 ? ' - ' : '-') + Math.abs(c);
+      } else if (a === 0) {
+        formatted += '0';
+      }
+
+      return {
+        eqText: canonicalFromAI || formatted,
+        mode: 'linear',
+        a,
+        b: 0,
+        c,
+        d: 0,
+        rawEq
+      };
+    } else if (Math.abs(totalA) > 1e-6) {
+      // Vertical line: totalA * x + totalC = 0 => x = -totalC / totalA
+      const xVal = parseFloat((-totalC / totalA).toFixed(2));
+      return {
+        eqText: `x = ${xVal}`,
+        mode: 'vertical',
+        a: 0,
+        b: 0,
+        c: xVal,
+        d: 0,
+        rawEq
+      };
+    }
+  }
+
+  // Fallback default
+  return { eqText: 'y = x + 1', mode: 'linear', a: 1, b: 0, c: 1, d: 0, rawEq };
 }
 
 // ----------------------------------------------------
@@ -839,7 +940,23 @@ export default function MathLab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user: "Examine this handwritten math equation image carefully. Identify the exact equation written (e.g. y = x + 1, y = 2x + 1, y = x^2 - 4, y = sin(x)). Respond ONLY with valid JSON: {\"equation\": \"<detected_equation>\", \"mode\": \"linear|quadratic|sine\", \"explanation\": \"<short description>\"}",
+          user: `Analyze this handwritten math equation image carefully.
+Identify the exact equation written on the whiteboard (e.g. x = y + 4, y = 2x - 3, y = x^2 - 4, y = sin(x)).
+Express it in standard Cartesian form solved for y: y = f(x).
+
+Respond ONLY with valid JSON in this exact structure:
+{
+  "equation": "<original_detected_equation, e.g. x = y + 4>",
+  "canonical": "<solved_for_y_equation, e.g. y = x - 4>",
+  "mode": "linear" | "quadratic" | "sine",
+  "params": {
+    "a": <number, slope or leading coefficient, e.g. 1>,
+    "b": <number, frequency or linear coeff, default 0>,
+    "c": <number, y-intercept or constant, e.g. -4>,
+    "d": <number, vertical offset, default 0>
+  },
+  "explanation": "<short explanation, e.g. Detected handwritten equation x = y + 4. Solved for y: y = x - 4 (slope m = 1, y-intercept c = -4).>"
+}`,
           image: dataUrl
         })
       });
@@ -864,7 +981,7 @@ export default function MathLab() {
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[0]);
-          const parsedResult = parseMathEquation(parsed.equation, parsed.mode, parsed.params);
+          const parsedResult = parseMathEquation(parsed.equation || parsed.canonical, parsed.mode, parsed.params, parsed.canonical);
 
           setPlotMode(parsedResult.mode);
           setParamA(parsedResult.a);
@@ -872,25 +989,29 @@ export default function MathLab() {
           setParamC(parsedResult.c);
           setParamD(parsedResult.d);
           setEquationText(parsedResult.eqText);
-          setRecognizedText(parsedResult.eqText);
-          setAiExplanation(parsed.explanation || `Detected ${parsedResult.mode} equation ${parsedResult.eqText}.`);
+          setRecognizedText(parsed.equation || parsedResult.rawEq || parsedResult.eqText);
+          setAiExplanation(parsed.explanation || `Detected: ${parsed.equation || parsedResult.rawEq} ➔ Plotted: ${parsedResult.eqText}`);
         } catch (err) {
           const parsedResult = parseMathEquation(rawText);
           setPlotMode(parsedResult.mode);
           setParamA(parsedResult.a);
+          setParamB(parsedResult.b);
           setParamC(parsedResult.c);
+          setParamD(parsedResult.d);
           setEquationText(parsedResult.eqText);
-          setRecognizedText(parsedResult.eqText);
-          setAiExplanation("Recognized expression from whiteboard selection.");
+          setRecognizedText(parsedResult.rawEq || parsedResult.eqText);
+          setAiExplanation(`Recognized: ${parsedResult.rawEq} ➔ Plotted: ${parsedResult.eqText}`);
         }
       } else {
         const parsedResult = parseMathEquation(rawText);
         setPlotMode(parsedResult.mode);
         setParamA(parsedResult.a);
+        setParamB(parsedResult.b);
         setParamC(parsedResult.c);
+        setParamD(parsedResult.d);
         setEquationText(parsedResult.eqText);
-        setRecognizedText(parsedResult.eqText);
-        setAiExplanation(rawText.slice(0, 150) || "Detected mathematical graph curve.");
+        setRecognizedText(parsedResult.rawEq || parsedResult.eqText);
+        setAiExplanation(rawText.slice(0, 150) || `Detected ${parsedResult.eqText}`);
       }
     } catch (error) {
       console.error("Recognition error:", error);
@@ -1033,34 +1154,65 @@ export default function MathLab() {
     ctx.beginPath();
     let isFirst = true;
 
-    for (let px = 0; px < width; px += 2) {
-      const mathX = (px - originX) / zoomScale;
-      const mathY = evaluateY(mathX);
-      const py = originY - mathY * zoomScale;
+    if (plotMode === 'vertical') {
+      const px = originX + paramC * zoomScale;
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, height);
+      ctx.stroke();
 
-      if (py >= -100 && py <= height + 100) {
-        if (isFirst) {
-          ctx.moveTo(px, py);
-          isFirst = false;
-        } else {
-          ctx.lineTo(px, py);
-        }
-      } else {
-        isFirst = true;
+      // Highlight X-intercept for vertical line
+      if (px >= 0 && px <= width) {
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.arc(px, originY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`(${paramC}, 0)`, px + 8, originY - 6);
       }
-    }
-    ctx.stroke();
+    } else {
+      for (let px = 0; px < width; px += 2) {
+        const mathX = (px - originX) / zoomScale;
+        const mathY = evaluateY(mathX);
+        const py = originY - mathY * zoomScale;
 
-    // Highlight Y-intercept
-    const yInt = evaluateY(0);
-    const pyInt = originY - yInt * zoomScale;
-    if (pyInt >= 0 && pyInt <= height) {
-      ctx.fillStyle = '#10B981';
-      ctx.beginPath();
-      ctx.arc(originX, pyInt, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(`(0, ${yInt.toFixed(1)})`, originX + 8, pyInt - 6);
+        if (py >= -100 && py <= height + 100) {
+          if (isFirst) {
+            ctx.moveTo(px, py);
+            isFirst = false;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        } else {
+          isFirst = true;
+        }
+      }
+      ctx.stroke();
+
+      // Highlight Y-intercept
+      const yInt = evaluateY(0);
+      const pyInt = originY - yInt * zoomScale;
+      if (pyInt >= 0 && pyInt <= height) {
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.arc(originX, pyInt, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`(0, ${yInt.toFixed(1)})`, originX + 8, pyInt - 6);
+      }
+
+      // Highlight X-intercept for linear curves
+      if (plotMode === 'linear' && paramA !== 0) {
+        const xInt = -paramC / paramA;
+        const pxInt = originX + xInt * zoomScale;
+        if (pxInt >= 0 && pxInt <= width && Math.abs(xInt) > 0.05) {
+          ctx.fillStyle = '#3B82F6';
+          ctx.beginPath();
+          ctx.arc(pxInt, originY, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`(${xInt.toFixed(1)}, 0)`, pxInt + 8, originY + 14);
+        }
+      }
     }
 
   }, [zoomScale, paramA, paramB, paramC, paramD, plotMode, hoverCoord]);
@@ -1139,14 +1291,30 @@ export default function MathLab() {
 
   const getFormattedFormula = () => {
     switch (plotMode) {
-      case 'linear':
-        return `y = ${paramA === 1 ? '' : paramA === -1 ? '-' : paramA}x ${paramC >= 0 ? '+ ' + paramC : '- ' + Math.abs(paramC)}`;
-      case 'quadratic':
-        return `y = ${paramA !== 1 ? paramA : ''}x² ${paramC >= 0 ? '+ ' + paramC : '- ' + Math.abs(paramC)}`;
+      case 'linear': {
+        const a = paramA;
+        const c = paramC;
+        if (a === 0) return `y = ${c}`;
+        let aStr = a === 1 ? 'x' : a === -1 ? '-x' : `${a}x`;
+        if (c === 0) return `y = ${aStr}`;
+        return `y = ${aStr} ${c > 0 ? '+ ' + c : '- ' + Math.abs(c)}`;
+      }
+      case 'vertical':
+        return `x = ${paramC}`;
+      case 'quadratic': {
+        const a = paramA;
+        const b = paramB;
+        const c = paramC;
+        let res = 'y = ';
+        if (a !== 0) res += `${a === 1 ? '' : a === -1 ? '-' : a}x²`;
+        if (b !== 0) res += ` ${b > 0 && a !== 0 ? '+ ' : b < 0 ? '- ' : ''}${Math.abs(b) === 1 ? 'x' : Math.abs(b) + 'x'}`;
+        if (c !== 0 || (a === 0 && b === 0)) res += ` ${c > 0 && (a !== 0 || b !== 0) ? '+ ' : c < 0 ? '- ' : ''}${Math.abs(c)}`;
+        return res.trim();
+      }
       case 'sine':
-        return `y = ${paramA} · sin(${paramB}x) ${paramD >= 0 ? '+ ' + paramD : '- ' + Math.abs(paramD)}`;
+        return `y = ${paramA !== 1 ? paramA : ''}sin(${paramB !== 1 ? paramB : ''}x)${paramD !== 0 ? (paramD > 0 ? ' + ' + paramD : ' - ' + Math.abs(paramD)) : ''}`;
       default:
-        return equationText;
+        return equationText || 'y = x + 1';
     }
   };
 
@@ -1402,11 +1570,21 @@ export default function MathLab() {
                 </div>
               </div>
 
-              <div style={{ background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '12px 16px', borderRadius: 10, display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.5)' }}>Active Curve</span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: '#F472B6', fontFamily: 'monospace', display: 'block' }}>
+              <div style={{ background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '14px 18px', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Active 2D Curve</span>
+                  {recognizedText && (
+                    <span style={{ fontSize: 11, background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '2px 10px', borderRadius: 12, fontWeight: 700 }}>
+                      Handwritten: {recognizedText}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: '#F472B6', fontFamily: 'monospace', display: 'block' }}>
                     {getFormattedFormula()}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#A78BFA', fontWeight: 600 }}>
+                    ({plotMode === 'linear' ? 'Linear Line' : plotMode === 'vertical' ? 'Vertical Line' : plotMode === 'quadratic' ? 'Parabola' : plotMode === 'sine' ? 'Sine Wave' : 'Curve'})
                   </span>
                 </div>
               </div>
@@ -1431,13 +1609,29 @@ export default function MathLab() {
                     <label style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.7)', display: 'flex', justifyContent: 'space-between' }}>
                       <span>Slope/Scale (a):</span> <b>{paramA}</b>
                     </label>
-                    <input type="range" min="-5" max="5" step="0.5" value={paramA} onChange={e => setParamA(parseFloat(e.target.value))} style={{ width: '100%', accentColor: '#8B5CF6' }} />
+                    <input
+                      type="range"
+                      min={Math.min(-10, Math.floor(paramA - 2))}
+                      max={Math.max(10, Math.ceil(paramA + 2))}
+                      step="0.5"
+                      value={paramA}
+                      onChange={e => setParamA(parseFloat(e.target.value))}
+                      style={{ width: '100%', accentColor: '#8B5CF6' }}
+                    />
                   </div>
                   <div>
                     <label style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.7)', display: 'flex', justifyContent: 'space-between' }}>
                       <span>Intercept/Offset (c):</span> <b>{paramC}</b>
                     </label>
-                    <input type="range" min="-10" max="10" step="1" value={paramC} onChange={e => setParamC(parseFloat(e.target.value))} style={{ width: '100%', accentColor: '#10B981' }} />
+                    <input
+                      type="range"
+                      min={Math.min(-15, Math.floor(paramC - 2))}
+                      max={Math.max(15, Math.ceil(paramC + 2))}
+                      step="0.5"
+                      value={paramC}
+                      onChange={e => setParamC(parseFloat(e.target.value))}
+                      style={{ width: '100%', accentColor: '#10B981' }}
+                    />
                   </div>
                 </div>
               </div>
