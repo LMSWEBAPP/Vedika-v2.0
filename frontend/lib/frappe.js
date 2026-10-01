@@ -1,0 +1,3214 @@
+// lib/frappe.js
+
+const rawFrappeUrl = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_FRAPPE_URL || '')
+  : (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
+
+const FRAPPE_URL = (rawFrappeUrl && rawFrappeUrl.includes('vyomanta.onrender.com'))
+  ? 'https://vedika-v2-0.onrender.com'
+  : (rawFrappeUrl || (typeof window !== 'undefined' ? '' : 'https://vedika-v2-0.onrender.com'));
+
+export function buildFrappeUrl(path) {
+  const base = typeof window !== 'undefined'
+    ? window.location.origin
+    : (FRAPPE_URL || 'https://vedika-v2-0.onrender.com');
+  const fullPath = (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FRAPPE_URL)
+    ? path
+    : `${FRAPPE_URL}${path}`;
+  return new URL(fullPath, base);
+}
+
+export function sanitizeTitle(title) {
+  if (!title) return title;
+  return title.replace(/#/g, 'No.');
+}
+
+// Default demo courses fallback
+export const DEFAULT_COURSES = [
+  {
+    id: "physics-mechanics-fundamentals",
+    name: "physics-mechanics-fundamentals",
+    title: "Physics: Mechanics & Energy",
+    instructor: "Dr. Angela Thorne",
+    category: "Physics",
+    enrolled: 38,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Master classical mechanics, 1D motion, Newton's laws of motion, conservation of mechanical energy, and universal gravitation.",
+    image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 15, 2026"
+  },
+  {
+    id: "calculus-advanced-mathematics",
+    name: "calculus-advanced-mathematics",
+    title: "Mathematics: Calculus & Analysis",
+    instructor: "Prof. David Miller",
+    category: "Maths",
+    enrolled: 42,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Comprehensive journey through differential and integral calculus, limits, continuity, rate of change, and geometric area integrals.",
+    image: "https://images.unsplash.com/photo-1509228468518-180dd4864904?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 14, 2026"
+  },
+  {
+    id: "general-physical-chemistry",
+    name: "general-physical-chemistry",
+    title: "Chemistry: Atoms, Bonds & Reactions",
+    instructor: "Dr. Maya Lin",
+    category: "Chemistry",
+    enrolled: 35,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Investigate quantum electron orbitals, ionic and covalent bonding, stoichiometric reaction yields, and acid-base titration equilibria.",
+    image: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 12, 2026"
+  },
+  {
+    id: "cellular-biology-genetics",
+    name: "cellular-biology-genetics",
+    title: "Biology: Cells & Molecular Genetics",
+    instructor: "Dr. Sarah Jenkins",
+    category: "Biology",
+    enrolled: 40,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Explore living systems from cellular organelles and ATP cellular respiration to DNA replication, central dogma, and Mendelian inheritance.",
+    image: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Aug 10, 2026"
+  },
+  {
+    id: "python-programming-essentials",
+    name: "python-programming-essentials",
+    title: "Python Programming Essentials",
+    instructor: "Alex Mercer",
+    category: "Python",
+    enrolled: 65,
+    lessonsCount: 4,
+    status: "Published",
+    description: "From beginner syntax to structured programming: master dynamic typing, collections, conditionals, iteration, and reusable modular functions.",
+    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Jul 28, 2026"
+  },
+  {
+    id: "modern-web-development-html-css",
+    name: "modern-web-development-html-css",
+    title: "Web Development: HTML & CSS",
+    instructor: "Elena Rostova",
+    category: "Web Development",
+    enrolled: 52,
+    lessonsCount: 4,
+    status: "Published",
+    description: "Learn fundamental front-end web engineering with semantic HTML5 elements, accessible forms, modern CSS box models, and responsive Flexbox.",
+    image: "https://images.unsplash.com/photo-1547658719-da2b51169166?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    date: "Jul 25, 2026"
+  }
+];
+
+// Client-side cache for optimized zero-latency instant loading
+export const clientCache = {
+  courses: null,
+  coursesTimestamp: 0,
+  syllabus: {},         // Map of courseId -> { data, timestamp }
+  quizzes: null,
+  quizzesTimestamp: 0,
+  assignments: null,
+  assignmentsTimestamp: 0,
+  quizSubmissions: null,
+  quizSubmissionsTimestamp: 0,
+  assignmentSubmissions: null,
+  assignmentSubmissionsTimestamp: 0
+};
+
+// Helper to get active user ID to scope cache keys
+function getActiveUserId() {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('frappe_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.email || parsed.name || 'anonymous';
+      }
+    } catch (e) {}
+  }
+  return 'anonymous';
+}
+
+// Helper to invalidate courses cache across all user sessions
+export function invalidateCoursesCache() {
+  clientCache.courses = null;
+  clientCache.coursesTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('cached_courses_list_') || key.startsWith('cached_courses_timestamp_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.setItem('courses_updated_ts', Date.now().toString());
+      window.dispatchEvent(new Event('courses_updated'));
+    } catch (e) {}
+  }
+}
+
+export function invalidateSyllabusCache(courseId) {
+  if (courseId) {
+    delete clientCache.syllabus[courseId];
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`cached_syllabus_${courseId}`);
+      localStorage.removeItem(`cached_syllabus_timestamp_${courseId}`);
+    }
+  } else {
+    clientCache.syllabus = {};
+    if (typeof window !== 'undefined') {
+      // Clear all cached read syllabuses from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('cached_syllabus_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  }
+}
+
+export function invalidateQuizzesCache() {
+  clientCache.quizzes = null;
+  clientCache.quizzesTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('quizzes_updated'));
+  }
+}
+
+export function invalidateAssignmentsCache() {
+  clientCache.assignments = null;
+  clientCache.assignmentsTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('assignments_updated'));
+  }
+}
+
+export function invalidateSubmissionsCache() {
+  clientCache.quizSubmissions = null;
+  clientCache.quizSubmissionsTimestamp = 0;
+  clientCache.assignmentSubmissions = null;
+  clientCache.assignmentSubmissionsTimestamp = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('submissions_updated'));
+  }
+}
+
+async function handleResponse(res, isRest = true) {
+  if (!res.ok) {
+    let errMsg = `HTTP Error ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data._server_messages) {
+        try {
+          const msgs = JSON.parse(data._server_messages);
+          const parsed = msgs.map(m => {
+            try {
+              return JSON.parse(m).message;
+            } catch (e) {
+              return m;
+            }
+          }).join('\n');
+          if (parsed) errMsg = parsed;
+        } catch (e) {}
+      } else if (data.exception) {
+        errMsg = data.exception.split('\n').filter(Boolean).pop() || data.exception;
+      } else if (data.exc) {
+        try {
+          const excList = JSON.parse(data.exc);
+          if (excList.length > 0) errMsg = excList[0].split('\n').filter(Boolean).pop() || excList[0];
+        } catch (e) {}
+      }
+    } catch (e) {}
+    throw new Error(errMsg);
+  }
+  const data = await res.json();
+  return isRest ? data.data : data.message;
+}
+const promiseCache = new Map();
+
+function getCachedPromise(key, fetchFn) {
+  if (promiseCache.has(key)) {
+    return promiseCache.get(key);
+  }
+  const promise = fetchFn().catch(err => {
+    promiseCache.delete(key);
+    throw err;
+  });
+  promiseCache.set(key, promise);
+  return promise;
+}
+
+export function clearApiCache() {
+  promiseCache.clear();
+}
+
+export async function frappeGet(method, params = {}) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const mergedParams = { ...params };
+  if (sid && !mergedParams.sid) {
+    mergedParams.sid = sid;
+  }
+  
+  const cacheKey = `GET_METHOD:${method}:${JSON.stringify(mergedParams)}`;
+  
+  return getCachedPromise(cacheKey, async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    try {
+      const url = buildFrappeUrl(`/api/method/${method}`);
+      Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString(), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": getActiveUserId()
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return handleResponse(res, false);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  });
+}
+
+export async function frappePost(method, body = {}) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  promiseCache.clear();
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const url = buildFrappeUrl(`/api/method/${method}`);
+  if (sid) {
+    url.searchParams.set('sid', sid);
+  }
+  
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Email": getActiveUserId()
+    },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res, false);
+}
+
+export async function frappeRestGet(resource, params = {}) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const mergedParams = { ...params };
+  if (sid && !mergedParams.sid) {
+    mergedParams.sid = sid;
+  }
+  
+  const cacheKey = `GET_REST:${resource}:${JSON.stringify(mergedParams)}`;
+  
+  return getCachedPromise(cacheKey, async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    try {
+      const encodedSegments = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
+      const url = buildFrappeUrl(`/api/resource/${encodedSegments}`);
+      Object.entries(mergedParams).forEach(([k, v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString(), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": getActiveUserId()
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return handleResponse(res, true);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  });
+}
+
+export async function frappeRestPost(resource, body = {}) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  promiseCache.clear();
+  
+  const encodedSegments = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const url = buildFrappeUrl(`/api/resource/${encodedSegments}`);
+  if (sid) {
+    url.searchParams.set('sid', sid);
+  }
+  
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Email": getActiveUserId()
+    },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res, true);
+}
+
+export async function frappeRestPut(resource, name, body = {}) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  promiseCache.clear();
+  
+  const encodedResource = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
+  const encodedName = encodeURIComponent(name);
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const url = buildFrappeUrl(`/api/resource/${encodedResource}/${encodedName}`);
+  if (sid) {
+    url.searchParams.set('sid', sid);
+  }
+  
+  const res = await fetch(url.toString(), {
+    method: "PUT",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Email": getActiveUserId()
+    },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res, true);
+}
+
+export async function frappeRestDelete(resource, name) {
+  if (!FRAPPE_URL && typeof window === 'undefined') throw new Error("Frappe URL not configured");
+  
+  promiseCache.clear();
+  
+  const encodedResource = resource.split('/').map(segment => encodeURIComponent(segment)).join('/');
+  const encodedName = encodeURIComponent(name);
+  
+  let sid = null;
+  if (typeof window !== 'undefined') {
+    sid = localStorage.getItem('frappe_sid');
+  }
+  
+  const url = buildFrappeUrl(`/api/resource/${encodedResource}/${encodedName}`);
+  if (sid) {
+    url.searchParams.set('sid', sid);
+  }
+  
+  const res = await fetch(url.toString(), {
+    method: "DELETE",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+  return handleResponse(res, true);
+}
+
+// Fetch enrolled courses from Frappe LMS
+export async function getEnrolledCourses() {
+  if (FRAPPE_URL) {
+    return frappeGet("academy_portal.api.get_enrolled_courses");
+  }
+  // Simulated Fallback
+  return DEFAULT_COURSES.filter(c => c.status === 'Published');
+}
+
+// --- Course Categories API ---
+
+export async function getCourseCategories() {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/categories', { cache: 'no-store' });
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          localStorage.setItem('admin_course_categories', JSON.stringify(list));
+          return list;
+        }
+      }
+    } catch (_) {}
+
+    const saved = localStorage.getItem('admin_course_categories');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (_) {}
+    }
+  }
+
+  return [
+    "Web Development",
+    "Frontend",
+    "Framework",
+    "Data Structures & Algorithms",
+    "Python Programming",
+    "Finance",
+    "Business",
+    "Design",
+    "Personal Development"
+  ];
+}
+
+export async function addCourseCategory(categoryName) {
+  const trimmed = (categoryName || '').trim();
+  if (!trimmed) return null;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: trimmed })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.categories) {
+          localStorage.setItem('admin_course_categories', JSON.stringify(data.categories));
+        }
+      }
+    } catch (_) {}
+
+    const saved = localStorage.getItem('admin_course_categories');
+    let list = [];
+    try { list = JSON.parse(saved) || []; } catch (_) {}
+    if (!list.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+      list.push(trimmed);
+      localStorage.setItem('admin_course_categories', JSON.stringify(list));
+    }
+  }
+
+  return trimmed;
+}
+
+// --- High-level Unified REST-based Course Management API ---
+
+// Helper to decorate course list with enrollments and filter deleted courses
+function prepareCourses(list, locallyDeleted = []) {
+  let localEnrollments = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const savedEnrollments = localStorage.getItem('student_course_enrollments');
+      if (savedEnrollments) {
+        localEnrollments = JSON.parse(savedEnrollments);
+      }
+    } catch (e) {}
+  }
+
+  const localCounts = {};
+  if (Array.isArray(localEnrollments)) {
+    localEnrollments.forEach(e => {
+      if (e && e.course) {
+        localCounts[e.course] = (localCounts[e.course] || 0) + 1;
+      }
+    });
+  }
+
+  return (list || [])
+    .filter(c => c && !locallyDeleted.includes(String(c.id)))
+    .map(c => ({
+      ...c,
+      enrolled: localCounts[c.id] !== undefined ? localCounts[c.id] : (c.enrolled || 0)
+    }));
+}
+
+/**
+ * Fetch all courses (filtered or unfiltered) - Instant 0ms return with background revalidation
+ */
+export async function getCourses(options = {}) {
+  let locallyDeleted = [];
+  if (typeof window !== 'undefined') {
+    try {
+      locallyDeleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String);
+    } catch (e) {}
+  }
+
+  const now = Date.now();
+
+  // 1. Instant in-memory cache check (< 60s)
+  if (!options.forceRefresh && clientCache.courses && (now - clientCache.coursesTimestamp < 60000)) {
+    return prepareCourses(clientCache.courses, locallyDeleted);
+  }
+
+  // 2. Instant local read from localStorage
+  let list = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_courses_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.courses = list;
+          clientCache.coursesTimestamp = now;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Background server fetch to sync newly published courses
+  const revalidateCourses = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/courses', { signal: controller.signal }).catch(() => null);
+      clearTimeout(timeoutId);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.courses) && data.courses.length > 0) {
+          let updated = data.courses;
+          if (list && Array.isArray(list)) {
+            const serverIds = new Set(data.courses.map(c => String(c.id)));
+            const localOnly = list.filter(c => !serverIds.has(String(c.id)));
+            updated = [...localOnly, ...data.courses];
+          }
+          clientCache.courses = updated;
+          clientCache.coursesTimestamp = Date.now();
+          try {
+            localStorage.setItem('admin_courses_list', JSON.stringify(updated));
+          } catch (e) {}
+          window.dispatchEvent(new Event('courses_updated'));
+        }
+      }
+    } catch (_) {}
+  };
+
+  // 3. If local list is available and forceRefresh not requested, return INSTANTLY (0ms!)
+  if (list && !options.forceRefresh) {
+    revalidateCourses();
+    return prepareCourses(list, locallyDeleted);
+  }
+
+  // If forceRefresh, await revalidation
+  if (options.forceRefresh && typeof window !== 'undefined') {
+    await revalidateCourses();
+    if (clientCache.courses) {
+      list = clientCache.courses;
+    }
+  }
+
+  // 4. Fallback to DEFAULT_COURSES if nothing is initialized yet
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_COURSES;
+    clientCache.courses = list;
+    clientCache.coursesTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_courses_list', JSON.stringify(DEFAULT_COURSES));
+      } catch (e) {}
+      revalidateCourses();
+    }
+  }
+
+  return prepareCourses(list, locallyDeleted);
+}
+
+/**
+ * Create a new course
+ */
+export async function createCourse(courseData) {
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const newCourse = {
+    ...courseData,
+    id: courseData.id || Date.now().toString(),
+    status: courseData.status || 'Published',
+    enrolled: 0,
+    date: courseData.date || formattedDate
+  };
+
+  // 1. Immediately update localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_courses_list') || JSON.stringify(DEFAULT_COURSES);
+      let courses = JSON.parse(saved);
+      courses = courses.filter(c => String(c.id) !== String(newCourse.id));
+      courses.unshift(newCourse);
+      localStorage.setItem('admin_courses_list', JSON.stringify(courses));
+    } catch (e) {}
+  }
+
+  // 2. Persist to server API route (/api/courses)
+  if (typeof window !== 'undefined') {
+    try {
+      fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ course: newCourse })
+      }).catch(err => console.warn('[createCourse] /api/courses save error:', err));
+    } catch (e) {}
+  }
+
+  // 3. Broadcast update to all components and tabs
+  invalidateCoursesCache();
+
+  // 4. Background sync with Frappe if online (non-blocking)
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        let inst = "Administrator";
+        if (courseData.instructor && (courseData.instructor.includes("@") || courseData.instructor === "Administrator")) {
+          inst = courseData.instructor;
+        }
+        const serializedDescription = JSON.stringify({
+          description: courseData.description || "",
+          pdf: courseData.pdf || ""
+        });
+        await frappeRestPost("LMS Course", {
+          title: sanitizeTitle(courseData.title),
+          published: newCourse.status === "Published" ? 1 : 0,
+          instructors: [{ instructor: inst }],
+          short_introduction: courseData.tagline || courseData.short_introduction || `${courseData.title} course introduction.`,
+          description: serializedDescription,
+          category: courseData.category || "Web Development",
+          image: courseData.image || ""
+        });
+      } catch (e) {}
+    })();
+  }
+
+  return newCourse;
+}
+
+/**
+ * Update a course
+ */
+export async function updateCourse(id, courseData) {
+  const strId = String(id);
+  const updatedCourse = { ...courseData, id: strId };
+
+  // 1. Immediately update localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_courses_list') || JSON.stringify(DEFAULT_COURSES);
+      const courses = JSON.parse(saved);
+      const updated = courses.map(c => String(c.id) === strId ? { ...c, ...courseData, id: strId } : c);
+      localStorage.setItem('admin_courses_list', JSON.stringify(updated));
+    } catch (e) {}
+  }
+
+  // 2. Persist to server API route
+  if (typeof window !== 'undefined') {
+    try {
+      fetch('/api/courses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: strId, course: courseData })
+      }).catch(err => console.warn('[updateCourse] /api/courses error:', err));
+    } catch (e) {}
+  }
+
+  // 3. Broadcast update
+  invalidateCoursesCache();
+  if (id) invalidateSyllabusCache(strId);
+
+  // 4. Background sync with Frappe
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        let inst = "Administrator";
+        if (courseData.instructor && (courseData.instructor.includes("@") || courseData.instructor === "Administrator")) {
+          inst = courseData.instructor;
+        }
+        const serializedDescription = JSON.stringify({
+          description: courseData.description || "",
+          pdf: courseData.pdf || ""
+        });
+        await frappeRestPut("LMS Course", id, {
+          title: sanitizeTitle(courseData.title),
+          published: (courseData.status === "Published" || courseData.status === "published") ? 1 : 0,
+          category: courseData.category || undefined,
+          instructors: [{ instructor: inst }],
+          short_introduction: courseData.tagline || courseData.short_introduction || undefined,
+          description: serializedDescription,
+          image: courseData.image || ""
+        });
+      } catch (e) {}
+    })();
+  }
+
+  return updatedCourse;
+}
+
+/**
+ * Delete a course
+ */
+export async function deleteCourse(id) {
+  const strId = String(id);
+
+  // 1. Immediately remove from local storage state and mark deleted
+  if (typeof window !== 'undefined') {
+    try {
+      const deleted = JSON.parse(localStorage.getItem('locally_deleted_courses') || '[]').map(String);
+      if (!deleted.includes(strId)) {
+        deleted.push(strId);
+        localStorage.setItem('locally_deleted_courses', JSON.stringify(deleted));
+      }
+    } catch (e) {}
+
+    try {
+      const saved = localStorage.getItem('admin_courses_list') || JSON.stringify(DEFAULT_COURSES);
+      const courses = JSON.parse(saved);
+      const filtered = courses.filter(c => String(c.id) !== strId);
+      localStorage.setItem('admin_courses_list', JSON.stringify(filtered));
+    } catch (e) {}
+
+    localStorage.removeItem(`admin_course_details_${strId}`);
+    localStorage.removeItem(`cached_syllabus_${strId}`);
+    localStorage.removeItem(`cached_syllabus_timestamp_${strId}`);
+  }
+
+  // 2. Persist delete to server API
+  if (typeof window !== 'undefined') {
+    try {
+      fetch(`/api/courses?id=${encodeURIComponent(strId)}`, {
+        method: 'DELETE'
+      }).catch(err => console.warn('[deleteCourse] /api/courses error:', err));
+    } catch (e) {}
+  }
+
+  // 3. Broadcast update to all tabs and listeners
+  invalidateCoursesCache();
+  if (id) invalidateSyllabusCache(strId);
+
+  const isLocalCourseId = /^\d{10,}$/.test(strId) || strId.startsWith('local_') || strId.startsWith('course_');
+
+  if (FRAPPE_URL && !isLocalCourseId) {
+    try {
+      // 1. Fetch and delete linked Enrollments to avoid LinkExistsError
+      const enrollments = await frappeRestGet("LMS Enrollment", {
+        filters: JSON.stringify([["course", "=", id]]),
+        fields: JSON.stringify(["name"]),
+        limit_page_length: 500
+      }).catch(() => []);
+      if (Array.isArray(enrollments)) {
+        for (const enroll of enrollments) {
+          await frappeRestDelete("LMS Enrollment", enroll.name).catch(err => {
+            console.warn(`Could not delete linked LMS Enrollment ${enroll.name}:`, err);
+          });
+        }
+      }
+
+      // 2. Fetch and delete linked Quizzes
+      const quizzes = await frappeRestGet("LMS Quiz", {
+        filters: JSON.stringify([["course", "=", id]]),
+        fields: JSON.stringify(["name"]),
+        limit_page_length: 500
+      }).catch(() => []);
+      if (Array.isArray(quizzes)) {
+        for (const q of quizzes) {
+          await frappeRestDelete("LMS Quiz", q.name).catch(err => {
+            console.warn(`Could not delete linked LMS Quiz ${q.name}:`, err);
+          });
+        }
+      }
+
+      // 3. Fetch and delete linked Assignments
+      const assignments = await frappeRestGet("LMS Assignment", {
+        filters: JSON.stringify([["course", "=", id]]),
+        fields: JSON.stringify(["name"]),
+        limit_page_length: 500
+      }).catch(() => []);
+      if (Array.isArray(assignments)) {
+        for (const a of assignments) {
+          await frappeRestDelete("LMS Assignment", a.name).catch(err => {
+            console.warn(`Could not delete linked LMS Assignment ${a.name}:`, err);
+          });
+        }
+      }
+
+      // 4. Fetch and delete linked Batches
+      const batches = await frappeRestGet("LMS Batch", {
+        filters: JSON.stringify([["course", "=", id]]),
+        fields: JSON.stringify(["name"]),
+        limit_page_length: 500
+      }).catch(() => []);
+      if (Array.isArray(batches)) {
+        for (const b of batches) {
+          await frappeRestDelete("LMS Batch", b.name).catch(err => {
+            console.warn(`Could not delete linked LMS Batch ${b.name}:`, err);
+          });
+        }
+      }
+
+      // 5. Fetch syllabus first to get chapter and lesson names
+      const syllabus = await getCourseSyllabus(id).catch(() => null);
+      if (syllabus && syllabus.modules) {
+        // Step A: Unlink lessons from chapters
+        for (const mod of syllabus.modules) {
+          await frappeRestPut("Course Chapter", mod.id, { lessons: [] }).catch(err => {
+            console.warn(`Failed to unlink lessons from chapter ${mod.id}:`, err);
+          });
+        }
+
+        // Step B: Unlink chapters from course
+        await frappeRestPut("LMS Course", id, { chapters: [] }).catch(err => {
+          console.warn(`Failed to unlink chapters from course ${id}:`, err);
+        });
+
+        // Step C: Delete all Course Lessons
+        for (const mod of syllabus.modules) {
+          if (mod.lessons) {
+            for (const les of mod.lessons) {
+              await frappeRestDelete("Course Lesson", les.id).catch(err => {
+                console.warn(`Could not delete Course Lesson ${les.id}:`, err);
+              });
+            }
+          }
+        }
+
+        // Step D: Delete all Course Chapters
+        for (const mod of syllabus.modules) {
+          await frappeRestDelete("Course Chapter", mod.id).catch(err => {
+            console.warn(`Could not delete Course Chapter ${mod.id}:`, err);
+          });
+        }
+      }
+
+      // Step E: Finally delete the LMS Course document itself
+      await frappeRestDelete("LMS Course", id);
+    } catch (e) {
+      console.warn("Could not delete course via Frappe REST API (offline or unavailable). Deleted locally.", e);
+    }
+  }
+
+  invalidateCoursesCache();
+  return true;
+}
+
+/**
+ * Fetch course syllabus outline (Chapters & Lessons) from Server API, Local Storage, or Frappe
+ */
+export async function getCourseSyllabus(courseId, options = {}) {
+  const forceRefresh = options.forceRefresh || (typeof window !== 'undefined' && window.location.pathname.includes('/admin'));
+  const now = Date.now();
+
+  // 1. Check in-memory cache first if not forced refresh
+  if (!forceRefresh) {
+    const cachedEntry = clientCache.syllabus[courseId];
+    if (cachedEntry && (now - cachedEntry.timestamp < 300000)) { // 5 minutes TTL
+      return cachedEntry.data;
+    }
+  }
+
+  let syllabus = null;
+
+  // 2. Check localStorage custom syllabus outlines (instant 0ms read)
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(`admin_course_details_${courseId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.modules) && parsed.modules.length > 0) {
+          syllabus = parsed;
+          clientCache.syllabus[courseId] = { data: syllabus, timestamp: now };
+        }
+      } catch (_) {}
+    }
+  }
+
+  // Background server sync helper
+  const revalidateSyllabus = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.modules) && data.modules.length > 0) {
+          clientCache.syllabus[courseId] = { data, timestamp: Date.now() };
+          try {
+            localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(data));
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  };
+
+  // If already found in localStorage and not forceRefresh, return immediately and sync in background!
+  if (syllabus && !forceRefresh) {
+    revalidateSyllabus();
+    return syllabus;
+  }
+
+  // 3. Try local server persistence API if forceRefresh or not found yet
+  if (typeof window !== 'undefined') {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.modules) && data.modules.length > 0) {
+          syllabus = data;
+          clientCache.syllabus[courseId] = { data: syllabus, timestamp: Date.now() };
+          try {
+            localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(syllabus));
+          } catch (_) {}
+          return syllabus;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 3. Try Frappe DocTypes if online and not a local ID
+  const isLocalCourseId = /^\d{10,}$/.test(String(courseId)) || String(courseId).startsWith('local_') || String(courseId).startsWith('course_');
+  if (!syllabus && FRAPPE_URL && !isLocalCourseId) {
+    try {
+      syllabus = await Promise.race([
+        frappeGet("lms.lms.api.get_course_syllabus_optimized", { course_id: courseId }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]);
+      if (syllabus && syllabus.error) syllabus = null;
+    } catch (_) {
+      syllabus = null;
+    }
+
+    if (!syllabus) {
+      try {
+        const courseDoc = await frappeRestGet(`LMS Course/${courseId}`);
+        const chapterRefs = courseDoc.chapters || [];
+
+        const modules = await Promise.all((chapterRefs || []).map(async (ref) => {
+          try {
+            const chDoc = await frappeRestGet(`Course Chapter/${ref.chapter}`);
+            const lessonRefs = chDoc.lessons || [];
+
+            const lessons = await Promise.all((lessonRefs || []).map(async (lRef) => {
+              try {
+                const lDoc = await frappeRestGet(`Course Lesson/${lRef.lesson}`);
+                let pts = [];
+                let quizQuestions = [];
+                let codingExercise = { hasExercise: false };
+                let pdf = "";
+                if (lDoc.instructor_notes) {
+                  try {
+                    const meta = JSON.parse(lDoc.instructor_notes);
+                    if (Array.isArray(meta.pts)) pts = meta.pts;
+                    if (Array.isArray(meta.quizQuestions)) quizQuestions = meta.quizQuestions;
+                    if (meta.codingExercise) codingExercise = meta.codingExercise;
+                    if (meta.pdf) pdf = meta.pdf;
+                  } catch (e) {}
+                }
+                return {
+                  id: lDoc.name,
+                  title: lDoc.title || lRef.lesson,
+                  dur: "10 min",
+                  vid: lDoc.youtube || "",
+                  overview: lDoc.body || "",
+                  pts,
+                  quizQuestions,
+                  codingExercise,
+                  pdf
+                };
+              } catch (e) {
+                const cleanTitle = lRef.lesson
+                  .replace(/^(lesson-|l-)/i, '')
+                  .split(/[-_]/)
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                return {
+                  id: lRef.lesson,
+                  title: cleanTitle,
+                  dur: "10 min",
+                  vid: "",
+                  overview: "",
+                  pts: [],
+                  quizQuestions: [],
+                  codingExercise: { hasExercise: false },
+                  pdf: ""
+                };
+              }
+            }));
+
+            return {
+              id: chDoc.name,
+              title: chDoc.title,
+              emoji: "📖",
+              accent: "#5B8CF8",
+              lessons
+            };
+          } catch (err) {
+            return { id: ref.chapter, title: "Untitled Chapter", emoji: "📖", accent: "#5B8CF8", lessons: [] };
+          }
+        }));
+
+        syllabus = {
+          id: courseId,
+          title: courseDoc.title,
+          tagline: courseDoc.short_introduction || "",
+          modules
+        };
+      } catch (_) {}
+    }
+  }
+
+  // 4. Default outline if completely new course
+  if (!syllabus) {
+    syllabus = {
+      id: courseId,
+      title: "Course Syllabus Outline",
+      tagline: "Define modules and lessons for students.",
+      modules: [
+        {
+          id: `${courseId}_m1`,
+          title: "Introduction",
+          emoji: "🚀",
+          accent: "#5B8CF8",
+          lessons: [
+            {
+              id: `${courseId}_l1`,
+              title: "What is this course?",
+              dur: "5 min",
+              vid: "",
+              overview: "Welcome to the course. Here is a brief explanation of what we will cover.",
+              pts: ["Course overview", "Course requirements"],
+              quizQuestions: [],
+              codingExercise: {
+                hasExercise: false,
+                language: 'python',
+                instruction: '',
+                starterCode: '',
+                solutionCode: '',
+                testCases: []
+              },
+              pdf: ""
+            }
+          ]
+        }
+      ]
+    };
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(syllabus));
+      fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syllabus })
+      }).catch(() => {});
+    }
+  }
+
+  // Cache in memory and localStorage
+  clientCache.syllabus[courseId] = {
+    data: syllabus,
+    timestamp: Date.now()
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`cached_syllabus_${courseId}`, JSON.stringify(syllabus));
+      localStorage.setItem(`cached_syllabus_timestamp_${courseId}`, String(Date.now()));
+    } catch (_) {}
+  }
+
+  return syllabus;
+}
+
+function cleanYoutubeVid(input) {
+  if (!input || typeof input !== 'string') return '';
+  const str = input.trim();
+  if (!str) return '';
+  if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+  const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?.*v=|shorts\/|live\/))([a-zA-Z0-9_-]{11})/);
+  if (match && match[1]) return match[1];
+  try {
+    const urlObj = new URL(str.startsWith('http') ? str : `https://${str}`);
+    const vParam = urlObj.searchParams.get('v');
+    if (vParam && /^[a-zA-Z0-9_-]{11}$/.test(vParam)) return vParam;
+  } catch (e) {}
+  const tokenMatch = str.match(/([a-zA-Z0-9_-]{11})/);
+  if (tokenMatch && tokenMatch[1]) return tokenMatch[1];
+  return str;
+}
+
+/**
+ * Save course syllabus outline to Frappe DocTypes or Local Storage
+ */
+export async function saveCourseSyllabus(courseId, syllabus) {
+  // 1. Immediately persist to server API (permanent across browsers and reloads)
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch(`/api/courses/${encodeURIComponent(courseId)}/syllabus`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syllabus }),
+        cache: 'no-store'
+      });
+    } catch (apiErr) {
+      console.warn("Failed to persist syllabus to server API:", apiErr);
+    }
+
+    // 2. Persist to localStorage
+    localStorage.setItem(`admin_course_details_${courseId}`, JSON.stringify(syllabus));
+    localStorage.setItem(`cached_syllabus_${courseId}`, JSON.stringify(syllabus));
+    localStorage.setItem(`cached_syllabus_timestamp_${courseId}`, String(Date.now()));
+
+    // Update lesson count in cached course list
+    try {
+      const saved = localStorage.getItem('admin_courses_list');
+      if (saved) {
+        const courses = JSON.parse(saved);
+        const totalLessons = (syllabus.modules || []).reduce((acc, m) => acc + (m.lessons ? m.lessons.length : 0), 0);
+        const updated = courses.map(c => String(c.id) === String(courseId) ? { ...c, lessonsCount: totalLessons } : c);
+        localStorage.setItem('admin_courses_list', JSON.stringify(updated));
+      }
+    } catch (_) {}
+  }
+
+  // 3. Update memory cache
+  clientCache.syllabus[courseId] = {
+    data: syllabus,
+    timestamp: Date.now()
+  };
+
+  // 4. Try syncing to Frappe DocTypes in background (non-blocking, tolerant of 503)
+  const isLocalCourseId = /^\d{10,}$/.test(String(courseId)) || String(courseId).startsWith('local_') || String(courseId).startsWith('course_');
+  if (FRAPPE_URL && !isLocalCourseId) {
+    (async () => {
+      try {
+        for (const chapter of syllabus.modules) {
+          const lessonsList = [];
+          for (const lesson of chapter.lessons || []) {
+            const cleanVid = cleanYoutubeVid(lesson.vid);
+            const notesStr = JSON.stringify({
+              pts: lesson.pts || ["Key concept introduction."],
+              quizQuestions: lesson.quizQuestions || [],
+              codingExercise: lesson.codingExercise || { hasExercise: false },
+              pdf: lesson.pdf || ""
+            });
+
+            const lRes = await Promise.race([
+              frappePost("lms.lms.api.save_course_lesson_custom", {
+                lesson_id: lesson.id,
+                title: sanitizeTitle(lesson.title),
+                chapter_id: chapter.id,
+                youtube: cleanVid,
+                body: lesson.overview,
+                instructor_notes: notesStr,
+                user_email: getActiveUserId()
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+            ]);
+
+            if (lRes && lRes.status === "success" && lRes.name) {
+              lessonsList.push(lRes.name);
+            }
+          }
+
+          await Promise.race([
+            frappePost("lms.lms.api.save_course_chapter_custom", {
+              chapter_id: chapter.id,
+              title: sanitizeTitle(chapter.title),
+              course: courseId,
+              lessons: lessonsList.map(lId => ({ lesson: lId })),
+              user_email: getActiveUserId()
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+          ]);
+        }
+      } catch (e) {
+        console.warn("Background Frappe sync skipped (Frappe offline/suspended).");
+      }
+    })();
+  }
+
+  return syllabus;
+}
+
+export function isAdminUser(userOrEmail) {
+  if (!userOrEmail) return false;
+  if (typeof userOrEmail === 'string') {
+    const s = userOrEmail.trim().toLowerCase();
+    return s === 'admin' || s === 'administrator' || s === 'admin@lms.com';
+  }
+  const role = (userOrEmail.role || '').toLowerCase();
+  const email = (userOrEmail.email || '').toLowerCase();
+  const username = (userOrEmail.username || '').toLowerCase();
+  return (
+    role === 'administrator' ||
+    role === 'admin' ||
+    role === 'system manager' ||
+    email === 'admin@lms.com' ||
+    username === 'administrator' ||
+    username === 'admin'
+  );
+}
+
+/**
+ * Real backend authenticated login
+ */
+export async function login(email, password) {
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const trimmedPassword = (password || '').trim();
+
+  if (!normalizedEmail || !trimmedPassword) {
+    throw new Error('Please enter both email and password.');
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalizedEmail, password: trimmedPassword })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (typeof window !== 'undefined') {
+        if (data.sid) localStorage.setItem('frappe_sid', data.sid);
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('jwt', data.token);
+        }
+      }
+      return data.user;
+    } else {
+      throw new Error(data.error || data.message || "Invalid email or password.");
+    }
+  } catch (err) {
+    console.error('[Auth Login Error]:', err.message);
+    throw err;
+  }
+}
+
+// --- LMS Batch API ---
+
+const DEFAULT_BATCHES = [
+  { id: '1', title: 'Python Cohort - Summer 2026', start_date: '2026-06-01', end_date: '2026-08-31', medium: 'Online', seat_count: 50, published: true, amount: 199, currency: 'USD' },
+  { id: '2', title: 'Data Structures Intensive - Q3', start_date: '2026-07-15', end_date: '2026-09-15', medium: 'Offline', seat_count: 25, published: true, amount: 299, currency: 'USD' },
+  { id: '3', title: 'ML/AI Boot Camp', start_date: '2026-09-01', end_date: '2026-12-15', medium: 'Online', seat_count: 100, published: false, amount: 499, currency: 'USD' }
+];
+
+export async function getBatches() {
+  if (FRAPPE_URL) {
+    try {
+      const batches = await frappeRestGet("LMS Batch", {
+        fields: JSON.stringify(["name", "title", "start_date", "end_date", "medium", "seat_count", "published", "amount", "currency"]),
+        limit_page_length: 100
+      });
+      return batches.map(b => ({
+        id: b.name,
+        title: b.title,
+        start_date: b.start_date,
+        end_date: b.end_date,
+        medium: b.medium || 'Online',
+        seat_count: b.seat_count || 0,
+        published: !!b.published,
+        amount: b.amount || 0,
+        currency: b.currency || 'USD'
+      }));
+    } catch (e) {
+      console.error("Failed to fetch batches. Falling back to local state.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_batches_list');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem('admin_batches_list', JSON.stringify(DEFAULT_BATCHES));
+    return DEFAULT_BATCHES;
+  }
+  return DEFAULT_BATCHES;
+}
+
+export async function createBatch(batchData) {
+  if (FRAPPE_URL) {
+    try {
+      const result = await frappeRestPost("LMS Batch", {
+        title: batchData.title,
+        start_date: batchData.start_date,
+        end_date: batchData.end_date,
+        medium: batchData.medium || 'Online',
+        seat_count: parseInt(batchData.seat_count) || 0,
+        published: batchData.published ? 1 : 0,
+        amount: parseFloat(batchData.amount) || 0,
+        currency: batchData.currency || 'USD',
+        // Add defaults for required fields in the backend
+        start_time: batchData.start_time || "09:00:00",
+        end_time: batchData.end_time || "18:00:00",
+        timezone: batchData.timezone || "Asia/Kolkata",
+        description: batchData.description || `${batchData.title} batch cohort.`,
+        batch_details: batchData.batch_details || `${batchData.title} batch details.`,
+        instructors: [{ instructor: "Administrator" }]
+      });
+      return { ...batchData, id: result.name };
+    } catch (e) {
+      console.warn("Notice: Frappe REST API unavailable for createBatch. Falling back to local state.", e.message || e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_batches_list') || JSON.stringify(DEFAULT_BATCHES);
+    const list = JSON.parse(saved);
+    const newBatch = { ...batchData, id: Date.now().toString() };
+    list.unshift(newBatch);
+    localStorage.setItem('admin_batches_list', JSON.stringify(list));
+    return newBatch;
+  }
+  return batchData;
+}
+
+export async function updateBatch(id, batchData) {
+  if (FRAPPE_URL) {
+    try {
+      await frappeRestPut("LMS Batch", id, {
+        title: batchData.title,
+        start_date: batchData.start_date,
+        end_date: batchData.end_date,
+        medium: batchData.medium,
+        seat_count: parseInt(batchData.seat_count) || 0,
+        published: batchData.published ? 1 : 0,
+        amount: parseFloat(batchData.amount) || 0,
+        currency: batchData.currency,
+        // Optional updates/defaults
+        start_time: batchData.start_time || "09:00:00",
+        end_time: batchData.end_time || "18:00:00",
+        timezone: batchData.timezone || "Asia/Kolkata",
+        description: batchData.description || `${batchData.title} batch cohort.`,
+        batch_details: batchData.batch_details || `${batchData.title} batch details.`,
+        instructors: [{ instructor: "Administrator" }]
+      });
+      return batchData;
+    } catch (e) {
+      console.warn("Notice: Frappe REST API unavailable for updateBatch. Falling back to local state.", e.message || e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_batches_list') || JSON.stringify(DEFAULT_BATCHES);
+    const list = JSON.parse(saved);
+    const updated = list.map(b => b.id === id ? { ...b, ...batchData } : b);
+    localStorage.setItem('admin_batches_list', JSON.stringify(updated));
+    return batchData;
+  }
+  return batchData;
+}
+
+export async function deleteBatch(id) {
+  if (FRAPPE_URL) {
+    try {
+      await frappeRestDelete("LMS Batch", id);
+      return true;
+    } catch (e) {
+      console.error("Failed to delete batch.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_batches_list') || JSON.stringify(DEFAULT_BATCHES);
+    const list = JSON.parse(saved);
+    const filtered = list.filter(b => b.id !== id);
+    localStorage.setItem('admin_batches_list', JSON.stringify(filtered));
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Enroll a student in a course
+ */
+export async function enrollStudentInCourse(courseId, studentEmail) {
+  invalidateCoursesCache();
+  if (FRAPPE_URL) {
+    try {
+      return await frappeRestPost("LMS Enrollment", {
+        course: courseId,
+        member: studentEmail
+      });
+    } catch (e) {
+      console.error("Failed to enroll via Frappe REST API. Falling back to local state.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('student_course_enrollments') || '[]';
+    let enrollments = [];
+    try {
+      enrollments = JSON.parse(saved);
+    } catch (e) {}
+
+    const exists = enrollments.some(e => e.course === courseId && e.member === studentEmail);
+    if (!exists) {
+      enrollments.push({ course: courseId, member: studentEmail });
+      localStorage.setItem('student_course_enrollments', JSON.stringify(enrollments));
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Check if a student is enrolled in a course
+ */
+export async function checkStudentEnrollment(courseId, studentEmail) {
+  if (!studentEmail) return false;
+
+  if (FRAPPE_URL) {
+    try {
+      const res = await frappeRestGet("LMS Enrollment", {
+        fields: JSON.stringify(["name"]),
+        filters: JSON.stringify([
+          ["course", "=", courseId],
+          ["member", "=", studentEmail]
+        ])
+      });
+      return res && res.length > 0;
+    } catch (e) {
+      console.error("Failed to check enrollment via Frappe REST API. Falling back to local state.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('student_course_enrollments') || '[]';
+    let enrollments = [];
+    try {
+      enrollments = JSON.parse(saved);
+    } catch (e) {}
+
+    return enrollments.some(e => e.course === courseId && e.member === studentEmail);
+  }
+  return false;
+}
+
+/**
+ * Get all course IDs a student is enrolled in
+ */
+export async function getStudentEnrollments(studentEmail) {
+  if (!studentEmail) return [];
+
+  let local = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('student_course_enrollments') || '[]';
+      const enrollments = JSON.parse(saved);
+      local = enrollments.filter(e => e && e.member === studentEmail).map(e => e.course);
+    } catch (e) {}
+  }
+
+  if (local.length > 0) return local;
+
+  if (FRAPPE_URL) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1800);
+      const res = await frappeRestGet("LMS Enrollment", {
+        fields: JSON.stringify(["course"]),
+        filters: JSON.stringify([
+          ["member", "=", studentEmail]
+        ]),
+        limit_page_length: 100
+      });
+      clearTimeout(timeoutId);
+      return (res || []).map(e => e.course);
+    } catch (_) {
+      // Fast fallback to local
+    }
+  }
+
+  return local;
+}
+
+// --- LMS Quiz API ---
+
+export const DEFAULT_QUIZZES = [
+  {
+    id: 'quiz-physics-mechanics',
+    title: 'Kinematics & Newton\'s Laws Quiz',
+    course: 'physics-mechanics-fundamentals',
+    courseTitle: 'Physics: Mechanics & Energy',
+    lesson: 'phys_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What is Newton\'s Second Law of Motion?', options: ['F = m / a', 'F = m · a', 'E = mc²', 'W = F · d'], correct: 1 },
+      { question: 'If an object moves with constant velocity, what is its net acceleration?', options: ['9.8 m/s²', '0 m/s²', 'Variable', 'Infinite'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-calculus-derivatives',
+    title: 'Limits & Differential Calculus Quiz',
+    course: 'calculus-advanced-mathematics',
+    courseTitle: 'Mathematics: Calculus & Analysis',
+    lesson: 'math_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What is the derivative of f(x) = x³ with respect to x?', options: ['3x', '3x²', 'x²', '3x³'], correct: 1 },
+      { question: 'Geometrically, what does the first derivative f\'(x) represent?', options: ['The area under the curve', 'The slope of the tangent line', 'The x-intercept', 'The function volume'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-chemistry-bonding',
+    title: 'Atomic Structure & Chemical Bonding Quiz',
+    course: 'general-physical-chemistry',
+    courseTitle: 'Chemistry: Atoms, Bonds & Reactions',
+    lesson: 'chem_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'What type of bond forms when electrons are shared between two nonmetals?', options: ['Ionic bond', 'Covalent bond', 'Metallic bond', 'Hydrogen bond'], correct: 1 },
+      { question: 'What is the maximum number of electrons an s-orbital can hold?', options: ['2', '6', '10', '14'], correct: 0 }
+    ]
+  },
+  {
+    id: 'quiz-biology-cell',
+    title: 'Cell Organelles & Respiration Quiz',
+    course: 'cellular-biology-genetics',
+    courseTitle: 'Biology: Cells & Molecular Genetics',
+    lesson: 'bio_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'Which organelle is considered the powerhouse of eukaryotic cells?', options: ['Ribosome', 'Mitochondria', 'Golgi apparatus', 'Lysosome'], correct: 1 },
+      { question: 'What molecule carries genetic instructions for building proteins?', options: ['Lipids', 'DNA', 'Glucose', 'Hemoglobin'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-python-intro',
+    title: 'Python Syntax & Variables Quiz',
+    course: 'python-programming-essentials',
+    courseTitle: 'Python Programming Essentials',
+    lesson: 'py_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'Which keyword is used to define a function in Python?', options: ['func', 'define', 'def', 'function'], correct: 2 },
+      { question: 'What is the output of type(10.5)?', options: ['<class \'int\'>', '<class \'float\'>', '<class \'str\'>', '<class \'double\'>'], correct: 1 }
+    ]
+  },
+  {
+    id: 'quiz-web-html-css',
+    title: 'HTML & CSS Fundamentals Quiz',
+    course: 'modern-web-development-html-css',
+    courseTitle: 'Web Development: HTML & CSS',
+    lesson: 'web_l2',
+    max_attempts: 3,
+    passing_percentage: 75,
+    total_marks: 10,
+    duration: '10 mins',
+    questions: [
+      { question: 'Which HTML5 element represents the primary navigation links of a page?', options: ['<header>', '<nav>', '<section>', '<aside>'], correct: 1 },
+      { question: 'In the CSS box model, which layer sits between padding and margin?', options: ['Content', 'Border', 'Outline', 'Shadow'], correct: 1 }
+    ]
+  }
+];
+
+export async function getQuizzes(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.quizzes && (now - clientCache.quizzesTimestamp < 60000)) {
+    return clientCache.quizzes;
+  }
+
+  // 2. Try localStorage first (instant 0ms read)
+  let list = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_quizzes_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.quizzes = list;
+          clientCache.quizzesTimestamp = now;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Non-blocking background revalidation from /api/quizzes
+  const revalidateQuizzes = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/quizzes', { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        const serverList = await res.json();
+        if (Array.isArray(serverList) && serverList.length > 0) {
+          clientCache.quizzes = serverList;
+          clientCache.quizzesTimestamp = Date.now();
+          localStorage.setItem('admin_quizzes_list', JSON.stringify(serverList));
+          window.dispatchEvent(new Event('quizzes_updated'));
+          return serverList;
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  // If cached list is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (list && !forceRefresh) {
+    revalidateQuizzes();
+    return list;
+  }
+
+  // If forceRefresh, await revalidation
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateQuizzes();
+    if (updated) return updated;
+    if (clientCache.quizzes) return clientCache.quizzes;
+  }
+
+  // 3. Fallback to DEFAULT_QUIZZES
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_QUIZZES;
+    clientCache.quizzes = list;
+    clientCache.quizzesTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_quizzes_list', JSON.stringify(DEFAULT_QUIZZES));
+      } catch (_) {}
+      revalidateQuizzes();
+    }
+  }
+
+  return list;
+}
+
+export async function createQuiz(quizData) {
+  const payload = {
+    ...quizData,
+    id: quizData.id || ('quiz-' + Date.now()),
+    questions: quizData.questions || []
+  };
+
+  // 1. Persist to local server API (/api/quizzes)
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch('/api/quizzes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quiz: payload })
+      });
+    } catch (_) {}
+
+    // 2. Persist to localStorage
+    const saved = localStorage.getItem('admin_quizzes_list') || JSON.stringify(DEFAULT_QUIZZES);
+    try {
+      const list = JSON.parse(saved);
+      const existingIdx = list.findIndex(q => q.id === payload.id);
+      if (existingIdx >= 0) {
+        list[existingIdx] = { ...list[existingIdx], ...payload };
+      } else {
+        list.unshift(payload);
+      }
+      localStorage.setItem('admin_quizzes_list', JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  // 3. Optional Frappe background sync (fire-and-forget, never throws to caller)
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        const questionsRefs = [];
+        const qs = quizData.questions || [];
+        for (const q of qs) {
+          const qDoc = await frappeRestPost("LMS Question", {
+            question: q.question,
+            type: "Choices",
+            multiple: 0,
+            option_1: q.options?.[0] || "",
+            is_correct_1: q.correct === 0 ? 1 : 0,
+            option_2: q.options?.[1] || "",
+            is_correct_2: q.correct === 1 ? 1 : 0,
+            option_3: q.options?.[2] || "",
+            is_correct_3: q.correct === 2 ? 1 : 0,
+            option_4: q.options?.[3] || "",
+            is_correct_4: q.correct === 3 ? 1 : 0,
+          });
+          questionsRefs.push({
+            question: qDoc.name,
+            marks: 5,
+            question_detail: q.question,
+            type: "Choices"
+          });
+        }
+
+        const frappePayload = {
+          title: quizData.title,
+          course: quizData.course,
+          lesson: quizData.lesson || undefined,
+          max_attempts: parseInt(quizData.max_attempts) || 3,
+          passing_percentage: parseInt(quizData.passing_percentage) || 70,
+          total_marks: parseInt(quizData.total_marks) || 10,
+          duration: quizData.duration || '10 mins',
+          questions: questionsRefs
+        };
+
+        try {
+          await frappeRestPost("LMS Quiz", frappePayload);
+        } catch (err) {
+          if (err.message && err.message.includes("Could not find Lesson")) {
+            delete frappePayload.lesson;
+            await frappeRestPost("LMS Quiz", frappePayload);
+          }
+        }
+      } catch (e) {
+        console.warn("Notice: Frappe background sync for quiz deferred or offline:", e.message || e);
+      }
+    })();
+  }
+
+  return payload;
+}
+
+export async function updateQuiz(id, quizData) {
+  const payload = {
+    ...quizData,
+    id,
+    questions: quizData.questions || []
+  };
+
+  // 1. Persist to server API (/api/quizzes)
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch('/api/quizzes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quiz: payload })
+      });
+    } catch (_) {}
+
+    // 2. Persist to localStorage
+    const saved = localStorage.getItem('admin_quizzes_list') || JSON.stringify(DEFAULT_QUIZZES);
+    try {
+      const list = JSON.parse(saved);
+      const updated = list.map(q => q.id === id ? { ...q, ...payload } : q);
+      localStorage.setItem('admin_quizzes_list', JSON.stringify(updated));
+    } catch (_) {}
+  }
+
+  // 3. Optional Frappe sync (fire-and-forget, never throws)
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        const questionsRefs = [];
+        const qs = quizData.questions || [];
+        for (const q of qs) {
+          let qName = q.id;
+          const qPayload = {
+            question: q.question,
+            type: "Choices",
+            multiple: 0,
+            option_1: q.options?.[0] || "",
+            is_correct_1: q.correct === 0 ? 1 : 0,
+            option_2: q.options?.[1] || "",
+            is_correct_2: q.correct === 1 ? 1 : 0,
+            option_3: q.options?.[2] || "",
+            is_correct_3: q.correct === 2 ? 1 : 0,
+            option_4: q.options?.[3] || "",
+            is_correct_4: q.correct === 3 ? 1 : 0,
+          };
+
+          try {
+            if (qName && !qName.startsWith("q_") && !qName.startsWith("quiz-")) {
+              await frappeRestPut("LMS Question", qName, qPayload);
+            } else {
+              const qDoc = await frappeRestPost("LMS Question", qPayload);
+              qName = qDoc.name;
+            }
+          } catch (qErr) {
+            const qDoc = await frappeRestPost("LMS Question", qPayload);
+            qName = qDoc.name;
+          }
+
+          questionsRefs.push({
+            question: qName,
+            marks: 5,
+            question_detail: q.question,
+            type: "Choices"
+          });
+        }
+
+        const updatePayload = {
+          title: quizData.title,
+          course: quizData.course,
+          lesson: quizData.lesson || null,
+          max_attempts: parseInt(quizData.max_attempts) || 3,
+          passing_percentage: parseInt(quizData.passing_percentage) || 70,
+          total_marks: parseInt(quizData.total_marks) || 10,
+          duration: quizData.duration,
+          questions: questionsRefs
+        };
+
+        try {
+          await frappeRestPut("LMS Quiz", id, updatePayload);
+        } catch (err) {
+          if (err.message && err.message.includes("Could not find Lesson")) {
+            updatePayload.lesson = null;
+            await frappeRestPut("LMS Quiz", id, updatePayload);
+          } else {
+            await frappeRestPost("LMS Quiz", updatePayload);
+          }
+        }
+      } catch (e) {
+        console.warn("Notice: Frappe background sync for quiz update deferred or offline:", e.message || e);
+      }
+    })();
+  }
+
+  return payload;
+}
+
+export async function deleteQuiz(id) {
+  // 1. Delete from server API
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch(`/api/quizzes?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (_) {}
+
+    // 2. Delete from localStorage
+    const saved = localStorage.getItem('admin_quizzes_list') || JSON.stringify(DEFAULT_QUIZZES);
+    try {
+      const list = JSON.parse(saved);
+      const filtered = list.filter(q => q.id !== id);
+      localStorage.setItem('admin_quizzes_list', JSON.stringify(filtered));
+    } catch (_) {}
+  }
+
+  // 3. Optional Frappe sync
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await Promise.race([
+          frappeRestDelete("LMS Quiz", id),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        ]);
+      } catch (_) {}
+    })();
+  }
+
+  return true;
+}
+
+// --- LMS Quiz Submission API ---
+
+export async function getQuizSubmissions(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.quizSubmissions && (now - clientCache.quizSubmissionsTimestamp < 60000)) {
+    return clientCache.quizSubmissions;
+  }
+
+  // 2. Read from localStorage (instant 0ms read)
+  let local = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('quiz_submissions');
+      if (saved) local = JSON.parse(saved);
+    } catch (_) {}
+  }
+
+  // Background revalidation with fast timeout
+  const revalidateSubs = async () => {
+    if (!FRAPPE_URL) return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const res = await frappeRestGet("LMS Quiz Submission", {
+        fields: JSON.stringify(["name", "quiz", "quiz_title", "course", "member", "member_name", "score", "score_out_of", "percentage", "passing_percentage"]),
+        limit_page_length: 100
+      });
+      clearTimeout(timer);
+      if (Array.isArray(res)) {
+        const mergedMap = new Map();
+        res.forEach(s => { if (s && s.name) mergedMap.set(s.name, s); });
+        local.forEach(s => { if (s) mergedMap.set(s.id || s.name || `${s.quiz}_${s.member}`, s); });
+        const merged = Array.from(mergedMap.values());
+        clientCache.quizSubmissions = merged;
+        clientCache.quizSubmissionsTimestamp = Date.now();
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('quiz_submissions', JSON.stringify(merged));
+          window.dispatchEvent(new Event('submissions_updated'));
+        }
+      }
+    } catch (_) {}
+  };
+
+  // If local submissions exist and not forceRefresh, return immediately and sync in background!
+  if (local.length > 0 && !forceRefresh) {
+    clientCache.quizSubmissions = local;
+    clientCache.quizSubmissionsTimestamp = now;
+    revalidateSubs();
+    return local;
+  }
+
+  if (forceRefresh) {
+    await revalidateSubs();
+    if (clientCache.quizSubmissions) return clientCache.quizSubmissions;
+  } else {
+    revalidateSubs();
+  }
+
+  clientCache.quizSubmissions = local;
+  clientCache.quizSubmissionsTimestamp = now;
+  return local;
+}
+
+export async function submitQuizResponse(subData) {
+  let createdSub = null;
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('quiz_submissions') || '[]';
+    try {
+      const list = JSON.parse(saved);
+      const newSub = { ...subData, id: 'sub-' + Date.now(), timestamp: new Date().toISOString() };
+      list.unshift(newSub);
+      localStorage.setItem('quiz_submissions', JSON.stringify(list));
+      clientCache.quizSubmissions = list;
+      clientCache.quizSubmissionsTimestamp = Date.now();
+      window.dispatchEvent(new Event('submissions_updated'));
+      createdSub = newSub;
+    } catch (_) {}
+  }
+
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPost("LMS Quiz Submission", {
+          quiz: subData.quiz,
+          quiz_title: subData.quiz_title,
+          course: subData.course,
+          member: subData.member,
+          member_name: subData.member_name,
+          score: subData.score,
+          score_out_of: subData.score_out_of,
+          percentage: subData.percentage,
+          passing_percentage: subData.passing_percentage
+        });
+      } catch (e) {
+        console.warn("Notice: Frappe quiz submission sync deferred or failed:", e.message || e);
+      }
+    })();
+  }
+
+  return createdSub || subData;
+}
+
+// --- LMS Assignment API ---
+
+// Local metadata helpers for custom assignment fields not in standard Frappe schema
+function getAssignmentMetadata(assId) {
+  if (typeof window === 'undefined') return {};
+  try {
+    const store = JSON.parse(localStorage.getItem('assignment_criteria_store') || '{}');
+    return store[assId] || {};
+  } catch (e) { return {}; }
+}
+
+function setAssignmentMetadata(assId, meta) {
+  if (typeof window === 'undefined') return;
+  try {
+    const store = JSON.parse(localStorage.getItem('assignment_criteria_store') || '{}');
+    store[assId] = { ...(store[assId] || {}), ...meta };
+    localStorage.setItem('assignment_criteria_store', JSON.stringify(store));
+  } catch (e) {}
+}
+
+function getStoredAiEval(subId) {
+  if (typeof window === 'undefined') return null;
+  try {
+    const store = JSON.parse(localStorage.getItem('submission_ai_store') || '{}');
+    return store[subId] || null;
+  } catch (e) { return null; }
+}
+
+function setStoredAiEval(subId, score, aiEval) {
+  if (typeof window === 'undefined') return;
+  try {
+    const store = JSON.parse(localStorage.getItem('submission_ai_store') || '{}');
+    store[subId] = { score, ai_evaluation: aiEval };
+    localStorage.setItem('submission_ai_store', JSON.stringify(store));
+  } catch (e) {}
+}
+
+export const DEFAULT_ASSIGNMENTS = [
+  {
+    id: 'assign-physics-mechanics',
+    title: 'Kinematic Trajectory & Forces Analysis',
+    course: 'physics-mechanics-fundamentals',
+    courseTitle: 'Physics: Mechanics & Energy',
+    chapter: 'physics_m1',
+    chapterTitle: 'Kinematics & Newton\'s Laws',
+    type: 'Text',
+    question: '<p>A projectile is launched with an initial velocity of 20 m/s at an angle of 30° above the horizontal. Assuming g = 9.8 m/s² and negligible air resistance, calculate the maximum height reached and horizontal range. Show equations and steps.</p>',
+    show_answer: true,
+    answer: 'v0y = 20 * sin(30°) = 10 m/s\nv0x = 20 * cos(30°) = 17.32 m/s\nTime to peak t = 10 / 9.8 = 1.02 s\nMax Height H = (10^2) / (2 * 9.8) = 5.10 m\nTotal flight time T = 2 * 1.02 = 2.04 s\nRange R = 17.32 * 2.04 = 35.35 m',
+    evaluation_criteria: [
+      'Decomposes initial velocity into horizontal and vertical vector components',
+      'Applies kinematic equation for maximum vertical height',
+      'Calculates total flight duration correctly',
+      'Determines total horizontal range with appropriate physical units'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>A projectile is launched with an initial velocity of 20 m/s at an angle of 30° above the horizontal. Assuming g = 9.8 m/s² and negligible air resistance, calculate the maximum height reached and horizontal range. Show equations and steps.</p>',
+        sample_answer: 'v0y = 10 m/s, v0x = 17.32 m/s. Max height H = 5.10 m, Total range R = 35.35 m.'
+      }
+    ]
+  },
+  {
+    id: 'assign-calculus-derivatives',
+    title: 'Derivative Optimization & Tangent Analysis',
+    course: 'calculus-advanced-mathematics',
+    courseTitle: 'Mathematics: Calculus & Analysis',
+    chapter: 'math_m1',
+    chapterTitle: 'Limits & Differential Calculus',
+    type: 'Text',
+    question: '<p>Given the cubic polynomial f(x) = 2x³ - 9x² + 12x + 1, find all critical points, determine whether each is a local maximum or minimum using the second derivative test, and state intervals of concavity.</p>',
+    show_answer: true,
+    answer: 'f\'(x) = 6x² - 18x + 12 = 6(x - 1)(x - 2) = 0 => Critical points at x = 1 and x = 2.\nf\'\'(x) = 12x - 18.\nAt x = 1: f\'\'(1) = -6 < 0 => Local Maximum at (1, 6).\nAt x = 2: f\'\'(2) = +6 > 0 => Local Minimum at (2, 5).\nf\'\'(x) = 0 at x = 1.5. Concave down on (-inf, 1.5), concave up on (1.5, +inf).',
+    evaluation_criteria: [
+      'Computes the first derivative f\'(x) accurately',
+      'Solves for critical points x = 1 and x = 2',
+      'Applies second derivative test f\'\'(x) to classify extrema',
+      'Determines inflection point and concavity intervals'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Given the cubic polynomial f(x) = 2x³ - 9x² + 12x + 1, find all critical points, determine whether each is a local maximum or minimum using the second derivative test, and state intervals of concavity.</p>',
+        sample_answer: 'Critical points at x = 1 (local max, 6) and x = 2 (local min, 5). Inflection point at x = 1.5.'
+      }
+    ]
+  },
+  {
+    id: 'assign-chemistry-stoichiometry',
+    title: 'Stoichiometric Yield & Limiting Reactant Analysis',
+    course: 'general-physical-chemistry',
+    courseTitle: 'Chemistry: Atoms, Bonds & Reactions',
+    chapter: 'chem_m2',
+    chapterTitle: 'Reactions, Stoichiometry & Acid-Base Equilibrium',
+    type: 'Text',
+    question: '<p>Consider the reaction: 2 Al + 3 Cl2 -> 2 AlCl3. If 54.0 g of aluminum reacts with 142.0 g of chlorine gas, identify the limiting reactant, calculate the theoretical yield of aluminum chloride in grams, and determine the mass of excess reactant remaining.</p>',
+    show_answer: true,
+    answer: 'Molar masses: Al = 27.0 g/mol, Cl2 = 71.0 g/mol, AlCl3 = 133.5 g/mol.\nMoles of Al = 54.0 / 27.0 = 2.00 mol.\nMoles of Cl2 = 142.0 / 71.0 = 2.00 mol.\nStoichiometric requirement: 2.00 mol Al requires 3.00 mol Cl2. Since only 2.00 mol Cl2 is available, Cl2 is the limiting reactant.\nMoles of AlCl3 produced = 2.00 * (2/3) = 1.33 mol.\nTheoretical yield = 1.33 mol * 133.5 g/mol = 178.0 g.\nMoles of Al consumed = 2.00 * (2/3) = 1.33 mol. Remaining Al = 2.00 - 1.33 = 0.67 mol = 18.0 g.',
+    evaluation_criteria: [
+      'Converts given masses to moles using molar masses',
+      'Correctly identifies Cl2 as the limiting reagent',
+      'Calculates theoretical yield of AlCl3 in grams',
+      'Determines remaining unreacted mass of excess Al'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Calculate the limiting reactant, theoretical yield of AlCl3, and excess reactant remaining when 54.0 g Al reacts with 142.0 g Cl2.</p>',
+        sample_answer: 'Limiting reactant is Cl2. Theoretical yield of AlCl3 is 178.0 g. Excess Al remaining is 18.0 g.'
+      }
+    ]
+  },
+  {
+    id: 'assign-biology-respiration',
+    title: 'Cellular Respiration Pathways Comparison',
+    course: 'cellular-biology-genetics',
+    courseTitle: 'Biology: Cells & Molecular Genetics',
+    chapter: 'bio_m1',
+    chapterTitle: 'Cell Structure & Cellular Energetics',
+    type: 'Text',
+    question: '<p>Compare glycolysis, the citric acid (Krebs) cycle, and oxidative phosphorylation in terms of cellular location, input substrates, net ATP yield, and primary electron carriers produced.</p>',
+    show_answer: true,
+    answer: '1. Glycolysis: Cytoplasm, Input: 1 Glucose, Net ATP: 2 ATP (substrate-level), Electron carriers: 2 NADH.\n2. Citric Acid Cycle: Mitochondrial matrix, Input: 2 Acetyl-CoA, Net ATP: 2 ATP/GTP, Electron carriers: 6 NADH + 2 FADH2.\n3. Oxidative Phosphorylation: Inner mitochondrial membrane (cristae), Input: NADH, FADH2, O2, Net ATP: ~28-32 ATP, Electron carriers: NAD+ and FAD regenerated, H2O formed.',
+    evaluation_criteria: [
+      'Identifies intracellular organelle locations correctly',
+      'Specifies input molecules and products for all three stages',
+      'Contrasts substrate-level vs oxidative ATP synthesis yields',
+      'Explains roles of NADH and FADH2 in electron transport'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Compare glycolysis, the citric acid cycle, and oxidative phosphorylation in terms of location, net ATP, and electron carriers.</p>',
+        sample_answer: 'Glycolysis (cytoplasm, 2 ATP, 2 NADH); Krebs cycle (matrix, 2 ATP, 6 NADH, 2 FADH2); Oxidative phosphorylation (cristae, ~28 ATP, regenerates NAD+/FAD).'
+      }
+    ]
+  },
+  {
+    id: 'assign-python-fibonacci',
+    title: 'Implementing Fibonacci Sequence Generator',
+    course: 'python-programming-essentials',
+    courseTitle: 'Python Programming Essentials',
+    chapter: 'python_m1',
+    chapterTitle: 'Python Basics & Core Collections',
+    type: 'Text',
+    question: '<p>Write a Python function <code>fibonacci(n)</code> that returns the first <code>n</code> Fibonacci numbers as a list. Hand in the source code file or code text.</p>',
+    show_answer: true,
+    answer: 'def fibonacci(n):\n    if n <= 0: return []\n    if n == 1: return [0]\n    seq = [0, 1]\n    while len(seq) < n:\n        seq.append(seq[-1] + seq[-2])\n    return seq',
+    evaluation_criteria: [
+      'Function named fibonacci(n) returning a list',
+      'Handles edge cases n <= 0 and n == 1 correctly',
+      'Uses loop or recursion to build correct sequence',
+      'Time complexity O(N) or efficient execution'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Write a Python function <code>fibonacci(n)</code> that returns the first <code>n</code> Fibonacci numbers as a list.</p>',
+        sample_answer: 'def fibonacci(n):\n    if n <= 0: return []\n    if n == 1: return [0]\n    seq = [0, 1]\n    while len(seq) < n:\n        seq.append(seq[-1] + seq[-2])\n    return seq'
+      }
+    ]
+  },
+  {
+    id: 'assign-web-responsive-card',
+    title: 'Responsive Flexbox Product Card Implementation',
+    course: 'modern-web-development-html-css',
+    courseTitle: 'Web Development: HTML & CSS',
+    chapter: 'web_m2',
+    chapterTitle: 'CSS Styling, Box Model & Flexbox',
+    type: 'Text',
+    question: '<p>Write semantic HTML5 markup and modern CSS using Flexbox to build a responsive profile or product card. Ensure proper padding, border-radius, box-shadow, and a hover transition effect.</p>',
+    show_answer: true,
+    answer: '<article class="card">\n  <img src="avatar.jpg" alt="Profile avatar" class="card-img" />\n  <div class="card-body">\n    <h2>Alex Mercer</h2>\n    <p>Senior Full-Stack Developer</p>\n    <button class="btn">Connect</button>\n  </div>\n</article>\n\n<style>\n.card { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; overflow: hidden; }\n.card:hover { transform: translateY(-4px); }\n.card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }\n</style>',
+    evaluation_criteria: [
+      'Uses semantic HTML elements (<article>, <h2>, <button>)',
+      'Applies CSS Flexbox alignment properties',
+      'Implements clean spacing via padding and margin',
+      'Demonstrates interactive hover transition'
+    ],
+    pass_threshold: 70,
+    min_char_count: 20,
+    questions: [
+      {
+        id: 1,
+        prompt: '<p>Write semantic HTML5 and CSS Flexbox code for a responsive card component with hover transition.</p>',
+        sample_answer: 'Semantic <article> with display: flex, padding, border-radius, and transform transition on hover.'
+      }
+    ]
+  }
+];
+
+export function parseQuestionsList(questionStr, extraQuestions, defaultAnswer) {
+  if (Array.isArray(extraQuestions) && extraQuestions.length > 0) {
+    return extraQuestions;
+  }
+  if (!questionStr) return [{ id: 1, prompt: '', sample_answer: defaultAnswer || '' }];
+
+  const regex = /(?:Question\s+(\d+)[:\.-]?\s*)/gi;
+  const matches = [...questionStr.matchAll(regex)];
+
+  if (matches.length > 1) {
+    const parsed = [];
+    for (let i = 0; i < matches.length; i++) {
+      const startIndex = matches[i].index + matches[i][0].length;
+      const endIndex = (i + 1 < matches.length) ? matches[i + 1].index : questionStr.length;
+      const promptText = questionStr.substring(startIndex, endIndex).trim();
+      if (promptText) {
+        parsed.push({
+          id: i + 1,
+          prompt: promptText,
+          sample_answer: ''
+        });
+      }
+    }
+    if (parsed.length > 0) return parsed;
+  }
+
+  return [{ id: 1, prompt: questionStr, sample_answer: defaultAnswer || '' }];
+}
+
+export async function getAssignments(filterParams = {}, options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  const formatList = (rawList) => {
+    return (rawList || []).map(a => {
+      const extra = getAssignmentMetadata(a.id);
+      const resolvedQuestions = parseQuestionsList(a.question || '', extra.questions || a.questions, a.answer);
+      return {
+        ...a,
+        evaluation_criteria: extra.evaluation_criteria || a.evaluation_criteria || [],
+        pass_threshold: extra.pass_threshold || a.pass_threshold || 70,
+        min_char_count: extra.min_char_count !== undefined ? extra.min_char_count : (a.min_char_count !== undefined ? a.min_char_count : 20),
+        questions: resolvedQuestions
+      };
+    });
+  };
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.assignments && (now - clientCache.assignmentsTimestamp < 60000)) {
+    return formatList(clientCache.assignments);
+  }
+
+  // 2. Try localStorage first (instant 0ms read)
+  let list = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('admin_assignments_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+          clientCache.assignments = list;
+          clientCache.assignmentsTimestamp = now;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Non-blocking background revalidation from /api/assignments
+  const revalidateAssignments = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const query = new URLSearchParams(filterParams).toString();
+      const res = await fetch(`/api/assignments${query ? '?' + query : ''}`, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        const serverList = await res.json();
+        if (Array.isArray(serverList) && serverList.length > 0) {
+          clientCache.assignments = serverList;
+          clientCache.assignmentsTimestamp = Date.now();
+          localStorage.setItem('admin_assignments_list', JSON.stringify(serverList));
+          window.dispatchEvent(new Event('assignments_updated'));
+          return serverList;
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  // If cached list is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (list && !forceRefresh) {
+    revalidateAssignments();
+    return formatList(list);
+  }
+
+  // If forceRefresh, await revalidation
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateAssignments();
+    if (updated) return formatList(updated);
+    if (clientCache.assignments) return formatList(clientCache.assignments);
+  }
+
+  // 3. Fallback to DEFAULT_ASSIGNMENTS
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    list = DEFAULT_ASSIGNMENTS;
+    clientCache.assignments = list;
+    clientCache.assignmentsTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('admin_assignments_list', JSON.stringify(DEFAULT_ASSIGNMENTS));
+      } catch (_) {}
+      revalidateAssignments();
+    }
+  }
+
+  return formatList(list);
+}
+
+export async function createAssignment(assignmentData) {
+  const combinedQuestion = (assignmentData.questions && assignmentData.questions.length > 0)
+    ? assignmentData.questions.map((q, idx) => `Question ${idx + 1}: ${q.prompt}`).join('\n\n')
+    : (assignmentData.question || 'Assignment prompt details.');
+
+  const payload = {
+    ...assignmentData,
+    id: assignmentData.id || `assign-${Date.now()}`,
+    question: combinedQuestion
+  };
+
+  // 1. Persist to server API
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment: payload })
+      });
+    } catch (_) {}
+
+    // 2. Persist to localStorage
+    const saved = localStorage.getItem('admin_assignments_list') || JSON.stringify(DEFAULT_ASSIGNMENTS);
+    try {
+      const list = JSON.parse(saved);
+      list.unshift(payload);
+      localStorage.setItem('admin_assignments_list', JSON.stringify(list));
+    } catch (_) {}
+
+    setAssignmentMetadata(payload.id, {
+      evaluation_criteria: assignmentData.evaluation_criteria || [],
+      pass_threshold: assignmentData.pass_threshold || 70,
+      min_char_count: assignmentData.min_char_count !== undefined ? assignmentData.min_char_count : 20,
+      questions: assignmentData.questions || [],
+      custom_course_title: assignmentData.custom_course_title || ''
+    });
+  }
+
+  // 3. Optional Frappe background sync
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await Promise.race([
+          frappeRestPost("LMS Assignment", {
+            title: payload.title,
+            type: payload.type || 'Text',
+            course: payload.course,
+            question: combinedQuestion,
+            show_answer: payload.show_answer ? 1 : 0,
+            answer: payload.answer || ''
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        ]);
+      } catch (_) {}
+    })();
+  }
+
+  return payload;
+}
+
+export async function updateAssignment(id, assignmentData) {
+  const combinedQuestion = (assignmentData.questions && assignmentData.questions.length > 0)
+    ? assignmentData.questions.map((q, idx) => `Question ${idx + 1}: ${q.prompt}`).join('\n\n')
+    : (assignmentData.question || 'Assignment prompt details.');
+
+  const payload = {
+    ...assignmentData,
+    id,
+    question: combinedQuestion
+  };
+
+  // 1. Persist to server API
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment: payload })
+      });
+    } catch (_) {}
+
+    // 2. Persist to localStorage
+    const saved = localStorage.getItem('admin_assignments_list') || JSON.stringify(DEFAULT_ASSIGNMENTS);
+    try {
+      const list = JSON.parse(saved);
+      const updated = list.map(a => a.id === id ? { ...a, ...payload } : a);
+      localStorage.setItem('admin_assignments_list', JSON.stringify(updated));
+    } catch (_) {}
+
+    setAssignmentMetadata(id, {
+      evaluation_criteria: assignmentData.evaluation_criteria || [],
+      pass_threshold: assignmentData.pass_threshold || 70,
+      min_char_count: assignmentData.min_char_count !== undefined ? assignmentData.min_char_count : 20,
+      questions: assignmentData.questions || [],
+      custom_course_title: assignmentData.custom_course_title || ''
+    });
+  }
+
+  return payload;
+}
+
+export async function deleteAssignment(id) {
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch(`/api/assignments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (_) {}
+
+    const saved = localStorage.getItem('admin_assignments_list') || JSON.stringify(DEFAULT_ASSIGNMENTS);
+    try {
+      const list = JSON.parse(saved);
+      const filtered = list.filter(a => a.id !== id);
+      localStorage.setItem('admin_assignments_list', JSON.stringify(filtered));
+    } catch (_) {}
+  }
+
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await Promise.race([
+          frappeRestDelete("LMS Assignment", id),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        ]);
+      } catch (_) {}
+    })();
+  }
+
+  return true;
+}
+
+// --- LMS Assignment Submission API ---
+
+const DEFAULT_ASSIGNMENT_SUBMISSIONS = [
+  {
+    id: 'sub-fibonacci-1',
+    assignment: 'assign-python-fibonacci',
+    assignment_title: 'Implementing Fibonacci Sequence Generator',
+    type: 'Text',
+    member: 'alex.student@apex.edu',
+    member_name: 'Alex Rivera',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.',
+    answer: `def fibonacci(n):
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    
+    fib_series = [0, 1]
+    for i in range(2, n):
+        next_val = fib_series[-1] + fib_series[-2]
+        fib_series.append(next_val)
+    return fib_series`,
+    course: '1',
+    lesson: 'l2',
+    timestamp: '2026-09-26T14:30:00.000Z'
+  },
+  {
+    id: 'sub-fibonacci-2',
+    assignment: 'assign-python-fibonacci',
+    assignment_title: 'Implementing Fibonacci Sequence Generator',
+    type: 'Text',
+    member: 'priya.sharma@globaleng.edu',
+    member_name: 'Priya Sharma',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Write a Python function fibonacci(n) that returns the first n Fibonacci numbers as a list. Hand in the source code file or code text.',
+    answer: `def fibonacci(n):
+    # Generates fibonacci list up to n elements
+    res = []
+    a, b = 0, 1
+    for _ in range(n):
+        res.append(a)
+        a, b = b, a + b
+    return res`,
+    course: '1',
+    lesson: 'l2',
+    timestamp: '2026-09-26T15:10:00.000Z'
+  },
+  {
+    id: 'sub-sorting-1',
+    assignment: 'assign-dsa-sorting',
+    assignment_title: 'Custom Merge Sort Complexity Analysis',
+    type: 'Text',
+    member: 'rahul.v@apex.edu',
+    member_name: 'Rahul Verma',
+    evaluator: '',
+    status: 'Not Graded',
+    question: 'Compare the computational complexity and space requirements of Merge Sort and In-place Quicksort. Submit a report explaining edge cases.',
+    answer: `Merge Sort vs Quicksort Complexity Analysis:
+
+1. Time Complexity:
+- Merge Sort: Always O(N log N) in best, average, and worst cases because it consistently divides arrays in half and requires O(N) merge steps.
+- Quicksort: Average case O(N log N), but worst-case degrades to O(N^2) if the pivot chosen is consistently the extreme element (e.g. already sorted array without randomized pivot).
+
+2. Space Complexity:
+- Merge Sort: O(N) auxiliary space required for temporary merge buffers.
+- Quicksort: O(log N) stack space for recursive calls, operates in-place.
+
+3. Stability:
+- Merge Sort is stable (preserves relative order of duplicate elements).
+- Standard Quicksort is unstable due to far-distance swaps.
+
+4. Edge Cases:
+- Empty array: handled in base case len <= 1.
+- Duplicate values: Merge sort handles duplicates stably without performance penalty.`,
+    course: '2',
+    lesson: '2_m1',
+    timestamp: '2026-09-26T16:45:00.000Z'
+  }
+];
+
+export async function getAssignmentSubmissions(options = {}) {
+  const forceRefresh = options.forceRefresh;
+  const now = Date.now();
+
+  const formatList = (rawList) => {
+    return (rawList || []).map(s => {
+      const extra = getStoredAiEval(s.id || s.name) || {};
+      return {
+        ...s,
+        score: extra.score !== undefined ? extra.score : s.score,
+        ai_evaluation: extra.ai_evaluation || s.ai_evaluation || null
+      };
+    });
+  };
+
+  // 1. In-memory cache check (< 60s)
+  if (!forceRefresh && clientCache.assignmentSubmissions && (now - clientCache.assignmentSubmissionsTimestamp < 60000)) {
+    return formatList(clientCache.assignmentSubmissions);
+  }
+
+  // 2. Read from localStorage (instant 0ms read)
+  let local = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('assignment_submissions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          local = parsed;
+          clientCache.assignmentSubmissions = local;
+          clientCache.assignmentSubmissionsTimestamp = now;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Background revalidation
+  const revalidateSubmissions = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('/api/assignment-submissions', { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (res && res.ok) {
+        let list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          clientCache.assignmentSubmissions = list;
+          clientCache.assignmentSubmissionsTimestamp = Date.now();
+          localStorage.setItem('assignment_submissions', JSON.stringify(list));
+          window.dispatchEvent(new Event('submissions_updated'));
+          return list;
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  // If local is present and not forceRefresh, return INSTANTLY and revalidate in background!
+  if (local && !forceRefresh) {
+    revalidateSubmissions();
+    return formatList(local);
+  }
+
+  if (forceRefresh && typeof window !== 'undefined') {
+    const updated = await revalidateSubmissions();
+    if (updated) return formatList(updated);
+    if (clientCache.assignmentSubmissions) return formatList(clientCache.assignmentSubmissions);
+  }
+
+  // Fallback to DEFAULT_ASSIGNMENT_SUBMISSIONS
+  if (!local || local.length === 0) {
+    local = DEFAULT_ASSIGNMENT_SUBMISSIONS;
+    clientCache.assignmentSubmissions = local;
+    clientCache.assignmentSubmissionsTimestamp = now;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('assignment_submissions', JSON.stringify(DEFAULT_ASSIGNMENT_SUBMISSIONS));
+      } catch (_) {}
+      revalidateSubmissions();
+    }
+  }
+
+  return formatList(local);
+}
+
+export async function submitAssignmentResponse(subData) {
+  let createdOrUpdatedSub = null;
+
+  // 1. Persist to server API first
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/assignment-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.submission) {
+          createdOrUpdatedSub = data.submission;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Server API submit failed, falling back to local storage', e);
+    }
+
+    // 2. Persist to localStorage and dispatch update events
+    const saved = localStorage.getItem('assignment_submissions') || '[]';
+    try {
+      const list = JSON.parse(saved);
+      const subId = createdOrUpdatedSub?.id || subData.id || ('sub-ass-' + Date.now());
+      const existingIdx = list.findIndex(s => 
+        (s.id && s.id === subId) || 
+        (s.assignment === subData.assignment && s.member?.toLowerCase() === subData.member?.toLowerCase())
+      );
+      
+      const record = createdOrUpdatedSub || {
+        ...subData,
+        id: subId,
+        status: 'Not Graded',
+        comments: '',
+        evaluator: '',
+        timestamp: new Date().toISOString()
+      };
+
+      if (existingIdx >= 0) {
+        list[existingIdx] = { ...list[existingIdx], ...record };
+      } else {
+        list.unshift(record);
+      }
+      localStorage.setItem('assignment_submissions', JSON.stringify(list));
+      createdOrUpdatedSub = record;
+
+      // Broadcast update event so other tabs/components reload immediately
+      window.dispatchEvent(new Event('assignment_submissions_updated'));
+    } catch (e) {}
+  }
+
+  // 3. Optional background sync to Frappe
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPost("LMS Assignment Submission", {
+          assignment: subData.assignment,
+          assignment_title: subData.assignment_title,
+          type: subData.type || 'Text',
+          member: subData.member,
+          member_name: subData.member_name,
+          answer: subData.answer || '',
+          course: subData.course,
+          status: 'Not Graded',
+          question: subData.question || ''
+        });
+      } catch (_) {}
+    })();
+  }
+
+  return createdOrUpdatedSub || subData;
+}
+
+export async function gradeAssignmentSubmission(id, gradeData) {
+  if (gradeData.score !== undefined || gradeData.ai_evaluation) {
+    setStoredAiEval(id, gradeData.score, gradeData.ai_evaluation);
+  }
+
+  let updatedSub = null;
+
+  // 1. Update on server API
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/assignment-submissions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...gradeData })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.submission) updatedSub = data.submission;
+      }
+    } catch (_) {}
+
+    // 2. Update in localStorage
+    const saved = localStorage.getItem('assignment_submissions') || '[]';
+    try {
+      const list = JSON.parse(saved);
+      const updated = list.map(sub => sub.id === id ? { ...sub, ...gradeData } : sub);
+      localStorage.setItem('assignment_submissions', JSON.stringify(updated));
+      window.dispatchEvent(new Event('assignment_submissions_updated'));
+    } catch (e) {}
+  }
+
+  // 3. Optional background sync to Frappe
+  if (FRAPPE_URL) {
+    (async () => {
+      try {
+        await frappeRestPut("LMS Assignment Submission", id, {
+          status: gradeData.status,
+          comments: gradeData.comments,
+          evaluator: gradeData.evaluator
+        });
+      } catch (_) {}
+    })();
+  }
+
+  return updatedSub || gradeData;
+}
+
+// --- Job Opportunity API ---
+
+const DEFAULT_JOBS = [
+  { id: '1', title: 'Senior Software Engineer', company: 'Google', location: 'Mountain View, CA', type: 'Full Time', work_mode: 'Hybrid', status: 'Open', company_website: 'https://google.com', description: '<p>We are looking for a Senior Software Engineer with strong background in distributed systems and systems design.</p>', date: 'Posted 2 days ago' },
+  { id: '2', title: 'Frontend Developer (React)', company: 'Meta', location: 'Remote', type: 'Full Time', work_mode: 'Remote', status: 'Open', company_website: 'https://meta.com', description: '<p>Build the next generation of social applications using React, Next.js, and modern CSS.</p>', date: 'Posted 3 days ago' },
+  { id: '3', title: 'Product Design Intern', company: 'Figma', location: 'San Francisco, CA', type: 'Part Time', work_mode: 'On-site', status: 'Open', company_website: 'https://figma.com', description: '<p>Join our design systems team to shape the tool that designers around the world use daily.</p>', date: 'Posted 5 days ago' },
+  { id: '4', title: 'Full Stack Engineer', company: 'Vercel', location: 'Remote', type: 'Full Time', work_mode: 'Remote', status: 'Open', company_website: 'https://vercel.com', description: '<p>Work on Next.js and Vercel hosting platform features. Experience in Rust and Node.js is a plus.</p>', date: 'Posted 1 week ago' },
+  { id: '5', title: 'Python Backend Specialist', company: 'OpenAI', location: 'San Francisco, CA', type: 'Full Time', work_mode: 'On-site', status: 'Closed', company_website: 'https://openai.com', description: '<p>Help train and run neural networks using high-performance Python APIs.</p>', date: 'Posted 1 week ago' },
+];
+
+export async function getJobs() {
+  if (FRAPPE_URL) {
+    try {
+      const jobs = await frappeRestGet("Job Opportunity", {
+        fields: JSON.stringify(["name", "job_title", "location", "type", "work_mode", "status", "company_name", "company_website", "description", "creation"]),
+        limit_page_length: 100
+      });
+      return jobs.map(j => ({
+        id: j.name,
+        title: j.job_title,
+        location: j.location,
+        type: j.type || 'Full Time',
+        work_mode: j.work_mode || 'Remote',
+        status: j.status || 'Open',
+        company: j.company_name,
+        company_website: j.company_website || '',
+        description: j.description || '',
+        date: new Date(j.creation).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      }));
+    } catch (e) {
+      console.error("Failed to fetch jobs. Falling back.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_jobs_list');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem('admin_jobs_list', JSON.stringify(DEFAULT_JOBS));
+    return DEFAULT_JOBS;
+  }
+  return DEFAULT_JOBS;
+}
+
+export async function createJob(jobData) {
+  if (FRAPPE_URL) {
+    try {
+      const result = await frappeRestPost("Job Opportunity", {
+        job_title: jobData.title,
+        location: jobData.location,
+        type: jobData.type || 'Full Time',
+        work_mode: jobData.work_mode || 'Remote',
+        status: jobData.status || 'Open',
+        company_name: jobData.company,
+        company_website: jobData.company_website,
+        description: jobData.description || '',
+        company_logo: '/placeholder-logo.png',
+        company_email_address: 'careers@company.com'
+      });
+      return { ...jobData, id: result.name };
+    } catch (e) {
+      console.error("Failed to create job. Falling back.", e);
+      throw e;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_jobs_list') || JSON.stringify(DEFAULT_JOBS);
+    const list = JSON.parse(saved);
+    const newJob = { ...jobData, id: Date.now().toString(), date: 'Posted just now' };
+    list.unshift(newJob);
+    localStorage.setItem('admin_jobs_list', JSON.stringify(list));
+    return newJob;
+  }
+  return jobData;
+}
+
+export async function updateJob(id, jobData) {
+  if (FRAPPE_URL) {
+    try {
+      await frappeRestPut("Job Opportunity", id, {
+        job_title: jobData.title,
+        location: jobData.location,
+        type: jobData.type,
+        work_mode: jobData.work_mode,
+        status: jobData.status,
+        company_name: jobData.company,
+        company_website: jobData.company_website,
+        description: jobData.description,
+        company_logo: '/placeholder-logo.png',
+        company_email_address: 'careers@company.com'
+      });
+      return jobData;
+    } catch (e) {
+      console.error("Failed to update job. Falling back.", e);
+      throw e;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_jobs_list') || JSON.stringify(DEFAULT_JOBS);
+    const list = JSON.parse(saved);
+    const updated = list.map(j => j.id === id ? { ...j, ...jobData } : j);
+    localStorage.setItem('admin_jobs_list', JSON.stringify(updated));
+    return jobData;
+  }
+  return jobData;
+}
+
+export async function deleteJob(id) {
+  if (FRAPPE_URL) {
+    try {
+      await frappeRestDelete("Job Opportunity", id);
+      return true;
+    } catch (e) {
+      console.error("Failed to delete job.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_jobs_list') || JSON.stringify(DEFAULT_JOBS);
+    const list = JSON.parse(saved);
+    const filtered = list.filter(j => j.id !== id);
+    localStorage.setItem('admin_jobs_list', JSON.stringify(filtered));
+    return true;
+  }
+  return false;
+}
+
+// --- LMS Search API ---
+
+export async function searchLMS(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return { courses: [], batches: [], quizzes: [], assignments: [], jobs: [] };
+
+  if (FRAPPE_URL) {
+    try {
+      const [courses, batches, quizzes, assignments, jobs] = await Promise.all([
+        frappeRestGet("LMS Course", {
+          fields: JSON.stringify(["name", "title", "category", "published"]),
+          filters: JSON.stringify([["title", "like", `%${query}%`]]),
+          limit_page_length: 20
+        }).catch(() => []),
+        frappeRestGet("LMS Batch", {
+          fields: JSON.stringify(["name", "title", "medium"]),
+          filters: JSON.stringify([["title", "like", `%${query}%`]]),
+          limit_page_length: 20
+        }).catch(() => []),
+        frappeRestGet("LMS Quiz", {
+          fields: JSON.stringify(["name", "title", "course"]),
+          filters: JSON.stringify([["title", "like", `%${query}%`]]),
+          limit_page_length: 20
+        }).catch(() => []),
+        frappeRestGet("LMS Assignment", {
+          fields: JSON.stringify(["name", "title", "course"]),
+          filters: JSON.stringify([["title", "like", `%${query}%`]]),
+          limit_page_length: 20
+        }).catch(() => []),
+        frappeRestGet("Job Opportunity", {
+          fields: JSON.stringify(["name", "job_title", "company_name", "status"]),
+          filters: JSON.stringify([["job_title", "like", `%${query}%`]]),
+          limit_page_length: 20
+        }).catch(() => [])
+      ]);
+
+      return {
+        courses: (courses || []).map(c => ({ id: c.name, title: c.title, category: c.category, status: c.published ? "Published" : "Draft" })),
+        batches: (batches || []).map(b => ({ id: b.name, title: b.title, medium: b.medium || "Online" })),
+        quizzes: (quizzes || []).map(q => ({ id: q.name, title: q.title, course: q.course })),
+        assignments: (assignments || []).map(a => ({ id: a.name, title: a.title, course: a.course })),
+        jobs: (jobs || []).map(j => ({ id: j.name, title: j.job_title, company: j.company_name, status: j.status }))
+      };
+    } catch (e) {
+      console.error("Failed to query search from Frappe REST API. Falling back to local storage.", e);
+    }
+  }
+
+  // Local fallback
+  if (typeof window !== 'undefined') {
+    const getLocal = (key, def) => {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : def;
+      } catch (e) { return def; }
+    };
+
+    const courses = getLocal('admin_courses_list', DEFAULT_COURSES);
+    const batches = getLocal('admin_batches_list', DEFAULT_BATCHES);
+    const quizzes = getLocal('admin_quizzes_list', DEFAULT_QUIZZES);
+    const assignments = getLocal('admin_assignments_list', DEFAULT_ASSIGNMENTS);
+    const jobs = getLocal('admin_jobs_list', DEFAULT_JOBS);
+
+    const matches = (str) => (str || '').toLowerCase().includes(q);
+
+    return {
+      courses: courses.filter(c => matches(c.title) || matches(c.category)),
+      batches: batches.filter(b => matches(b.title) || matches(b.medium)),
+      quizzes: quizzes.filter(qz => matches(qz.title)),
+      assignments: assignments.filter(a => matches(a.title)),
+      jobs: jobs.filter(j => matches(j.title) || matches(j.company))
+    };
+  }
+
+  return { courses: [], batches: [], quizzes: [], assignments: [], jobs: [] };
+}
+
+// --- LMS Notifications/Alerts API ---
+
+const DEFAULT_NOTIFICATIONS = [
+  { id: '1', title: 'New Student Enrollment', message: 'Aarav Mehta has enrolled in "Python Fundamentals".', category: 'Enrollment', read: false, date: '10 mins ago' },
+  { id: '2', title: 'Assignment Submission', message: 'Sneha Patel submitted "Implementing Fibonacci Sequence Generator".', category: 'Assignment', read: false, date: '1 hour ago' },
+  { id: '3', title: 'Quiz Completed', message: 'Rohan Sharma scored 90% in "Python Syntax & Variables Quiz".', category: 'Quiz', read: true, date: 'Yesterday' },
+  { id: '4', title: 'System Alert', message: 'Database backup completed successfully.', category: 'System', read: true, date: '2 days ago' }
+];
+
+export async function getNotifications() {
+  // LMS Alert is a mock DocType not present in standard Frappe LMS.
+  // We fall back directly to avoid console 404 network errors.
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_notifications_list');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem('admin_notifications_list', JSON.stringify(DEFAULT_NOTIFICATIONS));
+    return DEFAULT_NOTIFICATIONS;
+  }
+  return DEFAULT_NOTIFICATIONS;
+}
+
+export async function markNotificationRead(id) {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_notifications_list') || JSON.stringify(DEFAULT_NOTIFICATIONS);
+    const list = JSON.parse(saved);
+    const updated = list.map(n => n.id === id ? { ...n, read: true } : n);
+    localStorage.setItem('admin_notifications_list', JSON.stringify(updated));
+    return true;
+  }
+  return false;
+}
+
+export async function clearAllNotifications() {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_notifications_list') || JSON.stringify(DEFAULT_NOTIFICATIONS);
+    const list = JSON.parse(saved);
+    const updated = list.map(n => ({ ...n, read: true }));
+    localStorage.setItem('admin_notifications_list', JSON.stringify(updated));
+    return true;
+  }
+  return false;
+}
+
+// --- LMS Certifications API ---
+
+const DEFAULT_CERTIFICATES = [
+  { id: 'cert-101', student_name: 'Aarav Mehta', course_title: 'Python Fundamentals', issue_date: 'Jun 10, 2026', cert_hash: 'py-8f3a9b2c1d', status: 'Active' },
+  { id: 'cert-102', student_name: 'Sneha Patel', course_title: 'Data Structures & Algorithms', issue_date: 'Jun 12, 2026', cert_hash: 'dsa-4c7e6d2a8b', status: 'Active' }
+];
+
+const DEFAULT_CERT_CONFIG = {
+  signer_name: 'Dr. Seshu Kumar',
+  signer_title: 'LMS Academic Director',
+  require_passing_quiz: true,
+  require_assignments_submitted: true,
+  theme_color: '#9B6EF8'
+};
+
+export async function getCertificates() {
+  if (FRAPPE_URL) {
+    try {
+      const certs = await frappeRestGet("LMS Certificate", {
+        fields: JSON.stringify(["name", "member_name", "course_title", "issue_date", "published"]),
+        limit_page_length: 100
+      });
+      if (certs && Array.isArray(certs)) {
+        return certs.map(c => ({
+          id: c.name,
+          student_name: c.member_name || "Unknown Student",
+          course_title: c.course_title,
+          issue_date: c.issue_date ? new Date(c.issue_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "",
+          cert_hash: c.name,
+          status: c.published ? "Active" : "Draft"
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to fetch certificates from Frappe REST API. Falling back.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_certificates_list');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem('admin_certificates_list', JSON.stringify(DEFAULT_CERTIFICATES));
+    return DEFAULT_CERTIFICATES;
+  }
+  return DEFAULT_CERTIFICATES;
+}
+
+export async function createCertificate(certData) {
+  if (FRAPPE_URL) {
+    try {
+      const result = await frappeRestPost("LMS Certificate", {
+        member: certData.member_email || "admin@lms.com",
+        member_name: certData.student_name,
+        course_title: certData.course_title,
+        issue_date: certData.issue_date ? new Date(certData.issue_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        published: 1
+      });
+      return { ...certData, id: result.name, cert_hash: result.name, status: "Active" };
+    } catch (e) {
+      console.error("Failed to create certificate via Frappe REST API. Falling back.", e);
+      throw e;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_certificates_list') || JSON.stringify(DEFAULT_CERTIFICATES);
+    const list = JSON.parse(saved);
+    const newCert = {
+      ...certData,
+      id: 'cert-' + Date.now(),
+      cert_hash: certData.cert_hash || Math.random().toString(36).substr(2, 10),
+      issue_date: certData.issue_date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: 'Active'
+    };
+    list.unshift(newCert);
+    localStorage.setItem('admin_certificates_list', JSON.stringify(list));
+    return newCert;
+  }
+  return certData;
+}
+
+export async function deleteCertificate(id) {
+  if (FRAPPE_URL) {
+    try {
+      await frappeRestDelete("LMS Certificate", id);
+      return true;
+    } catch (e) {
+      console.error("Failed to delete certificate.", e);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_certificates_list') || JSON.stringify(DEFAULT_CERTIFICATES);
+    const list = JSON.parse(saved);
+    const filtered = list.filter(c => c.id !== id);
+    localStorage.setItem('admin_certificates_list', JSON.stringify(filtered));
+    return true;
+  }
+  return false;
+}
+
+export async function getCertificateConfig() {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('admin_cert_config');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem('admin_cert_config', JSON.stringify(DEFAULT_CERT_CONFIG));
+    return DEFAULT_CERT_CONFIG;
+  }
+  return DEFAULT_CERT_CONFIG;
+}
+
+export async function saveCertificateConfig(config) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('admin_cert_config', JSON.stringify(config));
+    return config;
+  }
+  return config;
+}
+
+export async function saveProgressToRedis(email, completed) {
+  try {
+    const res = await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, completed })
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("Failed to save progress to Redis:", e);
+    return false;
+  }
+}
+
+export async function getProgressFromRedis(email) {
+  try {
+    const res = await fetch(`/api/progress?email=${encodeURIComponent(email)}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.completed || {};
+    }
+  } catch (e) {
+    console.error("Failed to get progress from Redis:", e);
+  }
+  return null;
+}
+
+export async function getLMSStudents() {
+  if (FRAPPE_URL) {
+    try {
+      const users = await frappeGet("lms.lms.api.get_lms_students_optimized");
+      if (users && Array.isArray(users) && !users.error) {
+        return users;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch optimized students, falling back to legacy User REST API.", e);
+    }
+
+    try {
+      const users = await frappeRestGet("User", {
+        fields: JSON.stringify(["name", "email", "full_name", "enabled"]),
+        filters: JSON.stringify([
+          ["name", "!=", "Administrator"],
+          ["name", "!=", "Guest"],
+          ["enabled", "=", 1]
+        ]),
+        limit_page_length: 500
+      });
+      return users.map(u => ({
+        username: u.email || u.name,
+        name: u.full_name || u.name
+      }));
+    } catch (e) {
+      console.error("Failed to fetch students from Frappe REST API, falling back.", e);
+    }
+  }
+  return [];
+}

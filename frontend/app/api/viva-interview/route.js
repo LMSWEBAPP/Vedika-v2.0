@@ -1,0 +1,598 @@
+import { NextResponse } from 'next/server';
+import { verifyJwt } from '@/lib/auth';
+import { callGemini } from '@/lib/gemini';
+
+async function callGeminiWithRetry(contents, systemInstruction = '', generationConfig = {}, maxRetries = 3) {
+  const result = await callGemini({
+    contents,
+    systemInstruction,
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 2500,
+      thinkingConfig: { thinkingBudget: 0 },
+      ...generationConfig
+    },
+    maxRetries
+  });
+  return result.text;
+}
+
+export async function POST(request) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    let payload = verifyJwt(authHeader);
+    if (!payload) {
+      const cookieHeader = request.headers.get('cookie') || '';
+      const match = cookieHeader.match(/(?:jwt|token)=([^;]+)/);
+      if (match) {
+        payload = verifyJwt(match[1]);
+      }
+    }
+    // Fail-open for academic interactive examination & viva practice
+    if (!payload) {
+      payload = { user_id: 'student@lms.com', role: 'Student', tenant_id: 'default_tenant' };
+    }
+
+    const body = await request.json();
+    const { 
+      action, type = 'viva', subject = 'Physics', topic = '', level = 'College', 
+      difficulty = 'Medium', history = [], jdText = '', programmingLanguage = '', 
+      experimentName = '', resumeBlueprint = null, resumeBase64 = null, 
+      resumeMimeType = 'application/pdf', audioBase64 = null, audioMimeType = 'audio/webm', 
+      questionIndex = 0
+    } = body || {};
+
+    // Input payload size constraints
+    if (resumeBase64 && typeof resumeBase64 === 'string' && resumeBase64.length > 10 * 1024 * 1024 * 1.37) {
+      return NextResponse.json({ error: 'Resume payload exceeds 10MB limit.' }, { status: 400 });
+    }
+    if (audioBase64 && typeof audioBase64 === 'string' && audioBase64.length > 15 * 1024 * 1024 * 1.37) {
+      return NextResponse.json({ error: 'Audio payload exceeds 15MB limit.' }, { status: 400 });
+    }
+
+    // -------------------------------------------------------------
+    // ACTION: PARSE RESUME
+    // -------------------------------------------------------------
+    if (action === 'parse-resume') {
+      try {
+        const contents = [];
+        if (resumeBase64) {
+          contents.push({
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType: resumeMimeType,
+                  data: resumeBase64.replace(/^data:.*?;base64,/, '')
+                }
+              },
+              {
+                text: `Analyze this resume document. Extract and return a clean JSON summary object with these exact keys:
+{
+  "name": "Candidate Name or 'Candidate'",
+  "targetRole": "Primary title/specialization e.g. Fullstack Developer",
+  "keySkills": ["skill1", "skill2", "skill3", "skill4", "skill5"],
+  "experienceSummary": "1-2 sentence summary of experience level and core domains",
+  "keyProjects": ["project or domain 1", "project or domain 2"]
+}`
+              }
+            ]
+          });
+        } else {
+          contents.push({
+            role: 'user',
+            parts: [{
+              text: `Analyze this text content from a candidate's background/resume:\n"${(jdText || topic).slice(0, 3000)}"\n
+Extract and return a clean JSON summary object:
+{
+  "name": "Candidate",
+  "targetRole": "Primary specialization",
+  "keySkills": ["skill1", "skill2", "skill3"],
+  "experienceSummary": "1-2 sentence background summary",
+  "keyProjects": ["project or domain 1"]
+}`
+            }]
+          });
+        }
+
+        const rawJson = await callGeminiWithRetry(
+          contents,
+          'You are an expert HR and technical resume parser. Output ONLY valid JSON matching the schema.',
+          { responseMimeType: 'application/json', temperature: 0.2 }
+        );
+
+        let cleanJson = rawJson.trim();
+        if (cleanJson.startsWith('```')) {
+          cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+        }
+        const parsed = JSON.parse(cleanJson);
+        return NextResponse.json({ blueprint: parsed });
+      } catch (err) {
+        console.error('[Viva API] Parse resume error:', err);
+        return NextResponse.json({
+          blueprint: {
+            name: 'Candidate',
+            targetRole: programmingLanguage || 'Software Developer',
+            keySkills: [programmingLanguage || 'Technical Skills'],
+            experienceSummary: 'Candidate profile configured for technical evaluation.',
+            keyProjects: []
+          }
+        });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ACTION: TRANSCRIBE AUDIO (Safari / Firefox MediaRecorder fallback)
+    // -------------------------------------------------------------
+    if (action === 'transcribe-audio') {
+      if (!audioBase64) {
+        return NextResponse.json({ error: 'Missing audioBase64 parameter.' }, { status: 400 });
+      }
+
+      try {
+        const contents = [{
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: audioMimeType,
+                data: audioBase64.replace(/^data:.*?;base64,/, '')
+              }
+            },
+            {
+              text: 'Transcribe this spoken English audio exactly into text. Output ONLY the plain transcription text without commentary or prefixes.'
+            }
+          ]
+        }];
+
+        const transcription = await callGeminiWithRetry(
+          contents,
+          'You are an ultra-accurate speech-to-text transcriber for academic and technical interviews. Output only spoken text.',
+          { temperature: 0.1 }
+        );
+
+        return NextResponse.json({ text: transcription.trim() });
+      } catch (err) {
+        console.error('[Viva API] Audio transcription error:', err);
+        return NextResponse.json({ error: 'Audio transcription failed. Please try voice again or type your answer.' }, { status: 500 });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ACTION: GENERATE QUESTION (Strict Examiner Persona - No Spoilers)
+    // -------------------------------------------------------------
+    if (action === 'question') {
+      let contextText = '';
+      if (type === 'viva') {
+        const targetExp = experimentName || topic || 'Core Laboratory Experiment';
+        contextText = `Subject: ${subject}\nAcademic Experiment/Topic: "${targetExp}"\nStudent Level: ${level}\nChosen Difficulty: ${difficulty.toUpperCase()} (${difficulty === 'Easy' ? 'basic definitions & standard formulas' : difficulty === 'Hard' ? 'advanced derivations, non-ideal conditions, error analysis & edge cases' : 'standard academic analytical questions'}).`;
+      } else {
+        // Technical Interview
+        const stack = programmingLanguage || topic || 'Fullstack Engineering';
+        let resumeDetails = '';
+        if (resumeBlueprint) {
+          resumeDetails = `\nCandidate Blueprint:\n- Role: ${resumeBlueprint.targetRole || 'Developer'}\n- Skills: ${(resumeBlueprint.keySkills || []).join(', ')}\n- Background: ${resumeBlueprint.experienceSummary || ''}`;
+        }
+        let jdDetails = jdText ? `\nTarget Job Description / Requirements:\n"${jdText.slice(0, 600)}..."` : '';
+        contextText = `Target Stack/Domain: ${stack}\nTarget Seniority: ${level} Engineer\nChosen Difficulty: ${difficulty.toUpperCase()} (${difficulty === 'Easy' ? 'syntax fundamentals & standard patterns' : difficulty === 'Hard' ? 'low-level runtime internals, high-scale bottlenecks & failure modes' : 'production architecture & problem solving'})${resumeDetails}${jdDetails}`;
+      }
+
+      const isFirstQuestion = questionIndex === 0 && history.length === 0;
+      const recentQ1s = Array.isArray(body.recentQ1s) ? body.recentQ1s : [];
+      let recentQ1Text = '';
+      if (recentQ1s.length > 0) {
+        recentQ1Text = `\nANTI-REPETITION MANDATE: The candidate recently answered these opening questions in previous sessions for this topic:\n${recentQ1s.map((q, i) => `- "${q}"`).join('\n')}\nYou MUST NOT repeat any of these questions or test the exact same sub-topic concept as Question 1.`;
+      }
+
+      let openingDiversificationInstruction = '';
+      if (isFirstQuestion) {
+        openingDiversificationInstruction = `\nDYNAMIC SUB-TOPIC DIVERSIFICATION FOR QUESTION 1:
+- Dynamically identify 5 distinct core sub-topic pillars within "${experimentName || topic || subject || programmingLanguage}" appropriate for a ${level} level examination.
+- Select ONE specific sub-topic pillar to test for this session's opening question.
+- Do NOT default to generic textbook definitions or the single most common entry-level opening question (e.g., for Python, avoid defaulting to mutable/immutable unless specifically targeted). Pick a specific, meaningful core concept pillar.
+${recentQ1Text}`;
+      }
+
+      const systemInstruction = `You are a real, highly experienced, authentic, and engaging ${type === 'viva' ? 'University Professor conducting an in-person academic viva defense' : 'Senior/Staff Software Engineer conducting a live technical interview'}.
+Context:
+${contextText}
+
+Question Index: ${questionIndex + 1} of 5.
+Difficulty Tier: ${difficulty.toUpperCase()}.
+${openingDiversificationInstruction}
+
+HUMAN CONVERSATIONAL GUIDELINES:
+1. Speak like a real human sitting across from the candidate or on a live video call—warm, articulate, natural, and conversational.
+2. STRICTLY AVOID robotic, AI-sounding formulas like "What is the primary physical principle underlying...", "Explain the advantages and disadvantages of...", or dry textbook definition requests.
+3. GROUND QUESTIONS IN REAL SCENARIOS & THOUGHT EXPERIMENTS:
+   ${type === 'viva' ? `
+   - For Viva: Ask intuitive laboratory scenarios, what-if parameter changes, and real physical observations.
+     Example style: "Welcome! Let's say we're setting up this experiment in the lab. If we suddenly double the slit distance while keeping the wavelength constant, walk me through what happens to the interference fringes on our screen and why."
+     Example style: "Good point. Now suppose our meter readings kept drifting higher over 20 minutes. What physical phenomenon in the apparatus is most likely causing that, and how would you correct for it?"
+   ` : `
+   - For Technical Interview: Ask practical engineering situations, trade-offs, production incidents, or architecture decisions.
+     Example style: "Nice to meet you! Let's say you're building a real-time caching service handling heavy concurrent writes. How would you choose between an in-memory LRU cache and an external store like Redis for this case?"
+     Example style: "Makes sense. Quick follow-up: what happens if two worker threads attempt to update the same record at the exact same millisecond? How would you guard against race conditions here?"
+   `}
+4. KEEP IT NATURAL & SPOKEN: Exactly ONE focused question (maximum 2 sentences), using natural conversational phrasing like "Walk me through...", "Let's say you're...", "Suppose we...", "How would you handle...", "What happens if...".
+5. NEVER provide answers, hints, solutions, or code explanations yourself. You are assessing the candidate.
+6. ACKNOWLEDGMENT & RELEVANCE:
+   - If Question 1, offer a warm, natural human greeting: e.g. "Glad to have you here! Let's get started with your ${difficulty.toLowerCase()} session."
+   - For subsequent questions, react like a real human: briefly acknowledge their specific response in a conversational way (e.g. "Good insight on that.", "Fair point on the indexing trade-off.", "I see your reasoning there—let's take that a step further.").
+   - If their answer was clearly off-topic or evasive, gently steer them back: "I see, but that doesn't quite address our question on ${topic || subject}. Let's bring the focus back..."
+7. TOPIC VALIDATION (Mandatory for Question 1):
+   - Set "isValidTopic" to true for legitimate technical, scientific, or academic topics.
+   - Set "isValidTopic" to false only for random gibberish or pure greetings ("asdf", "hello", "1234").
+
+Output ONLY a valid JSON object matching this schema:
+{
+  "isValidTopic": true,
+  "rejectionReason": "If topic is invalid, short 1-sentence reason. Leave empty if valid.",
+  "acknowledgment": "Conversational, natural human acknowledgment (max 15 words)",
+  "question": "The conversational, human-phrased question ending with a question mark"
+}`;
+
+      let conversationHistory = '';
+      if (history.length > 0) {
+        conversationHistory = 'Transcript of previous turns in this session:\n';
+        history.forEach((h, idx) => {
+          conversationHistory += `Q${idx + 1}: ${h.question}\nCandidate A${idx + 1}: ${h.answer || '(No answer provided)'}\n`;
+        });
+        conversationHistory += `\nNow formulate Question ${questionIndex + 1} of 5 (${difficulty} Difficulty):`;
+      } else {
+        conversationHistory = `This is the start of the session. Formulate the first opening question (Question 1 of 5 at ${difficulty} Difficulty).`;
+      }
+
+      try {
+        const rawJson = await callGeminiWithRetry(
+          [{ role: 'user', parts: [{ text: conversationHistory }] }],
+          systemInstruction,
+          { responseMimeType: 'application/json', temperature: difficulty === 'Hard' ? 0.75 : 0.6 }
+        );
+
+        let cleanJson = rawJson.trim();
+        if (cleanJson.startsWith('```')) {
+          cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+        }
+        const parsed = JSON.parse(cleanJson);
+        return NextResponse.json({
+          isValidTopic: parsed.isValidTopic !== false,
+          rejectionReason: parsed.rejectionReason || '',
+          acknowledgment: parsed.acknowledgment || (questionIndex === 0 ? "Glad to have you here! Let's get started." : 'Understood. Let us proceed.'),
+          question: parsed.question || 'Could you walk me through the core principles behind this concept?'
+        });
+      } catch (err) {
+        console.error('[Viva API] Question generation error, using fallback:', err);
+        const fallbackQuestionsViva = [
+          `Let's start with the basics: if you were explaining the core intuition behind "${experimentName || topic}" to a junior student, what real-world example would you use?`,
+          `Suppose during your lab measurement, your readings keep drifting higher over 15 minutes. What physical effect is most likely causing that, and how would you correct it?`,
+          `Walk me through what would happen to your measured outcome if we doubled the primary input parameter in this setup.`,
+          `What assumptions did we make in the theoretical derivation that might not hold true in a real physical laboratory?`,
+          `Before turning on the apparatus, what specific calibration step is most critical to avoid systematic measurement error?`
+        ];
+
+        const fallbackQuestionsInterview = [
+          `Let's dive in: walk me through how you would architect a production service in ${programmingLanguage || 'this stack'} to handle unexpected spikes in traffic.`,
+          `Suppose a background job starts silently failing in production under concurrent load. Where would you look first, and how would you reproduce the bug?`,
+          `How do you decide between synchronous execution and asynchronous worker queues when designing latency-critical APIs?`,
+          `Walk me through a difficult edge case or race condition you encountered recently and how you resolved it.`,
+          `If your database query response times suddenly tripled after a new deployment, what systematic steps would you take to diagnose it?`
+        ];
+
+        const fallbackList = type === 'viva' ? fallbackQuestionsViva : fallbackQuestionsInterview;
+        const qText = fallbackList[Math.min(questionIndex, fallbackList.length - 1)];
+
+        return NextResponse.json({
+          acknowledgment: questionIndex === 0 ? `Welcome to your ${difficulty.toLowerCase()} session! Let's get started.` : 'Understood. Let us proceed.',
+          question: qText
+        });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ACTION: EVALUATE SESSION (Holistic Topic-Rollup Scorecard)
+    // -------------------------------------------------------------
+    if (action === 'evaluate-session') {
+      const targetDomain = (experimentName || topic || subject || programmingLanguage || '').trim();
+      if (!targetDomain) {
+        return NextResponse.json({ error: 'Missing evaluation topic or subject parameter. Session evaluation blocked.' }, { status: 400 });
+      }
+
+      const topicUnitsInput = body.topicUnits || [];
+      const historyInput = history || [];
+
+      // Group raw history turns into TopicUnits if topicUnits wasn't directly passed
+      let topicUnits = [...topicUnitsInput];
+      if (topicUnits.length === 0 && historyInput.length > 0) {
+        let currentUnit = null;
+        historyInput.forEach((h, idx) => {
+          const isFollowUp = h.questionType === 'follow_up' || /follow-up|probing/i.test(h.question || '');
+          if (!currentUnit || (!isFollowUp && currentUnit.turns.length > 0)) {
+            if (currentUnit) topicUnits.push(currentUnit);
+            currentUnit = {
+              topicIndex: topicUnits.length + 1,
+              topicName: h.topicName || `Topic ${topicUnits.length + 1}`,
+              turns: []
+            };
+          }
+          currentUnit.turns.push({
+            questionType: isFollowUp ? 'follow_up' : 'main',
+            question: h.question,
+            answer: h.answer,
+            durationSec: h.durationSec || 30
+          });
+        });
+        if (currentUnit && currentUnit.turns.length > 0) {
+          topicUnits.push(currentUnit);
+        }
+      }
+
+      const nTopics = topicUnits.length;
+
+      // RULE 1: Zero-Division & Crash Guard
+      if (nTopics === 0) {
+        return NextResponse.json({
+          overallScore: 0,
+          letterGrade: 'Incomplete',
+          summaryCritique: 'The examination session ended before any sub-topic questions were presented or answered.',
+          rubricBreakdown: {
+            technicalAccuracy: { score: 0, feedback: 'No topic data recorded.' },
+            problemSolving: { score: 0, feedback: 'No topic data recorded.' },
+            communicationClarity: { score: 0, feedback: 'No topic data recorded.' },
+            depthAndCompleteness: { score: 0, feedback: 'No topic data recorded.' }
+          },
+          perTopicAnalysis: [],
+          strengths: [],
+          criticalImprovements: ['Complete at least 2 topics to receive an official grade.'],
+          recommendedStudyTopics: [topic || subject || 'Core Principles']
+        });
+      }
+
+      let contextSummary = '';
+      if (type === 'viva') {
+        contextSummary = `Academic Viva Examination on "${experimentName || topic}" in ${subject} (${level} level, ${difficulty} difficulty). Total Topics Attempted: ${nTopics}.`;
+      } else {
+        contextSummary = `Technical Job Interview on ${programmingLanguage || topic} for a ${level} position (${difficulty} difficulty). Total Topics Attempted: ${nTopics}. ${jdText ? `Target JD: ${jdText.slice(0, 300)}` : ''}`;
+      }
+
+      const systemInstruction = `You are a strict, distinguished academic professor and senior hiring committee director.
+Perform a rigorous, objective topic-rollup evaluation of the interview conducted at ${difficulty.toUpperCase()} difficulty.
+
+Evaluation Context:
+${contextSummary}
+
+CRITICAL TOPIC-ROLLUP SCORING & RUBRIC RULES (MANDATORY):
+1. TOPIC ROLLUP EVALUATION:
+   - Evaluate each TOPIC UNIT as ONE single data point combining the main question and any follow-up probes.
+   - Do NOT score turns independently. Evaluate candidate's net understanding of the topic as a whole.
+2. EVIDENCE-FIRST EXTRACTION & SENIORITY-CALIBRATED REFERENCE FACTS:
+   - For each topic, FIRST extract "candidateClaims" (exact technical facts/formulas stated by candidate).
+   - Generate "levelCalibratedReferenceFacts" required for seniority level "${(level || 'College').toUpperCase()}":
+     * Junior / College: Syntax definitions, primary formulas, standard usage.
+     * Mid: Edge cases, common failure modes, standard architecture patterns.
+     * Senior / Lead: Low-level runtime internals, memory layout, system trade-offs, high-scale bottlenecks.
+   - Compare candidateClaims against levelCalibratedReferenceFacts to generate "matchedConcepts" and "missingConcepts".
+3. RUBRIC DIMENSIONS PER TOPIC (0-10 Scale):
+   - Technical Accuracy & Depth (50% weight): Evaluate correctness against levelCalibratedReferenceFacts.
+   - Problem Solving & Adaptability (30% weight): Handling of probed follow-ups and edge cases. NOTE: If main answer was so thorough that ZERO follow-ups were needed, award FULL CREDIT matching technical accuracy.
+   - Communication Clarity (20% weight): Articulation and structure appropriate for ${level} level.
+4. DOMAIN RELEVANCE & OFF-TOPIC EVALUATION (Rule 3):
+   - Evaluate whether candidate responses genuinely address the target subject/topic (${experimentName || topic || subject}).
+   - ACCEPTABLE COMPARISONS: Candidate using cross-language or cross-domain analogies to illustrate a concept in ${experimentName || topic || subject} IS ON-TOPIC.
+   - UNACCEPTABLE SUBSTITUTIONS: Candidate answering with concepts from a completely different domain in place of addressing the question (e.g. explaining HTML tags when asked about C pointers) IS OFF-TOPIC per Rule 3.
+   - If candidate's response for a topic unit is OFF-TOPIC:
+     * Set rubric: { technicalAccuracy: 0, problemSolving: 0, communicationClarity: 2-5 (based on grammar) }.
+     * Set keyGaps: "Candidate response was off-topic and substituted unrelated domain concepts instead of addressing ${experimentName || topic || subject}."
+5. SKIPPED / TIMED-OUT TOPICS:
+   - If candidate skipped or explicitly admitted "I don't know", set rubric: { technicalAccuracy: 0, problemSolving: 0, communicationClarity: 0 } with keyGaps: "Candidate skipped topic or admitted lack of knowledge."
+
+Return ONLY a valid JSON object matching this EVIDENCE-FIRST schema (perTopicAnalysis MUST come first):
+{
+  "perTopicAnalysis": [
+    {
+      "topicIndex": number (1 to N),
+      "topicName": "Sub-topic title",
+      "turnsCount": number,
+      "candidateClaims": "Exact technical claims and formulas stated by the candidate",
+      "levelCalibratedReferenceFacts": "Essential required technical facts for ${level} level",
+      "matchedConcepts": ["Concept 1 matched", "Concept 2 matched"],
+      "missingConcepts": ["Missing concept 1", "Missing concept 2"],
+      "keyGaps": "Specific missing concept, off-topic note, or error",
+      "rubric": {
+        "technicalAccuracy": number (0-10),
+        "problemSolving": number (0-10),
+        "communicationClarity": number (0-10)
+      }
+    }
+  ],
+  "summaryCritique": "2 to 3 sentences high-level executive review of candidate performance across topics and pacing",
+  "strengths": ["Demonstrated strength 1", "Demonstrated strength 2"],
+  "criticalImprovements": ["Priority improvement 1", "Priority improvement 2"],
+  "recommendedStudyTopics": ["Topic 1 to study", "Topic 2 to study"]
+}`;
+
+      let transcriptText = `FULL TOPIC-ROLLUP INTERVIEW TRANSCRIPT (${difficulty.toUpperCase()} DIFFICULTY):\n\n`;
+      topicUnits.forEach((unit, uIdx) => {
+        transcriptText += `=== TOPIC ${uIdx + 1}: ${unit.topicName || `Sub-Topic ${uIdx + 1}`} ===\n`;
+        unit.turns.forEach((t, tIdx) => {
+          let cleanAnswer = (t.answer || '').trim();
+          cleanAnswer = cleanAnswer.replace(/^(can you repeat|please repeat|repeat it|say again|pardon|i didn't catch that|could you rephrase)[,.\s?!]+/i, '').trim() || cleanAnswer;
+          transcriptText += `[${t.questionType === 'follow_up' ? 'Follow-up Probe' : 'Main Question'}]: ${t.question}\nCandidate Answer: "${cleanAnswer || '(No response recorded / Timed out)'}"\n\n`;
+        });
+      });
+
+      try {
+        const rawJson = await callGeminiWithRetry(
+          [{ role: 'user', parts: [{ text: transcriptText }] }],
+          systemInstruction,
+          { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 2500 }
+        );
+
+        let cleanJson = rawJson.trim();
+        if (cleanJson.startsWith('```')) {
+          cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+        }
+
+        const scorecard = JSON.parse(cleanJson);
+
+        // Enforce math rules 100% programmatically to prevent LLM arithmetic drift
+        const coverageFactor = nTopics >= 3 ? 1.0 : (nTopics === 2 ? 0.85 : 0.70);
+        let rawMeanTopicScore = 0;
+
+        if (scorecard.perTopicAnalysis && Array.isArray(scorecard.perTopicAnalysis)) {
+          scorecard.perTopicAnalysis = scorecard.perTopicAnalysis.map((t) => {
+            const rub = t.rubric || {};
+            const techAcc = typeof rub.technicalAccuracy === 'number' ? rub.technicalAccuracy : 0;
+            const probSol = typeof rub.problemSolving === 'number' ? rub.problemSolving : 0;
+            const commCla = typeof rub.communicationClarity === 'number' ? rub.communicationClarity : 0;
+            
+            // Programmatically compute weighted topicScore
+            const computedTopicScore = Math.min(10, Math.max(0, Math.round((techAcc * 0.50) + (probSol * 0.30) + (commCla * 0.20))));
+            return {
+              ...t,
+              topicScore: computedTopicScore
+            };
+          });
+
+          const validTopics = scorecard.perTopicAnalysis.filter(t => typeof t.topicScore === 'number' && !t.unscored);
+          rawMeanTopicScore = validTopics.length > 0
+            ? validTopics.reduce((acc, t) => acc + t.topicScore, 0) / validTopics.length
+            : 0;
+
+          // Programmatically aggregate overall rubric breakdown across valid attempted topics
+          const meanTechAcc = validTopics.length > 0
+            ? Math.round((validTopics.reduce((acc, t) => acc + (t.rubric?.technicalAccuracy || 0), 0) / validTopics.length) * 10) / 10
+            : 0;
+          const meanProbSol = validTopics.length > 0
+            ? Math.round((validTopics.reduce((acc, t) => acc + (t.rubric?.problemSolving || 0), 0) / validTopics.length) * 10) / 10
+            : 0;
+          const meanCommCla = validTopics.length > 0
+            ? Math.round((validTopics.reduce((acc, t) => acc + (t.rubric?.communicationClarity || 0), 0) / validTopics.length) * 10) / 10
+            : 0;
+
+          scorecard.rubricBreakdown = {
+            technicalAccuracy: {
+              score: meanTechAcc,
+              feedback: `Evaluated across ${validTopics.length} attempted topic unit(s) against ${level} expectations.`
+            },
+            problemSolving: {
+              score: meanProbSol,
+              feedback: `Evaluated across probed follow-up scenarios and edge-case handling.`
+            },
+            communicationClarity: {
+              score: meanCommCla,
+              feedback: `Evaluated across response structure, articulation, and domain relevance.`
+            }
+          };
+        }
+
+        const calculatedScore = Math.min(100, Math.max(0, Math.round(rawMeanTopicScore * 10 * coverageFactor)));
+        const totalQuestionsAsked = topicUnits.reduce((acc, u) => acc + (u.turns?.length || 1), 0);
+
+        let letterGrade = 'F';
+        if (nTopics < 2) {
+          letterGrade = 'Incomplete';
+        } else if (calculatedScore >= 90) letterGrade = 'A+';
+        else if (calculatedScore >= 80) letterGrade = 'A';
+        else if (calculatedScore >= 70) letterGrade = 'B+';
+        else if (calculatedScore >= 60) letterGrade = 'B';
+        else if (calculatedScore >= 50) letterGrade = 'C';
+        else if (calculatedScore >= 40) letterGrade = 'D';
+        else letterGrade = 'F';
+
+        return NextResponse.json({
+          ...scorecard,
+          nTopics,
+          totalQuestionsAsked,
+          rawMeanTopicScore: Number(rawMeanTopicScore.toFixed(1)),
+          coverageFactor: Number(coverageFactor.toFixed(2)),
+          overallScore: calculatedScore,
+          letterGrade
+        });
+      } catch (err) {
+        console.error('[Viva API] Session evaluation JSON parsing or generation error:', err);
+        
+        // System error fallback: Mark topics as unscored rather than assigning arbitrary fake scores
+        const analyzedTopics = topicUnits.map((unit, idx) => {
+          const firstAns = (unit.turns?.[0]?.answer || '').trim();
+          const ans = firstAns.toLowerCase();
+          const isSkipped = !firstAns || ans.includes('skip') || ans.includes('timed out');
+          
+          if (isSkipped) {
+            return {
+              topicIndex: idx + 1,
+              topicName: unit.topicName || `Topic ${idx + 1}`,
+              turnsCount: unit.turns.length,
+              topicScore: 0,
+              unscored: false,
+              rubric: {
+                technicalAccuracy: 0,
+                problemSolving: 0,
+                communicationClarity: 0
+              },
+              candidateSummary: '(No response recorded / Skipped)',
+              idealModelAnswer: `A comprehensive answer for this topic covers core scientific/engineering definitions.`,
+              keyGaps: 'Candidate skipped or timed out on this sub-topic.'
+            };
+          }
+
+          return {
+            topicIndex: idx + 1,
+            topicName: unit.topicName || `Topic ${idx + 1}`,
+            turnsCount: unit.turns.length,
+            topicScore: null,
+            unscored: true,
+            rubric: {
+              technicalAccuracy: null,
+              problemSolving: null,
+              communicationClarity: null
+            },
+            candidateSummary: firstAns,
+            idealModelAnswer: `A comprehensive answer for this topic covers core scientific/engineering definitions.`,
+            keyGaps: 'Unscored: Automated evaluation service experienced a temporary connectivity issue.'
+          };
+        });
+
+        const scoredTopics = analyzedTopics.filter(t => !t.unscored && typeof t.topicScore === 'number');
+        const rawMeanScore = scoredTopics.length > 0
+          ? scoredTopics.reduce((acc, q) => acc + q.topicScore, 0) / scoredTopics.length
+          : 0;
+        const coverageFactor = Math.min(1.0, 0.5 + 0.15 * nTopics);
+        const overallScore = Math.round(rawMeanScore * 10 * coverageFactor);
+
+        let letterGrade = 'F';
+        if (nTopics < 2 || scoredTopics.length === 0) letterGrade = 'Incomplete';
+        else if (overallScore >= 90) letterGrade = 'A+';
+        else if (overallScore >= 80) letterGrade = 'A';
+        else if (overallScore >= 70) letterGrade = 'B+';
+        else if (overallScore >= 60) letterGrade = 'B';
+        else if (overallScore >= 50) letterGrade = 'C';
+        else if (overallScore >= 40) letterGrade = 'D';
+        else letterGrade = 'F';
+
+        return NextResponse.json({
+          rawMeanTopicScore: Number(rawMeanScore.toFixed(1)),
+          coverageFactor: Number(coverageFactor.toFixed(2)),
+          overallScore,
+          letterGrade,
+          systemErrorWarning: 'Automated evaluation service encountered a temporary error. Unscored topics are excluded from the total.',
+          summaryCritique: `The candidate completed ${analyzedTopics.length} sub-topic evaluation(s). Due to a system timeout, certain responses could not be automatically scored.`,
+          rubricBreakdown: {
+            technicalAccuracy: { score: scoredTopics.length > 0 ? Math.round(rawMeanScore) : 0, feedback: 'Evaluated based on available scored topics.' },
+            problemSolving: { score: scoredTopics.length > 0 ? Math.round(rawMeanScore * 0.9) : 0, feedback: 'Evaluated across available scored topic probes.' },
+            communicationClarity: { score: scoredTopics.length > 0 ? Math.round(rawMeanScore * 1.1) : 0, feedback: 'Articulation clarity across available turns.' }
+          },
+          perTopicAnalysis: analyzedTopics,
+          strengths: ['Attempted examination topics'],
+          criticalImprovements: ['Review fundamental concepts for all topics'],
+          recommendedStudyTopics: [topic || subject || 'Core Principles']
+        });
+      }
+    }
+
+    return NextResponse.json({ error: 'Invalid action specified.' }, { status: 400 });
+  } catch (error) {
+    console.error('[Viva API] Global exception:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

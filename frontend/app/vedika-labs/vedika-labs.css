@@ -1,0 +1,994 @@
+/* =========================================================================
+   VEDIKA LABS - CINEMATIC SCI-FI LAB REDESIGN STYLESHEET
+   Accurately matches reference mockup with elevated pedestal,
+   cards arranged as a carousel BEHIND the bot, neon glows, and clear POV.
+   NO VERTICAL SCROLL: Fits within 100vh - 64px viewport perfectly.
+   ========================================================================= */
+
+.vedika-labs-cinema-view {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
+  background-color: #030712;
+  color: #F8FAFC;
+  font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
+  overflow: hidden; /* STRICT: No vertical scroll */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  contain: layout size;
+}
+
+/* Sharp high-tech sci-fi chamber background (clean without conflicting pre-printed cards/bot) */
+.vedika-labs-scene-backdrop {
+  position: absolute;
+  inset: 0;
+  background-image: url('/vedika-lab-chamber.jpg?v=2');
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  filter: brightness(0.72) contrast(1.08) saturate(1.05);
+  z-index: 0;
+  pointer-events: none;
+  contain: paint;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Atmospheric lighting and depth vignettes with smooth radial blending */
+.vedika-labs-scene-overlay {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 62% 40%, rgba(var(--active-color-rgb), 0.14) 0%, transparent 60%),
+    radial-gradient(circle at 50% 90%, rgba(3, 7, 18, 0.85) 0%, transparent 70%),
+    linear-gradient(90deg, rgba(3, 7, 18, 0.92) 0%, rgba(3, 7, 18, 0.65) 28%, transparent 50%, rgba(3, 7, 18, 0.55) 75%, rgba(3, 7, 18, 0.88) 100%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.25) 0%, rgba(3, 7, 18, 0.94) 100%);
+  z-index: 1;
+  pointer-events: none;
+  transform: translateZ(0);
+  transition: opacity 0.5s ease;
+}
+
+/* Top Navigation Loading Bar */
+.vedika-labs-top-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 99999;
+  background: linear-gradient(90deg, transparent, var(--active-color), #FFFFFF, transparent);
+  box-shadow: 0 0 16px var(--active-color);
+  animation: progressPulse 1s ease infinite alternate;
+}
+
+@keyframes progressPulse {
+  0% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Main Layout: Centered Showcase Stage */
+.vedika-labs-main-grid {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 20px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Centered CTA Explore Button Wrap */
+.vedika-labs-center-cta-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  z-index: 10;
+}
+
+.vedika-labs-explore-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 10px 28px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--active-color, #A855F7) 0%, #3B82F6 100%);
+  color: #FFFFFF;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: none;
+}
+
+.vedika-labs-explore-cta-btn:hover {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+.vedika-labs-explore-cta-btn .cta-arrow {
+  transition: none;
+}
+
+.vedika-labs-explore-cta-btn:hover .cta-arrow {
+  transform: none;
+}
+
+
+
+/* =========================================================================
+   STAGE VIEWPORT: Hologram Carousel Behind Bot + Elevated Pedestal & Cute Bot
+   ========================================================================= */
+.vedika-labs-stage-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 1240px;
+  height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1600px;
+  overflow: visible;
+}
+
+/* Ceiling Sci-Fi Energy Beam */
+.vedika-labs-ceiling-emitter {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 260px;
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emitter-ring {
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.emitter-ring-outer {
+  width: 190px;
+  height: 38px;
+}
+
+.emitter-ring-inner {
+  width: 145px;
+  height: 30px;
+  margin-top: -30px;
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), 0 0 25px rgba(56, 189, 248, 0.5);
+}
+
+.emitter-beam-cone {
+  width: 220px;
+  height: 280px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.16) 0%, transparent 70%);
+  filter: blur(14px);
+}
+
+/* =========================================================================
+   CAROUSEL LAYER: FULL-STAGE EXTENSION (NO ARROWS)
+   ========================================================================= */
+.vedika-labs-carousel-stage {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1160px;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10; /* Elevated above pedestal and bot layer */
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* THE CARDS VIEWPORT: Spans full stage width with overflow visible so outer cards are never cut */
+.cards-bounded-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: visible; /* Cards never get clipped when selected or rotated */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1600px;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cards-stage-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1600px;
+  transform-style: preserve-3d;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Classy Curved Holographic Floor Guide Track with Feathered Ends */
+.cards-curved-guide-track {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1080px;
+  height: 58px;
+  border-radius: 50%;
+  border-bottom: 2px solid rgba(var(--active-color-rgb), 0.5);
+  box-shadow: 0 10px 24px rgba(var(--active-color-rgb), 0.4);
+  pointer-events: none;
+  filter: blur(1px);
+  mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+  transition: all 0.5s ease;
+}
+
+/* Hologram Card Base: Balanced proportions, clean squircle border-radius */
+.vedika-hologram-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -87.5px;
+  margin-top: -157.5px;
+  width: 175px;
+  height: 315px;
+  border-radius: 20px;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  user-select: none;
+  pointer-events: auto; /* Direct, unobstructed click reception */
+  z-index: 10;
+  contain: layout style;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+}
+
+/* Selected Card: lifts forward prominently with vibrant neon glow */
+.vedika-hologram-card.selected-glow {
+  opacity: 1 !important;
+}
+
+.vedika-hologram-card.ambient-card:hover {
+  opacity: 0.95 !important;
+}
+
+/* Translucent Soft Glass Panel with Cubic-Bezier Edge Curvature & Specular Highlight */
+.card-glass-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 15%, rgba(var(--card-theme-rgb), 0.22) 0%, rgba(15, 23, 42, 0.72) 65%, rgba(6, 11, 24, 0.90) 100%);
+  border: 1px solid rgba(var(--card-theme-rgb), 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 
+    0 10px 28px -4px rgba(0, 0, 0, 0.5),
+    0 0 18px -2px rgba(var(--card-theme-rgb), 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.32),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 0 16px rgba(var(--card-theme-rgb), 0.15);
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vedika-hologram-card.selected-glow .card-glass-panel {
+  border-color: var(--card-theme);
+  box-shadow: 
+    0 0 32px var(--card-glow),
+    0 14px 36px -4px rgba(0, 0, 0, 0.6),
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.45),
+    inset 0 0 22px rgba(var(--card-theme-rgb), 0.3);
+}
+
+/* Fast GPU-composited Glow Aura for Active Card */
+.card-active-glow-aura {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 12%, rgba(var(--card-theme-rgb), 0.28) 0%, transparent 72%);
+  box-shadow: inset 0 0 24px rgba(var(--card-theme-rgb), 0.38);
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+/* Card Header */
+.card-header-titles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-left: 2px;
+  position: relative;
+  z-index: 4;
+}
+
+.card-header-top-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.card-tech-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--card-theme);
+  box-shadow: 0 0 8px var(--card-theme);
+  flex-shrink: 0;
+}
+
+.card-lab-headline {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.card-headline-accent-bar {
+  width: 26px;
+  height: 2px;
+  border-radius: 2px;
+  margin-top: 3px;
+  margin-left: 10px;
+  box-shadow: 0 0 8px var(--card-theme);
+}
+
+/* Detailed Classic Thematic Artwork Container */
+.card-thematic-art {
+  position: relative;
+  width: 100%;
+  height: 236px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.art-math-detailed,
+.art-physics-detailed,
+.art-chem-detailed,
+.art-bio-detailed {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.art-svg-scene {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  shape-rendering: geometricPrecision;
+}
+
+/* Hardware-accelerated smooth compositing */
+.card-thematic-art svg,
+.card-thematic-art canvas {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* =========================================================================
+   OPTION 9 HOLOGRAPHIC 3D LIVE ANIMATIONS & CYBERNETIC DEPTH
+   ========================================================================= */
+
+/* Pedestal Emitter Sparks Rising */
+.spark-drift-1 {
+  animation: sparkRise1 2.8s ease-out infinite;
+}
+.spark-drift-2 {
+  animation: sparkRise2 3.4s ease-out infinite 0.7s;
+}
+.spark-drift-3 {
+  animation: sparkRise3 2.5s ease-out infinite 1.3s;
+}
+
+@keyframes sparkRise1 {
+  0% { transform: translateY(0); opacity: 0; }
+  30% { opacity: 0.9; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-38px); opacity: 0; }
+}
+
+@keyframes sparkRise2 {
+  0% { transform: translateY(0); opacity: 0; }
+  25% { opacity: 0.95; }
+  75% { opacity: 0.5; }
+  100% { transform: translateY(-46px); opacity: 0; }
+}
+
+@keyframes sparkRise3 {
+  0% { transform: translateY(0); opacity: 0; }
+  35% { opacity: 0.85; }
+  85% { opacity: 0.4; }
+  100% { transform: translateY(-32px); opacity: 0; }
+}
+
+/* 1. MATH LAB: 3D Holographic Crystalline Octahedron & Mathematical Elements */
+.live-holo-crystal {
+  transform-origin: 87.5px 98px;
+  animation: holoCrystalFloat 5.2s ease-in-out infinite alternate;
+}
+
+@keyframes holoCrystalFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75));
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+    filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.95));
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75));
+  }
+}
+
+.live-math-pi-3d {
+  animation: mathPiLevitate 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes mathPiLevitate {
+  0% { transform: translate(16px, 22px) rotate(0deg); }
+  50% { transform: translate(16px, 18px) rotate(3deg); }
+  100% { transform: translate(16px, 22px) rotate(0deg); }
+}
+
+.live-math-cube-3d {
+  animation: mathCubeFloat 4.6s ease-in-out infinite alternate;
+}
+
+@keyframes mathCubeFloat {
+  0% { transform: translate(14px, 82px) rotate(0deg); }
+  50% { transform: translate(14px, 78px) rotate(-4deg); }
+  100% { transform: translate(14px, 82px) rotate(0deg); }
+}
+
+.live-math-tetra-3d {
+  animation: mathTetraFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes mathTetraFloat {
+  0% { transform: translate(18px, 142px) scale(1); }
+  50% { transform: translate(19px, 138px) scale(1.04); }
+  100% { transform: translate(18px, 142px) scale(1); }
+}
+
+.live-math-integral-3d {
+  animation: mathIntegralFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes mathIntegralFloat {
+  0% { transform: translate(140px, 22px) rotate(0deg); }
+  50% { transform: translate(140px, 18px) rotate(-3deg); }
+  100% { transform: translate(140px, 22px) rotate(0deg); }
+}
+
+.live-math-rhombus-3d {
+  animation: mathRhombusFloat 4.4s ease-in-out infinite alternate;
+}
+
+@keyframes mathRhombusFloat {
+  0% { transform: translate(142px, 84px) scale(1); }
+  50% { transform: translate(141px, 80px) scale(1.05); }
+  100% { transform: translate(142px, 84px) scale(1); }
+}
+
+.live-math-infinity-3d {
+  animation: mathInfinityFloat 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes mathInfinityFloat {
+  0% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
+  50% { transform: translate(137px, 138px) scale(1.06) rotate(4deg); }
+  100% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
+}
+
+.live-math-spiral {
+  transform-origin: 87.5px 98px;
+  animation: mathSpiralRotate 28s linear infinite;
+}
+
+@keyframes mathSpiralRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2. PHYSICS LAB: Planetary Core, Quantum Gyro & Satellite Orbits */
+.live-phys-core {
+  animation: physCoreGlowPulse 4.5s ease-in-out infinite alternate;
+}
+
+.live-phys-planet-group {
+  transform-origin: 0px 0px;
+  animation: planetCelestialFloat 6s ease-in-out infinite alternate;
+}
+
+@keyframes planetCelestialFloat {
+  0% {
+    transform: translate(87.5px, 96px) rotate(-16deg);
+  }
+  50% {
+    transform: translate(87.5px, 91px) rotate(-13deg);
+  }
+  100% {
+    transform: translate(87.5px, 96px) rotate(-16deg);
+  }
+}
+
+.live-phys-planet-bands {
+  animation: planetSurfaceDrift 3.2s linear infinite;
+}
+
+@keyframes planetSurfaceDrift {
+  0% {
+    transform: translateX(-70px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+@keyframes physCoreGlowPulse {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(0, 212, 255, 0.85));
+  }
+  100% {
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
+  }
+}
+
+.live-phys-gyro-3d {
+  animation: physGyroFloat 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes physGyroFloat {
+  0% { transform: translate(24px, 46px) rotate(0deg); }
+  50% { transform: translate(25px, 41px) rotate(8deg); }
+  100% { transform: translate(24px, 46px) rotate(0deg); }
+}
+
+.live-phys-dipole-3d {
+  animation: physDipoleFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes physDipoleFloat {
+  0% { transform: translate(144px, 48px) scale(1); }
+  50% { transform: translate(143px, 43px) scale(1.05); }
+  100% { transform: translate(144px, 48px) scale(1); }
+}
+
+.live-phys-probe-3d {
+  animation: physProbeFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes physProbeFloat {
+  0% { transform: translate(22px, 142px) scale(1); }
+  50% { transform: translate(23px, 137px) scale(1.06); }
+  100% { transform: translate(22px, 142px) scale(1); }
+}
+
+.live-orbit-group {
+  animation: orbitGroupWobble 12s ease-in-out infinite alternate;
+}
+
+@keyframes orbitGroupWobble {
+  0% { transform: translate(87.5px, 96px) rotate(0deg); }
+  50% { transform: translate(87.5px, 92px) rotate(3deg); }
+  100% { transform: translate(87.5px, 96px) rotate(0deg); }
+}
+
+.live-satellite-front-1 {
+  animation: satRevolve1 3s ease-in-out infinite alternate;
+}
+.live-satellite-front-2 {
+  animation: satRevolve2 3.6s ease-in-out infinite alternate;
+}
+.live-satellite-front-3 {
+  animation: satRevolve3 2.6s ease-in-out infinite alternate;
+}
+.live-satellite-rear {
+  animation: satRevolveRear 3.8s ease-in-out infinite alternate;
+}
+
+@keyframes satRevolve1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8px, 6px) scale(1.08); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes satRevolve2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6px, -8px) scale(0.92); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes satRevolve3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-4px, -6px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes satRevolveRear {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8px, 4px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* 3. CHEMISTRY LAB: Volumetric Flask, Benzene Lattice & Evaporation */
+.live-holo-flask {
+  animation: holoFlaskFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes holoFlaskFloat {
+  0% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
+  }
+  50% {
+    transform: translateY(-6px);
+    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.95));
+  }
+  100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
+  }
+}
+
+.live-chem-benzene-3d {
+  animation: chemBenzeneFloat 4.4s ease-in-out infinite alternate;
+}
+
+@keyframes chemBenzeneFloat {
+  0% { transform: translate(20px, 64px) rotate(0deg); }
+  50% { transform: translate(20px, 59px) rotate(4deg); }
+  100% { transform: translate(20px, 64px) rotate(0deg); }
+}
+
+.live-chem-bulb-3d {
+  animation: chemBulbFloat 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes chemBulbFloat {
+  0% { transform: translate(20px, 142px) scale(1); }
+  50% { transform: translate(21px, 137px) scale(1.06); }
+  100% { transform: translate(20px, 142px) scale(1); }
+}
+
+.live-chem-molecules {
+  animation: chemMoleculeFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes chemMoleculeFloat {
+  0% { transform: translate(144px, 68px) rotate(0deg); }
+  50% { transform: translate(142px, 62px) rotate(6deg); }
+  100% { transform: translate(144px, 68px) rotate(0deg); }
+}
+
+/* 4. BIOLOGY LAB: Botanical Leaves, Living Cell Vesicle & Chloroplast */
+.live-bio-cell-3d {
+  animation: bioCellVesiclePulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes bioCellVesiclePulse {
+  0% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
+  50% { transform: translate(136px, 146px) scale(1.06); filter: drop-shadow(0 0 16px #F59E0B); }
+  100% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
+}
+
+.live-bio-chloroplast-3d {
+  animation: bioChloroplastFloat 4.6s ease-in-out infinite alternate;
+}
+
+@keyframes bioChloroplastFloat {
+  0% { transform: translate(28px, 44px) rotate(0deg); }
+  50% { transform: translate(27px, 39px) rotate(6deg); }
+  100% { transform: translate(28px, 44px) rotate(0deg); }
+}
+
+.live-bio-leaf-left {
+  animation: bioLeafSwayLeft 4.5s ease-in-out infinite alternate;
+}
+.live-bio-leaf-right {
+  animation: bioLeafSwayRight 5s ease-in-out infinite alternate;
+}
+
+@keyframes bioLeafSwayLeft {
+  0% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
+  50% { transform: translate(18px, 48px) rotate(-18deg) scale(1.04); }
+  100% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
+}
+
+@keyframes bioLeafSwayRight {
+  0% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
+  50% { transform: translate(136px, 114px) rotate(26deg) scale(1.04); }
+  100% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
+}
+
+/* Carousel Nav Arrows: Pure floating arrows without circle background */
+.carousel-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  height: auto;
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+  box-shadow: none;
+  outline: none;
+  pointer-events: auto;
+  transition: none;
+  filter: none;
+}
+
+.carousel-nav-arrow.left {
+  left: -28px;
+}
+
+.carousel-nav-arrow.right {
+  right: -28px;
+}
+
+.carousel-nav-arrow:hover {
+  background: transparent;
+  color: var(--active-color, #38BDF8);
+  filter: none;
+  transform: translateY(-50%);
+}
+
+.carousel-nav-arrow:active {
+  transform: translateY(-50%);
+}
+
+/* =========================================================================
+   FOREGROUND BOT CHARACTER (BROUGHT TO FRONT & ENLARGED)
+   ========================================================================= */
+.vedika-labs-pedestal-stage {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 350px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 25; /* Brought to front in foreground over cards */
+  pointer-events: none !important;
+}
+
+/* Foreground Cute Bot Floating Naturally */
+.vedika-labs-bot-foreground {
+  position: relative;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2px;
+  pointer-events: none !important;
+}
+
+.vedika-labs-bot-foreground * {
+  pointer-events: none !important;
+}
+
+.bot-pedestal-shadow {
+  position: absolute;
+  bottom: 4px;
+  width: 230px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0) 75%);
+  filter: blur(8px);
+  z-index: -1;
+  pointer-events: none !important;
+}
+
+.vedika-bot-character-img {
+  width: 215px;
+  height: auto;
+  max-height: 245px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(var(--active-color-rgb), 0.35));
+  animation: botHoverFloating 4s ease-in-out infinite alternate;
+  pointer-events: none !important;
+}
+
+@keyframes botHoverFloating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+  100% { transform: translateY(0px); }
+}
+
+/* =========================================================================
+   BOTTOM FLOATING METRICS BANNER
+   ========================================================================= */
+.vedika-labs-bottom-banner {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto 10px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  contain: content;
+}
+
+.metrics-banner-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 10px 22px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.metric-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+}
+
+.metric-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-val {
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.metric-lbl {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94A3B8;
+}
+
+/* =========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================= */
+@media (max-width: 1100px) {
+  .vedika-labs-cinema-view {
+    overflow-y: auto;
+    height: auto;
+    max-height: none;
+    min-height: calc(100vh - 64px);
+  }
+
+  .vedika-labs-main-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 14px 20px 8px;
+  }
+
+  .vedika-labs-left-panel {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .vedika-labs-features-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .vedika-labs-quote-card {
+    display: none;
+  }
+
+  .vedika-labs-stage-viewport {
+    height: 400px;
+  }
+
+  .metrics-banner-inner {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .vedika-labs-cinema-view {
+    height: auto;
+    max-height: none;
+    overflow-y: auto;
+    min-height: 100vh;
+  }
+
+  .vedika-labs-stage-viewport {
+    height: 350px;
+  }
+
+  .vedika-hologram-card {
+    width: 170px;
+    height: 280px;
+  }
+
+  .vedika-bot-character-img {
+    width: 175px;
+    max-height: 200px;
+  }
+
+  .pedestal-disk-outer {
+    width: 290px;
+    height: 65px;
+  }
+
+  .metrics-banner-inner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

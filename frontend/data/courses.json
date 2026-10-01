@@ -1,0 +1,80 @@
+[
+  {
+    "id": "physics-mechanics-fundamentals",
+    "name": "physics-mechanics-fundamentals",
+    "title": "Physics: Mechanics & Energy",
+    "instructor": "Dr. Angela Thorne",
+    "category": "Physics",
+    "enrolled": 38,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "Master classical mechanics, 1D motion, Newton's laws of motion, conservation of mechanical energy, and universal gravitation.",
+    "image": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Aug 15, 2026"
+  },
+  {
+    "id": "calculus-advanced-mathematics",
+    "name": "calculus-advanced-mathematics",
+    "title": "Mathematics: Calculus & Analysis",
+    "instructor": "Prof. David Miller",
+    "category": "Maths",
+    "enrolled": 42,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "Comprehensive journey through differential and integral calculus, limits, continuity, rate of change, and geometric area integrals.",
+    "image": "https://images.unsplash.com/photo-1509228468518-180dd4864904?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Aug 14, 2026"
+  },
+  {
+    "id": "general-physical-chemistry",
+    "name": "general-physical-chemistry",
+    "title": "Chemistry: Atoms, Bonds & Reactions",
+    "instructor": "Dr. Maya Lin",
+    "category": "Chemistry",
+    "enrolled": 35,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "Investigate quantum electron orbitals, ionic and covalent bonding, stoichiometric reaction yields, and acid-base titration equilibria.",
+    "image": "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Aug 12, 2026"
+  },
+  {
+    "id": "cellular-biology-genetics",
+    "name": "cellular-biology-genetics",
+    "title": "Biology: Cells & Molecular Genetics",
+    "instructor": "Dr. Sarah Jenkins",
+    "category": "Biology",
+    "enrolled": 40,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "Explore living systems from cellular organelles and ATP cellular respiration to DNA replication, central dogma, and Mendelian inheritance.",
+    "image": "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Aug 10, 2026"
+  },
+  {
+    "id": "python-programming-essentials",
+    "name": "python-programming-essentials",
+    "title": "Python Programming Essentials",
+    "instructor": "Alex Mercer",
+    "category": "Python",
+    "enrolled": 65,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "From beginner syntax to structured programming: master dynamic typing, collections, conditionals, iteration, and reusable modular functions.",
+    "image": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Jul 28, 2026"
+  },
+  {
+    "id": "modern-web-development-html-css",
+    "name": "modern-web-development-html-css",
+    "title": "Web Development: HTML & CSS",
+    "instructor": "Elena Rostova",
+    "category": "Web Development",
+    "enrolled": 52,
+    "lessonsCount": 4,
+    "status": "Published",
+    "description": "Learn fundamental front-end web engineering with semantic HTML5 elements, accessible forms, modern CSS box models, and responsive Flexbox.",
+    "image": "https://images.unsplash.com/photo-1547658719-da2b51169166?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+    "date": "Jul 25, 2026"
+  }
+]

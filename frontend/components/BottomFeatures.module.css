@@ -1,0 +1,116 @@
+.bottomSection {
+  position: relative;
+  z-index: 5;
+  padding: 1rem 3rem 2rem 3rem;
+  margin-top: -1rem;
+}
+
+.container {
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 1.1rem 1.35rem;
+  background: rgba(12, 17, 32, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.card:hover {
+  background: rgba(18, 25, 48, 0.85);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.8), 0 0 25px -10px rgba(139, 92, 246, 0.25);
+}
+
+.iconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.2s ease;
+}
+
+.card:hover .iconBox {
+  transform: scale(1.08);
+}
+
+.iconLight {
+  color: #ffffff;
+}
+
+/* Gradients matching the design */
+.badgeViolet {
+  background: linear-gradient(135deg, #4338ca, #6366f1);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+.badgePurple {
+  background: linear-gradient(135deg, #7e22ce, #a855f7);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+}
+
+.badgeIndigo {
+  background: linear-gradient(135deg, #3730a3, #4f46e5);
+  box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
+}
+
+.badgeLavender {
+  background: linear-gradient(135deg, #581c87, #9333ea);
+  box-shadow: 0 0 15px rgba(147, 51, 234, 0.4);
+}
+
+.textWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  line-height: 1.25;
+}
+
+.cardTitle {
+  font-family: var(--font-space), -apple-system, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.cardSubtitle {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+@media (max-width: 1080px) {
+  .cardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+  .bottomSection {
+    padding: 1rem 1.25rem 2rem 1.25rem;
+  }
+}

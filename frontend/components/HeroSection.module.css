@@ -1,0 +1,557 @@
+.heroSection {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  padding: 1rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  align-items: center;
+  gap: 4rem;
+}
+
+/* ========================================================= */
+/* LEFT CONTENT COLUMN                                       */
+/* ========================================================= */
+.contentCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 540px;
+  z-index: 10;
+  position: relative;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.mainTitle {
+  margin: 0.25rem 0 0.6rem 0;
+}
+
+/* 1. Delicate Font: Thinoo for Eyebrow / Lead */
+.titleLead {
+  font-family: var(--font-thinoo), var(--sub-font), -apple-system, sans-serif;
+  font-size: clamp(0.85rem, 1.2vw, 1.08rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-lab-physics, #00c2ff);
+  margin-bottom: 0.35rem;
+  text-shadow: 0 0 20px rgba(0, 194, 255, 0.45);
+}
+
+/* ========================================================= */
+/* PAIRED HORIZONTAL ANIMATION: SYLLABLE CHARTS CONTAINERS    */
+/* ========================================================= */
+.titleH1 {
+  font-family: var(--font-outfit), 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 850;
+  line-height: 0.98;
+  text-transform: uppercase;
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+}
+
+/* VEDIKA: Dominant, noticeably bigger with sober geometric profile */
+.titleRowVedika {
+  font-size: clamp(4.4rem, 7.8vw, 8.2rem);
+  letter-spacing: -0.035em;
+  font-weight: 900;
+}
+
+/* AI TUTOR: Proportionally smaller than Vedika with distinct word gap */
+.titleRowAiTutor {
+  font-size: clamp(2.5rem, 4.3vw, 4.5rem);
+  letter-spacing: 0.035em;
+  padding-left: 0.2rem;
+  font-weight: 800;
+}
+
+.wordGap {
+  display: inline-block;
+  width: clamp(0.7rem, 1.25vw, 1.35rem);
+}
+
+@keyframes maskSlideInRight {
+  0% {
+    transform: translate3d(108%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes maskSlideInLeft {
+  0% {
+    transform: translate3d(-108%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.titleChartsCont {
+  display: inline-flex;
+  overflow: hidden;
+  position: relative;
+  vertical-align: top;
+}
+
+.titleChartsCont u {
+  display: inline-flex;
+  text-decoration: none;
+  overflow: hidden;
+  position: relative;
+  padding: 4px 0;
+  margin: -4px 0;
+}
+
+.titleChartsCont span {
+  display: inline-block;
+  will-change: transform;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Distinct Vertical Gradient for VEDIKA Text */
+.titleRowVedika .titleChartsCont span {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #ffffff 22%,
+    #e2e8f0 52%,
+    #94a3b8 80%,
+    #64748b 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 20px rgba(255, 255, 255, 0.28));
+}
+
+/* Clean Vertical Gradient for AI TUTOR Text */
+.titleRowAiTutor .titleChartsCont span {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #e2e8f0 45%,
+    #94a3b8 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(255, 255, 255, 0.18));
+}
+
+.sylVe {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.04s both;
+}
+.sylDi {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.22s both;
+}
+.sylKa {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.40s both;
+}
+.sylAi {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.18s both;
+}
+.sylTu {
+  animation: maskSlideInRight 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.36s both;
+}
+.sylTor {
+  animation: maskSlideInLeft 1.5s cubic-bezier(0.52, 0, 0.48, 1) 0.54s both;
+}
+
+/* 3. Simple Font: Vollkorn for Subline & Descriptions */
+.titleSubline {
+  font-family: var(--font-outfit), 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(1.35rem, 2.1vw, 2.1rem);
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: -0.015em;
+  margin-top: 0.35rem;
+}
+
+.description {
+  font-family: var(--font-outfit), 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: #94a3b8;
+  font-size: clamp(1.05rem, 1.22vw, 1.2rem);
+  line-height: 1.75;
+  max-width: 500px;
+}
+
+/* ========================================================= */
+/* RIGHT VISUAL STAGE & MASCOT WITH HEAVY PARTICLES          */
+/* ========================================================= */
+.visualCol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.visualCol::before {
+  content: '';
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(168, 85, 247, 0.12) 0%,
+    rgba(0, 194, 255, 0.10) 35%,
+    rgba(0, 242, 152, 0.06) 60%,
+    transparent 75%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stageFrame {
+  position: relative;
+  width: 100%;
+  max-width: 610px;
+  aspect-ratio: 1.328 / 1;
+  overflow: visible;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  perspective: 850px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+/* Space backdrop: Clean Earth Horizon with smooth edge feathering into deep space */
+.spaceBackdrop {
+  position: absolute;
+  inset: -5% -8% -3% -8%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+  -webkit-mask-image: radial-gradient(
+    ellipse 55% 48% at 50% 52%,
+    #000000 18%,
+    rgba(0, 0, 0, 0.85) 38%,
+    rgba(0, 0, 0, 0.35) 60%,
+    rgba(0, 0, 0, 0.08) 78%,
+    transparent 96%
+  );
+  mask-image: radial-gradient(
+    ellipse 55% 48% at 50% 52%,
+    #000000 18%,
+    rgba(0, 0, 0, 0.85) 38%,
+    rgba(0, 0, 0, 0.35) 60%,
+    rgba(0, 0, 0, 0.08) 78%,
+    transparent 96%
+  );
+}
+
+.spaceBackdropImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+/* Glowing 4-Lab Colors Aura Backplate */
+.portalAuraGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 78%;
+  height: 94%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 52% 70% at 50% 50%,
+    rgba(168, 85, 247, 0.22) 0%,
+    rgba(0, 194, 255, 0.18) 32%,
+    rgba(0, 242, 152, 0.12) 55%,
+    rgba(255, 153, 0, 0.10) 75%,
+    transparent 100%
+  );
+  filter: blur(52px);
+  pointer-events: none;
+  z-index: 1;
+  animation: portalPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes portalPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.96);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.04);
+    opacity: 1;
+  }
+}
+
+/* 3D Particle Swarm in stage behind the mascot (widened to prevent clipping at high scales) */
+.stageParticlesWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260%;
+  height: 220%;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Central Mascot Container: Centered with the particle rings */
+.mascotContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 94%;
+  aspect-ratio: 0.7467;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Base Layer: Inner Vedika Bot aligned underneath */
+.innerRobotLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.robotLayerActive {
+  opacity: 1;
+}
+
+.robotLayerHidden {
+  opacity: 0;
+}
+
+.botImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 25px rgba(0, 194, 255, 0.4));
+  pointer-events: none;
+}
+
+/* Fallback Human Layer to ensure kid is immediately visible on SSR / reload */
+.baseHumanFallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.baseHumanFallbackReady {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.humanFallbackImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Canvas Layer on Top: Human Student with talking visemes & fluid hover reveal */
+.sceneCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+
+
+/* ========================================================= */
+/* INTERACTION HINT BADGE                                    */
+/* ========================================================= */
+.idleHint {
+  position: absolute;
+  bottom: 0.95rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(10, 16, 32, 0.85);
+  border: 1px solid rgba(0, 194, 255, 0.28);
+  border-radius: 9999px;
+  padding: 0.30rem 0.95rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 194, 255, 0.18);
+  pointer-events: none;
+  z-index: 15;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.idleHintActive {
+  border-color: rgba(0, 242, 152, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 242, 152, 0.2);
+}
+
+.idleHintActive .idleHintIcon {
+  color: #00f298;
+}
+
+.idleHintIcon {
+  color: var(--color-lab-physics, #00c2ff);
+  animation: pulseGlow 2.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.hintQuoteText {
+  font-family: var(--font-thinoo), var(--font-space), sans-serif;
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+/* Fine Glowing Pointer Dot */
+.fluidPointerDot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.15s ease;
+}
+
+.pointerHalo {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 194, 255, 0.6) 0%, transparent 75%);
+  animation: pulseHalo 1.2s infinite ease-in-out;
+}
+
+.pointerCore {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #00c2ff;
+  box-shadow: 0 0 10px #00c2ff, 0 0 20px #a855f7;
+}
+
+@keyframes pulseHalo {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 1;
+  }
+}
+
+/* ========================================================= */
+/* RESPONSIVE DESIGN                                         */
+/* ========================================================= */
+@media (max-width: 1140px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+  .contentCol {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .description {
+    max-width: 100%;
+  }
+  .stageFrame {
+    max-width: 600px;
+  }
+}
+
+@media (max-width: 680px) {
+  .heroSection {
+    padding: 5rem 1.25rem 2rem 1.25rem;
+  }
+  .stageFrame {
+    aspect-ratio: 1.15 / 1;
+  }
+  .titleH1 {
+    font-size: clamp(2.4rem, 10vw, 3.2rem);
+  }
+  .titleRow2 {
+    padding-left: 0.2rem;
+  }
+  .idleHint {
+    padding: 0.35rem 0.85rem;
+  }
+  .hintQuoteText {
+    font-size: 0.72rem;
+  }
+}

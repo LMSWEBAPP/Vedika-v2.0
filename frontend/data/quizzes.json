@@ -1,0 +1,200 @@
+[
+  {
+    "id": "quiz-physics-mechanics",
+    "title": "Kinematics & Newton's Laws Quiz",
+    "course": "physics-mechanics-fundamentals",
+    "courseTitle": "Physics: Mechanics & Energy",
+    "lesson": "phys_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "What is Newton's Second Law of Motion?",
+        "options": [
+          "F = m / a",
+          "F = m · a",
+          "E = mc²",
+          "W = F · d"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "If an object moves with constant velocity in a straight line, what is its net acceleration?",
+        "options": [
+          "9.8 m/s²",
+          "0 m/s²",
+          "Variable",
+          "Infinite"
+        ],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "quiz-calculus-derivatives",
+    "title": "Limits & Differential Calculus Quiz",
+    "course": "calculus-advanced-mathematics",
+    "courseTitle": "Mathematics: Calculus & Analysis",
+    "lesson": "math_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "What is the derivative of f(x) = x³ with respect to x?",
+        "options": [
+          "3x",
+          "3x²",
+          "x²",
+          "3x³"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "Geometrically, what does the first derivative f'(x) represent?",
+        "options": [
+          "The area under the curve",
+          "The slope of the tangent line",
+          "The x-intercept",
+          "The volume of revolution"
+        ],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "quiz-chemistry-bonding",
+    "title": "Atomic Structure & Chemical Bonding Quiz",
+    "course": "general-physical-chemistry",
+    "courseTitle": "Chemistry: Atoms, Bonds & Reactions",
+    "lesson": "chem_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "What type of bond forms when valence electrons are shared between two nonmetals?",
+        "options": [
+          "Ionic bond",
+          "Covalent bond",
+          "Metallic bond",
+          "Hydrogen bond"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "What is the maximum number of electrons an s-orbital can hold?",
+        "options": [
+          "2",
+          "6",
+          "10",
+          "14"
+        ],
+        "correct": 0
+      }
+    ]
+  },
+  {
+    "id": "quiz-biology-cell",
+    "title": "Cell Organelles & Respiration Quiz",
+    "course": "cellular-biology-genetics",
+    "courseTitle": "Biology: Cells & Molecular Genetics",
+    "lesson": "bio_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "Which organelle is considered the powerhouse of eukaryotic cells?",
+        "options": [
+          "Ribosome",
+          "Mitochondria",
+          "Golgi apparatus",
+          "Lysosome"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "What molecule carries genetic instructions for building proteins in cells?",
+        "options": [
+          "Lipids",
+          "DNA",
+          "Glucose",
+          "Hemoglobin"
+        ],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "quiz-python-intro",
+    "title": "Python Syntax & Variables Quiz",
+    "course": "python-programming-essentials",
+    "courseTitle": "Python Programming Essentials",
+    "lesson": "py_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "Which keyword is used to define a reusable function in Python?",
+        "options": [
+          "func",
+          "define",
+          "def",
+          "function"
+        ],
+        "correct": 2
+      },
+      {
+        "question": "What is the output of type(10.5) in Python?",
+        "options": [
+          "<class 'int'>",
+          "<class 'float'>",
+          "<class 'str'>",
+          "<class 'double'>"
+        ],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "quiz-web-html-css",
+    "title": "HTML & CSS Fundamentals Quiz",
+    "course": "modern-web-development-html-css",
+    "courseTitle": "Web Development: HTML & CSS",
+    "lesson": "web_l2",
+    "max_attempts": 3,
+    "passing_percentage": 75,
+    "total_marks": 10,
+    "duration": "10 mins",
+    "questions": [
+      {
+        "question": "Which HTML5 element represents the primary navigation section of a webpage?",
+        "options": [
+          "<header>",
+          "<nav>",
+          "<section>",
+          "<aside>"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "In the standard CSS box model, which layer sits directly between padding and margin?",
+        "options": [
+          "Content",
+          "Border",
+          "Outline",
+          "Shadow"
+        ],
+        "correct": 1
+      }
+    ]
+  }
+]
