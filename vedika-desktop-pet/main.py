@@ -797,13 +797,19 @@ class DesktopPetApp(QObject):
 
             if msg_type == "WEBAPP_STATE_UPDATE":
                 if hasattr(self, 'gemini_client') and self.gemini_client:
+                    if not isinstance(payload, dict):
+                        payload = {}
+                    if not payload.get("activeRoute"):
+                        payload["activeRoute"] = payload.get("page") or payload.get("route", "")
                     self.gemini_client.active_webapp_context = payload
                 
-                activity = payload.get("activity")
+                activity = payload.get("activity") if isinstance(payload, dict) else ""
                 if activity and self.pet:
                     is_speaking = hasattr(self, 'gemini_client') and self.gemini_client and self.gemini_client.is_speaking
                     if not is_speaking:
-                        if activity == "dsa_puzzle":
+                        if activity == "homepage":
+                            self.set_active_animation("idle")
+                        elif activity == "dsa_puzzle":
                             self.set_active_animation("typing")
                         elif activity == "chemistry_lab":
                             self.set_active_animation("chemistry")
@@ -811,6 +817,40 @@ class DesktopPetApp(QObject):
                             self.set_active_animation("maths")
                         elif activity == "reading":
                             self.set_active_animation("reading")
+                        elif activity == "coding_tutor":
+                            self.set_active_animation("working")
+
+            elif msg_type == "HOMEPAGE_KID_VOICE_STARTED":
+                print("[WS Bridge] Homepage kid voice started -> silencing desktop pet")
+                self.set_active_animation("idle")
+                if self.pet:
+                    self.pet.say("")
+                if hasattr(self, 'gemini_client') and self.gemini_client and self.gemini_client.is_active:
+                    self.gemini_client.is_speaking = False
+                    worker = getattr(self.gemini_client, 'worker_thread', None)
+                    if worker:
+                        worker.flush_speaker = True
+
+            elif msg_type == "HOMEPAGE_KID_VOICE_ENDED":
+                print("[WS Bridge] Homepage kid voice completed -> pet ready")
+                self.set_active_animation("idle")
+
+            elif msg_type == "WEBAPP_VOICE_TUTOR_STATE":
+                is_active = bool(payload.get("active", False) if isinstance(payload, dict) else payload)
+                if is_active:
+                    print("[WS Bridge] WebApp in-page Voice Tutor connected -> muting desktop pet")
+                    self.set_active_animation("idle")
+                    if self.pet:
+                        self.pet.say("")
+                    if hasattr(self, 'gemini_client') and self.gemini_client:
+                        self.gemini_client.is_paused = True
+                        worker = getattr(self.gemini_client, 'worker_thread', None)
+                        if worker:
+                            worker.flush_speaker = True
+                else:
+                    print("[WS Bridge] WebApp in-page Voice Tutor disconnected -> unmuting desktop pet")
+                    if hasattr(self, 'gemini_client') and self.gemini_client:
+                        self.gemini_client.is_paused = False
 
             elif msg_type == "PUZZLE_STUCK" or msg_type == "CHECK_STUDENT_CODE":
                 puzzle_title = payload.get("puzzleTitle", "this coding problem")
@@ -1049,11 +1089,10 @@ class DesktopPetApp(QObject):
     def on_trigger_action_requested(self, action, target=""):
         """Handles voice-triggered remote page actions."""
         print(f"[Main] Voice requested remote action: {action} (target={target})")
-        if hasattr(self, 'ws_bridge') and self.ws_bridge.isValid():
-            self.ws_bridge.sendTextMessage(json.dumps({
-                "type": "PET_ACTION_REQUESTED",
-                "payload": {"action": action, "target": target}
-            }))
+        self.broadcast_to_webapp({
+            "type": "PET_ACTION_REQUESTED",
+            "payload": {"action": action, "target": target}
+        })
 
     @Slot(int, str)
     def on_timer_requested(self, duration_seconds, label="Study Timer"):

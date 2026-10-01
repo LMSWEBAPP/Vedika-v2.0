@@ -465,26 +465,27 @@ class MemoryManager:
 
         with self._get_connection() as conn:
             if not create_new:
-                # Strictly match by lesson_id, then fall back to lesson_title only if course_id also matches.
-                # NEVER match notes from other lessons/courses to avoid cross-session contamination.
                 row = None
-                if lesson_id and lesson_id.strip():
+                # Check 1: Flexible match matching old repository pattern
+                cursor = conn.execute("""
+                    SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
+                    FROM student_notebook_notes
+                    WHERE (lesson_id = ? AND lesson_id != '') OR (lesson_title = ? AND lesson_title != '') OR (course_id = ? AND lesson_id = '')
+                    ORDER BY id DESC LIMIT 1
+                """, (lesson_id or "", lesson_title or "", course_id or ""))
+                row = cursor.fetchone()
+
+                # Check 2: If still not found, fallback to the most recent note in the notebook
+                # so that consecutive commands like "add a point in that same note" or "add to my notes"
+                # seamlessly append to the student's active notebook note instead of creating duplicates.
+                if not row:
                     cursor = conn.execute("""
                         SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
                         FROM student_notebook_notes
-                        WHERE lesson_id = ?
                         ORDER BY id DESC LIMIT 1
-                    """, (lesson_id,))
+                    """)
                     row = cursor.fetchone()
-                elif lesson_title and lesson_title.strip() and course_id and course_id.strip():
-                    # Only fall back to lesson_title match if both lesson_title AND course_id match
-                    cursor = conn.execute("""
-                        SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
-                        FROM student_notebook_notes
-                        WHERE lesson_title = ? AND course_id = ?
-                        ORDER BY id DESC LIMIT 1
-                    """, (lesson_title, course_id))
-                    row = cursor.fetchone()
+
                 if row:
                     note_id = row["id"]
                     existing_text = row["note_text"] or ""

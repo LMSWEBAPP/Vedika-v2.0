@@ -322,8 +322,16 @@ class GeminiLiveWorker(QThread):
                 except Exception as ex:
                     print(f"[GeminiLiveWorker] Note timestamp parse warning: {ex}")
 
-            # Check if user explicitly asked for a brand new note
-            is_explicit_new = bool(create_new or any(phrase in note_content.lower() for phrase in ["in a new note", "as a new note", "start a new note", "create a new note", "separate note"]))
+            # Check if user explicitly asked for a brand new note vs appending to the same note
+            is_same_note = any(p in note_content.lower() for p in [
+                "same note", "that note", "add a point", "another point", "append",
+                "in this note", "to my notes", "to notes", "into notes"
+            ])
+            is_explicit_new = False if is_same_note else bool(
+                create_new or any(p in note_content.lower() for p in [
+                    "in a new note", "as a new note", "start a new note", "create a new note", "separate note"
+                ])
+            )
 
             mm = MemoryManager()
             note_id, is_updated, combined_text, note_data = mm.append_or_create_notebook_note(
@@ -401,6 +409,13 @@ class GeminiLiveWorker(QThread):
             if not url or url.strip().lower() in ("website", "vedika", "portal", "vedika website", "the website", "page", "the page"):
                 url = "https://vedika-v20c.vercel.app/"
             self.client.open_url_requested.emit(url)
+            is_homepage = url.rstrip("/").endswith("vedika-v20c.vercel.app") or "localhost" in url
+            if is_homepage:
+                return {
+                    "status": "success",
+                    "opened_url": url,
+                    "instruction": "The Vedika homepage is now opening and playing its child welcome voice intro. STAY COMPLETELY SILENT. Do NOT speak, greet, or talk over the child voice narration. Remain still in idle state and wait until the student speaks to you."
+                }
             return {"status": "success", "opened_url": url}
 
         def stop_voice_chat() -> dict:
@@ -476,38 +491,50 @@ class GeminiLiveWorker(QThread):
             - 'What is going on in this page?' / 'What is happening on this page?' / 'What is on this page?'
             - 'What should I do here?' / 'What do I do next?' / 'Guide me on this page'
             - 'Explain this page' / 'Help me with what is showing right now'
-            This feeds the live desktop screenshot directly to Gemini Multimodal Live, allowing you to visually analyze the page layout, text, buttons, and student work to provide concrete, step-by-step guidance."""
+            - 'How to write this code in another way?' / 'Show another way to write this code' / 'Rewrite this code'
+            - 'Check my code' / 'Why is my code failing?' / 'Help me solve this puzzle'
+            This feeds the live desktop screenshot directly to Gemini Multimodal Live, allowing you to visually analyze the page layout, code editor, 3D visualizers, text, buttons, and student work to provide concrete, step-by-step guidance."""
             print("[GeminiLiveWorker] Tool call request received: capture_user_screen")
             self.client.tool_executing = True
             try:
+                # Trigger visual pet scan animation and speech bubble immediately
+                if hasattr(self.client, 'say_requested'):
+                    self.client.say_requested.emit("Scanning your screen... 🔍", 2.5)
+                if hasattr(self.client, 'animation_requested'):
+                    self.client.animation_requested.emit("searching")
+
                 jpeg_bytes = await self.request_main_thread_screenshot()
                 
                 if jpeg_bytes:
                     if self.session and self.client.is_active:
                         try:
-                            print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session...")
-                            async def _do_send():
-                                try:
-                                    await self.session.send_realtime_input(
-                                        media_chunks=[types.Blob(
-                                            data=jpeg_bytes,
-                                            mime_type="image/jpeg"
-                                        )]
-                                    )
-                                except Exception:
+                            print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session via video field...")
+                            if self.session_send_lock:
+                                async with self.session_send_lock:
                                     await self.session.send_realtime_input(
                                         video=types.Blob(
                                             data=jpeg_bytes,
                                             mime_type="image/jpeg"
                                         )
                                     )
-                            if self.session_send_lock:
-                                async with self.session_send_lock:
-                                    await _do_send()
                             else:
-                                await _do_send()
+                                await self.session.send_realtime_input(
+                                    video=types.Blob(
+                                        data=jpeg_bytes,
+                                        mime_type="image/jpeg"
+                                    )
+                                )
                             print("[GeminiLiveWorker] Screen image blob successfully transmitted to Gemini Live session!")
-                            return {"status": "success", "image_received": True, "message": "Screen image ingested. Analyzing content."}
+                            webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
+                            return {
+                                "status": "success",
+                                "image_received": True,
+                                "activeRoute": webapp_ctx.get("activeRoute") or webapp_ctx.get("page") or webapp_ctx.get("route", ""),
+                                "codeSnippet": webapp_ctx.get("studentCode") or webapp_ctx.get("codeSnippet", ""),
+                                "puzzleTitle": webapp_ctx.get("puzzleTitle", ""),
+                                "lessonTitle": webapp_ctx.get("lessonTitle", ""),
+                                "message": "Screen image ingested. Visually inspect the user screen, acknowledge the active code/page, and answer the student's question."
+                            }
                         except Exception as e:
                             print(f"[GeminiLiveWorker] Error transmitting screen image blob: {e}")
                             return {"status": "error", "message": f"Failed to transmit screen image to model: {e}"}
@@ -730,10 +757,10 @@ class GeminiLiveWorker(QThread):
             + route_instructions +
             "3. If the user asks to switch experiments or control actions on an active page (e.g. 'switch to titration', 'show gas laws', 'switch to projectile motion', 'show cell organelles', 'switch to calculus visualizer', 'start presentation', 'clear screen'): call 'trigger_pet_action(action, target)' (e.g. action='select_experiment', target='titration').\n"
             "4. If the user asks for a hint on their current puzzle, call 'trigger_puzzle_hint'.\n"
-            "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route.\n"
+            "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route. When opening or navigating to the homepage, you MUST REMAIN COMPLETELY SILENT while the page is opening and the kid welcome voice is speaking. Do NOT talk over the welcome narration. Stay still in idle state until the student speaks to you.\n"
             "6. If the user asks to stop or pause voice chat, call 'stop_voice_chat' immediately.\n"
             "7. You can also trigger pet visual animations on yourself ('wave', 'jump', 'failed', 'waiting', 'review', 'idle', 'explaining').\n"
-            "8. SCREEN VISION & CODE PUZZLE GUIDANCE: When the user asks 'What is on my screen?', 'What is going on in this page?', 'What should I do here?', 'Can you see what I am doing?', 'Explain what is on my screen', 'Check my code', 'Why is my code failing', 'Where is my error', 'Help me solve this puzzle', or asks any question about what is displaying on their active screen or in their code editor: IMMEDIATELY call 'capture_user_screen' tool function on your VERY FIRST turn! Once the image is received, visually inspect the active page or code editor. In addition, read the 'studentCode', 'lastError', and 'puzzleTitle' from your active context. Identify the exact line number, syntax error, missing return, or logic flaw, and explain clearly and encouragingly where to correct the code (e.g. 'On line 4, your while loop condition needs to be...'). CRITICAL: When the student is asking about an active video lesson moment, do NOT capture the desktop screen; explain the lesson concepts being taught directly!\n"
+            "8. SCREEN VISION & CODE INSPECTION: When the user asks 'What is on my screen?', 'What is going on in this page?', 'What should I do here?', 'Can you see what I am doing?', 'Explain what is on my screen', 'Check my code', 'Why is my code failing', 'Where is my error', 'Help me solve this puzzle', 'How to write this code in another way', 'Show another way to write this', or asks any question about what is displaying on their active screen, code editor, 3D visualizer, or browser: IMMEDIATELY call 'capture_user_screen' tool function on your VERY FIRST turn! NEVER guess or assume what is on the screen without calling 'capture_user_screen'. Once the image is received, visually inspect the active page or code editor. In addition, read the active code snippet and puzzle/lesson title from your context. Identify the exact line number, syntax error, or logic flaw, and explain clearly and encouragingly how to write or fix the code (e.g. 'Looking at your code on line 4, another way to write this is...'). CRITICAL: When the student is asking about an active video lesson moment, do NOT capture the desktop screen; explain the lesson concepts being taught directly!\n"
             "9. VISUAL POINTING & LASER HIGHLIGHT: When explaining code errors, UI buttons, syntax mistakes, or specific elements on the user's screen: IMMEDIATELY call 'point_to_screen_location(x, y, label)' with normalized coordinates (x: 0.0 to 1.0, y: 0.0 to 1.0) to highlight the exact position with a glowing laser pointer and sonar pulse for the student.\n"
             "10. RECALL PREVIOUS QUESTIONS & MEMORY SEARCH: Call 'recall_previous_questions(limit)' when the student asks what was previously asked, or 'search_learning_memory(query, category)' to search stored academic insights and past discussions.\n"
             "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, 'update_student_profile(name, stage, field_of_study, hobbies, favorite_topics)' to remember student details, or 'clear_student_memory' to clear history.\n"
@@ -1247,7 +1274,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success"}
                                     )
                                 )
@@ -1256,12 +1283,15 @@ class GeminiLiveWorker(QThread):
                                 if not url or str(url).strip().lower() in ("website", "vedika", "portal", "vedika website", "the website", "page", "the page"):
                                     url = "https://vedika-v20c.vercel.app/"
                                 self.client.open_url_requested.emit(url)
-                                
+                                is_homepage = url.rstrip("/").endswith("vedika-v20c.vercel.app") or "localhost" in url
+                                resp = {"status": "success", "opened_url": url}
+                                if is_homepage:
+                                    resp["instruction"] = "The Vedika homepage is now opening and playing its child welcome voice intro. STAY COMPLETELY SILENT. Do NOT speak, greet, or talk over the child voice narration. Remain still in idle state and wait until the student speaks to you."
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
-                                        response={"status": "success", "opened_url": url}
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
+                                        response=resp
                                     )
                                 )
                             elif func_name == "play_music":
@@ -1271,7 +1301,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "playing_music": query or "trending music"}
                                     )
                                 )
@@ -1281,7 +1311,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "session_ended": True}
                                     )
                                 )
@@ -1293,7 +1323,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "navigated_route": route}
                                     )
                                 )
@@ -1308,7 +1338,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "hint_level": hint_level}
                                     )
                                 )
@@ -1321,7 +1351,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "action": action, "target": target}
                                     )
                                 )
@@ -1329,19 +1359,25 @@ class GeminiLiveWorker(QThread):
                                 print("[GeminiLiveWorker] Executing tool capture_user_screen via main-thread bridge...")
                                 self.client.tool_executing = True
                                 try:
+                                    if hasattr(self.client, 'say_requested'):
+                                        self.client.say_requested.emit("Scanning your screen... 🔍", 2.5)
+                                    if hasattr(self.client, 'animation_requested'):
+                                        self.client.animation_requested.emit("searching")
+
                                     jpeg_bytes = await self.request_main_thread_screenshot()
                                     if jpeg_bytes:
                                         if self.session and self.client.is_active:
                                             try:
-                                                print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session...")
-                                                try:
-                                                    await self.session.send_realtime_input(
-                                                        media_chunks=[types.Blob(
-                                                            data=jpeg_bytes,
-                                                            mime_type="image/jpeg"
-                                                        )]
-                                                    )
-                                                except Exception:
+                                                print(f"[GeminiLiveWorker] Transmitting screen image blob ({len(jpeg_bytes)/1024:.1f} KB) to Gemini Live session via video field...")
+                                                if self.session_send_lock:
+                                                    async with self.session_send_lock:
+                                                        await self.session.send_realtime_input(
+                                                            video=types.Blob(
+                                                                data=jpeg_bytes,
+                                                                mime_type="image/jpeg"
+                                                            )
+                                                        )
+                                                else:
                                                     await self.session.send_realtime_input(
                                                         video=types.Blob(
                                                             data=jpeg_bytes,
@@ -1349,11 +1385,20 @@ class GeminiLiveWorker(QThread):
                                                         )
                                                     )
                                                 print("[GeminiLiveWorker] Screen image blob successfully transmitted to Gemini Live session!")
+                                                webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
                                                 function_responses.append(
                                                     types.FunctionResponse(
                                                         name=func_name,
-                                                        id=fc.id,
-                                                        response={"status": "success", "image_received": True, "message": "Screen image ingested. Analyzing content."}
+                                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
+                                                        response={
+                                                            "status": "success",
+                                                            "image_received": True,
+                                                            "activeRoute": webapp_ctx.get("activeRoute") or webapp_ctx.get("page") or webapp_ctx.get("route", ""),
+                                                            "codeSnippet": webapp_ctx.get("studentCode") or webapp_ctx.get("codeSnippet", ""),
+                                                            "puzzleTitle": webapp_ctx.get("puzzleTitle", ""),
+                                                            "lessonTitle": webapp_ctx.get("lessonTitle", ""),
+                                                            "message": "Screen image ingested. Visually inspect the user screen, acknowledge the active code/page, and answer the student's question."
+                                                        }
                                                     )
                                                 )
                                             except Exception as e:
@@ -1361,7 +1406,7 @@ class GeminiLiveWorker(QThread):
                                                 function_responses.append(
                                                     types.FunctionResponse(
                                                         name=func_name,
-                                                        id=fc.id,
+                                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                                         response={"status": "error", "message": f"Failed to transmit screen image: {e}"}
                                                     )
                                                 )
@@ -1369,7 +1414,7 @@ class GeminiLiveWorker(QThread):
                                             function_responses.append(
                                                 types.FunctionResponse(
                                                     name=func_name,
-                                                    id=fc.id,
+                                                    id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                                     response={"status": "error", "message": "Gemini Live session is inactive."}
                                                 )
                                             )
@@ -1377,7 +1422,7 @@ class GeminiLiveWorker(QThread):
                                         function_responses.append(
                                             types.FunctionResponse(
                                                 name=func_name,
-                                                id=fc.id,
+                                                id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                                 response={"status": "error", "message": "Failed to capture screen image."}
                                             )
                                         )
@@ -1396,7 +1441,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "pointing_at": {"x": x_val, "y": y_val, "label": label_str}}
                                     )
                                 )
@@ -1421,7 +1466,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={
                                             "status": "success",
                                             "count": len(final_list),
@@ -1440,7 +1485,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "memories": mems, "dialogue_matches": convs}
                                     )
                                 )
@@ -1456,7 +1501,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "message": "Student profile updated successfully."}
                                     )
                                 )
@@ -1471,7 +1516,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success" if res else "failed", "saved": {"category": cat, "subject": subj, "topic": top}}
                                     )
                                 )
@@ -1482,7 +1527,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "message": "All student memories cleared."}
                                     )
                                 )
@@ -1498,7 +1543,7 @@ class GeminiLiveWorker(QThread):
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
-                                        id=fc.id,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response={"status": "success", "timer_started": f"{mins} minutes for {lbl}"}
                                     )
                                 )
@@ -1517,6 +1562,21 @@ class GeminiLiveWorker(QThread):
                                     )
                                 )
                         
+                        # If ANY function_call was unrecognized, add a graceful error response so the model
+                        # is never left waiting for a response it will never receive (which causes session hangs).
+                        recognized_ids = {fr.id for fr in function_responses}
+                        for fc in tc.function_calls:
+                            if fc.id not in recognized_ids:
+                                ts_fallback = f"call_{fc.name}_{int(time.time()*1000)}"
+                                print(f"[GeminiLiveWorker] Warning: Unrecognized tool '{fc.name}' — returning graceful error response to prevent session hang.")
+                                function_responses.append(
+                                    types.FunctionResponse(
+                                        name=fc.name,
+                                        id=fc.id or ts_fallback,
+                                        response={"status": "error", "message": f"Tool '{fc.name}' is not implemented on this device."}
+                                    )
+                                )
+
                         if function_responses and self.session and self.client.is_active:
                             try:
                                 if self.session_send_lock:
@@ -1531,18 +1591,11 @@ class GeminiLiveWorker(QThread):
                             except Exception as e:
                                 print(f"[GeminiLiveWorker] Error sending tool response: {e}")
                 
-                # Check if underlying WebSocket was closed by server or if turn interaction simply completed
-                ws = getattr(self.session, "_ws", None)
-                ws_state = getattr(ws, "state", None)
-                is_ws_open = (ws_state is not None and getattr(ws_state, "name", "") == "OPEN") or (ws_state == 1)
-                if not is_ws_open and self.client.is_active and not getattr(self, "_stopping_audio", False):
-                    print(f"[GeminiLiveWorker] Live API WebSocket was closed (state={ws_state}). Triggering reconnection...")
-                    self.notify_failure("Live API stream closed by server")
+                if not self.client.is_active or getattr(self, "_stopping_audio", False):
                     break
-                else:
-                    # Turn interaction completed cleanly and WebSocket is still OPEN! Loop to receive next turn.
-                    print("[GeminiLiveWorker] Turn interaction completed; continuing receive loop for next interaction.")
-                    continue
+                # Turn interaction completed cleanly! Continue receive loop for next turn seamlessly without restarting.
+                print("[GeminiLiveWorker] Turn interaction completed; continuing receive loop for next interaction.")
+                continue
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1788,14 +1841,19 @@ class GeminiLiveClient(QObject):
         if w and getattr(w, "loop", None) and w.loop.is_running() and getattr(w, "async_queue", None) and self.status == "connected":
             w.suppress_mic_for_prompt = True
             def _enqueue():
-                # Flush pending mic audio PCM chunks from queue so prompt is processed cleanly without conflict
+                # Flush ONLY pending mic audio PCM chunks (bytes) from queue so prompt is processed cleanly.
+                # Text prompt dicts from other callers (e.g. video moment) are intentionally preserved.
+                temp_text_items = []
                 while not w.async_queue.empty():
                     try:
                         item = w.async_queue.get_nowait()
                         if isinstance(item, dict) and "text" in item:
-                            pass
+                            temp_text_items.append(item)  # Preserve queued text prompts
                     except Exception:
                         break
+                # Re-queue preserved text items before the new prompt
+                for saved_item in temp_text_items:
+                    w.async_queue.put_nowait(saved_item)
                 w.async_queue.put_nowait({"text": prompt_text})
             w.loop.call_soon_threadsafe(_enqueue)
             print(f"[GeminiLiveClient] Dispatched realtime text prompt to active session: {prompt_text[:80]}...")
@@ -2154,15 +2212,11 @@ class GeminiLiveClient(QObject):
             self.is_speaking = False
             self.speaking_stopped.emit()
         
-        # Thread-safely flag worker thread to flush audio queue
+        # Thread-safely flag worker thread to flush audio queue via the flush_speaker flag.
+        # The worker's play_audio_loop checks this flag and drains the queue safely from
+        # its own asyncio event loop — do NOT drain asyncio.Queue directly from this Qt main thread.
         if self.worker_thread:
             self.worker_thread.flush_speaker = True
-            if self.worker_thread.audio_out_queue:
-                while not self.worker_thread.audio_out_queue.empty():
-                    try:
-                        self.worker_thread.audio_out_queue.get_nowait()
-                    except Exception:
-                        break
 
         self.word_stream_timer.stop()
         self.sentence_chunks = []

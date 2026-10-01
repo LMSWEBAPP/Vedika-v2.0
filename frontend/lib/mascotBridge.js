@@ -176,26 +176,18 @@ class MascotBridge {
         }
       });
 
-      // 1. Notify Next.js router listener in LayoutWrapper
+      // 1. Notify Next.js router listener in LayoutWrapper for clean, smooth in-tab transition
       if (this.navListeners.size > 0) {
         this.navListeners.forEach((fn) => {
           try { fn(targetRoute); } catch (e) { console.error('[MascotBridge] navListener error:', e); }
         });
-      }
-
-      // 2. Guaranteed In-Tab Fallback:
-      // If Next.js router.push does not switch the page within 200ms (e.g. frozen worker, pending state, dynamic chunk lag),
-      // force browser window.location in the active tab without opening a new window!
-      setTimeout(() => {
+      } else {
+        // Fallback only if no router listener is mounted
         if (typeof window !== 'undefined') {
-          const currentFull = window.location.pathname + window.location.search;
-          const targetPathOnly = targetRoute.split('?')[0];
-          if (window.location.pathname !== targetPathOnly && currentFull !== targetRoute) {
-            console.log('[MascotBridge] Soft router transition pending. Enforcing in-tab location.href:', targetRoute);
-            window.location.href = targetRoute;
-          }
+          console.log('[MascotBridge] No navListener registered; using window.location.href:', targetRoute);
+          window.location.href = targetRoute;
         }
-      }, 200);
+      }
     }
 
     this.listeners.forEach((fn) => {
@@ -296,6 +288,15 @@ class MascotBridge {
     return () => this.statusListeners.delete(callback);
   }
 
+  sendVoiceTutorState(isActive) {
+    return this.send({
+      type: 'WEBAPP_VOICE_TUTOR_STATE',
+      payload: {
+        active: Boolean(isActive)
+      }
+    });
+  }
+
   isMascotConnected() {
     return this.isConnected;
   }
@@ -310,6 +311,7 @@ export function getMascotBridge() {
       isMascotConnected: () => false,
       sendVideoMoment: () => false,
       sendActivityUpdate: () => false,
+      sendVoiceTutorState: () => false,
       subscribe: () => () => {},
       onNavigate: () => () => {},
       onStatusChange: () => () => {}
