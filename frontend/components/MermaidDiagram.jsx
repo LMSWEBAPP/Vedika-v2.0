@@ -177,22 +177,12 @@ function StitchLiveOverlay({
         left: 0,
         width: '100%',
         height: '100%',
-        minHeight: '1400px',
-        minWidth: '100%',
         pointerEvents: 'none',
         zIndex: 15,
         overflow: 'visible'
       }}
     >
       <defs>
-        {/* Node Gradient fills per theme color */}
-        {NODE_PALETTES.map((p, idx) => (
-          <linearGradient key={`grad-${idx}`} id={`stitchNodeGrad_${idx}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={p.fillGrad[0]} />
-            <stop offset="100%" stopColor={p.fillGrad[1]} />
-          </linearGradient>
-        ))}
-
         {/* Dynamic Arrow Markers per theme color */}
         {NODE_PALETTES.map((p, idx) => (
           <marker
@@ -208,14 +198,9 @@ function StitchLiveOverlay({
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={p.arrow} />
           </marker>
         ))}
-
-        {/* Soft, clean drop shadow without neon glow */}
-        <filter id="stitchBoxShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.45" />
-        </filter>
       </defs>
 
-      {/* Completed Curved Edges sitting permanently on canvas */}
+      {/* Completed Illuminated Connections between nodes */}
       {drawnEdges.map((e, idx) => {
         const colorIdx = e.colorIdx ?? (idx % NODE_PALETTES.length);
         const palette = NODE_PALETTES[colorIdx];
@@ -224,96 +209,75 @@ function StitchLiveOverlay({
             <path
               d={getCurvedEdgePath(e.x1, e.y1, e.x2, e.y2)}
               stroke={e.color || palette.arrow}
-              strokeWidth="2"
+              strokeWidth="2.5"
               fill="none"
+              style={{ filter: `drop-shadow(0 0 6px ${e.color || palette.arrow}80)` }}
               markerEnd={`url(#stitchArrow_${colorIdx})`}
             />
           </g>
         );
       })}
 
-      {/* Active Drawing Curved Edge (Crisp, No Glow) */}
+      {/* Active Laser Flow Edge while pen draws */}
       {activeEdge && (
         <path
           d={getCurvedEdgePath(activeEdge.x1, activeEdge.y1, activeEdge.x2, activeEdge.y2)}
           stroke={activeEdge.color || '#A855F7'}
-          strokeWidth="2.2"
+          strokeWidth="3"
           strokeDasharray="6 3"
           fill="none"
+          style={{ filter: `drop-shadow(0 0 8px ${activeEdge.color || '#A855F7'})` }}
         />
       )}
 
-      {/* Completed Multi-Colored Nodes sitting permanently on canvas */}
+      {/* Solidified Node Highlight Rings (celebratory luminous accents) */}
       {drawnNodes.map((n, idx) => {
         const colorIdx = n.colorIdx ?? (idx % NODE_PALETTES.length);
         const palette = NODE_PALETTES[colorIdx];
         return (
-          <g key={`node-${idx}`} filter="url(#stitchBoxShadow)">
+          <g key={`node-highlight-${idx}`}>
             <rect
-              x={n.x}
-              y={n.y}
-              width={n.w}
-              height={n.h}
-              rx={8}
-              ry={8}
-              fill={`url(#stitchNodeGrad_${colorIdx})`}
+              x={n.x - 2}
+              y={n.y - 2}
+              width={n.w + 4}
+              height={n.h + 4}
+              rx={10}
+              ry={10}
+              fill="none"
               stroke={palette.stroke}
-              strokeWidth="1.5"
+              strokeWidth="2"
+              style={{ filter: `drop-shadow(0 0 8px ${palette.stroke}90)` }}
             />
-            <line
-              x1={n.x + 8}
-              y1={n.y + 1}
-              x2={n.x + n.w - 8}
-              y2={n.y + 1}
-              stroke={palette.topHighlight}
-              strokeWidth="1"
-            />
-            <text
-              x={n.x + n.w / 2}
-              y={n.y + n.h / 2 + 4}
-              textAnchor="middle"
-              fill="#F8FAFC"
-              fontSize="12"
-              fontWeight="600"
-              fontFamily="var(--font-outfit), sans-serif"
-              letterSpacing="-0.01em"
-            >
-              {n.text}
-            </text>
           </g>
         );
       })}
 
-      {/* Active Box Being Drawn Like in Paint (Plain Dotted Box without Glow) */}
+      {/* Active Box Outline Being Drawn Live like Paint */}
       {activeBox && (
         <rect
-          x={activeBox.x}
-          y={activeBox.y}
-          width={Math.max(4, activeBox.w)}
-          height={Math.max(4, activeBox.h)}
-          rx={8}
-          ry={8}
-          fill="rgba(15, 23, 42, 0.72)"
-          stroke={activeBox.stroke || '#94A3B8'}
-          strokeWidth="1.75"
+          x={activeBox.x - 2}
+          y={activeBox.y - 2}
+          width={Math.max(6, activeBox.w + 4)}
+          height={Math.max(6, activeBox.h + 4)}
+          rx={10}
+          ry={10}
+          fill="rgba(56, 189, 248, 0.12)"
+          stroke={activeBox.stroke || '#38BDF8'}
+          strokeWidth="2.5"
           strokeDasharray="6 4"
+          style={{ filter: `drop-shadow(0 0 10px ${activeBox.stroke || '#38BDF8'})` }}
         />
       )}
 
-      {/* Active Text Being Written from Left to Right (Crisp, No Glow on Box) */}
+      {/* Active Text Indicator being typed */}
       {activeWritingText && (
-        <text
-          x={activeWritingText.x}
-          y={activeWritingText.y}
-          fill="#F8FAFC"
-          fontSize="12"
-          fontWeight="600"
-          fontFamily="var(--font-outfit), sans-serif"
-          letterSpacing="-0.01em"
-        >
-          {activeWritingText.text}
-          <tspan fill={activeWritingText.cursorColor || '#A855F7'} fontWeight="700">|</tspan>
-        </text>
+        <circle
+          cx={activeWritingText.x}
+          cy={activeWritingText.y}
+          r="3"
+          fill={activeWritingText.cursorColor || '#A855F7'}
+          style={{ filter: `drop-shadow(0 0 6px ${activeWritingText.cursorColor || '#A855F7'})` }}
+        />
       )}
     </svg>
   );
@@ -321,7 +285,7 @@ function StitchLiveOverlay({
 
 /**
  * Accurately extracts node coordinates and edge paths from the rendered Mermaid SVG
- * relative to the SVG root, unscaled by current stage zoom.
+ * relative to the stage container, unscaled by current stage zoom.
  */
 function extractDiagramLayout(container, activeZoom = 1) {
   if (!container) return { nodes: [], edges: [] };
@@ -330,35 +294,21 @@ function extractDiagramLayout(container, activeZoom = 1) {
   const svgEl = wrapper.querySelector('svg');
   if (!svgEl) return { nodes: [], edges: [] };
 
-  const svgRect = svgEl.getBoundingClientRect();
+  const stageEl = container.querySelector('.mermaid-canvas-stage') || wrapper;
+  const stageRect = stageEl.getBoundingClientRect();
   const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
   const zoomFactor = activeZoom > 0 ? activeZoom : 1;
 
   const nodes = rawNodeEls.map((el, idx) => {
     const r = el.getBoundingClientRect();
     const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
-    // Unscaled native coordinates relative to SVG root
-    const x = (r.left - svgRect.left) / zoomFactor;
-    const y = (r.top - svgRect.top) / zoomFactor;
-    const w = Math.max(110, r.width / zoomFactor);
-    const h = Math.max(40, r.height / zoomFactor);
+    // Unscaled native coordinates relative to stage root
+    const x = (r.left - stageRect.left) / zoomFactor;
+    const y = (r.top - stageRect.top) / zoomFactor;
+    const w = Math.max(80, r.width / zoomFactor);
+    const h = Math.max(36, r.height / zoomFactor);
     return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
   });
-
-  // Enforce clean minimum vertical spacing between boxes
-  const MIN_BOX_GAP = 45;
-  for (let i = 1; i < nodes.length; i++) {
-    const prev = nodes[i - 1];
-    const curr = nodes[i];
-    const minRequiredY = prev.y + prev.h + MIN_BOX_GAP;
-    if (curr.y < minRequiredY && Math.abs(curr.x - prev.x) < 180) {
-      const shift = minRequiredY - curr.y;
-      curr.y += shift;
-      for (let j = i + 1; j < nodes.length; j++) {
-        nodes[j].y += shift;
-      }
-    }
-  }
 
   let edges = [];
   for (let i = 0; i < nodes.length - 1; i++) {
@@ -390,7 +340,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
-  const [isModalOpen, setIsModalOpen] = useState(true); // Fullscreen expand modal open by default for Visual Summary!
+  const [isModalOpen, setIsModalOpen] = useState(false); // Clean inline display in chat response by default; expandable to fullscreen modal on demand!
   const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
 
   // Mouse drag panning state for modal viewport
@@ -544,9 +494,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       isClicking: false
     });
 
-    let timeline = 700;
+    let timeline = 300;
 
-    // ── Phase 2: Draw Each Box like Paint & Write Text from Left to Right ──
+    // ── Phase 2: Highlight & Draw Each Box With Animated Pen ──
     nodes.forEach((node, idx) => {
       const colorIdx = idx % NODE_PALETTES.length;
       const palette = NODE_PALETTES[colorIdx];
@@ -557,18 +507,17 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           x: node.x,
           y: node.y,
           visible: true,
-          status: `Drafting Block (${idx + 1}/${nodes.length})`,
-          label: `Starting Box...`,
+          status: `Drawing Node (${idx + 1}/${nodes.length})`,
+          label: `${node.text.slice(0, 24)}...`,
           isClicking: false,
           accentColor: palette.stroke
         });
-        // Plain dotted box without glow
-        setActiveBox({ x: node.x, y: node.y, w: 6, h: 6, stroke: palette.stroke });
+        setActiveBox({ x: node.x, y: node.y, w: 10, h: 10, stroke: palette.stroke });
       }, timeline);
       animTimeoutsRef.current.push(tCorner);
 
-      // Step 2B: Drag out rectangle like Paint (top-left -> bottom-right)
-      const paintFrames = [0.25, 0.5, 0.75, 1.0];
+      // Step 2B: Trace bounding box live
+      const paintFrames = [0.4, 0.75, 1.0];
       paintFrames.forEach((pct, pIdx) => {
         const tFrame = setTimeout(() => {
           const curW = node.w * pct;
@@ -578,106 +527,61 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             x: node.x + curW,
             y: node.y + curH,
             visible: true,
-            status: `Drawing Box (${idx + 1}/${nodes.length})`,
-            label: `${Math.round(curW)}×${Math.round(curH)}`,
-            isClicking: false,
-            accentColor: palette.stroke
-          });
-        }, timeline + 100 + (pIdx * 90));
-        animTimeoutsRef.current.push(tFrame);
-      });
-
-      // Step 2C: Pen glides to the left side of the box to write text
-      const tLeft = setTimeout(() => {
-        const textY = node.y + node.h / 2 + 4;
-        setCursorState({
-          x: node.x + 14,
-          y: textY,
-          visible: true,
-          status: `Writing Block (${idx + 1}/${nodes.length})`,
-          label: `Writing...`,
-          isClicking: false,
-          accentColor: palette.stroke
-        });
-        setActiveWritingText({ x: node.x + 14, y: textY, text: '', cursorColor: palette.arrow });
-      }, timeline + 500);
-      animTimeoutsRef.current.push(tLeft);
-
-      // Step 2D: Type text as pen moves from left to right
-      const textLen = node.text.length;
-      const textSteps = [0.25, 0.5, 0.75, 1.0];
-      textSteps.forEach((pct, sIdx) => {
-        const tType = setTimeout(() => {
-          const charCount = Math.max(1, Math.ceil(textLen * pct));
-          const partialText = node.text.slice(0, charCount);
-          const cursorX = node.x + 14 + ((node.w - 28) * pct);
-          const textY = node.y + node.h / 2 + 4;
-
-          setActiveWritingText({ x: node.x + 14, y: textY, text: partialText, cursorColor: palette.arrow });
-          setCursorState({
-            x: cursorX,
-            y: textY,
-            visible: true,
-            status: `Writing: "${partialText}"`,
+            status: `Drawing Node (${idx + 1}/${nodes.length})`,
             label: `${Math.round(pct * 100)}%`,
             isClicking: false,
             accentColor: palette.stroke
           });
-        }, timeline + 680 + (sIdx * 90));
-        animTimeoutsRef.current.push(tType);
+        }, timeline + 60 + (pIdx * 50));
+        animTimeoutsRef.current.push(tFrame);
       });
 
-      // Step 2E: Solidify card (plain, zero neon glow)
+      // Step 2C: Solidify node with glowing accent halo
       const tSolidify = setTimeout(() => {
-        // Clear active drafting elements
         setActiveBox(null);
         setActiveWritingText(null);
-
-        // Add this node permanently with its color palette!
         setDrawnNodes((prev) => [...prev, { ...node, colorIdx, palette }]);
-
         setCursorState((prev) => ({
           ...prev,
           x: node.x + node.w / 2,
           y: node.y + node.h / 2,
-          status: 'Block Done ✨',
+          status: 'Node Ready ✨',
           label: `${node.text}`,
           isClicking: false,
           accentColor: palette.arrow
         }));
-      }, timeline + 1100);
+      }, timeline + 360);
       animTimeoutsRef.current.push(tSolidify);
 
-      timeline += 1320; // Total time per box
+      timeline += 450; // Snappy 450ms per node!
     });
 
-    // ── Phase 3: Connect the Blocks with Curved Arrows One by One ──
+    // ── Phase 3: Connect the Blocks with Flow Arrows ──
     const tPauseNotice = setTimeout(() => {
       setCursorState((prev) => ({
         ...prev,
-        status: '🔗 Linking Blocks with Curved Arrows...',
-        label: `Connecting ${edges.length} flow paths`,
+        status: '🔗 Linking Flows...',
+        label: `Connecting ${edges.length} paths`,
         isClicking: false,
         accentColor: '#A855F7'
       }));
-    }, timeline + 100);
+    }, timeline + 40);
     animTimeoutsRef.current.push(tPauseNotice);
 
-    timeline += 450;
-    const EDGE_DURATION = 620;
+    timeline += 120;
+    const EDGE_DURATION = 260;
 
     edges.forEach((edge, edgeIdx) => {
       const colorIdx = edge.colorIdx ?? (edgeIdx % NODE_PALETTES.length);
       const edgeColor = edge.color || NODE_PALETTES[colorIdx].arrow;
 
-      // Step 3A: Glide pen to start of connector
       const tStartLink = setTimeout(() => {
         setCursorState({
           x: edge.x1,
           y: edge.y1,
           visible: true,
           status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
-          label: 'Connecting ➔',
+          label: '➔',
           isClicking: false,
           accentColor: edgeColor
         });
@@ -685,8 +589,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       }, timeline);
       animTimeoutsRef.current.push(tStartLink);
 
-      // Step 3B: Curved line grows along with pen to end
-      const edgeSteps = [0.33, 0.66, 1.0];
+      const edgeSteps = [0.5, 1.0];
       edgeSteps.forEach((pct, eIdx) => {
         const tEdgeProg = setTimeout(() => {
           const curX = edge.x1 + (edge.x2 - edge.x1) * pct;
@@ -697,46 +600,43 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             y: curY,
             visible: true,
             status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
-            label: 'Connecting ➔',
+            label: '➔',
             isClicking: false,
             accentColor: edgeColor
           });
-        }, timeline + 80 + (eIdx * 90));
+        }, timeline + 60 + (eIdx * 60));
         animTimeoutsRef.current.push(tEdgeProg);
       });
 
-      // Step 3C: Place arrowhead
       const tFinishLink = setTimeout(() => {
         setActiveEdge(null);
         setDrawnEdges((prev) => [...prev, { ...edge, color: edgeColor, colorIdx }]);
-
         setCursorState({
           x: edge.x2,
           y: edge.y2,
           visible: true,
-          status: `Flow Connected (${edgeIdx + 1}/${edges.length})`,
+          status: `Linked ✨`,
           label: 'Linked ✨',
           isClicking: false,
           accentColor: edgeColor
         });
-      }, timeline + 380);
+      }, timeline + 220);
       animTimeoutsRef.current.push(tFinishLink);
 
       timeline += EDGE_DURATION;
     });
 
-    // ── Phase 4: Settle & Complete (Leave Viewport & Zoom Untouched!) ──
+    // ── Phase 4: Settle & Complete ──
     const tFinish = setTimeout(() => {
       setCursorState((prev) => ({
         ...prev,
-        status: 'Flowchart Complete ✨',
-        label: 'Canvas Ready',
+        status: 'Infographic Complete ✨',
+        label: 'Ready',
         isClicking: false
       }));
 
       const tHide = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, visible: false }));
-        // Reveal raw Mermaid SVG seamlessly
         const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
         targets.forEach((root) => {
           const w = root.querySelector('.mermaid-svg-wrapper');
@@ -746,9 +646,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           }
         });
         setIsBuilding(false);
-      }, 700);
+      }, 350);
       animTimeoutsRef.current.push(tHide);
-    }, timeline + 100);
+    }, timeline + 60);
     animTimeoutsRef.current.push(tFinish);
   }, [isModalOpen, autoFitModalChart]);
 

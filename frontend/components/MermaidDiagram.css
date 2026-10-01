@@ -730,10 +730,14 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   }
 }
 
-/* Live Draw Building State on Mermaid SVG: HIDE static SVG during live draw */
+/* Live Draw Building State on Mermaid SVG: Keep diagram crisp and visible with live animated overlay */
+.mermaid-svg-wrapper {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
 .mermaid-svg-wrapper.building {
-  opacity: 0 !important;
-  pointer-events: none !important;
+  opacity: 0.98;
   transition: opacity 0.3s ease;
 }
 

@@ -1390,18 +1390,20 @@ class DesktopPetApp(QObject):
         print("[Engine] Voice session active and listening (silence keep-alive).")
 
     def on_turn_watchdog_timeout(self):
-        """Triggered if Gemini Live is stuck thinking for >12s without speaking or completing turn."""
+        """Triggered if Gemini Live is stuck thinking for >45s without speaking or completing turn."""
         print("[Engine] Turn watchdog: Vedika appears stalled in thinking state. Triggering failsafe reconnection...")
         if self.pet:
-            self.pet.say("Just give me a moment... 🔄", duration=3.5)
+            self.pet.say("Just give me a moment... 🔄", duration=3.0)
+            self.pet.state_machine.change_state("idle")
         if hasattr(self, "gemini_client") and self.gemini_client and self.gemini_client.is_active:
+            self.gemini_client.is_speaking = False
             self.gemini_client.reconnect_session()
 
     def check_voice_engine_health(self):
         """Periodic health check ensuring voice worker thread never silently disappears during an active session."""
         if hasattr(self, 'gemini_client') and self.gemini_client:
             client = self.gemini_client
-            if getattr(client, 'is_active', False):
+            if getattr(client, 'is_active', False) and not getattr(client, '_is_reconnecting', False) and not client._reconnect_timer.isActive():
                 worker = getattr(client, 'worker_thread', None)
                 if worker is None or not worker.isRunning():
                     print("[HealthWatchdog] Active voice session detected with dead worker thread. Auto-healing session...")
@@ -1519,7 +1521,9 @@ class DesktopPetApp(QObject):
         print("[Engine] Refreshing Vedika voice session failsafe requested...")
         if self.pet:
             self.pet.say("Just give me a moment... 🔄", duration=3.0)
+            self.pet.state_machine.change_state("idle")
         if hasattr(self, "gemini_client") and self.gemini_client:
+            self.gemini_client.is_speaking = False
             self.gemini_client.reconnect_session()
 
     def exit_application(self):
