@@ -157,8 +157,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        height: '100%',
-        minHeight: '85vh',
+        minHeight: 800,
         background: '#090B13',
         color: T.text,
         borderRadius: 16,
@@ -369,7 +368,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
         
         {/* TAB 1: PhET Simulation iFrame View */}
         {activeTab === 'sim' && (
-          <div style={{ width: '100%', height: '100%', minHeight: '650px', position: 'relative' }}>
+          <div style={{ width: '100%', height: 740, minHeight: 700, position: 'relative' }}>
             {isLoading && (
               <div style={{
                 position: 'absolute',
@@ -394,7 +393,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
               </div>
             )}
 
-            <div style={{ width: '100%', height: '100%', minHeight: '650px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '100%', minHeight: 700, overflow: 'hidden', position: 'relative' }}>
               <iframe
                 ref={iframeRef}
                 src={`/api/phet-proxy?sim=${activeSim?.id}&url=${encodeURIComponent(activeSim?.embedUrl || '')}`}
@@ -405,7 +404,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
                   width: '100%',
                   height: 'calc(100% + 44px)',
                   marginBottom: '-44px',
-                  minHeight: '694px',
+                  minHeight: 744,
                   border: 'none',
                   background: '#000'
                 }}

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
   Dna, Sliders, Info, Zap,
-  RotateCcw, Play, Pause, Activity, Eye, Info as InfoIcon
+  RotateCcw, Play, Pause, Activity, Eye, Info as InfoIcon, Maximize2
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 
@@ -572,7 +572,7 @@ export default function BiologyLab() {
 
   if (labMode === 'phet') {
     return (
-      <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', padding: 12, background: '#07080F' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100%', padding: '16px 16px 90px', boxSizing: 'border-box', background: '#07080F' }}>
         <PhetSimViewer
           subject="biology"
           activeSimId={activePhetSim}
@@ -585,12 +585,23 @@ export default function BiologyLab() {
   }
 
   return (
-    <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', background: '#07080F', color: '#DDE3F2', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'row',
+      flex: 1,
+      minHeight: '100%',
+      minHeight: 'calc(100vh - 54px)',
+      background: '#07080F',
+      color: '#DDE3F2',
+      fontFamily: 'var(--font-outfit), sans-serif',
+      boxSizing: 'border-box',
+      paddingBottom: 90
+    }}>
       
       {/* --- LEFT COLUMN: Parameter sidebar panel --- */}
       <div style={{
         width: 360,
-        height: '100%',
+        minHeight: 700,
         background: '#0C0F1C',
         borderRight: '1px solid rgba(255,255,255,0.06)',
         display: 'flex',
@@ -599,12 +610,33 @@ export default function BiologyLab() {
         zIndex: 5
       }}>
         {/* Lab Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Dna size={20} color="#9B6EF8" />
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#F8FAFC' }}>Biology Lab</h2>
-            <span style={{ fontSize: 10.5, color: '#647298', fontWeight: 600 }}>Cell Structure & Ecology Sandbox</span>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Dna size={20} color="#9B6EF8" />
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#F8FAFC' }}>Biology Lab</h2>
+              <span style={{ fontSize: 10.5, color: '#647298', fontWeight: 600 }}>Cell Structure & Ecology Sandbox</span>
+            </div>
           </div>
+          <button
+            onClick={() => setLabMode('phet')}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(155, 110, 248, 0.3)',
+              background: 'rgba(155, 110, 248, 0.12)',
+              color: '#A78BFA',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5
+            }}
+          >
+            <Maximize2 size={12} />
+            HTML5 Sim
+          </button>
         </div>
 
         {/* Experiment Selector */}
@@ -830,10 +862,10 @@ export default function BiologyLab() {
       </div>
 
       {/* --- RIGHT COLUMN: 3D Canvas + SVG Line Chart Overlay --- */}
-      <div style={{ flex: 1, height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 700, position: 'relative', display: 'flex', flexDirection: 'column' }}>
         
         {/* Three.js Canvas container */}
-        <div ref={mountRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
+        <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: 700, zIndex: 1 }} />
 
         {/* Live Lotka-Volterra SVG Graph Plot overlay */}
         {selectedExperiment === 'ecosystem' && historyData.length > 1 && (

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
   Play, Pause, RotateCcw, Award, Sliders, Info, Zap,
-  ChevronRight, HelpCircle, Activity, Lightbulb, Compass, AlertCircle
+  ChevronRight, HelpCircle, Activity, Lightbulb, Compass, AlertCircle, Maximize2
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 
@@ -755,7 +755,7 @@ export default function PhysicsLab() {
 
   if (labMode === 'phet') {
     return (
-      <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', padding: 12, background: '#07080F' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100%', padding: '16px 16px 90px', boxSizing: 'border-box', background: '#07080F' }}>
         <PhetSimViewer
           subject="physics"
           activeSimId={activePhetSim}
@@ -768,12 +768,23 @@ export default function PhysicsLab() {
   }
 
   return (
-    <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', background: '#07080F', color: '#DDE3F2', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'row',
+      flex: 1,
+      minHeight: '100%',
+      minHeight: 'calc(100vh - 54px)',
+      background: '#07080F',
+      color: '#DDE3F2',
+      fontFamily: 'var(--font-outfit), sans-serif',
+      boxSizing: 'border-box',
+      paddingBottom: 90
+    }}>
       
       {/* --- LEFT COLUMN: Parameters Sidebar (Width: 380px) --- */}
       <div style={{
         width: 360,
-        height: '100%',
+        minHeight: 700,
         background: '#0C0F1C',
         borderRight: '1px solid rgba(255,255,255,0.06)',
         display: 'flex',
@@ -782,12 +793,33 @@ export default function PhysicsLab() {
         zIndex: 5
       }}>
         {/* Lab Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Activity size={20} color="#5B8CF8" />
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#F8FAFC' }}>Physics Lab</h2>
-            <span style={{ fontSize: 10.5, color: '#647298', fontWeight: 600 }}>Virtual Interactive Workbench</span>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Activity size={20} color="#5B8CF8" />
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#F8FAFC' }}>Physics Lab</h2>
+              <span style={{ fontSize: 10.5, color: '#647298', fontWeight: 600 }}>Virtual Interactive Workbench</span>
+            </div>
           </div>
+          <button
+            onClick={() => setLabMode('phet')}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(91, 140, 248, 0.3)',
+              background: 'rgba(91, 140, 248, 0.12)',
+              color: '#5B8CF8',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5
+            }}
+          >
+            <Maximize2 size={12} />
+            HTML5 Sim
+          </button>
         </div>
 
         {/* Experiment Selector */}
@@ -1242,10 +1274,10 @@ export default function PhysicsLab() {
       </div>
 
       {/* --- RIGHT COLUMN: 3D Canvas + Energy Chart Overlay --- */}
-      <div style={{ flex: 1, height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 700, position: 'relative', display: 'flex', flexDirection: 'column' }}>
         
         {/* Render Three.js Canvas container */}
-        <div ref={mountRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
+        <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: 700, zIndex: 1 }} />
 
         {/* Dynamic Live Energy SVG overlay (bottom overlay block) */}
         {selectedExperiment === 'pendulum' && (
