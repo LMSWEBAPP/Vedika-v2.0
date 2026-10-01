@@ -239,79 +239,80 @@ nextApp.prepare().then(() => {
       systemInstruction += ' SUBJECT FOCUS: Currently helping with Languages & Reading! Expand vocabulary and grammar.';
     } else {
       systemInstruction += ' Ready to tutor across all academic subjects with simple, delightful real-world analogies.';
+    }
   }
 
   const sessionId = searchParams.get('sessionId');
-    const userId = searchParams.get('userId');
-    const memoryCtx = await loadMemoryContext(sessionId, userId);
-    if (memoryCtx) systemInstruction += memoryCtx;
+  const userId = searchParams.get('userId');
+  const memoryCtx = await loadMemoryContext(sessionId, userId);
+  if (memoryCtx) systemInstruction += memoryCtx;
 
-    let geminiSession = null;
+  let geminiSession = null;
+  try {
+    clientWs.send(JSON.stringify({ type: 'status', message: 'Establishing low-latency connection to Gemini...' }));
+    const ai = getGeminiClient();
+    geminiSession = await ai.live.connect({
+      model: process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview',
+      callbacks: {
+        onmessage: (message) => {
+          const content = message.serverContent;
+          if (!content) return;
+          for (const part of content.modelTurn?.parts || []) {
+            if (part.inlineData?.data) {
+              clientWs.send(JSON.stringify({ type: 'audio', data: part.inlineData.data }));
+            }
+          }
+          if (content.outputTranscription?.text) {
+            clientWs.send(JSON.stringify({ type: 'agent-transcription', text: content.outputTranscription.text }));
+          }
+          if (content.interrupted) {
+            clientWs.send(JSON.stringify({ type: 'interrupted' }));
+          }
+          if (content.inputTranscription?.text?.trim()) {
+            const sentiment = analyzeSentiment(content.inputTranscription.text);
+            clientWs.send(JSON.stringify({ type: 'user-transcription', text: content.inputTranscription.text, sentiment }));
+          }
+        },
+        onclose: () => {
+          clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor connection closed.' }));
+        },
+        onerror: (error) => {
+          console.error('[WS] Session error:', error);
+          clientWs.send(JSON.stringify({ type: 'error', message: 'Session error occurred.' }));
+        },
+      },
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
+        systemInstruction,
+        outputAudioTranscription: {},
+        inputAudioTranscription: {},
+      },
+    });
+
+    console.log('[WS] Connected with Gemini Live API');
+    clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor is ready! Ask your academic questions.' }));
+  } catch (err) {
+    console.error('[WS] Failed connecting to Gemini Live API:', err.message);
+    clientWs.send(JSON.stringify({ type: 'error', message: `Tutoring setup failed: ${err.message}` }));
+    clientWs.close();
+    return;
+  }
+
+  clientWs.on('message', (buffer) => {
     try {
-      clientWs.send(JSON.stringify({ type: 'status', message: 'Establishing low-latency connection to Gemini...' }));
-      const ai = getGeminiClient();
-      geminiSession = await ai.live.connect({
-        model: process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview',
-        callbacks: {
-          onmessage: (message) => {
-            const content = message.serverContent;
-            if (!content) return;
-            for (const part of content.modelTurn?.parts || []) {
-              if (part.inlineData?.data) {
-                clientWs.send(JSON.stringify({ type: 'audio', data: part.inlineData.data }));
-              }
-            }
-            if (content.outputTranscription?.text) {
-              clientWs.send(JSON.stringify({ type: 'agent-transcription', text: content.outputTranscription.text }));
-            }
-            if (content.interrupted) {
-              clientWs.send(JSON.stringify({ type: 'interrupted' }));
-            }
-            if (content.inputTranscription?.text?.trim()) {
-              const sentiment = analyzeSentiment(content.inputTranscription.text);
-              clientWs.send(JSON.stringify({ type: 'user-transcription', text: content.inputTranscription.text, sentiment }));
-            }
-          },
-          onclose: () => {
-            clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor connection closed.' }));
-          },
-          onerror: (error) => {
-            console.error('[WS] Session error:', error);
-            clientWs.send(JSON.stringify({ type: 'error', message: 'Session error occurred.' }));
-          },
-        },
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-          systemInstruction,
-          outputAudioTranscription: {},
-          inputAudioTranscription: {},
-        },
-      });
-
-      console.log('[WS] Connected with Gemini Live API');
-      clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor is ready! Ask your academic questions.' }));
-    } catch (err) {
-      console.error('[WS] Failed connecting to Gemini Live API:', err.message);
-      clientWs.send(JSON.stringify({ type: 'error', message: `Tutoring setup failed: ${err.message}` }));
-      clientWs.close();
-      return;
-    }
-
-    clientWs.on('message', (buffer) => {
-      try {
-        const msg = JSON.parse(buffer.toString());
-        if (msg.type === 'audio' && msg.data && geminiSession) {
-          geminiSession.sendRealtimeInput({ audio: { data: msg.data, mimeType: 'audio/pcm;rate=16000' } });
-        }
-      } catch (e) { console.error('[WS] Audio error:', e); }
-    });
-
-    clientWs.on('close', () => {
-      console.log('[WS] Client disconnected');
-      if (geminiSession) { try { geminiSession.close(); } catch {} }
-    });
+      const msg = JSON.parse(buffer.toString());
+      if (msg.type === 'audio' && msg.data && geminiSession) {
+        geminiSession.sendRealtimeInput({ audio: { data: msg.data, mimeType: 'audio/pcm;rate=16000' } });
+      }
+    } catch (e) { console.error('[WS] Audio error:', e); }
   });
+
+  clientWs.on('close', () => {
+    console.log('[WS] Client disconnected');
+    if (geminiSession) { try { geminiSession.close(); } catch {} }
+  });
+});
 
   // Forward all other requests to Next.js
   app.all('*', (req, res) => {
