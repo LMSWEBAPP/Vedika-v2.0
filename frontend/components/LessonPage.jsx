@@ -187,7 +187,24 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     const bridge = getMascotBridge();
     const unsubStatus = bridge.onStatusChange((status) => {
       setIsMascotConnected(status);
+      if (status) {
+        // Sync study notes from desktop pet SQLite store upon connection
+        try {
+          bridge.getStudyNotes({
+            courseId: lesson?.courseId || '',
+            lessonId: lesson?.id || ''
+          });
+        } catch (_) {}
+      }
     });
+
+    // Request initial notes sync
+    try {
+      bridge.getStudyNotes({
+        courseId: lesson?.courseId || '',
+        lessonId: lesson?.id || ''
+      });
+    } catch (_) {}
 
     const unsubMsg = bridge.subscribe((msg) => {
       if (!msg) return;
@@ -195,23 +212,104 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       if (type === 'STUDY_NOTE_ADDED' || type === 'STUDY_NOTE_UPDATED') {
         const note = msg.payload;
         if (!note) return;
-        setNotes((prev) => {
-          const exists = prev.some((n) => String(n.id) === String(note.id));
-          const updated = exists ? prev.map((n) => (String(n.id) === String(note.id) ? note : n)) : [note, ...prev];
-          try {
-            localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
-          } catch (_) {}
-          return updated;
-        });
+
+        // Check if note belongs to current lesson (or has matching videoId/lessonTitle/empty lessonId)
+        const isThisLesson = !note.lessonId ||
+          note.lessonId === lesson?.id ||
+          note.lessonId === lesson?.title ||
+          note.lessonTitle === lesson?.title ||
+          (lesson?.vid && note.videoId === lesson.vid);
+
+        if (isThisLesson) {
+          setNotes((prev) => {
+            const idx = prev.findIndex((n) =>
+              String(n.id) === String(note.id) ||
+              (n.timestampFormatted === note.timestampFormatted && (
+                !n.lessonId || !note.lessonId || n.lessonId === note.lessonId || n.lessonTitle === note.lessonTitle
+              )) ||
+              (n.noteText && note.noteText && (
+                note.noteText.includes(n.noteText) || n.noteText.includes(note.noteText)
+              ))
+            );
+            let updated;
+            if (idx !== -1) {
+              updated = [...prev];
+              updated[idx] = { ...updated[idx], ...note };
+            } else {
+              updated = [note, ...prev];
+            }
+            try {
+              localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+            } catch (_) {}
+            return updated;
+          });
+        }
+
         setAllCourseNotes((prev) => {
-          const exists = prev.some((n) => String(n.id) === String(note.id));
-          const updated = exists ? prev.map((n) => (String(n.id) === String(note.id) ? note : n)) : [note, ...prev];
+          const idx = prev.findIndex((n) =>
+            String(n.id) === String(note.id) ||
+            (n.timestampFormatted === note.timestampFormatted && (
+              !n.lessonId || !note.lessonId || n.lessonId === note.lessonId || n.lessonTitle === note.lessonTitle
+            )) ||
+            (n.noteText && note.noteText && (
+              note.noteText.includes(n.noteText) || n.noteText.includes(note.noteText)
+            ))
+          );
+          let updated;
+          if (idx !== -1) {
+            updated = [...prev];
+            updated[idx] = { ...updated[idx], ...note };
+          } else {
+            updated = [note, ...prev];
+          }
           try {
             localStorage.setItem(`vedika_course_notes_${lesson?.courseId || 'general'}`, JSON.stringify(updated));
           } catch (_) {}
           return updated;
         });
+
         setRecentNoteAlert(note);
+        setTimeout(() => {
+          setRecentNoteAlert((cur) => (cur?.id === note.id ? null : cur));
+        }, 5000);
+      } else if (type === 'STUDY_NOTES_LIST') {
+        const list = msg.payload?.notes || (Array.isArray(msg.payload) ? msg.payload : []);
+        if (Array.isArray(list) && list.length > 0) {
+          setAllCourseNotes(list);
+          const lessonNotes = list.filter((n) =>
+            !n.lessonId ||
+            n.lessonId === lesson?.id ||
+            n.lessonId === lesson?.title ||
+            n.lessonTitle === lesson?.title ||
+            (lesson?.vid && n.videoId === lesson.vid)
+          );
+          if (lessonNotes.length > 0) {
+            setNotes((prev) => {
+              const mergedMap = new Map();
+              prev.forEach((n) => mergedMap.set(String(n.id) || `${n.timestampFormatted}_${n.noteText}`, n));
+              lessonNotes.forEach((n) => mergedMap.set(String(n.id) || `${n.timestampFormatted}_${n.noteText}`, n));
+              const merged = Array.from(mergedMap.values()).sort(
+                (a, b) => (b.timestampSeconds || 0) - (a.timestampSeconds || 0)
+              );
+              try {
+                localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(merged));
+              } catch (_) {}
+              return merged;
+            });
+          }
+        }
+      } else if (type === 'STUDY_NOTE_DELETED') {
+        const deletedId = msg.payload?.id;
+        if (deletedId) {
+          setNotes((prev) => {
+            const updated = prev.filter((n) => String(n.id) !== String(deletedId));
+            try {
+              localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+            } catch (_) {}
+            return updated;
+          });
+          setAllCourseNotes((prev) => prev.filter((n) => String(n.id) !== String(deletedId)));
+        }
       }
     });
 
@@ -219,7 +317,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       unsubStatus();
       unsubMsg();
     };
-  }, [lesson?.id, lesson?.courseId]);
+  }, [lesson?.id, lesson?.courseId, lesson?.title, lesson?.vid]);
 
   // Load current user & notes
   useEffect(() => {
@@ -441,34 +539,55 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const handleSaveQuickNote = (noteText, timeFormatted) => {
     if (!noteText || !noteText.trim()) return;
     const cleanText = noteText.replace(/\*\*/g, '').trim();
-    const noteObj = {
-      id: Date.now().toString(),
-      lessonId: lesson?.id,
-      lessonTitle: lesson?.title,
-      courseId: lesson?.courseId || 'general',
-      courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
-      noteText: cleanText,
-      timestampSeconds: Math.floor(videoCurrentTime || 0),
-      timestampFormatted: timeFormatted || formatTimestamp(videoCurrentTime),
-      source: 'ai_explainer',
-      createdAt: new Date().toISOString()
-    };
-    const updated = [noteObj, ...notes];
-    setNotes(updated);
-    try {
-      localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
-      const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
-      const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-      const updatedCourse = [noteObj, ...curCourseNotes];
-      localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
-      setAllCourseNotes(updatedCourse);
-    } catch (err) {}
+    const formattedTime = timeFormatted || formatTimestamp(videoCurrentTime);
+    const timeSec = Math.floor(videoCurrentTime || 0);
+
+    let noteObj;
+    setNotes((prev) => {
+      const idx = prev.findIndex((n) => n.timestampFormatted === formattedTime);
+      let updated;
+      if (idx !== -1) {
+        const existing = prev[idx];
+        const combined = existing.noteText.includes(cleanText)
+          ? existing.noteText
+          : `${existing.noteText}\n• ${cleanText.replace(/^[•\-*]\s*/, '')}`;
+        noteObj = { ...existing, noteText: combined };
+        updated = [...prev];
+        updated[idx] = noteObj;
+      } else {
+        noteObj = {
+          id: Date.now().toString(),
+          lessonId: lesson?.id || '',
+          lessonTitle: lesson?.title || '',
+          courseId: lesson?.courseId || 'general',
+          courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
+          noteText: cleanText.startsWith('•') || cleanText.startsWith('-') ? cleanText : `• ${cleanText}`,
+          timestampSeconds: timeSec,
+          timestampFormatted: formattedTime,
+          source: 'ai_explainer',
+          createdAt: new Date().toISOString()
+        };
+        updated = [noteObj, ...prev];
+      }
+      try {
+        localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+        const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
+        const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
+        const updatedCourse = [noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))];
+        localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
+        setAllCourseNotes(updatedCourse);
+      } catch (err) {}
+      return updated;
+    });
+
     setIsPointsSaved(true);
     setTimeout(() => setIsPointsSaved(false), 2500);
-    setRecentNoteAlert(noteObj);
-    setTimeout(() => {
-      setRecentNoteAlert(cur => cur?.id === noteObj.id ? null : cur);
-    }, 4500);
+    if (noteObj) {
+      setRecentNoteAlert(noteObj);
+      setTimeout(() => {
+        setRecentNoteAlert(cur => cur?.id === noteObj.id ? null : cur);
+      }, 4500);
+    }
     try {
       const bridge = getMascotBridge();
       bridge.send({
@@ -479,8 +598,9 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           courseTitle: lesson?.courseTitle || '',
           lessonId: lesson?.id || '',
           lessonTitle: lesson?.title || '',
-          timestampSeconds: Math.floor(videoCurrentTime || 0),
-          timestampFormatted: timeFormatted || formatTimestamp(videoCurrentTime),
+          videoId: lesson?.vid || '',
+          timestampSeconds: timeSec,
+          timestampFormatted: formattedTime,
           topic: lesson?.title || '',
           source: 'webapp_summary'
         }
@@ -494,8 +614,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
     const noteObj = {
       id: Date.now().toString(),
-      lessonId: lesson?.id,
-      lessonTitle: lesson?.title,
+      lessonId: lesson?.id || '',
+      lessonTitle: lesson?.title || '',
       courseId: lesson?.courseId || 'general',
       courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
       noteText: newNoteText.trim(),
@@ -511,7 +631,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
       const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
       const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-      const updatedCourse = [noteObj, ...curCourseNotes];
+      const updatedCourse = [noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))];
       localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
       setAllCourseNotes(updatedCourse);
     } catch (err) {}
@@ -531,6 +651,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           courseTitle: lesson?.courseTitle || COURSE?.title || '',
           lessonId: lesson?.id || '',
           lessonTitle: lesson?.title || '',
+          videoId: lesson?.vid || '',
           timestampSeconds: Math.floor(videoCurrentTime || 0),
           timestampFormatted: formatTimestamp(videoCurrentTime),
           topic: lesson?.title || '',
@@ -541,16 +662,20 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   };
 
   const handleDeleteNoteById = (id) => {
-    const updated = notes.filter(n => n.id !== id);
+    const updated = notes.filter(n => String(n.id) !== String(id));
     setNotes(updated);
     try {
       localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
       const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
       const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-      const updatedCourse = curCourseNotes.filter(n => n.id !== id);
+      const updatedCourse = curCourseNotes.filter(n => String(n.id) !== String(id));
       localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
       setAllCourseNotes(updatedCourse);
     } catch (err) {}
+    try {
+      const bridge = getMascotBridge();
+      bridge.deleteStudyNote(id);
+    } catch (_) {}
   };
 
   const handleDownloadNote = (note) => {

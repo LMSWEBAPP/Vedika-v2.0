@@ -46,15 +46,29 @@ class MascotBridge {
   connectWebSocket() {
     if (typeof window === 'undefined') return;
 
+    // Do not attempt local loopback WebSocket if page is running on external/public origin,
+    // as Chromium blocks cross-origin Local Network Access (ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS).
+    // The HTTP relay handles 100% of two-way communication seamlessly without console errors.
+    const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocalHost) {
+      return;
+    }
+
+    if (this.wsConnectAttempts >= 3 && this.isHttpRelayActive) {
+      return;
+    }
+
     try {
       if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
         return;
       }
 
+      this.wsConnectAttempts = (this.wsConnectAttempts || 0) + 1;
       this.ws = new WebSocket('ws://127.0.0.1:8765');
 
       this.ws.onopen = () => {
         this.isConnected = true;
+        this.wsConnectAttempts = 0;
         console.log('[MascotBridge] Local WebSocket connected (ws://127.0.0.1:8765)');
         this._notifyStatus(true);
         // Announce active tab presence and current path
@@ -79,7 +93,7 @@ class MascotBridge {
       };
 
       this.ws.onerror = () => {
-        // Quiet: On HTTPS production Chrome, this fails gracefully and HTTP relay takes over instantly
+        // Quiet: On HTTPS or browser restrictions, HTTP relay takes over instantly
         if (!this.isHttpRelayActive) {
           this.isConnected = false;
         }
@@ -100,10 +114,14 @@ class MascotBridge {
 
   _scheduleWsReconnect() {
     if (this.reconnectTimer) return;
+    const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (!isLocalHost) return;
+    if (this.wsConnectAttempts >= 3 && this.isHttpRelayActive) return;
+
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.connectWebSocket();
-    }, 1500);
+    }, 4000);
   }
 
   startHttpRelay() {
@@ -237,6 +255,8 @@ class MascotBridge {
     videoId,
     timestampSeconds = 0,
     timestampFormatted = '00:00',
+    courseId = '',
+    lessonId = '',
     lessonTitle = '',
     chapterTitle = '',
     courseTitle = '',
@@ -250,6 +270,8 @@ class MascotBridge {
         videoId,
         timestampSeconds,
         timestampFormatted,
+        courseId,
+        lessonId,
         lessonTitle,
         chapterTitle,
         courseTitle,
@@ -259,6 +281,27 @@ class MascotBridge {
         transcriptSnippet,
         activity: 'video_lesson'
       }
+    });
+  }
+
+  saveStudyNote(notePayload) {
+    return this.send({
+      type: 'SAVE_STUDY_NOTE',
+      payload: notePayload
+    });
+  }
+
+  getStudyNotes(filter = {}) {
+    return this.send({
+      type: 'GET_STUDY_NOTES',
+      payload: filter
+    });
+  }
+
+  deleteStudyNote(noteId) {
+    return this.send({
+      type: 'DELETE_STUDY_NOTE',
+      payload: { id: noteId }
     });
   }
 
@@ -310,6 +353,9 @@ export function getMascotBridge() {
     return {
       isMascotConnected: () => false,
       sendVideoMoment: () => false,
+      saveStudyNote: () => false,
+      getStudyNotes: () => false,
+      deleteStudyNote: () => false,
       sendActivityUpdate: () => false,
       sendVoiceTutorState: () => false,
       subscribe: () => () => {},
@@ -325,3 +371,4 @@ export function getMascotBridge() {
 }
 
 export default getMascotBridge;
+

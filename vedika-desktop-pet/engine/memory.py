@@ -466,13 +466,16 @@ class MemoryManager:
         with self._get_connection() as conn:
             if not create_new:
                 row = None
-                # Check 1: Flexible match matching old repository pattern
+                # Check 1: Flexible match matching lesson_id, lesson_title, video_id, or course
                 cursor = conn.execute("""
                     SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
                     FROM student_notebook_notes
-                    WHERE (lesson_id = ? AND lesson_id != '') OR (lesson_title = ? AND lesson_title != '') OR (course_id = ? AND lesson_id = '')
+                    WHERE (lesson_id = ? AND lesson_id != '') 
+                       OR (lesson_title = ? AND lesson_title != '') 
+                       OR (video_id = ? AND video_id != '')
+                       OR (course_id = ? AND lesson_id = '')
                     ORDER BY id DESC LIMIT 1
-                """, (lesson_id or "", lesson_title or "", course_id or ""))
+                """, (lesson_id or "", lesson_title or "", video_id or "", course_id or ""))
                 row = cursor.fetchone()
 
                 # Check 2: If still not found, fallback to the most recent note in the notebook
@@ -493,16 +496,16 @@ class MemoryManager:
                     if formatted_bullets in existing_text or clean_text in existing_text:
                         note_dict = {
                             "id": str(note_id),
-                            "courseId": row["course_id"],
-                            "courseTitle": row["course_title"],
-                            "chapterTitle": row["chapter_title"],
-                            "lessonId": row["lesson_id"],
-                            "lessonTitle": row["lesson_title"],
-                            "videoId": row["video_id"],
+                            "courseId": row["course_id"] or course_id or "",
+                            "courseTitle": row["course_title"] or course_title or "",
+                            "chapterTitle": row["chapter_title"] or chapter_title or "",
+                            "lessonId": row["lesson_id"] or lesson_id or "",
+                            "lessonTitle": row["lesson_title"] or lesson_title or "",
+                            "videoId": row["video_id"] or video_id or "",
                             "timestampSeconds": row["timestamp_seconds"],
                             "timestampFormatted": row["timestamp_formatted"],
                             "noteText": existing_text,
-                            "topic": row["topic"],
+                            "topic": row["topic"] or topic or "",
                             "source": source,
                             "createdAt": row["created_at"]
                         }
@@ -512,22 +515,28 @@ class MemoryManager:
 
                     conn.execute("""
                         UPDATE student_notebook_notes
-                        SET note_text = ?, updated_at = CURRENT_TIMESTAMP
+                        SET note_text = ?, 
+                            lesson_id = CASE WHEN (lesson_id IS NULL OR lesson_id = '') THEN ? ELSE lesson_id END,
+                            course_id = CASE WHEN (course_id IS NULL OR course_id = '') THEN ? ELSE course_id END,
+                            lesson_title = CASE WHEN (lesson_title IS NULL OR lesson_title = '') THEN ? ELSE lesson_title END,
+                            course_title = CASE WHEN (course_title IS NULL OR course_title = '') THEN ? ELSE course_title END,
+                            video_id = CASE WHEN (video_id IS NULL OR video_id = '') THEN ? ELSE video_id END,
+                            updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
-                    """, (combined, note_id))
+                    """, (combined, lesson_id or "", course_id or "", lesson_title or "", course_title or "", video_id or "", note_id))
 
                     note_dict = {
                         "id": str(note_id),
-                        "courseId": row["course_id"],
-                        "courseTitle": row["course_title"],
-                        "chapterTitle": row["chapter_title"],
-                        "lessonId": row["lesson_id"],
-                        "lessonTitle": row["lesson_title"],
-                        "videoId": row["video_id"],
+                        "courseId": row["course_id"] or course_id or "",
+                        "courseTitle": row["course_title"] or course_title or "",
+                        "chapterTitle": row["chapter_title"] or chapter_title or "",
+                        "lessonId": row["lesson_id"] or lesson_id or "",
+                        "lessonTitle": row["lesson_title"] or lesson_title or "",
+                        "videoId": row["video_id"] or video_id or "",
                         "timestampSeconds": row["timestamp_seconds"],
                         "timestampFormatted": row["timestamp_formatted"],
                         "noteText": combined,
-                        "topic": row["topic"],
+                        "topic": row["topic"] or topic or "",
                         "source": source,
                         "createdAt": row["created_at"]
                     }
