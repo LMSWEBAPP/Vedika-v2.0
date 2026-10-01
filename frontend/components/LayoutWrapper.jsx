@@ -104,7 +104,18 @@ export default function LayoutWrapper({ children }) {
   }, [pathname, router]);
 
   const isHomePage = pathname === '/';
-  const isFixedPage = pathname?.startsWith('/lesson/') || pathname?.startsWith('/vedika-ai') || pathname?.startsWith('/vedika-labs') || pathname?.startsWith('/general-tutor') || pathname?.startsWith('/coding-tutor') || pathname?.startsWith('/code-puzzle') || pathname?.startsWith('/viva-interview') || pathname?.startsWith('/quizzes') || pathname?.startsWith('/assignments') || pathname?.startsWith('/courses');
+  const isLabPage = pathname?.startsWith('/vedika-labs') || pathname?.startsWith('/labs');
+  const isFixedPage = !isLabPage && (
+    pathname?.startsWith('/lesson/') ||
+    pathname?.startsWith('/vedika-ai') ||
+    pathname?.startsWith('/general-tutor') ||
+    pathname?.startsWith('/coding-tutor') ||
+    pathname?.startsWith('/code-puzzle') ||
+    pathname?.startsWith('/viva-interview') ||
+    pathname?.startsWith('/quizzes') ||
+    pathname?.startsWith('/assignments') ||
+    pathname?.startsWith('/courses')
+  );
 
   useEffect(() => {
     // Configure layout background dynamically matching theme

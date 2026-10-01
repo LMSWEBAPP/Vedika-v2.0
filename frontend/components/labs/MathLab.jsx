@@ -1265,7 +1265,7 @@ export default function MathLab() {
       </header>
 
       {/* MAIN CONTAINER */}
-      <main style={{ flex: 1, padding: 24, maxWidth: 1400, margin: '0 auto', width: '100%' }}>
+      <main style={{ flex: 1, padding: '24px 24px 90px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* TAB 1: WHITEBOARD & REAL-TIME PLOTTER */}
         {activeTab === 'whiteboard' && (
@@ -1505,9 +1505,9 @@ export default function MathLab() {
                 </div>
               </div>
 
-              {/* INPUT BAR WITH SLEEK CONTINUOUS VOICE RECOGNITION */}
-              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+              {/* INPUT BAR WITH CLEAN DEDICATED VOICE BUTTON PLACEMENT */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginBottom: 20, flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: '1 1 340px', minWidth: 260 }}>
                   <input
                     type="text"
                     value={tutorQuery}
@@ -1516,51 +1516,53 @@ export default function MathLab() {
                     placeholder="e.g. Total surface area formed by joining two shapes or scooping a hemisphere..."
                     style={{
                       width: '100%',
-                      padding: '14px 130px 14px 18px',
+                      height: '100%',
+                      boxSizing: 'border-box',
+                      padding: '14px 18px',
                       borderRadius: 12,
                       background: 'rgba(255, 255, 255, 0.05)',
                       border: isListening ? '1px solid #EC4899' : '1px solid rgba(255, 255, 255, 0.15)',
                       color: '#FFF',
-                      fontSize: 15,
+                      fontSize: 14.5,
                       outline: 'none',
                       transition: 'border 0.2s'
                     }}
                   />
-
-                  {/* VOICE INPUT BUTTON WITH GLOWING ACTIVE BADGE */}
-                  <button
-                    onClick={toggleListening}
-                    title={isListening ? "Click to stop listening" : "Click to speak your math question"}
-                    style={{
-                      position: 'absolute',
-                      right: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: isListening ? 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)' : 'rgba(139, 92, 246, 0.15)',
-                      border: isListening ? '1px solid #EC4899' : '1px solid rgba(139, 92, 246, 0.3)',
-                      color: '#FFF',
-                      padding: '6px 12px',
-                      borderRadius: 20,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: isListening ? '0 0 14px rgba(236, 72, 153, 0.6)' : 'none',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <Mic size={16} color={isListening ? '#FFF' : '#A78BFA'} />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isListening ? '#FFF' : '#C4B5FD' }}>
-                      {isListening ? 'Listening...' : 'Voice'}
-                    </span>
-                  </button>
                 </div>
 
+                {/* DEDICATED VOICE INPUT BUTTON */}
                 <button
+                  type="button"
+                  onClick={toggleListening}
+                  title={isListening ? "Click to stop listening" : "Click to speak your math question"}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: 12,
+                    border: isListening ? '1px solid #EC4899' : '1px solid rgba(139, 92, 246, 0.35)',
+                    background: isListening ? 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)' : 'rgba(139, 92, 246, 0.15)',
+                    color: '#FFF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    boxShadow: isListening ? '0 0 16px rgba(236, 72, 153, 0.6)' : 'none',
+                    transition: 'all 0.2s',
+                    flexShrink: 0
+                  }}
+                >
+                  <Mic size={18} color={isListening ? '#FFF' : '#A78BFA'} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: isListening ? '#FFF' : '#E9D5FF' }}>
+                    {isListening ? 'Listening...' : 'Voice'}
+                  </span>
+                </button>
+
+                {/* SOLVE BUTTON */}
+                <button
+                  type="button"
                   onClick={() => handleAskTutor()}
                   disabled={isTutorThinking}
                   style={{
-                    padding: '14px 24px',
+                    padding: '12px 26px',
                     borderRadius: 12,
                     border: 'none',
                     background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
@@ -1570,11 +1572,14 @@ export default function MathLab() {
                     cursor: isTutorThinking ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8
+                    gap: 8,
+                    boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
+                    flexShrink: 0,
+                    transition: 'all 0.2s'
                   }}
                 >
                   <Send size={18} />
-                  {isTutorThinking ? 'Solving...' : 'Solve'}
+                  <span>{isTutorThinking ? 'Solving...' : 'Solve'}</span>
                 </button>
               </div>
 
