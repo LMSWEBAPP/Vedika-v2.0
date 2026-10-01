@@ -161,6 +161,8 @@ class GeminiLiveWorker(QThread):
         self.last_interruption_time = 0.0
         self.aec = BlockNLMSEchoCanceller()
         self._stopping_audio = False
+        self.is_playing_audio = False
+        self.suppress_mic_for_prompt = False
         self.current_turn_user_transcription = ""
         self.current_turn_model_text = ""
         self.in_session_history = []
@@ -874,7 +876,9 @@ class GeminiLiveWorker(QThread):
 
                     # Check speech pause watchdog (if user finished speaking >12s ago and no model response came back)
                     if getattr(self, "awaiting_turn_response", False):
-                        if time.time() - getattr(self, "speech_pause_timestamp", 0) > 12.0:
+                        if getattr(self.client, "is_speaking", False) or getattr(self, "is_playing_audio", False) or (self.audio_out_queue and not self.audio_out_queue.empty()):
+                            self.awaiting_turn_response = False
+                        elif time.time() - getattr(self, "speech_pause_timestamp", 0) > 12.0:
                             self.awaiting_turn_response = False
                             print("[GeminiLiveWorker] Watchdog: 12s elapsed with no Gemini Live response after speech. Triggering session refresh...")
                             self.notify_failure("Speech response timeout after 12s")
@@ -900,9 +904,11 @@ class GeminiLiveWorker(QThread):
                 
             if isinstance(chunk, dict) and "text" in chunk:
                 text_val = chunk["text"]
-                print(f"[SEND] Dispatching realtime text prompt to Gemini Live API: {text_val}")
+                print(f"[SEND] Dispatching realtime text prompt to Gemini Live API: {text_val[:80]}...")
                 if self.session and self.client.is_active:
                     try:
+                        self.suppress_mic_for_prompt = True
+                        self.awaiting_turn_response = False
                         if self.session_send_lock:
                             async with self.session_send_lock:
                                 await self.session.send_realtime_input(text=text_val)
@@ -943,8 +949,13 @@ class GeminiLiveWorker(QThread):
             speaking_sustained_counter = 0
             input_audio_buffer = bytearray()
             while self.client.is_active and self.mic_stream and not getattr(self, "_stopping_audio", False):
-                # Mute mic audio when session is paused, audio is stopping, or tool is executing
-                if getattr(self.client, "is_paused", False) or getattr(self, "_stopping_audio", False) or getattr(self.client, "tool_executing", False):
+                # Mute mic audio when session is paused, audio is stopping, tool is executing,
+                # proactive prompt is in flight, or tutor is actively speaking (unless barge-in is explicitly enabled)
+                if (getattr(self.client, "is_paused", False) or 
+                    getattr(self, "_stopping_audio", False) or 
+                    getattr(self.client, "tool_executing", False) or
+                    getattr(self, "suppress_mic_for_prompt", False) or
+                    (self.client.is_speaking and not getattr(self.client, "enable_barge_in", False))):
                     input_audio_buffer.clear()
                     await asyncio.sleep(0.05)
                     continue
@@ -1067,6 +1078,7 @@ class GeminiLiveWorker(QThread):
 
                 if chunk:
                     pcm_buffer.extend(chunk)
+                    self.is_playing_audio = True
 
                 # Prebuffer at start of speech turn to prevent PortAudio buffer starvation
                 if prebuffering:
@@ -1077,6 +1089,7 @@ class GeminiLiveWorker(QThread):
                 # Buffer PCM chunks to 2400 bytes (50ms of 24kHz mono) for smooth, non-stuttering PyAudio playback
                 min_chunk_bytes = 2400
                 while len(pcm_buffer) >= min_chunk_bytes or (chunk is None and len(pcm_buffer) > 0 and self.audio_out_queue.empty()):
+                    self.is_playing_audio = True
                     send_len = min_chunk_bytes if len(pcm_buffer) >= min_chunk_bytes else len(pcm_buffer)
                     play_bytes = bytes(pcm_buffer[:send_len])
                     del pcm_buffer[:send_len]
@@ -1096,10 +1109,12 @@ class GeminiLiveWorker(QThread):
                 
                 # Check if we finished playing all chunks after turn completed
                 if self.audio_out_queue.empty() and len(pcm_buffer) == 0:
+                    self.is_playing_audio = False
                     prebuffering = True
                     if getattr(self.client, "turn_completed_received", False):
                         print("[GeminiLive] Speaker finished playing all chunks. Re-enabling mic.")
                         self.client.turn_completed_received = False
+                        self.suppress_mic_for_prompt = False
                         self.client.mic_timer_trigger.emit(0)
                         if self.client.is_speaking:
                             self.client.is_speaking = False
@@ -1124,8 +1139,8 @@ class GeminiLiveWorker(QThread):
                         print(f"[RECV] Got response: text={has_text} audio={has_audio}")
                         
                         if sc.interrupted:
-                            if getattr(self.client, "tool_executing", False):
-                                print("[GeminiLiveWorker] Suppressed false server VAD interruption signal during active tool execution.")
+                            if not getattr(self.client, "enable_barge_in", False) or getattr(self.client, "tool_executing", False) or getattr(self, "suppress_mic_for_prompt", False):
+                                print("[GeminiLiveWorker] Suppressed false server VAD interruption signal (barge-in disabled or proactive prompt active).")
                             else:
                                 print("[GeminiLiveWorker] Gemini Server VAD emitted interrupted=True! Halting local speaker.")
                                 self.client.interrupted.emit()
@@ -1180,6 +1195,7 @@ class GeminiLiveWorker(QThread):
                                         self.client.speaking_started.emit()
                         
                         if sc.turn_complete:
+                            self.suppress_mic_for_prompt = False
                             self.client.turn_completed.emit()
                             user_q = self.current_turn_user_transcription.strip()
                             tutor_ans = self.current_turn_model_text.strip()
@@ -1515,11 +1531,18 @@ class GeminiLiveWorker(QThread):
                             except Exception as e:
                                 print(f"[GeminiLiveWorker] Error sending tool response: {e}")
                 
-                # If async for completed normally while session was supposed to be active:
-                if self.client.is_active and not getattr(self, "_stopping_audio", False):
-                    print("[GeminiLiveWorker] Live API receive stream was closed cleanly by server. Triggering reconnection...")
+                # Check if underlying WebSocket was closed by server or if turn interaction simply completed
+                ws = getattr(self.session, "_ws", None)
+                ws_state = getattr(ws, "state", None)
+                is_ws_open = (ws_state is not None and getattr(ws_state, "name", "") == "OPEN") or (ws_state == 1)
+                if not is_ws_open and self.client.is_active and not getattr(self, "_stopping_audio", False):
+                    print(f"[GeminiLiveWorker] Live API WebSocket was closed (state={ws_state}). Triggering reconnection...")
                     self.notify_failure("Live API stream closed by server")
                     break
+                else:
+                    # Turn interaction completed cleanly and WebSocket is still OPEN! Loop to receive next turn.
+                    print("[GeminiLiveWorker] Turn interaction completed; continuing receive loop for next interaction.")
+                    continue
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1763,11 +1786,22 @@ class GeminiLiveClient(QObject):
             return
         w = self.worker_thread
         if w and getattr(w, "loop", None) and w.loop.is_running() and getattr(w, "async_queue", None) and self.status == "connected":
-            w.loop.call_soon_threadsafe(w.async_queue.put_nowait, {"text": prompt_text})
-            print(f"[GeminiLiveClient] Dispatched realtime text prompt to active session: {prompt_text}")
+            w.suppress_mic_for_prompt = True
+            def _enqueue():
+                # Flush pending mic audio PCM chunks from queue so prompt is processed cleanly without conflict
+                while not w.async_queue.empty():
+                    try:
+                        item = w.async_queue.get_nowait()
+                        if isinstance(item, dict) and "text" in item:
+                            pass
+                    except Exception:
+                        break
+                w.async_queue.put_nowait({"text": prompt_text})
+            w.loop.call_soon_threadsafe(_enqueue)
+            print(f"[GeminiLiveClient] Dispatched realtime text prompt to active session: {prompt_text[:80]}...")
         else:
             self.pending_initial_prompt = prompt_text
-            print(f"[GeminiLiveClient] Queued pending initial prompt for startup: {prompt_text}")
+            print(f"[GeminiLiveClient] Queued pending initial prompt for startup: {prompt_text[:80]}...")
             if self.status in ("disconnected", "error"):
                 self.start()
 
@@ -2085,20 +2119,21 @@ class GeminiLiveClient(QObject):
         self.chunk_pause_ticks = 0
         self.turn_completed_received = True
         
-        # Check if speaker has already finished playing all chunks
-        is_queue_empty = True
-        if self.worker_thread and self.worker_thread.audio_out_queue:
-            is_queue_empty = self.worker_thread.audio_out_queue.empty()
+        # Check if speaker has already finished playing all audio chunks
+        is_playing = False
+        if self.worker_thread:
+            is_playing = getattr(self.worker_thread, "is_playing_audio", False) or (self.worker_thread.audio_out_queue and not self.worker_thread.audio_out_queue.empty())
             
-        if is_queue_empty:
-            print("[GeminiLive] Turn completed and speaker queue already empty. Re-enabling mic immediately.")
+        if not is_playing:
+            print("[GeminiLive] Turn completed and speaker already idle. Re-enabling mic immediately.")
             self.turn_completed_received = False
             if self.is_speaking:
                 self.is_speaking = False
                 self.speaking_stopped.emit()
         else:
-            # Re-enable fallback timer to re-enable mic in 2.5 seconds in case of lag
-            self.mic_enable_timer.start(2500)
+            print("[GeminiLive] Turn completed; audio still playing from buffer. Waiting for playback to finish before re-enabling mic.")
+            # Re-enable fallback safety timer to re-enable mic after 5.0 seconds in case of lag
+            self.mic_enable_timer.start(5000)
 
     @Slot()
     def enable_mic_after_speaking(self):

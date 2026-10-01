@@ -854,6 +854,17 @@ class DesktopPetApp(QObject):
                 concept_summary = payload.get("conceptSummary") or payload.get("overview") or ""
                 snippet = payload.get("transcriptSnippet") or ""
 
+                # Debounce rapid duplicate clicks within 2.0s
+                now_ts = time.time()
+                last_moment_ts = getattr(self, "_last_video_moment_ts", 0.0)
+                last_moment_key = getattr(self, "_last_video_moment_key", "")
+                current_moment_key = f"{payload.get('lessonId', '')}:{time_str}:{topic_str}"
+                if (now_ts - last_moment_ts < 2.0) and (last_moment_key == current_moment_key):
+                    print(f"[WS Bridge] Debounced duplicate video moment request: {current_moment_key}")
+                    return
+                self._last_video_moment_ts = now_ts
+                self._last_video_moment_key = current_moment_key
+
                 if hasattr(self, 'gemini_client') and self.gemini_client:
                     self.gemini_client.active_webapp_context = {
                         "courseId": payload.get("courseId", ""),
@@ -874,29 +885,24 @@ class DesktopPetApp(QObject):
                 self.set_active_animation("explaining")
 
                 if self.pet:
-                    self.pet.say(f"At this point in the video, {topic_str} is being explained. Did you not understand it at all, or did you understand parts of it? Would you like a real-world example, or what would you like me to clarify for you? 💡", duration=7.5)
+                    self.pet.say(f"Explaining '{topic_str}' at {time_str}... 💡", duration=3.0)
 
-                # Synthesize rich pedagogic diagnostic prompt with video topic context
+                # Synthesize clear, direct pedagogical diagnostic prompt with video topic context
                 context_parts = [f"Course: '{course_str}'", f"Lesson: '{lesson_str}'", f"Video Timestamp: {time_str}"]
                 if topic_str:
-                    context_parts.append(f"Current Topic: '{topic_str}'")
+                    context_parts.append(f"Topic: '{topic_str}'")
                 if concept_summary:
-                    context_parts.append(f"Concept Taught at this moment: '{concept_summary}'")
+                    context_parts.append(f"Concept: '{concept_summary}'")
                 if snippet:
-                    context_parts.append(f"Lecture transcript: '{snippet}'")
+                    context_parts.append(f"Transcript: '{snippet}'")
 
                 context_str = ". ".join(context_parts)
 
                 diagnostic_speech = (
-                    f"Speak warmly out loud to the student (mirroring whatever language they speak: if they speak Telugu respond in natural Telugu, if Hindi respond in natural Hindi, otherwise in clean English): "
-                    f"\"At this point in the video, {topic_str} is being explained. Did you not understand it at all, or did you understand parts of it? Would you like a clear real-world example, or what would you like me to clarify for you?\" and wave gently. "
-                    f"[PEDAGOGICAL CONTEXT FOR VEDIKA]: The student is watching this lesson ({context_str}). "
-                    f"When they answer, explain the concept simply, intuitively, and concisely with relatable analogies. "
-                    f"[CRITICAL CONTINUOUS MULTI-TOOL LOOP & ASSISTANCE INSTRUCTIONS]: "
-                    f"You are the student's continuous AI tutor and companion! All your tools remain 100% active and MUST be executed immediately whenever requested: "
-                    f"1. NOTE TAKING: If the student asks you to add notes, take notes, or write down points (e.g. 'add a few points in my personal notes', 'note this down', 'save this point to my notes', 'add to my notebook', or in Hindi/Telugu), you MUST IMMEDIATELY call the 'add_study_note' tool! You have full notebook access. Never say you cannot take notes or that the functionality is unavailable. "
-                    f"2. NAVIGATION & BROWSING: If the student asks to open another page, navigate to another course, open labs, open assignments, or open a website (e.g. 'open labs', 'open another page', 'go to chemistry'), you MUST IMMEDIATELY call 'navigate_webapp' or 'open_website'! "
-                    f"3. Never refuse tool actions. Seamlessly execute tools and continue normal friendly conversation in the student's language!"
+                    f"Explain what is being taught at timestamp {time_str} in the lesson '{lesson_str}' regarding '{topic_str}'. "
+                    f"Context: {context_str}. "
+                    f"In 2 to 3 engaging, conversational spoken sentences (mirroring whatever language the student speaks: Telugu, Hindi, or clean English), "
+                    f"explain the core intuition simply with a relatable analogy, then warmly ask what part they'd like help with. Wave gently."
                 )
                 if hasattr(self, "gemini_client") and self.gemini_client:
                     if not self.gemini_client.is_active:
