@@ -40,7 +40,7 @@ export const COURSE = {
   title: "Python Programming", tagline: "From zero to Python hero in 5 structured modules",
   modules: [
     {
-      id: "m1", title: "Getting Started", emoji: "🚀", accent: T.accent, lessons: [
+      id: "m1", title: "Getting Started", emoji: "🚀", accent: "#5B8CF8", lessons: [
         { id: "l1", title: "What is Python?", dur: "10 min", vid: "rfscVS0vtbw",
           overview: "Python is a versatile, high-level interpreted language known for clean readable syntax. Created by Guido van Rossum in 1991, now one of the world's most popular languages.",
           pts: ["Interpreted \u2014 runs line by line", "Dynamically typed \u2014 no declarations needed", "Cross-platform: Windows, Mac, Linux", "400,000+ packages on PyPI"] },
@@ -53,7 +53,7 @@ export const COURSE = {
       ]
     },
     {
-      id: "m2", title: "Control Flow", emoji: "\uD83D\uDD00", accent: T.green, lessons: [
+      id: "m2", title: "Control Flow", emoji: "\uD83D\uDD00", accent: "#22C5A0", lessons: [
         { id: "l4", title: "If / Elif / Else", dur: "13 min", vid: "DZwmZ8Usvnk",
           overview: "Conditional statements let you branch code execution based on truth conditions. Python uses indentation to define code blocks.",
           pts: ["Indentation defines the block", "==, !=, <, >, <=, >= comparisons", "and, or, not logical operators", "Ternary: x if cond else y"] },
@@ -66,7 +66,7 @@ export const COURSE = {
       ]
     },
     {
-      id: "m3", title: "Functions", emoji: "\u2699\uFE0F", accent: T.amber, lessons: [
+      id: "m3", title: "Functions", emoji: "\u2699\uFE0F", accent: "#F5A95B", lessons: [
         { id: "l7", title: "Defining Functions", dur: "20 min", vid: "9Os0o3wzS_I",
           overview: "Functions are reusable named code blocks. def creates them. They help avoid repetition and keep programs organized and testable.",
           pts: ["def function_name(params):", "return sends back a value", "Docstrings document the function", "Functions are first-class objects"] },
@@ -79,7 +79,7 @@ export const COURSE = {
       ]
     },
     {
-      id: "m4", title: "Data Structures", emoji: "\uD83D\uDCE6", accent: T.purple, lessons: [
+      id: "m4", title: "Data Structures", emoji: "\uD83D\uDCE6", accent: "#9B6EF8", lessons: [
         { id: "l10", title: "Lists", dur: "22 min", vid: "W8KRzm-HUcc",
           overview: "Lists are ordered, mutable sequences \u2014 Python's most versatile structure. They hold any type and support slicing, sorting, and comprehensions.",
           pts: ["lst.append(x) adds to end", "lst.pop() removes last item", "lst[1:4] slices elements", "Nested lists for 2D structures"] },
@@ -92,7 +92,7 @@ export const COURSE = {
       ]
     },
     {
-      id: "m5", title: "OOP", emoji: "\uD83C\uDFD7\uFE0F", accent: T.red, lessons: [
+      id: "m5", title: "OOP", emoji: "\uD83C\uDFD7\uFE0F", accent: "#F55B6B", lessons: [
         { id: "l13", title: "Classes & Objects", dur: "25 min", vid: "ZDa-Z5JzLYM",
           overview: "A class is a blueprint; objects are instances. OOP bundles data (attributes) with behavior (methods), modeling real-world entities.",
           pts: ["class MyClass: defines a class", "__init__ is the constructor", "self refers to the instance", "Attributes store per-instance data"] },
