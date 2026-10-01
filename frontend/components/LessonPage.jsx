@@ -1706,7 +1706,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
 
                     {/* TAB 3 CONTENT: LESSON Q&A */}
                     {activeCompanionTab === 'qa' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
                         <div style={{
                           flex: 1,
                           display: 'flex',
