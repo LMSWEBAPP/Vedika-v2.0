@@ -927,6 +927,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
       if (attempts > 60) {
         clearInterval(timer);
+        // Timer exhausted: SVG nodes never found (e.g. diagram rendered off-screen).
+        // Force-reveal the static diagram by ending the building state.
+        if (!cancelled) stopAndCleanAnimation();
       }
     }, 45);
 

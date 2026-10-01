@@ -1243,7 +1243,9 @@ export default function CodingTutor() {
       const res = await fetch(targetEndpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ system: systemPrompt, user: finalPrompt, maxOutputTokens: tokens, sessionId: sid, userId, courseId: 'general' }),
+        // When authenticated via JWT, omit userId from body — server extracts user identity from the token.
+        // Sending a mismatched localStorage userId causes a 403 Forbidden response.
+        body: JSON.stringify({ system: systemPrompt, user: finalPrompt, maxOutputTokens: tokens, sessionId: sid, ...(jwtToken ? {} : { userId }), courseId: 'general' }),
       });
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`;
@@ -2076,25 +2078,6 @@ export default function CodingTutor() {
                 {/* FeralUI Flow Gradient Canvas Background */}
                 <GlacierBackground variant={bgTheme} opacity={1.0} />
 
-                {/* Coding Bot image as a subtle watermark in background so text never overlaps */}
-                <div style={{
-                  position: 'absolute',
-                  right: isMobile ? '-10px' : '36px',
-                  bottom: isMobile ? '0px' : '15px',
-                  width: isMobile ? '260px' : '430px',
-                  maxWidth: '48vw',
-                  pointerEvents: 'none',
-                  zIndex: 0,
-                  opacity: 0.28,
-                  filter: 'drop-shadow(0 0 35px rgba(6, 182, 212, 0.28))',
-                  userSelect: 'none'
-                }}>
-                  <img
-                    src="/vedika-code-watermark.png?v=2"
-                    alt="Vedika Code AI Watermark"
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
-                  />
-                </div>
 
                 {/* Floating Top-Right Controls: Python Sandbox Toggle & Mode Pill */}
                 <div style={{
