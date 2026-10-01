@@ -172,8 +172,8 @@ wss.on('connection', async (clientWs, request) => {
       '1. Greet the candidate warmly, set a relaxed and professional engineering discussion tone, and immediately ask your first practical technical question. ' +
       '2. Frame questions around real-world production scenarios, architecture trade-offs, edge cases, scalability, concurrency, and clean code principles (e.g., "Let\'s say you\'re building...", "Suppose we hit a bottleneck in...", "Walk me through how you would handle..."). ' +
       '3. Keep your spoken responses concise (strictly 1 to 2 sentences maximum) so that the candidate has the floor to speak. ' +
-      '4. Listen to the candidate\'s answer. Acknowledge naturally and conversationally (e.g., "Good point on latency.", "Makes sense.", "Interesting approach."), then probe deeper or transition to the next technical topic. ' +
-      '5. NEVER provide answers, solutions, or code explanations yourself. You are the interviewer assessing the candidate. ' +
+      '4. Listen closely to the candidate\'s answer. Pick up a specific technical concept, claim, or gap from their answer, and ask an organic, focused follow-up probe (e.g., "You mentioned X... how would that behave under Y condition?"). Keep the interview feeling like an authentic person-to-person inquiry where you drill down into their reasoning. ' +
+      '5. NEVER reveal scores, grades, or correct model answers during the live interview. Keep all assessments concealed until the session finishes. ' +
       '6. AVOID robotic AI phrasing or generic textbook definition questions. Sound like a real senior engineer discussing production systems.';
   } else if (mode === 'viva') {
     systemInstruction =
@@ -185,8 +185,8 @@ wss.on('connection', async (clientWs, request) => {
       '1. Greet the student warmly, announce the examination topic (' + (topic || 'Academic Syllabus') + '), and ask your first oral viva question. ' +
       '2. Frame questions around real experimental observations, parameter changes, physical thought experiments, governing principles, and practical edge cases (e.g., "Suppose in the lab we suddenly double the...", "Walk me through what happens to the readings if...", "If you had to explain the core intuition to a peer..."). ' +
       '3. Keep your spoken questions and responses concise (strictly 1 to 2 sentences maximum) so the student can explain and defend their understanding. ' +
-      '4. Listen carefully to the student\'s explanation. If their answer is correct, acknowledge it naturally (e.g., "Solid explanation.", "Good intuition on that.") and probe deeper into underlying principles. If their answer is incomplete or off-topic, guide them back. ' +
-      '5. NEVER give away answers or teach during the examination defense. You are here to question and assess the student\'s mastery. ' +
+      '4. Listen carefully to the student\'s explanation. Pick up a specific point, formula, observation, or gap from their answer, and ask an organic follow-up probe that drills deeper into that specific claim. Maintain a supportive, person-to-person conversational cadence. ' +
+      '5. NEVER give away answers, scores, or evaluations during the viva defense. Keep all assessments strictly concealed until the examination concludes. ' +
       '6. AVOID dry robotic textbook recitation. Make the dialogue feel like an authentic, lively oral examination.';
   } else {
     systemInstruction =

@@ -185,6 +185,8 @@ export default function VivaInterviewPage() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [currentQuestionType, setCurrentQuestionType] = useState('main'); // 'main' | 'follow_up'
+  const [currentProbedPoint, setCurrentProbedPoint] = useState('');
   const [currentAcknowledgment, setCurrentAcknowledgment] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [userAnswer, setUserAnswer] = useState('');
@@ -1615,6 +1617,8 @@ export default function VivaInterviewPage() {
           localStorage.setItem('VEDIKA_RECENT_Q1_CACHE', JSON.stringify(parsed));
         } catch {}
 
+        setCurrentQuestionType(data.questionType || 'main');
+        setCurrentProbedPoint(data.probedPoint || '');
         setCurrentAcknowledgment(data.acknowledgment || 'Welcome to your examination. Let us begin.');
         setCurrentQuestion(data.question);
         setTurnStartTime(Date.now());
@@ -1633,6 +1637,8 @@ export default function VivaInterviewPage() {
           history: [],
           currentQIndex: 0,
           currentQuestion: data.question,
+          currentQuestionType: data.questionType || 'main',
+          currentProbedPoint: data.probedPoint || '',
           currentAcknowledgment: data.acknowledgment
         }));
 
@@ -1681,7 +1687,9 @@ export default function VivaInterviewPage() {
       {
         question: currentQuestion,
         answer: submittedAnswer,
-        durationSec
+        durationSec,
+        questionType: currentQuestionType,
+        probedPoint: currentProbedPoint
       }
     ];
 
@@ -1698,7 +1706,7 @@ export default function VivaInterviewPage() {
     const nextIdx = currentQIndex + 1;
     setCurrentQIndex(nextIdx);
     setLoading(true);
-    setStatusMessage('Examiner is evaluating your answer and formulating the next question...');
+    setStatusMessage('Examiner is evaluating your answer and formulating the next follow-up question...');
 
     try {
       const token = await getSafeAuthToken();
@@ -1732,6 +1740,8 @@ export default function VivaInterviewPage() {
 
       const data = await response.json();
       if (response.ok && data.question) {
+        setCurrentQuestionType(data.questionType || 'follow_up');
+        setCurrentProbedPoint(data.probedPoint || '');
         setCurrentAcknowledgment(data.acknowledgment || 'Understood. Let us proceed.');
         setCurrentQuestion(data.question);
         setTurnStartTime(Date.now());
@@ -1751,6 +1761,8 @@ export default function VivaInterviewPage() {
           history: newHistory,
           currentQIndex: nextIdx,
           currentQuestion: data.question,
+          currentQuestionType: data.questionType || 'follow_up',
+          currentProbedPoint: data.probedPoint || '',
           currentAcknowledgment: data.acknowledgment
         }));
       } else {
@@ -1774,7 +1786,9 @@ export default function VivaInterviewPage() {
       {
         question: currentQuestion,
         answer: 'Candidate skipped the question and provided no answer.',
-        durationSec
+        durationSec,
+        questionType: currentQuestionType,
+        probedPoint: currentProbedPoint
       }
     ];
 
@@ -1825,6 +1839,8 @@ export default function VivaInterviewPage() {
 
       const data = await response.json();
       if (response.ok && data.question) {
+        setCurrentQuestionType(data.questionType || 'follow_up');
+        setCurrentProbedPoint(data.probedPoint || '');
         setCurrentAcknowledgment(data.acknowledgment || 'Understood. Let us proceed.');
         setCurrentQuestion(data.question);
         setTurnStartTime(Date.now());
@@ -1844,6 +1860,8 @@ export default function VivaInterviewPage() {
           history: newHistory,
           currentQIndex: nextIdx,
           currentQuestion: data.question,
+          currentQuestionType: data.questionType || 'follow_up',
+          currentProbedPoint: data.probedPoint || '',
           currentAcknowledgment: data.acknowledgment
         }));
       } else {
@@ -1939,6 +1957,8 @@ export default function VivaInterviewPage() {
     setHistory(savedSessionFound.history || []);
     setCurrentQIndex(savedSessionFound.currentQIndex || 0);
     setCurrentQuestion(savedSessionFound.currentQuestion || '');
+    setCurrentQuestionType(savedSessionFound.currentQuestionType || (savedSessionFound.currentQIndex > 0 ? 'follow_up' : 'main'));
+    setCurrentProbedPoint(savedSessionFound.currentProbedPoint || '');
     setCurrentAcknowledgment(savedSessionFound.currentAcknowledgment || 'Welcome back.');
     setUserAnswer('');
     baseTextRef.current = '';
@@ -5408,18 +5428,35 @@ export default function VivaInterviewPage() {
                 borderBottom: `1px solid var(--border)`,
                 paddingBottom: 12
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{
                     padding: '4px 10px',
                     borderRadius: 8,
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    color: 'var(--purple)',
+                    background: currentQuestionType === 'follow_up' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                    color: currentQuestionType === 'follow_up' ? '#60A5FA' : 'var(--purple)',
                     fontSize: '0.75rem',
                     fontWeight: 800,
                     letterSpacing: '0.05em'
                   }}>
-                    TOPIC {currentQIndex + 1}
+                    QUESTION {currentQIndex + 1} OF 5
                   </span>
+                  {currentQuestionType === 'follow_up' && (
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: 'rgba(59, 130, 246, 0.12)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      color: '#93C5FD',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      <Sparkles size={11} />
+                      Follow-up Probe
+                    </span>
+                  )}
                   <span style={{
                     padding: '3px 8px',
                     borderRadius: 6,
@@ -5518,6 +5555,25 @@ export default function VivaInterviewPage() {
                 }}>
                   <span>💬 Examiner:</span>
                   <span>"{currentAcknowledgment}"</span>
+                </div>
+              )}
+
+              {/* PROBED CONCEPT BADGE */}
+              {currentQuestionType === 'follow_up' && currentProbedPoint && (
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--muted)',
+                  background: 'var(--s2)',
+                  padding: '5px 12px',
+                  borderRadius: 10,
+                  width: 'fit-content',
+                  border: `1px solid var(--border)`,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <span style={{ color: '#60A5FA', fontWeight: 800 }}>🔍 Probing Your Point:</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600 }}>"{currentProbedPoint}"</span>
                 </div>
               )}
 
@@ -6080,6 +6136,236 @@ export default function VivaInterviewPage() {
                 );
               })}
             </div>
+
+            {/* TURN-BY-TURN / QUESTION-BY-QUESTION DIAGNOSTIC REPORT */}
+            {scorecard.turnByTurnAnalysis && scorecard.turnByTurnAnalysis.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <FileCheck size={22} style={{ color: 'var(--purple)' }} />
+                      <span>Turn-by-Turn Diagnostic Analysis</span>
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                      Comprehensive question-by-question breakdown comparing your responses, what went well, missing concepts, best model answers, and tips for the next round.
+                    </p>
+                  </div>
+                  <span style={{
+                    padding: '4px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(139, 92, 246, 0.12)',
+                    border: '1px solid rgba(139, 92, 246, 0.25)',
+                    color: 'var(--purple)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700
+                  }}>
+                    {scorecard.turnByTurnAnalysis.length} Exam Questions Evaluated
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {scorecard.turnByTurnAnalysis.map((turn, tIdx) => {
+                    const isFollowUp = turn.questionType === 'follow_up';
+                    const score = typeof turn.scoreOutOfTen === 'number' ? turn.scoreOutOfTen : 0;
+                    const scoreColor = score >= 8 ? '#10B981' : score >= 5 ? 'var(--accent)' : '#EF4444';
+                    const scoreBg = score >= 8 ? 'rgba(16, 185, 129, 0.12)' : score >= 5 ? 'rgba(79, 131, 246, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+
+                    return (
+                      <div
+                        key={tIdx}
+                        style={{
+                          background: 'var(--s1)',
+                          border: `1px solid var(--border)`,
+                          borderRadius: 20,
+                          padding: isMobile ? '18px 14px' : '24px 22px',
+                          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 16
+                        }}
+                      >
+                        {/* TURN HEADER */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          borderBottom: `1px solid var(--border)`,
+                          paddingBottom: 12,
+                          flexWrap: 'wrap',
+                          gap: 8
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{
+                              padding: '3px 10px',
+                              borderRadius: 8,
+                              background: isFollowUp ? 'rgba(59, 130, 246, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                              color: isFollowUp ? '#60A5FA' : 'var(--purple)',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              letterSpacing: '0.04em'
+                            }}>
+                              {isFollowUp ? `Q${tIdx + 1} • FOLLOW-UP PROBE` : `Q${tIdx + 1} • CORE FOUNDATION`}
+                            </span>
+                            {turn.probedPoint && (
+                              <span style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--muted)',
+                                fontWeight: 600,
+                                background: 'var(--s2)',
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                border: `1px solid var(--border)`
+                              }}>
+                                Probed: <strong style={{ color: 'var(--text)' }}>"{turn.probedPoint}"</strong>
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{
+                            padding: '4px 12px',
+                            borderRadius: 10,
+                            background: scoreBg,
+                            color: scoreColor,
+                            fontSize: '0.8rem',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}>
+                            <span>Score:</span>
+                            <span>{score} / 10</span>
+                          </div>
+                        </div>
+
+                        {/* QUESTION BOX */}
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Examiner Question
+                          </label>
+                          <div style={{ margin: '4px 0 0 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.5 }}>
+                            "{turn.question}"
+                          </div>
+                        </div>
+
+                        {/* CANDIDATE ANSWER BOX */}
+                        <div style={{
+                          background: 'var(--s2)',
+                          border: `1px solid var(--border)`,
+                          borderRadius: 14,
+                          padding: '12px 16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Edit3 size={13} style={{ color: 'var(--muted)' }} />
+                            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Your Answer
+                            </span>
+                          </div>
+                          <div style={{
+                            fontSize: '0.875rem',
+                            color: turn.candidateAnswer?.includes('Skipped') ? 'var(--muted)' : 'var(--text)',
+                            fontStyle: turn.candidateAnswer?.includes('Skipped') ? 'italic' : 'normal',
+                            lineHeight: 1.5
+                          }}>
+                            "{turn.candidateAnswer}"
+                          </div>
+                        </div>
+
+                        {/* TWO-COLUMN FEEDBACK (STRENGTHS VS IMPROVEMENT) */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                          gap: 12
+                        }}>
+                          {/* WHAT WENT WELL */}
+                          <div style={{
+                            background: 'rgba(16, 185, 129, 0.08)',
+                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                            borderRadius: 14,
+                            padding: '12px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10B981', fontSize: '0.75rem', fontWeight: 800 }}>
+                              <CheckCircle size={15} />
+                              <span>What Went Well & Strengths</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                              {turn.whatWentWell}
+                            </p>
+                          </div>
+
+                          {/* WHAT CAN BE IMPROVED */}
+                          <div style={{
+                            background: 'rgba(245, 158, 11, 0.08)',
+                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                            borderRadius: 14,
+                            padding: '12px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#F59E0B', fontSize: '0.75rem', fontWeight: 800 }}>
+                              <AlertCircle size={15} />
+                              <span>Areas for Improvement & Gaps</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                              {turn.whatCanBeImproved}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* BEST MODEL ANSWER CARD */}
+                        {turn.bestModelAnswer && (
+                          <div style={{
+                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.06) 100%)',
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            borderRadius: 16,
+                            padding: '14px 18px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--purple)', fontSize: '0.8rem', fontWeight: 800 }}>
+                              <Sparkles size={16} />
+                              <span>🌟 Best Model Answer (Gold Standard)</span>
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.6 }}>
+                              <MathEquationRenderer text={turn.bestModelAnswer} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TIP FOR NEXT ROUND */}
+                        {turn.keyImprovementTip && (
+                          <div style={{
+                            background: 'rgba(59, 130, 246, 0.08)',
+                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                            borderRadius: 12,
+                            padding: '10px 14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            color: '#93C5FD',
+                            fontSize: '0.775rem',
+                            lineHeight: 1.4
+                          }}>
+                            <Lightbulb size={16} style={{ color: '#60A5FA', flexShrink: 0 }} />
+                            <div>
+                              <strong style={{ color: '#60A5FA' }}>Actionable Tip for Next Round: </strong>
+                              <span style={{ color: 'var(--text)' }}>{turn.keyImprovementTip}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* STRENGTHS & ACTIONABLE PREPARATION ROADMAP */}
             <div style={{
