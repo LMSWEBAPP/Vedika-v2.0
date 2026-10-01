@@ -104,7 +104,7 @@ export default function LayoutWrapper({ children }) {
   }, [pathname, router]);
 
   const isHomePage = pathname === '/';
-  const isLabPage = pathname?.startsWith('/vedika-labs') || pathname?.startsWith('/labs');
+  const isLabPage = pathname?.startsWith('/vedika-labs/') || pathname?.startsWith('/labs/');
   const isFixedPage = !isLabPage && (
     pathname?.startsWith('/lesson/') ||
     pathname?.startsWith('/vedika-ai') ||
@@ -114,7 +114,8 @@ export default function LayoutWrapper({ children }) {
     pathname?.startsWith('/viva-interview') ||
     pathname?.startsWith('/quizzes') ||
     pathname?.startsWith('/assignments') ||
-    pathname?.startsWith('/courses')
+    pathname?.startsWith('/courses') ||
+    pathname === '/vedika-labs'
   );
 
   useEffect(() => {
@@ -228,14 +229,14 @@ export default function LayoutWrapper({ children }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: isViewportLocked ? '100vh' : 'auto',
+      height: (isViewportLocked || isLabPage) ? '100vh' : 'auto',
       minHeight: '100vh',
-      maxHeight: isViewportLocked ? '100vh' : 'none',
+      maxHeight: (isViewportLocked || isLabPage) ? '100vh' : 'none',
       background: isHomePage ? '#02050c' : 'var(--bg)',
       color: isHomePage ? '#f8fafc' : 'var(--text)',
       width: '100%',
       position: 'relative',
-      overflow: isViewportLocked ? 'hidden' : 'visible'
+      overflow: (isViewportLocked || isLabPage) ? 'hidden' : 'visible'
     }}>
       {/* Present Navbar displayed consistently on every page */}
       <Header />
@@ -243,11 +244,11 @@ export default function LayoutWrapper({ children }) {
         position: 'relative',
         width: '100%',
         boxSizing: 'border-box',
-        overflowY: isViewportLocked ? 'hidden' : 'auto',
+        overflowY: isLabPage ? 'auto' : (isViewportLocked ? 'hidden' : 'auto'),
         overflowX: 'hidden',
-        height: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'auto',
-        maxHeight: isViewportLocked ? (isAskVedika ? '100vh' : 'calc(100vh - 54px)') : 'none',
-        minHeight: !isViewportLocked ? 'calc(100vh - 54px)' : 'auto',
+        height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+        maxHeight: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+        minHeight: 'calc(100vh - 54px)',
         marginTop: isAskVedika ? 0 : '54px',
         paddingTop: 0,
         background: isHomePage ? '#02050c' : 'var(--bg)'

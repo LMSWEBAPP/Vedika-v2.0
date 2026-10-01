@@ -636,6 +636,7 @@ export default function MathLab() {
   const [isListening, setIsListening] = useState(false);
   const [parsedVisualSpec, setParsedVisualSpec] = useState(null);
   const recognitionRef = useRef(null);
+  const tutorResponseRef = useRef(null);
 
   // Visualizer Parameters
   const [pythA, setPythA] = useState(6);
@@ -645,6 +646,13 @@ export default function MathLab() {
   const [calcFunc, setCalcFunc] = useState('quadratic');
   const [vecU, setVecU] = useState({ x: 4, y: 3 });
   const [vecV, setVecV] = useState({ x: -2, y: 5 });
+
+  // Auto-scroll to AI solution response when it arrives
+  useEffect(() => {
+    if (tutorResponse && tutorResponseRef.current) {
+      tutorResponseRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [tutorResponse]);
 
   // URL Query Parameters & Mascot Bridge Controller
   useEffect(() => {
@@ -1197,7 +1205,7 @@ export default function MathLab() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#07080F', color: '#F3F4F6', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: '#07080F', color: '#F3F4F6', fontFamily: 'var(--font-outfit), sans-serif' }}>
       
       {/* HEADER NAVBAR */}
       <header style={{
@@ -1612,7 +1620,7 @@ export default function MathLab() {
 
               {/* TUTOR RESPONSE & DYNAMIC VISUALIZER */}
               {(tutorResponse || isTutorThinking) && (
-                <div style={{ marginTop: 24 }}>
+                <div ref={tutorResponseRef} style={{ marginTop: 24 }}>
                   {isTutorThinking ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#A78BFA', padding: 20 }}>
                       <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
