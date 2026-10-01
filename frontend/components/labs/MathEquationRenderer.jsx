@@ -34,6 +34,77 @@ export function renderMathToHTML(tex, displayMode = false) {
   return null;
 }
 
+// Robust balanced brace extractor for standalone \boxed{...} not wrapped in math delimiters
+export function wrapStandaloneBoxed(text) {
+  if (!text || typeof text !== 'string') return text;
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    if (text.startsWith('\\boxed{', i)) {
+      let hasPrecedingDollar = false;
+      let checkIdx = i - 1;
+      while (checkIdx >= 0 && /\s/.test(text[checkIdx])) checkIdx--;
+      if (checkIdx >= 0 && text[checkIdx] === '$') {
+        hasPrecedingDollar = true;
+      }
+
+      if (hasPrecedingDollar) {
+        result += '\\boxed{';
+        i += 7;
+        continue;
+      }
+
+      let depth = 1;
+      let j = i + 7;
+      while (j < text.length && depth > 0) {
+        if (text[j] === '{') depth++;
+        else if (text[j] === '}') depth--;
+        j++;
+      }
+
+      if (depth === 0) {
+        const inner = text.slice(i + 7, j - 1);
+        result += `\n\n$$\\boxed{${inner.trim()}}$$\n\n`;
+        i = j;
+        continue;
+      }
+    }
+    result += text[i];
+    i++;
+  }
+  return result;
+}
+
+// Clean up bare LaTeX math symbols outside math delimiters into clean readable Unicode
+export function replaceBareLaTeXSymbols(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/\\pi\b/g, 'π')
+    .replace(/\\times\b/g, '×')
+    .replace(/\\approx\b/g, '≈')
+    .replace(/\\pm\b/g, '±')
+    .replace(/\\mp\b/g, '∓')
+    .replace(/\\le(q)?\b/g, '≤')
+    .replace(/\\ge(q)?\b/g, '≥')
+    .replace(/\\neq\b/g, '≠')
+    .replace(/\\div\b/g, '÷')
+    .replace(/\\cdot\b/g, '·')
+    .replace(/\\theta\b/g, 'θ')
+    .replace(/\\alpha\b/g, 'α')
+    .replace(/\\beta\b/g, 'β')
+    .replace(/\\gamma\b/g, 'γ')
+    .replace(/\\Delta\b/g, 'Δ')
+    .replace(/\\delta\b/g, 'δ')
+    .replace(/\\lambda\b/g, 'λ')
+    .replace(/\\mu\b/g, 'μ')
+    .replace(/\\sigma\b/g, 'σ')
+    .replace(/\\omega\b/g, 'ω')
+    .replace(/\\infty\b/g, '∞')
+    .replace(/\\sqrt\b/g, '√')
+    .replace(/\^\\circ\b/g, '°')
+    .replace(/\\circ\b/g, '°');
+}
+
 // Pre-parse Markdown text to extract block math and inline math
 export function parseLaTeXInText(content) {
   if (!content) return '';
@@ -46,6 +117,18 @@ export function parseLaTeXInText(content) {
   str = str
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => `\n\n$$\n${formula.trim()}\n$$\n\n`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => ` $${formula.trim()}$ `);
+
+  // Clean up any repeated dollar signs (e.g. $$$$ or $$$ -> $$)
+  str = str.replace(/\${3,}/g, '$$');
+
+  // Wrap standalone \boxed{...} that isn't inside math delimiters
+  str = wrapStandaloneBoxed(str);
+
+  // Normalize empty lines inside $$ ... $$ to prevent Markdown paragraph splitting
+  str = str.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+    const compactFormula = formula.replace(/\n\s*\n+/g, '\n').trim();
+    return `\n\n$$${compactFormula}$$\n\n`;
+  });
 
   return str;
 }
@@ -163,8 +246,8 @@ export function renderTextWithMath(children, theme = {}) {
           return <KaTeXSpan key={idx} math={math} displayMode={false} theme={theme} />;
         }
 
-        // Format Step / Case / Equation / Condition headers as bold badges
-        const stepMatch = part.match(/^(Step\s*\d+:?|Case\s*\d+:?|Equation\s*\(?\d+\)?:?|Condition\s*\d+:?|Option\s*[A-Z]:?)/i);
+        // Format Step / Case / Equation / Condition / Given headers as bold badges
+        const stepMatch = part.match(/^(Step\s*\d+:?|Case\s*\d+:?|Equation\s*\(?\d+\)?:?|Condition\s*\d+:?|Option\s*[A-Z]:?|Given:?|Formula:?|Formulas\s*Used:?|Required:?)/i);
         if (stepMatch) {
           const matchedStr = stepMatch[0];
           const restStr = part.slice(matchedStr.length);
@@ -186,12 +269,12 @@ export function renderTextWithMath(children, theme = {}) {
               >
                 {matchedStr}
               </span>
-              {renderFlippedCharacters(restStr)}
+              {renderFlippedCharacters(replaceBareLaTeXSymbols(restStr))}
             </React.Fragment>
           );
         }
 
-        return renderFlippedCharacters(part);
+        return renderFlippedCharacters(replaceBareLaTeXSymbols(part));
       });
     }
     if (React.isValidElement(child) && child.props && child.props.children) {

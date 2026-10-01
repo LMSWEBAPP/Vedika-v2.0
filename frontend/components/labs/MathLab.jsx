@@ -15,15 +15,17 @@ import {
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { getMascotBridge } from '@/lib/mascotBridge';
+import MathEquationRenderer from '@/components/labs/MathEquationRenderer';
 
-// Preprocess LaTeX math syntax into clean formatted KaTeX math
+// Preprocess LaTeX math syntax safely into clean formatted KaTeX math
 function preprocessLaTeX(text) {
   if (!text) return '';
-  return text
-    .replace(/\\\[([\s\S]*?)\\\]/g, '\n$$\n$1\n$$\n')
-    .replace(/\\\(([\s\S]*?)\\\)/g, '$$1$')
-    .replace(/(?<!\$)\\boxed\{([^}]+)\}(?!\$)/g, '$\\boxed{$1}$')
-    .replace(/(\\text\{[^}]+\})/g, '$$1$');
+  let str = String(text).replace(/\\n/g, '\n');
+  str = str
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => `\n\n$$\n${formula.trim()}\n$$\n\n`)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => ` $${formula.trim()}$ `);
+  str = str.replace(/\${3,}/g, '$$');
+  return str;
 }
 
 // Helper GCD function
@@ -521,76 +523,20 @@ class SafeMathRenderer extends React.Component {
 
 // Custom Markdown Math Renderer with KaTeX & LaTeX support
 function CustomMathMarkdown({ content }) {
-  const processed = preprocessLaTeX(content);
+  const mathTheme = {
+    text: '#F3F4F6',
+    muted: '#94A3B8',
+    purple: '#A78BFA',
+    accent: '#60A5FA',
+    green: '#34D399',
+    s2: 'rgba(255, 255, 255, 0.04)',
+    border: 'rgba(255, 255, 255, 0.1)'
+  };
 
   return (
     <SafeMathRenderer fallback={<div style={{ whiteSpace: 'pre-wrap', color: '#E5E7EB' }}>{content}</div>}>
-      <div className="math-markdown-content" style={{ fontSize: 15, lineHeight: 1.8, color: '#E5E7EB' }}>
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[[rehypeKatex, { throwOnError: false, errorColor: '#F472B6' }]]}
-          components={{
-            h3: ({ children }) => (
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#A78BFA', marginTop: 18, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(139, 92, 246, 0.2)', paddingBottom: 6 }}>
-                <Zap size={16} /> {children}
-              </h3>
-            ),
-            h4: ({ children }) => (
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F472B6', marginTop: 14, marginBottom: 6 }}>
-                {children}
-              </h4>
-            ),
-            code: ({ inline, children }) => {
-              const str = String(children);
-              if (inline) {
-                return (
-                  <span style={{
-                    fontFamily: 'monospace',
-                    background: 'rgba(139, 92, 246, 0.18)',
-                    color: '#F472B6',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    fontWeight: 700,
-                    fontSize: 14
-                  }}>
-                    {str}
-                  </span>
-                );
-              }
-              return (
-                <div style={{
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)',
-                  border: '1px solid rgba(139, 92, 246, 0.4)',
-                  borderRadius: 12,
-                  padding: '14px 20px',
-                  margin: '14px 0',
-                  textAlign: 'center',
-                  color: '#C4B5FD',
-                  fontWeight: 800,
-                  fontSize: 17,
-                  fontFamily: 'monospace',
-                  boxShadow: '0 4px 16px rgba(139, 92, 246, 0.2)'
-                }}>
-                  {str}
-                </div>
-              );
-            },
-            p: ({ children }) => {
-              const str = String(children);
-              if (str.startsWith('Problem ') || str.startsWith('Step ')) {
-                return (
-                  <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderLeft: '3px solid #8B5CF6', padding: '10px 14px', borderRadius: '0 8px 8px 0', margin: '10px 0' }}>
-                    {children}
-                  </div>
-                );
-              }
-              return <p style={{ margin: '8px 0' }}>{children}</p>;
-            }
-          }}
-        >
-          {processed}
-        </ReactMarkdown>
+      <div className="math-markdown-content" style={{ fontSize: 15, lineHeight: 1.85, color: '#E5E7EB' }}>
+        <MathEquationRenderer content={content} theme={mathTheme} />
       </div>
     </SafeMathRenderer>
   );
@@ -1148,7 +1094,7 @@ export default function MathLab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system: "You are Vedika Math AI, an expert math tutor. Explain step-by-step using clear markdown and standard LaTeX math syntax ($...$ for inline formulas like $x + 4x = 180^\\circ$, $$...$$ for block equations). ALWAYS add a ```json block at the VERY END containing a visualSpec JSON:\n```json\n{\n  \"type\": \"supplementary_angles\" | \"complementary_angles\" | \"angles\" | \"triangle\" | \"sector\" | \"circle\" | \"solid_surface\" | \"linear_graph\" | \"quadratic_graph\" | \"quadrilateral\",\n  \"title\": \"Dynamic Visualizer Title\",\n  \"params\": {\"angle1\": 36, \"angle2\": 144, \"totalAngle\": 180, \"base\": 6, \"height\": 8, \"radius\": 10, \"angle\": 30},\n  \"labels\": {\"val1\": \"36°\", \"val2\": \"144°\", \"result\": \"180°\"}\n}\n```",
+          system: "You are Vedika Math AI, an expert math tutor. Format your explanations with crystal-clear mathematical rigor and beautiful presentation:\n\n1. Mathematical Notation:\n- ALWAYS use standard LaTeX math syntax for ALL formulas, equations, variables, and calculations.\n- For standalone equations and multi-line derivations, ALWAYS use display math $$...$$ on their own lines (e.g. $$A_{\\text{total}} = 2\\pi r h + 2\\pi r^2$$).\n- For inline symbols, variables, numbers with units, and expressions, ALWAYS use inline math $...$ (e.g. $r = 7\\text{ cm}$, $h = 10\\text{ cm}$, $\\pi \\approx \\frac{22}{7}$).\n- Use \\times for multiplication (NEVER bare * or x).\n- Use \\frac{numerator}{denominator} for fractions.\n- NEVER output bare LaTeX commands (like \\pi, \\times, \\text) without wrapping them in $...$ or $$...$$.\n\n2. Structure Your Response:\n- ### Given & Required: State values with units as inline LaTeX.\n- ### Formulas Used: Display the key formulas.\n- ### Step-by-Step Solution: Clear numbered steps (e.g., Step 1: ..., Step 2: ...).\n- ### Final Answer: Put the final answer inside $$\\boxed{\\text{Answer: } ...}$$.\n\n3. ALWAYS append a ```json block at the VERY END containing a visualSpec JSON:\n```json\n{\n  \"type\": \"supplementary_angles\" | \"complementary_angles\" | \"angles\" | \"triangle\" | \"sector\" | \"circle\" | \"solid_surface\" | \"linear_graph\" | \"quadratic_graph\" | \"quadrilateral\",\n  \"title\": \"Dynamic Visualizer Title\",\n  \"params\": {\"angle1\": 36, \"angle2\": 144, \"totalAngle\": 180, \"base\": 6, \"height\": 8, \"radius\": 10, \"angle\": 30},\n  \"labels\": {\"val1\": \"36°\", \"val2\": \"144°\", \"result\": \"180°\"}\n}\n```",
           user: `Solve and explain this mathematical equation or question step-by-step:\n"${q}"`
         })
       });
