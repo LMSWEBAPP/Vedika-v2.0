@@ -827,10 +827,26 @@ class GeminiLiveWorker(QThread):
                     )
                     if not self.client.is_active or getattr(self, "_stopping_audio", False):
                         break
-                    for t in done:
-                        err = t.exception()
-                        if err and not isinstance(err, asyncio.CancelledError):
-                            print(f"[GeminiLiveWorker] Task notice: {err}")
+
+                    # FAILSAFE: If any core streaming task (send, receive, mic) died, immediately auto-reconnect
+                    if done and self.client.is_active and not getattr(self, "_stopping_audio", False):
+                        core_tasks_done = [t for t in done if t in tasks[:3]]
+                        if core_tasks_done:
+                            for t in core_tasks_done:
+                                err = t.exception()
+                                print(f"[GeminiLiveWorker] Core streaming task terminated ({err or 'Stream ended'}). Triggering auto-reconnect...")
+                            if self.client and self.client.is_active:
+                                self.client.connection_failed.emit("Worker streaming task lost connection")
+                            break
+
+                    # Check speech pause watchdog (if user finished speaking >12s ago and no model response came back)
+                    if getattr(self, "awaiting_turn_response", False):
+                        if time.time() - getattr(self, "speech_pause_timestamp", 0) > 12.0:
+                            self.awaiting_turn_response = False
+                            print("[GeminiLiveWorker] Watchdog: 12s elapsed with no Gemini Live response after speech. Triggering session refresh...")
+                            if self.client and self.client.is_active:
+                                self.client.connection_failed.emit("Speech response timeout after 12s")
+                            break
 
                 for t in tasks:
                     if not t.done():
@@ -874,6 +890,8 @@ class GeminiLiveWorker(QThread):
                     )
                 except Exception as e:
                     print(f"[GeminiLiveWorker] Error sending audio realtime chunk: {e}")
+                    if self.client and self.client.is_active and not getattr(self, "_stopping_audio", False):
+                        self.client.connection_failed.emit(f"Audio send error: {e}")
                     break
 
     async def read_mic_loop(self):
@@ -960,6 +978,8 @@ class GeminiLiveWorker(QThread):
                             if self.vad_active:
                                 self.vad_active = False
                                 print("[VAD] User paused speaking. Awaiting model response...")
+                                self.speech_pause_timestamp = time.time()
+                                self.awaiting_turn_response = True
                             continue  # Gated silence: discard silent chunks to save bandwidth
                     
                     await self.async_queue.put(chunk)
@@ -1053,6 +1073,7 @@ class GeminiLiveWorker(QThread):
                     
                     sc = response.server_content
                     if sc:
+                        self.awaiting_turn_response = False
                         has_text = bool(sc.model_turn and any(p.text for p in sc.model_turn.parts))
                         has_audio = bool(sc.model_turn and any(p.inline_data for p in sc.model_turn.parts))
                         print(f"[RECV] Got response: text={has_text} audio={has_audio}")
@@ -1442,6 +1463,13 @@ class GeminiLiveWorker(QThread):
                                 )
                             except Exception as e:
                                 print(f"[GeminiLiveWorker] Error sending tool response: {e}")
+                
+                # If async for completed normally while session was supposed to be active:
+                if self.client.is_active and not getattr(self, "_stopping_audio", False):
+                    print("[GeminiLiveWorker] Live API receive stream was closed cleanly by server. Triggering reconnection...")
+                    if self.client and self.client.is_active:
+                        self.client.connection_failed.emit("Live API stream closed by server")
+                    break
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1707,7 +1735,7 @@ class GeminiLiveClient(QObject):
     @Slot()
     def _on_worker_thread_finished(self, worker=None):
         """Slot executed on Qt Main Thread when worker QThread finishes cleanly."""
-        print("[GeminiLiveClient] Worker thread finished cleanly.")
+        print("[GeminiLiveClient] Worker thread finished.")
         self._is_stopping = False
         if worker is None:
             worker = self.sender()
@@ -1721,7 +1749,15 @@ class GeminiLiveClient(QObject):
             except Exception:
                 pass
             self._running_threads.discard(worker)
+            if self.worker_thread == worker:
+                self.worker_thread = None
         self._is_stopping = False
+
+        # FAILSAFE: If worker thread stopped unexpectedly while client was still marked active, auto-heal session
+        if self.is_active:
+            print("[GeminiLiveClient] Worker thread stopped while session marked active. Auto-healing voice session...")
+            self.is_active = False
+            self.on_connection_failed("Worker thread exited unexpectedly")
 
     def cleanup_audio(self):
         if self.audio_source:
@@ -1761,34 +1797,38 @@ class GeminiLiveClient(QObject):
         print(f"[GeminiLive] Connection dropped or failed: {error_message}")
         self.reconnect_count = getattr(self, 'reconnect_count', 0) + 1
         
-        if self.reconnect_count <= 5:
-            print(f"[GeminiLive] Auto-reconnecting session (attempt {self.reconnect_count}/5)...")
-            if hasattr(self, 'say_requested'):
-                self.say_requested.emit("Just give me a moment... 🔄", 2.5)
-            # Dynamically rotate key if multiple keys exist
-            if self.gemini_keys and len(self.gemini_keys) > 1:
-                old_index = self.current_key_index
-                import random
-                available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
-                self.current_key_index = random.choice(available_indices)
-                print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
-            # Preserve greeting flag so auto-reconnect resumes mid-session without re-greeting
-            _greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
-            self.is_active = False
-            self.cleanup_audio()
-            def _reconnect_preserving_greeting():
-                self.start()
-                # Restore greeting flag immediately after start() resets it
-                if _greeting_was_sent:
-                    self.initial_greeting_sent = True
-            QTimer.singleShot(1500, _reconnect_preserving_greeting)
-        else:
-            self.status = "error"
-            self.state_changed.emit("error")
-            fail_msg = "Refresh me once so that I can close it and open it again. You can press Alt+V to refresh me!"
-            if hasattr(self, 'say_requested'):
-                self.say_requested.emit(fail_msg, 6.0)
-            self.stop()
+        # Reset transition flags so they never lock out reconnect
+        self._is_starting = False
+        self._is_stopping = False
+        
+        print(f"[GeminiLive] Auto-reconnecting session (attempt {self.reconnect_count})...")
+        if hasattr(self, 'say_requested') and (self.reconnect_count == 1 or self.reconnect_count % 3 == 0):
+            self.say_requested.emit("Just give me a moment... 🔄", 2.5)
+            
+        # Dynamically rotate key if multiple keys exist
+        if self.gemini_keys and len(self.gemini_keys) > 1:
+            old_index = self.current_key_index
+            import random
+            available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
+            self.current_key_index = random.choice(available_indices)
+            print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
+            
+        # Preserve greeting flag so auto-reconnect resumes mid-session without re-greeting
+        _greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
+        self.is_active = False
+        self.cleanup_audio()
+        
+        # Adaptive backoff delay: 1.5s for initial attempts, 3.0s if repeatedly dropping
+        delay_ms = 1500 if self.reconnect_count <= 4 else 3000
+        
+        def _reconnect_preserving_greeting():
+            self._is_starting = False
+            self._is_stopping = False
+            self.start()
+            # Restore greeting flag immediately after start() resets it
+            if _greeting_was_sent:
+                self.initial_greeting_sent = True
+        QTimer.singleShot(delay_ms, _reconnect_preserving_greeting)
 
     def reconnect_session(self):
         """Clean failsafe method to instantly refresh/reboot the Gemini Live voice session without re-greeting."""

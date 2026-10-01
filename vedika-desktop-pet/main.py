@@ -353,6 +353,11 @@ class DesktopPetApp(QObject):
         self.turn_watchdog_timer.setSingleShot(True)
         self.turn_watchdog_timer.timeout.connect(self.on_turn_watchdog_timeout)
 
+        # Health watchdog timer checking background voice session every 10s
+        self.health_watchdog_timer = QTimer()
+        self.health_watchdog_timer.timeout.connect(self.check_voice_engine_health)
+        self.health_watchdog_timer.start(10000)
+
         # Start game loop timer (60 FPS)
         self.last_time = time.time()
         self.timer = QTimer()
@@ -1391,6 +1396,16 @@ class DesktopPetApp(QObject):
             self.pet.say("Just give me a moment... 🔄", duration=3.5)
         if hasattr(self, "gemini_client") and self.gemini_client and self.gemini_client.is_active:
             self.gemini_client.reconnect_session()
+
+    def check_voice_engine_health(self):
+        """Periodic health check ensuring voice worker thread never silently disappears during an active session."""
+        if hasattr(self, 'gemini_client') and self.gemini_client:
+            client = self.gemini_client
+            if getattr(client, 'is_active', False):
+                worker = getattr(client, 'worker_thread', None)
+                if worker is None or not worker.isRunning():
+                    print("[HealthWatchdog] Active voice session detected with dead worker thread. Auto-healing session...")
+                    client.reconnect_session()
 
     def on_gemini_session_activated(self):
         """Slot to safely initialize active voice chat session."""
