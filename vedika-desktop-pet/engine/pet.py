@@ -61,6 +61,14 @@ class Pet:
         """Sets live dual-line subtitles for User and AI dialogue."""
         self.renderer.set_dialogue(user_text, ai_text, duration)
 
+    def set_error(self, graceful_text, tech_text=None, duration=7.0):
+        """Displays a distinct, graceful error notification block."""
+        self.renderer.set_error(graceful_text, tech_text, duration)
+
+    def set_listening(self, is_listening: bool):
+        """Controls real-time dynamic listening indicator state."""
+        self.renderer.set_listening(is_listening)
+
     def play_sound(self, sound_name):
         """
         Plays a sound effect from the pet's sounds/ folder offline.

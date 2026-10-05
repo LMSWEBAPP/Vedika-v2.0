@@ -28,30 +28,11 @@ class InteractionManager:
         if hasattr(self.pet, 'behavior'):
             self.pet.behavior.reset_inactivity()
 
-        # Interrupt active Gemini speech instantly if user clicks on the pet
-        if hasattr(self.pet, 'main_app') and hasattr(self.pet.main_app, 'gemini_client'):
-            if self.pet.main_app.gemini_client.is_speaking:
-                print("[Interaction] User clicked pet while Gemini speaking -> Triggering instant interruption.")
-                self.pet.main_app.gemini_client.is_speaking = False
-                self.pet.main_app.gemini_client.interrupted.emit()
-                return
-
         self.pet.physics.start_drag()
         self.last_global_pos = (global_x, global_y)
         self.last_time = time.time()
         self.drag_vx = 0.0
         self.drag_vy = 0.0
-
-        # Smile/reaction speech
-        quotes = [
-            "Hi there! 😊",
-            "Bzz? ⚡",
-            "EVE! 🤖",
-            "Checking in...",
-            "Need anything? 🚀"
-        ]
-        self.pet.say(random.choice(quotes), duration=2.0)
-        self.pet.play_sound("click")
 
     def handle_drag(self, global_x, global_y):
         """
@@ -64,9 +45,13 @@ class InteractionManager:
         dt = now - self.last_time
         self.last_time = now
 
-        # Update position directly
-        self.pet.physics.x = float(global_x)
-        self.pet.physics.y = float(global_y)
+        # Update position directly with strict screen boundary clamping
+        screen_w = getattr(self.pet, 'screen_w', 1920)
+        screen_h = getattr(self.pet, 'screen_h', 1080)
+        max_x = max(0.0, float(screen_w - self.pet.physics.width))
+        max_y = max(0.0, float(screen_h - self.pet.physics.height))
+        self.pet.physics.x = max(0.0, min(max_x, float(global_x)))
+        self.pet.physics.y = max(0.0, min(max_y, float(global_y)))
 
         # Track velocity for momentum throws
         if dt > 0.001 and self.last_global_pos:
@@ -104,9 +89,12 @@ class InteractionManager:
             # Simple click or drag drop - preserve current active animation
             self.pet.physics.end_drag(0.0, 0.0)
 
+        # Enforce bounds immediately on release
+        screen_w = getattr(self.pet, 'screen_w', 1920)
+        screen_h = getattr(self.pet, 'screen_h', 1080)
+        self.pet.physics.enforce_screen_bounds(screen_w, screen_h)
         self.last_global_pos = None
 
     def handle_double_click(self):
-        """Double click gesture toggles voice chat session."""
-        if hasattr(self.pet, 'main_app') and self.pet.main_app:
-            self.pet.main_app.toggle_voice_chat()
+        """Double click voice toggle removed per user requirement to prevent mid-session voice collisions."""
+        pass

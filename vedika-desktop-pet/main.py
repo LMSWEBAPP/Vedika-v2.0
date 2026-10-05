@@ -5,14 +5,105 @@ import time
 import traceback
 import re
 
-# --- Persistent Mascot Logging (Console + mascot.log) ---
-LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mascot.log")
+import datetime
+
+# --- Multi-Session & Crash Logging System ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+SESSION_START_TIME = datetime.datetime.now()
+SESSION_TIMESTAMP_STR = SESSION_START_TIME.strftime("%Y-%m-%d_%H-%M-%S")
+CURRENT_SESSION_LOG_PATH = os.path.join(LOGS_DIR, f"session_{SESSION_TIMESTAMP_STR}.log")
+CURRENT_SESSION_ERRORS_PATH = os.path.join(LOGS_DIR, f"session_{SESSION_TIMESTAMP_STR}_errors.txt")
+ERRORS_SUMMARY_TXT_PATH = os.path.join(LOGS_DIR, "errors.txt")
+LATEST_LOG_PATH = os.path.join(LOGS_DIR, "latest.log")
+LEGACY_LOG_PATH = os.path.join(BASE_DIR, "mascot.log")
+CRASH_LOG_PATH = os.path.join(LOGS_DIR, f"crash_{SESSION_TIMESTAMP_STR}.log")
+LEGACY_CRASH_PATH = os.path.join(BASE_DIR, "crash.log")
+
+def save_vedika_diagnostic_error_txt(graceful_msg: str, tech_msg: str = "", source: str = "Gemini Live API"):
+    """
+    Saves clean, human-readable error explanations & actionable fixes into:
+    1. logs/session_YYYY-MM-DD_HH-MM-SS_errors.txt (Active session error log)
+    2. logs/errors.txt (Persistent cumulative readable errors log)
+    """
+    try:
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        t_lower = (tech_msg or "").lower()
+        g_lower = (graceful_msg or "").lower()
+        combined = t_lower + " " + g_lower
+
+        if "1011" in combined or "internal error" in combined:
+            category = "WebSocket Internal Protocol / Cloud Reset (1011)"
+            explanation = "Google Gemini Live service closed the WebSocket connection due to server-side turn contention."
+            advice = (
+                "1. If using Hold-to-Speak, release the button/key promptly when you finish speaking.\n"
+                "2. Avoid rapid repetitive button clicking while connection is opening.\n"
+                "3. Vedika automatically switches to a backup API key and auto-reconnects seamlessly."
+            )
+        elif "429" in combined or "resourceexhausted" in combined or "quota" in combined:
+            category = "API Quota Rate Limit Exceeded (429)"
+            explanation = "The currently active Gemini API key has hit its requests-per-minute quota."
+            advice = (
+                "1. Vedika will automatically rotate across the 5 configured backup keys.\n"
+                "2. To add additional keys, edit .env and append GEMINI_API_KEY_1, GEMINI_API_KEY_2, etc."
+            )
+        elif "pyaudio" in combined or "microphone" in combined or "device" in combined or "audio" in combined:
+            category = "Audio Hardware / Microphone Stream Issue"
+            explanation = "PyAudio could not capture or play raw 16kHz PCM audio."
+            advice = (
+                "1. Check Windows Settings -> Privacy & Security -> Microphone -> Allow apps to access microphone.\n"
+                "2. Verify default microphone in Windows Sound Control Panel."
+            )
+        elif "timeout" in combined or "network" in combined or "disconnect" in combined or "connection refused" in combined:
+            category = "Network Connectivity / Packet Drop"
+            explanation = "Temporary network packet drop or DNS resolution timeout connecting to Google Gemini servers."
+            advice = (
+                "1. Verify internet/WiFi connection.\n"
+                "2. Vedika's auto-healing subsystem will reconnect automatically."
+            )
+        else:
+            category = "Mascot Session Diagnostic Notice"
+            explanation = graceful_msg
+            advice = "1. Check logs/latest.log for the full raw trace."
+
+        report = (
+            f"\n{'='*75}\n"
+            f"[{now_str}] VEDIKA DIAGNOSTIC ERROR / WARNING REPORT\n"
+            f"Source: {source}\n"
+            f"Category: {category}\n"
+            f"---------------------------------------------------------------------------\n"
+            f"Vedika Spoken Notice: {graceful_msg}\n"
+            f"Technical Trace: {tech_msg or 'N/A'}\n"
+            f"Explanation: {explanation}\n"
+            f"Troubleshooting & Recommended Fix:\n{advice}\n"
+            f"{'='*75}\n"
+        )
+
+        for target_path in (CURRENT_SESSION_ERRORS_PATH, ERRORS_SUMMARY_TXT_PATH):
+            try:
+                with open(target_path, "a", encoding="utf-8", errors="replace") as f:
+                    f.write(report)
+            except Exception:
+                pass
+    except Exception as e:
+        pass
 
 class MascotLogger:
-    """Tee logger that writes to both console and mascot.log, persisting logs even when launched via pythonw.exe."""
-    def __init__(self, filename, original_stream=None):
-        self.filename = filename
+    """
+    Multi-target logger that writes to:
+    1. System console (stdout/stderr)
+    2. Timestamped session log file (logs/session_YYYY-MM-DD_HH-MM-SS.log)
+    3. Latest log (logs/latest.log)
+    4. Legacy mascot.log
+    5. Clean diagnostic error reports in logs/errors.txt & session error file
+    6. Real-time Qt signal for live Log Viewer streaming
+    """
+    def __init__(self, session_file, original_stream=None):
+        self.session_file = session_file
         self.original_stream = original_stream
+        self.recent_buffer = []
 
     def write(self, data):
         if not data:
@@ -23,9 +114,33 @@ class MascotLogger:
                 self.original_stream.flush()
             except Exception:
                 pass
+
+        # Write to session file, latest.log, and legacy mascot.log
+        for target in (self.session_file, LATEST_LOG_PATH, LEGACY_LOG_PATH):
+            try:
+                with open(target, "a", encoding="utf-8", errors="replace") as f:
+                    f.write(data)
+            except Exception:
+                pass
+
+        # Maintain recent buffer for crash context
+        self.recent_buffer.append(data)
+        if len(self.recent_buffer) > 400:
+            self.recent_buffer.pop(0)
+
+        # Detect warnings or critical errors to mirror into errors.txt
+        if any(term in data for term in ("[!] Warning", "Receive loop error:", "Connection dropped or failed:", "WebSocket error", "1011 None", "Internal error encountered")):
+            save_vedika_diagnostic_error_txt("Warning / Error detected in mascot execution", data.strip(), source="Mascot Logger")
+
+        # Emit to Qt log viewer if available
         try:
-            with open(self.filename, "a", encoding="utf-8", errors="replace") as f:
-                f.write(data)
+            from ui.log_viewer import log_emitter
+            log_emitter.new_log_line.emit(data)
+        except Exception:
+            pass
+        try:
+            from ui.log_viewer import log_emitter
+            log_emitter.new_log_line.emit(data)
         except Exception:
             pass
 
@@ -47,12 +162,51 @@ class MascotLogger:
 # Setup persistent logging for all print and error streams
 orig_stdout = sys.stdout
 orig_stderr = sys.stderr
-sys.stdout = MascotLogger(LOG_FILE_PATH, orig_stdout)
-sys.stderr = MascotLogger(LOG_FILE_PATH, orig_stderr)
+sys.stdout = MascotLogger(CURRENT_SESSION_LOG_PATH, orig_stdout)
+sys.stderr = MascotLogger(CURRENT_SESSION_LOG_PATH, orig_stderr)
+
+def handle_mascot_crash(exc_type, exc_value, exc_traceback):
+    """Crash fail-safe handler that writes timestamped crash log with full traceback and recent logs."""
+    crash_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    
+    recent_logs = "".join(getattr(sys.stdout, 'recent_buffer', [])[-50:])
+    crash_report = (
+        f"\n========================================================\n"
+        f"=== VEDIKA MASCOT CRASH REPORT [{crash_time_str}] ===\n"
+        f"Session ID: {SESSION_TIMESTAMP_STR}\n"
+        f"Session Log: {CURRENT_SESSION_LOG_PATH}\n"
+        f"Python: {sys.version}\n"
+        f"OS: {sys.platform}\n"
+        f"--------------------------------------------------------\n"
+        f"Exception: {exc_type.__name__}: {exc_value}\n"
+        f"Traceback:\n{tb_str}\n"
+        f"--------------------------------------------------------\n"
+        f"Recent Log Context:\n{recent_logs}\n"
+        f"========================================================\n"
+    )
+    
+    # Save to timestamped crash log in logs directory
+    for path in (CRASH_LOG_PATH, LEGACY_CRASH_PATH):
+        try:
+            with open(path, "a", encoding="utf-8", errors="replace") as f:
+                f.write(crash_report)
+        except Exception:
+            pass
+
+    if orig_stderr:
+        try:
+            orig_stderr.write(crash_report)
+            orig_stderr.flush()
+        except Exception:
+            pass
+
+sys.excepthook = handle_mascot_crash
 
 print(f"\n========================================================")
-print(f"=== Vedika Desktop Mascot Started [{time.ctime()}] ===")
-print(f"=== Logs: {LOG_FILE_PATH} ===")
+print(f"=== Vedika Desktop Mascot Started [{SESSION_START_TIME.ctime()}] ===")
+print(f"=== Active Session Log: {CURRENT_SESSION_LOG_PATH} ===")
+print(f"=== Logs Directory: {LOGS_DIR} ===")
 print(f"========================================================\n")
 
 # Load environment variables (.env) from local and project root
@@ -230,6 +384,44 @@ class CloudRelayPoller(QThread):
                     break
                 time.sleep(0.1)
 
+class GlobalF9HoldToSpeakTracker(QObject):
+    """System-wide global keyboard tracker for F9 Hold-to-Speak.
+    Works universally across Windows (in browsers, LMS webapp, coding editors, games)
+    regardless of which window has OS focus, with zero lag and <0.01% CPU."""
+    def __init__(self, main_app):
+        super().__init__()
+        self.main_app = main_app
+        self.is_holding = False
+        self.timer = QTimer(self)
+        self.timer.setInterval(20)  # Check every 20ms (50Hz) for instantaneous physical key response
+        self.timer.timeout.connect(self._poll_f9_key)
+        self.timer.start()
+
+    def _poll_f9_key(self):
+        try:
+            import ctypes
+            # 0x78 is VK_F9 on Windows
+            is_down = bool(ctypes.windll.user32.GetAsyncKeyState(0x78) & 0x8000)
+            if is_down and not self.is_holding:
+                self.is_holding = True
+                print("[GlobalHotKey F9] PRESSED (Global System-Wide Hold-to-Speak Active) 🎙️")
+                if hasattr(self.main_app, 'window') and self.main_app.window:
+                    if hasattr(self.main_app.window.pet, 'renderer'):
+                        self.main_app.window.pet.renderer.set_ptt_pressed(True)
+                    self.main_app.window.update()
+                self.main_app.start_push_to_talk()
+            elif not is_down and self.is_holding:
+                self.is_holding = False
+                print("[GlobalHotKey F9] RELEASED (Sending speech turn to Vedika) 🚀")
+                if hasattr(self.main_app, 'window') and self.main_app.window:
+                    if hasattr(self.main_app.window.pet, 'renderer'):
+                        self.main_app.window.pet.renderer.set_ptt_pressed(False)
+                        self.main_app.window.pet.renderer.set_listening(False)
+                    self.main_app.window.update()
+                self.main_app.stop_push_to_talk()
+        except Exception:
+            pass
+
 class DesktopPetApp(QObject):
     yt_resolved_signal = Signal(str)
 
@@ -331,6 +523,8 @@ class DesktopPetApp(QObject):
         self.gemini_client.thinking_started.connect(self.on_gemini_thinking)
         self.gemini_client.user_sentiment_detected.connect(self.on_gemini_sentiment_detected)
         self.gemini_client.state_changed.connect(self.on_gemini_state_changed)
+        self.gemini_client.user_listening_state_changed.connect(self.on_user_listening_state_changed)
+        self.gemini_client.error_occurred.connect(self.on_gemini_error_occurred)
         
         # Initialize local WebSocket bridge to Vedika AI Tutor WebApp
         self.init_websocket_bridge()
@@ -358,11 +552,25 @@ class DesktopPetApp(QObject):
         self.health_watchdog_timer.timeout.connect(self.check_voice_engine_health)
         self.health_watchdog_timer.start(10000)
 
+        # Pre-warm Gemini Live connection in standby mode on startup (eliminates cold connection lag on first PTT)
+        QTimer.singleShot(600, self._prewarm_gemini_voice)
+
+        # Global System-Wide F9 Hold-to-Speak Tracker (works everywhere in Windows even while browsing/typing)
+        self.global_f9_tracker = GlobalF9HoldToSpeakTracker(self)
+
         # Start game loop timer (60 FPS)
         self.last_time = time.time()
         self.timer = QTimer()
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(16)  # ~60 FPS
+
+    def _prewarm_gemini_voice(self):
+        """Pre-warms Gemini Live WebSocket connection in standby mode so first PTT press is 100% instant."""
+        if hasattr(self, 'gemini_client') and not self.gemini_client.is_active:
+            print("[MainApp] Pre-warming Gemini Live voice connection in standby mode...")
+            self.gemini_client.is_push_to_talk = True
+            self.gemini_client.is_ptt_holding = False
+            self.gemini_client.start()
 
     def scan_assets(self):
         """Scans assets/ subdirectories for plugin pets containing pet.json."""
@@ -495,8 +703,22 @@ class DesktopPetApp(QObject):
             self.pet.screen_w = screen.width()
             self.pet.screen_h = screen.height()
 
+            # Safety check: if dragging is True, check if Left Mouse Button is actually down
+            if self.pet.physics.is_dragging:
+                from PySide6.QtGui import QGuiApplication
+                if not (QGuiApplication.mouseButtons() & Qt.MouseButton.LeftButton):
+                    self.pet.interaction.handle_release()
+
             # 1. Update Pet Core Engine (Physics, Anim, AI Behaviors)
             self.pet.update(dt)
+
+            # Ensure coordinates stay strictly within available screen geometry
+            min_x = float(screen.left())
+            max_x = max(min_x, float(screen.left() + screen.width() - self.pet.physics.width))
+            min_y = float(screen.top())
+            max_y = max(min_y, float(screen.top() + screen.height() - self.pet.physics.height))
+            self.pet.physics.x = max(min_x, min(max_x, self.pet.physics.x))
+            self.pet.physics.y = max(min_y, min(max_y, self.pet.physics.y))
 
             # 1b. Update Desktop Activity Tracker (Foreground window detection)
             if self.auto_activity_reaction and hasattr(self, 'activity_tracker'):
@@ -511,10 +733,16 @@ class DesktopPetApp(QObject):
             if not self.pet.physics.is_dragging:
                 bubble_offset = int(self.window.bubble_offset * self.scale_factor)
                 pet_offset_x = (self.window.width() - int(self.pet.physics.width)) // 2
-                self.window.move(
-                    int(self.pet.physics.x - pet_offset_x), 
-                    int(self.pet.physics.y - bubble_offset)
-                )
+                
+                target_win_x = int(self.pet.physics.x - pet_offset_x)
+                target_win_y = int(self.pet.physics.y - bubble_offset)
+
+                # Boundary clamp window so it never jumps off-screen
+                max_win_x = screen.left() + screen.width() - self.window.width()
+                max_win_y = screen.top() + screen.height() - self.window.height()
+                target_win_x = max(screen.left(), min(max_win_x, target_win_x))
+                target_win_y = max(screen.top(), min(max_win_y, target_win_y))
+                self.window.move(target_win_x, target_win_y)
 
             # 4. Trigger redraw
             self.window.update()
@@ -532,29 +760,87 @@ class DesktopPetApp(QObject):
         is_paused = client.toggle_pause()
         if is_paused:
             print("[F9 Hotkey] Paused Gemini Live Voice Chat.")
+            if hasattr(self, "turn_watchdog_timer"):
+                self.turn_watchdog_timer.stop()
+            if hasattr(self, "voice_failsafe_timer"):
+                self.voice_failsafe_timer.stop()
             if self.pet:
-                self.pet.say("Voice Chat paused! Press F9 to resume. ⏸️", duration=2.5)
+                self.pet.state_machine.change_state("idle")
+                self.pet.say("Voice Chat paused! ⏸️", duration=2.5)
         else:
             print("[F9 Hotkey] Resumed Gemini Live Voice Chat.")
             if self.pet:
-                self.pet.say("Voice Chat resumed! What's next? 🎙️", duration=2.5)
+                self.pet.state_machine.change_state("waiting")
+
+    def start_push_to_talk(self):
+        """Dedicated Push-to-Talk activation: activates mic stream while button/key is held."""
+        client = getattr(self, "gemini_client", None)
+        if client and getattr(client, "is_continuous_mode", False):
+            # User is in continuous mode, speech already active
+            return
+
+        print("[MainApp] Push-to-Talk activated: Holding mic active 🎙️")
+        if self.pet:
+            self.pet.set_listening(True)
+        if client:
+            client.start_push_to_talk()
+
+    def stop_push_to_talk(self):
+        """Dedicated Push-to-Talk release: stops audio capture and sends turn for instant response."""
+        client = getattr(self, "gemini_client", None)
+        if client and getattr(client, "is_continuous_mode", False):
+            return
+
+        print("[MainApp] Push-to-Talk released: Sending speech turn to Vedika 🚀")
+        if self.pet:
+            self.pet.set_listening(False)
+        if client:
+            client.stop_push_to_talk()
+
+    @Slot(bool)
+    def on_user_listening_state_changed(self, is_listening: bool):
+        """Real-time slot: highlights listening element ONLY when Vedika is actively hearing user speech."""
+        if self.pet:
+            self.pet.set_listening(is_listening)
+
+    @Slot(str, str)
+    def on_gemini_error_occurred(self, graceful_text: str, tech_text: str):
+        """Displays graceful error card block above Vedika on sudden API/device issues and saves to txt file."""
+        print(f"[MainApp] Graceful error received: {graceful_text} ({tech_text})")
+        if self.pet:
+            self.pet.set_error(graceful_text, tech_text, duration=6.5)
+        # Save structured diagnostic entry to error txt file for the user
+        save_vedika_diagnostic_error_txt(graceful_text, tech_text, source="Gemini Live API")
 
     def toggle_gemini_start_stop_alt_v(self):
-        """Alt+V Hotkey Handler: Full Start / Stop (Connect / Disconnect) lifecycle."""
+        """Alt+V Hotkey Handler: Continuous Voice Chat toggle."""
         client = self.gemini_client
-        if client.is_active:
+        if client.is_active and getattr(client, "is_continuous_mode", False):
             print("[Alt+V Hotkey] Stopping Gemini Live Voice Chat...")
+            client.is_continuous_mode = False
+            client.is_push_to_talk = False
+            client.is_ptt_holding = False
             if self.pet:
-                self.pet.say("Voice Chat stopped! 🛑", duration=2.5)
+                self.pet.say("Continuous voice chat stopped. 🛑", duration=2.5)
             client.stop()
         else:
-            print("[Alt+V Hotkey] Starting Gemini Live Voice Chat...")
+            print("[Alt+V Hotkey] Starting Gemini Live Continuous Voice Chat...")
+            client.is_continuous_mode = True
+            client.is_push_to_talk = False
+            client.is_ptt_holding = False
             if self.pet:
-                self.pet.say("Voice Chat starting... 🚀", duration=2.5)
-            client.start()
+                self.pet.say("Continuous Voice Chat active! 🎙️", duration=3.0)
+            if not client.is_active:
+                client.start()
+            else:
+                client.is_paused = False
+                print("[Alt+V Hotkey] Switched active session to Continuous Voice Chat mode.")
 
     def trigger_screen_analysis_alt_s(self):
-        """Alt+S Hotkey Handler: Triggers manual screen capture and vision analysis."""
+        """Alt+S Hotkey Handler: Triggers manual screen capture with futuristic scanline overlay."""
+        if hasattr(self, 'pointer_overlay') and self.pointer_overlay:
+            self.pointer_overlay.start_screen_scan(duration=1.4)
+
         if not hasattr(self, 'gemini_client') or not self.gemini_client.is_active:
             print("[Alt+S Hotkey] Starting Gemini Live Voice Chat for Screen Analysis...")
             if self.pet:
@@ -627,6 +913,22 @@ class DesktopPetApp(QObject):
     def open_vyomantha_website(self):
         """Opens Vedika production portal in default web browser and triggers pet speech response."""
         self.open_url_by_gemini("https://vedika-v20c.vercel.app/")
+
+    def open_log_viewer_dialog(self):
+        """Opens or brings to front the diagnostic and session log viewer dialog."""
+        from ui.log_viewer import LogViewerDialog
+        if not hasattr(self, "_log_viewer_dialog") or self._log_viewer_dialog is None:
+            self._log_viewer_dialog = LogViewerDialog(
+                logs_dir=LOGS_DIR,
+                current_session_path=CURRENT_SESSION_LOG_PATH
+            )
+        self._log_viewer_dialog.show()
+        self._log_viewer_dialog.raise_()
+        self._log_viewer_dialog.activateWindow()
+
+    def toggle_log_viewer_alt_l(self):
+        """Alt+L Hotkey: Toggles the diagnostic log viewer dialog."""
+        self.open_log_viewer_dialog()
 
     def init_websocket_bridge(self):
         """Initializes embedded PySide6 QWebSocketServer on port 8765 for direct browser WebApp bridge."""
@@ -921,6 +1223,17 @@ class DesktopPetApp(QObject):
                         "route": f"/lesson/{payload.get('lessonId', '')}"
                     }
                 
+                # Debounce duplicate video moments within 5 seconds to prevent repeating explanations
+                now = time.time()
+                moment_key = f"{lesson_str}_{time_str}_{topic_str}"
+                last_key = getattr(self, "_last_video_moment_key", None)
+                last_time = getattr(self, "_last_video_moment_time", 0.0)
+                if last_key == moment_key and (now - last_time < 5.0):
+                    print(f"[WS Bridge] Debounced duplicate Ask Vedika Video Moment ({moment_key}) within 5.0s.")
+                    return
+                self._last_video_moment_key = moment_key
+                self._last_video_moment_time = now
+
                 print(f"[WS Bridge] Ask Vedika Video Moment received: {lesson_str} @ {time_str} ({topic_str})")
                 self.set_active_animation("explaining")
 
@@ -948,6 +1261,10 @@ class DesktopPetApp(QObject):
                     if not self.gemini_client.is_active:
                         print("[WS Bridge] Activating Gemini Live voice session for video lesson explanation...")
                         self.gemini_client.start()
+                    # Cleanly flush previous speaker output so the explanation starts fresh without overlap
+                    self.gemini_client.is_speaking = False
+                    if self.gemini_client.worker_thread:
+                        self.gemini_client.worker_thread.flush_speaker = True
                     self.gemini_client.send_realtime_text_prompt(diagnostic_speech)
 
                 # Acknowledge to WebApp that Vedika has received the moment
@@ -1436,6 +1753,19 @@ class DesktopPetApp(QObject):
 
     def on_turn_watchdog_timeout(self):
         """Triggered if Gemini Live is stuck thinking for >45s without speaking or completing turn."""
+        if hasattr(self, "gemini_client") and self.gemini_client:
+            # If user explicitly paused, turn watchdog MUST NEVER fire or reset session!
+            if getattr(self.gemini_client, "is_paused", False):
+                print("[Engine] Turn watchdog: Session is paused by user. Skipping failsafe trigger.")
+                return
+            if getattr(self.gemini_client, "tool_executing", False):
+                print("[Engine] Turn watchdog: Tool actively executing, extending timeout...")
+                if hasattr(self, "turn_watchdog_timer"):
+                    self.turn_watchdog_timer.start(30000)
+                return
+            if not getattr(self.gemini_client, "is_active", False) or getattr(self.gemini_client, "_is_reconnecting", False) or self.gemini_client._reconnect_timer.isActive():
+                print("[Engine] Turn watchdog: Session already reconnecting or inactive. Skipping failsafe trigger.")
+                return
         print("[Engine] Turn watchdog: Vedika appears stalled in thinking state. Triggering failsafe reconnection...")
         if self.pet:
             self.pet.say("Just give me a moment... 🔄", duration=3.0)
@@ -1448,6 +1778,9 @@ class DesktopPetApp(QObject):
         """Periodic health check ensuring voice worker thread never silently disappears during an active session."""
         if hasattr(self, 'gemini_client') and self.gemini_client:
             client = self.gemini_client
+            # If user intentionally paused, do not auto-heal or recreate worker
+            if getattr(client, "is_paused", False):
+                return
             if getattr(client, 'is_active', False) and not getattr(client, '_is_reconnecting', False) and not client._reconnect_timer.isActive():
                 worker = getattr(client, 'worker_thread', None)
                 if worker is None or not worker.isRunning():
@@ -1553,12 +1886,16 @@ class DesktopPetApp(QObject):
                     self.pet.state_machine.change_state("idle")
 
     def toggle_voice_chat(self):
-        """Helper to start/stop the voice chat session dynamically (e.g. on double-click)."""
+        """Helper to start/stop the continuous voice chat session dynamically (e.g. on double-click)."""
         if hasattr(self, "gemini_client") and self.gemini_client:
             client = self.gemini_client
             if client.status in ("disconnected", "error"):
+                if self.pet:
+                    self.pet.say("Continuous Voice Chat active! 🎙️", duration=3.0)
                 client.start()
             elif client.status == "connected":
+                if self.pet:
+                    self.pet.say("Continuous voice paused. 🛑", duration=2.0)
                 client.stop()
 
     def refresh_voice_session(self):

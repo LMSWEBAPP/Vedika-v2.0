@@ -89,3 +89,6 @@ docs/
 brain/
 graphify-out/
 .agents/
+scratch/
+*.mp4
+/user_profile.json

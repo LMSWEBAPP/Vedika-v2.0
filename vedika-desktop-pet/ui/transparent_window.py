@@ -11,8 +11,9 @@ class TransparentWindow(QWidget):
         self.pet = pet
         self.main_app = main_app
         self.scale_factor = scale_factor
-        self.bubble_offset = 48  # Height for 2-line speech bubble offset
-        self.timer_offset = 26   # Height for bottom timer capsule
+        self.bubble_offset = 58  # Height for 2-line speech bubble offset & graceful error card
+        self.timer_offset = 58   # Height for bottom timer & push-to-talk capsule
+        self.is_holding_ptt = False
 
         # Window styling
         self.setWindowFlags(
@@ -31,11 +32,6 @@ class TransparentWindow(QWidget):
 
         self.update_window_size()
         
-        # Global F9 Hotkey shortcut (Pause/Resume)
-        self.f9_shortcut = QShortcut(QKeySequence(Qt.Key.Key_F9), self)
-        self.f9_shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        self.f9_shortcut.activated.connect(self.main_app.toggle_gemini_pause_f9)
-
         # Global Alt+V Hotkey shortcut (Start/Stop)
         self.alt_v_shortcut = QShortcut(QKeySequence("Alt+V"), self)
         self.alt_v_shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
@@ -47,18 +43,12 @@ class TransparentWindow(QWidget):
         self.drag_offset = QPoint()
 
     def setup_global_hotkeys(self):
-        """Registers F9 (Pause/Resume) and Alt+V (Start/Stop) as system-wide Windows hotkeys via ctypes."""
+        """Registers Alt+V (Start/Stop), Alt+S (Screen Vision), and Alt+L (Log Viewer) as system-wide Windows hotkeys via ctypes.
+        F9 is dedicated exclusively to global Hold-to-Speak tracked by GlobalF9HoldToSpeakTracker."""
         try:
             import ctypes
             user32 = ctypes.windll.user32
             hwnd = int(self.winId())
-            # F9 (Pause/Resume) - VK_F9 = 0x70
-            res_f9 = user32.RegisterHotKey(hwnd, 1009, 0x4000, 0x70)
-            if res_f9:
-                print("[Hotkeys] System-wide F9 hotkey registered successfully.")
-            else:
-                print("[Hotkeys] Windows notice: F9 bound by OS/hardware. Registering VK_F8 fallback.")
-                user32.RegisterHotKey(hwnd, 1009, 0x4000, 0x71)  # F8 fallback
 
             # Alt+V (Start/Stop) - VK_V = 0x56, MOD_ALT = 0x0001 | MOD_NOREPEAT = 0x4000
             res_alt_v = user32.RegisterHotKey(hwnd, 1010, 0x4001, 0x56)
@@ -69,6 +59,11 @@ class TransparentWindow(QWidget):
             res_alt_s = user32.RegisterHotKey(hwnd, 1011, 0x4001, 0x53)
             if res_alt_s:
                 print("[Hotkeys] System-wide Alt+S hotkey registered successfully.")
+
+            # Alt+L (Diagnostic & Session Logs) - VK_L = 0x4C, MOD_ALT = 0x0001 | MOD_NOREPEAT = 0x4000
+            res_alt_l = user32.RegisterHotKey(hwnd, 1012, 0x4001, 0x4C)
+            if res_alt_l:
+                print("[Hotkeys] System-wide Alt+L (Log Viewer) hotkey registered successfully.")
         except Exception as e:
             print(f"[TransparentWindow] Windows RegisterHotKey notice: {e}")
 
@@ -81,17 +76,17 @@ class TransparentWindow(QWidget):
                 msg = wintypes.MSG.from_address(int(message))
                 WM_HOTKEY = 0x0312
                 if msg.message == WM_HOTKEY:
-                    if msg.wParam == 1009:
-                        print("[NativeEvent] System-wide F9 pressed.")
-                        self.main_app.toggle_gemini_pause_f9()
-                        return True, 0
-                    elif msg.wParam == 1010:
+                    if msg.wParam == 1010:
                         print("[NativeEvent] System-wide Alt+V pressed.")
                         self.main_app.toggle_gemini_start_stop_alt_v()
                         return True, 0
                     elif msg.wParam == 1011:
                         print("[NativeEvent] System-wide Alt+S pressed.")
                         self.main_app.trigger_screen_analysis_alt_s()
+                        return True, 0
+                    elif msg.wParam == 1012:
+                        print("[NativeEvent] System-wide Alt+L pressed.")
+                        self.main_app.toggle_log_viewer_alt_l()
                         return True, 0
         except Exception:
             pass
@@ -100,8 +95,9 @@ class TransparentWindow(QWidget):
     def update_window_size(self):
         """Updates the physical window size and physics bounds based on scale."""
         scaled_pet_w = int(self.pet.width * self.scale_factor)
-        window_w = max(scaled_pet_w + 140, int(290 * self.scale_factor))
-        scaled_h = int((self.pet.height + self.bubble_offset + self.timer_offset) * self.scale_factor)
+        # Room for pet, centered bottom controls, and full speech/error capsule without cutoffs
+        window_w = max(scaled_pet_w + int(60 * self.scale_factor), int(290 * self.scale_factor))
+        scaled_h = int((self.pet.height + self.bubble_offset + 38) * self.scale_factor)
         
         self.setFixedSize(window_w, scaled_h)
         
@@ -118,17 +114,46 @@ class TransparentWindow(QWidget):
         self.pet.renderer.draw(painter, self.scale_factor, window_w=self.width())
         painter.end()
 
-    # --- Mouse Event Triggers ---
+    # --- Mouse & Keyboard Event Triggers ---
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            # Capture click coordinate relative to the window geometry
+            pos = event.position()
+            # 1. Check for Push-to-Talk mic icon click below Vedika
+            if hasattr(self.pet, 'renderer') and hasattr(self.pet.renderer, 'ptt_button_rect'):
+                # Generous hit test target for effortless clicking
+                hit_rect = self.pet.renderer.ptt_button_rect.adjusted(-4, -4, 4, 4)
+                if hit_rect.contains(pos):
+                    self.is_holding_ptt = True
+                    self.pet.renderer.set_ptt_pressed(True)
+                    self.update()
+                    if hasattr(self.main_app, 'start_push_to_talk'):
+                        self.main_app.start_push_to_talk()
+                    return
+
+            # 2. Capture click coordinate relative to the window geometry for pet drag
             self.drag_offset = event.position().toPoint()
-            
             global_pos = event.globalPosition().toPoint()
             self.pet.interaction.handle_press(global_pos.x(), global_pos.y())
 
     def mouseMoveEvent(self, event):
+        # Fail-safe: If left mouse button is NOT physically held down, drag and PTT cannot occur!
+        left_held = bool(event.buttons() & Qt.MouseButton.LeftButton)
+        if not left_held:
+            if getattr(self, 'is_holding_ptt', False):
+                self.is_holding_ptt = False
+                if hasattr(self.pet, 'renderer'):
+                    self.pet.renderer.set_ptt_pressed(False)
+                    self.pet.renderer.set_listening(False)
+                self.update()
+                if hasattr(self.main_app, 'stop_push_to_talk'):
+                    self.main_app.stop_push_to_talk()
+            if self.pet.physics.is_dragging:
+                self.pet.interaction.handle_release()
+            global_pos = event.globalPosition().toPoint()
+            self.pet.interaction.handle_hover(global_pos.x(), global_pos.y())
+            return
+
         if self.pet.physics.is_dragging:
             global_pos = event.globalPosition().toPoint()
             
@@ -136,26 +161,129 @@ class TransparentWindow(QWidget):
             new_window_x = global_pos.x() - self.drag_offset.x()
             new_window_y = global_pos.y() - self.drag_offset.y()
             
-            # Calculate where the pet body box is located
+            # Strict multi-monitor boundary clamping (prevents pet from getting pushed off-screen)
+            screen = self.screen().availableGeometry()
+            min_x = screen.left()
+            max_x = max(min_x, screen.left() + screen.width() - self.width())
+            min_y = screen.top()
+            max_y = max(min_y, screen.top() + screen.height() - self.height())
+            
+            clamped_win_x = max(min_x, min(max_x, new_window_x))
+            clamped_win_y = max(min_y, min(max_y, new_window_y))
+
+            # Calculate where the pet body box is located (centered in window)
             pet_offset_x = (self.width() - self.pet.physics.width) // 2
-            pet_x = new_window_x + pet_offset_x
-            pet_y = new_window_y + int(self.bubble_offset * self.scale_factor)
+            pet_x = clamped_win_x + pet_offset_x
+            pet_y = clamped_win_y + int(self.bubble_offset * self.scale_factor)
             
             self.pet.interaction.handle_drag(pet_x, pet_y)
-            
-            # Reposition the window on screen immediately
-            self.move(new_window_x, new_window_y)
+            self.move(clamped_win_x, clamped_win_y)
         else:
             global_pos = event.globalPosition().toPoint()
             self.pet.interaction.handle_hover(global_pos.x(), global_pos.y())
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.pet.interaction.handle_release()
+            # Safely release Push-to-Talk and immediately halt listening visuals
+            if getattr(self, 'is_holding_ptt', False):
+                self.is_holding_ptt = False
+                if hasattr(self.pet, 'renderer'):
+                    self.pet.renderer.set_ptt_pressed(False)
+                    self.pet.renderer.set_listening(False)
+                self.update()
+                if hasattr(self.main_app, 'stop_push_to_talk'):
+                    self.main_app.stop_push_to_talk()
+
+            # Safely release Dragging
+            if self.pet.physics.is_dragging:
+                self.pet.interaction.handle_release()
+
+    def leaveEvent(self, event):
+        """When cursor leaves the window bounds, ensure drag and PTT are safely released if mouse was let go."""
+        left_held = bool(event.buttons() & Qt.MouseButton.LeftButton) if hasattr(event, 'buttons') else False
+        if not left_held:
+            if getattr(self, 'is_holding_ptt', False):
+                self.is_holding_ptt = False
+                if hasattr(self.pet, 'renderer'):
+                    self.pet.renderer.set_ptt_pressed(False)
+                    self.pet.renderer.set_listening(False)
+                self.update()
+                if hasattr(self.main_app, 'stop_push_to_talk'):
+                    self.main_app.stop_push_to_talk()
+            if self.pet.physics.is_dragging:
+                self.pet.interaction.handle_release()
+        super().leaveEvent(event)
 
     def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.pet.interaction.handle_double_click()
+        """Double click voice toggle removed per user request to prevent mid-session voice collisions."""
+        event.accept()
+
+    def keyPressEvent(self, event):
+        """Universal single-key hold-and-speak for easy accessibility, plus animation hotkeys."""
+        if event.isAutoRepeat():
+            return
+
+        key = event.key()
+
+        # Check reserved system hotkeys
+        if key == Qt.Key.Key_F9:
+            # F9 is handled globally across the whole OS by GlobalF9HoldToSpeakTracker
+            event.accept()
+            return
+        elif key == Qt.Key.Key_Tab:
+            self.main_app.cycle_animation()
+            event.accept()
+            return
+        elif Qt.Key.Key_1 <= key <= Qt.Key.Key_9:
+            index = key - Qt.Key.Key_1
+            self.main_app.switch_animation_by_index(index)
+            event.accept()
+            return
+        elif key == Qt.Key.Key_0:
+            self.main_app.switch_animation_by_index(9)
+            event.accept()
+            return
+        elif key in (Qt.Key.Key_Alt, Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_Meta, Qt.Key.Key_Escape):
+            super().keyPressEvent(event)
+            return
+
+        # ANY other single keyboard key acts as Hold-to-Speak for instant, effortless accessibility!
+        client = getattr(self.main_app, "gemini_client", None)
+        is_continuous = bool(client and getattr(client, "is_continuous_mode", False))
+        if not is_continuous:
+            self.is_holding_ptt = True
+            if hasattr(self.pet, 'renderer'):
+                self.pet.renderer.set_ptt_pressed(True)
+            self.update()
+            if hasattr(self.main_app, 'start_push_to_talk'):
+                self.main_app.start_push_to_talk()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        """Universal single-key release sends speech turn."""
+        if event.isAutoRepeat():
+            return
+
+        if event.key() == Qt.Key.Key_F9:
+            # F9 is handled globally across the whole OS by GlobalF9HoldToSpeakTracker
+            event.accept()
+            return
+
+        if getattr(self, 'is_holding_ptt', False):
+            self.is_holding_ptt = False
+            if hasattr(self.pet, 'renderer'):
+                self.pet.renderer.set_ptt_pressed(False)
+                self.pet.renderer.set_listening(False)
+            self.update()
+            if hasattr(self.main_app, 'stop_push_to_talk'):
+                self.main_app.stop_push_to_talk()
+            event.accept()
+            return
+
+        super().keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):
         """Displays custom-styled right-click context menu."""
@@ -273,9 +401,9 @@ class TransparentWindow(QWidget):
             voice_act = menu.addAction("Start Voice Chat (Retry)")
             voice_act.triggered.connect(client.start)
 
-        # 3c-2. Pause / Resume Voice Chat (F9)
+        # 3c-2. Pause / Resume Voice Chat
         if client.is_active:
-            pause_label = "Resume Voice Chat (F9)" if client.is_paused else "Pause Voice Chat (F9)"
+            pause_label = "Resume Voice Chat" if client.is_paused else "Pause Voice Chat"
             pause_act = menu.addAction(pause_label)
             pause_act.triggered.connect(self.main_app.toggle_gemini_pause_f9)
 
@@ -341,6 +469,10 @@ class TransparentWindow(QWidget):
         clear_mem = menu.addAction("🗑️ Clear Learning Memory")
         clear_mem.triggered.connect(self.clear_student_memory)
 
+        # 4d. Diagnostic Logs Viewer
+        log_act = menu.addAction("📜 View Mascot Logs & Diagnostics (Alt+L)")
+        log_act.triggered.connect(self.open_log_viewer)
+
         # 5. Position Reset
         reset = menu.addAction("Reset Position")
         reset.triggered.connect(self.reset_position)
@@ -352,6 +484,10 @@ class TransparentWindow(QWidget):
         menu.exec(event.globalPos())
 
     # --- Actions ---
+    def open_log_viewer(self):
+        """Opens the Diagnostic & Session Log Viewer Dialog."""
+        if hasattr(self.main_app, "open_log_viewer_dialog"):
+            self.main_app.open_log_viewer_dialog()
     
     def change_scale(self, scale):
         self.scale_factor = scale
@@ -443,22 +579,7 @@ class TransparentWindow(QWidget):
             if self.pet:
                 self.pet.say(f"Timer set for {mins} mins! ⏱️", duration=2.5)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Tab:
-            self.main_app.cycle_animation()
-            event.accept()
-        elif Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9:
-            index = event.key() - Qt.Key.Key_1
-            self.main_app.switch_animation_by_index(index)
-            event.accept()
-        elif event.key() == Qt.Key.Key_0:
-            self.main_app.switch_animation_by_index(9)
-            event.accept()
-        elif event.key() == Qt.Key.Key_F9:
-            self.main_app.toggle_gemini_pause_f9()
-            event.accept()
-        else:
-            super().keyPressEvent(event)
+
 
 
 class StudentProfileDialog(QDialog):

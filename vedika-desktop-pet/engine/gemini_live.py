@@ -82,6 +82,29 @@ def analyze_sentiment(text: str) -> dict:
         return {"label": "Curious / Inquisitive", "score": 0.4, "emoji": "🤔"}
     return {"label": "Calm / Conversational", "score": 0.0, "emoji": "😐"}
 
+def detect_user_language(text: str) -> str:
+    """Detects primary language/script in user question for immediate language mirroring (Requirement 5)."""
+    if not text:
+        return "english"
+    # Check Telugu Unicode range (0x0C00 - 0x0C7F)
+    if any(0x0C00 <= ord(c) <= 0x0C7F for c in text):
+        return "telugu"
+    # Check Devanagari / Hindi Unicode range (0x0900 - 0x097F)
+    if any(0x0900 <= ord(c) <= 0x097F for c in text):
+        return "hindi"
+    # Check Tamil Unicode range (0x0B80 - 0x0BFF)
+    if any(0x0B80 <= ord(c) <= 0x0BFF for c in text):
+        return "tamil"
+    lower = text.lower()
+    teluglish_words = {"enti", "cheppandi", "cheppu", "ela", "enduku", "artham", "ardham", "kaledu", "bagundi", "avunu", "leka", "chudu", "emiti"}
+    hinglish_words = {"kya", "kaise", "kyun", "batao", "samjhao", "samajh", "aaya", "nahi", "phir", "accha", "theek", "bhai", "dekho", "hai", "mujhe"}
+    words = set(re.findall(r'[a-zA-Z]+', lower))
+    if words & teluglish_words:
+        return "teluglish"
+    if words & hinglish_words:
+        return "hinglish"
+    return "english"
+
 class BlockNLMSEchoCanceller:
     """
     Normalized Least Mean Squares (NLMS) Adaptive Echo Canceller in pure NumPy.
@@ -168,6 +191,7 @@ class GeminiLiveWorker(QThread):
         self.in_session_history = []
         self.session_id = str(int(time.time()))
         self.last_user_sentiment = None
+        self.is_tool_pending = False
 
     def run(self):
         self.loop = asyncio.new_event_loop()
@@ -499,7 +523,7 @@ class GeminiLiveWorker(QThread):
             try:
                 # Trigger visual pet scan animation and speech bubble immediately
                 if hasattr(self.client, 'say_requested'):
-                    self.client.say_requested.emit("Scanning your screen... 🔍", 2.5)
+                    self.client.say_requested.emit("🔍 Scanning your screen... Analyzing visual context ✨", 3.0)
                 if hasattr(self.client, 'animation_requested'):
                     self.client.animation_requested.emit("searching")
 
@@ -628,11 +652,80 @@ class GeminiLiveWorker(QThread):
             """
             return self.execute_add_study_note(note_content=note_content, topic=topic, timestamp=timestamp, create_new=create_new)
 
+        def search_code_graph(query: str) -> dict:
+            """Searches the codebase Knowledge Graph (built by Graphify) using BFS semantic traversal.
+            ALWAYS call this when the student or developer asks about the project code, functions, architecture,
+            how a feature is implemented, which file contains a class, or how components connect."""
+            print(f"[GeminiLiveWorker] Tool call: search_code_graph(query='{query}')")
+            try:
+                import graphify.serve as s
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                repo_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
+                graph_path = os.path.join(repo_root, "graphify-out", "graph.json")
+                if not os.path.exists(graph_path):
+                    graph_path = os.path.join(current_dir, "..", "graphify-out", "graph.json")
+                
+                if os.path.exists(graph_path):
+                    G = s._load_graph(graph_path)
+                    res_text = s._query_graph_text(G, query, graph_path=graph_path)
+                    lines = [l for l in res_text.splitlines() if l.startswith("NODE ") or l.startswith("Graph:")]
+                    summary = "\n".join(lines[:16])
+                    return {"status": "success", "graph_context": summary or res_text[:800]}
+                else:
+                    return {"status": "warning", "message": "Graphify knowledge graph not yet generated."}
+            except Exception as e:
+                print(f"[GeminiLiveWorker] search_code_graph error: {e}")
+                return {"status": "error", "message": str(e)}
+
+        def get_code_snippet(file_path: str, start_line: int = 1, end_line: int = 40) -> dict:
+            """Safely inspects a specific file and line range in the codebase to explain code logic,
+            verify syntax, or guide the user on line-by-line implementations."""
+            print(f"[GeminiLiveWorker] Tool call: get_code_snippet(file='{file_path}', lines {start_line}-{end_line})")
+            try:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                repo_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
+                clean_path = file_path.replace("\\", "/").lstrip("/")
+                full_path = os.path.abspath(os.path.join(repo_root, clean_path))
+                
+                # Security Sandbox Check: Ensure path stays within repo root
+                if not full_path.startswith(repo_root) or not os.path.exists(full_path):
+                    pet_root = os.path.abspath(os.path.join(current_dir, ".."))
+                    alt_path = os.path.abspath(os.path.join(pet_root, clean_path))
+                    if alt_path.startswith(pet_root) and os.path.exists(alt_path):
+                        full_path = alt_path
+                    else:
+                        return {"status": "error", "message": f"File '{file_path}' not found within project workspace."}
+                
+                # Check for sensitive files
+                base_name = os.path.basename(full_path).lower()
+                if ".env" in base_name or "key" in base_name or base_name.endswith((".db", ".pem", ".p12", ".mp4", ".zip")):
+                    return {"status": "restricted", "message": f"Access to '{file_path}' is restricted for privacy/security."}
+                
+                start_l = max(1, int(start_line))
+                end_l = max(start_l, min(start_l + 50, int(end_line))) # Cap at 50 lines max
+                
+                with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                    all_lines = f.readlines()
+                
+                total_lines = len(all_lines)
+                sliced = all_lines[start_l - 1 : end_l]
+                numbered = [f"{start_l + idx}: {line}" for idx, line in enumerate(sliced)]
+                
+                return {
+                    "status": "success",
+                    "file": clean_path,
+                    "total_lines": total_lines,
+                    "start_line": start_l,
+                    "end_line": min(end_l, total_lines),
+                    "code": "".join(numbered)
+                }
+            except Exception as e:
+                return {"status": "error", "message": f"Could not read snippet: {e}"}
+
         # Construct dynamic Academic Voice Tutor system instruction matching voice-server.js
         tutor_lang = getattr(self.client, "tutor_language", "all")
         tutor_subj = getattr(self.client, "tutor_subject", "all")
 
-        # Senior Prompt Engineer Optimized Academic Voice Tutor System Instruction
         sys_inst = (
             "Your name is Vedika. You are a warm, highly humanized, and friendly academic tutor supporting school students. "
             "VOICE & HUMANIZATION GUIDELINES: "
@@ -640,6 +733,11 @@ class GeminiLiveWorker(QThread):
             "Sound like an encouraging elder sibling or personal tutor: warm, relatable, dynamic, and full of natural life. "
             "Keep answers strictly short and fluid (usually 1 to 2 short sentences per turn) so text-to-speech voice output sounds immediate, crisp, and human. "
             "Never output markdown symbols, asterisks, bullet points, numbers, or complex formulas into text, as they disrupt natural voice synthesis. "
+            "\n\nTHINK BEFORE SPEAKING - ZERO REPETITION DIRECTIVE:\n"
+            "- Always think before speaking to ensure you NEVER repeat a greeting or sentence twice.\n"
+            "- If you have already greeted the student, NEVER greet them again ('Hi', 'Hello', 'How are you?'). Proceed directly with the topic.\n"
+            "- Never duplicate your thoughts, sentences, or phrases within the same turn or across turns.\n"
+            "- If the student asks a question, provide a single, coherent, crisp answer without repeating yourself.\n"
             "\n\nSOCRATIC PEDAGOGY (ACTIVE INQUIRY & CHECK-IN CYCLES):\n"
             "1. PRE-EXPLANATION INTUITION PROBE: When a student asks for help, asks a question, or brings up a topic, do NOT immediately dump the direct answer or full solution. First, ask what they already know or what their intuition is (e.g., 'What do you already know about [concept]?' or 'Before I explain, what do you think is the first step?').\n"
             "2. GUIDED DISCOVERY: Break problems into simple pieces, provide intuitive analogies or tiny hints, and ask guided questions so the student discovers the solution themselves step by step.\n"
@@ -663,23 +761,18 @@ class GeminiLiveWorker(QThread):
             "Keep it immediate, crisp, lively, and welcoming!\n"
         )
 
-        # Instant Multilingual Language Mirroring Directive
-        if tutor_lang == 'telugu':
-            sys_inst += "LANGUAGE MODE: Default to sweet, conversational Telugu (unless the student switches to English or Hindi, in which case mirror their language immediately). "
-        elif tutor_lang == 'hindi':
-            sys_inst += "LANGUAGE MODE: Default to simple, warm, conversational Hindi (unless the student switches to English or Telugu, in which case mirror their language immediately). "
-        else:
-            sys_inst += (
-                "MULTILINGUAL INTELLIGENCE & INSTANT LANGUAGE MIRRORING:\n"
-                "- You are natively multilingual across English, Hindi (हिन्दी), Telugu (తెలుగు), Tamil, and other languages.\n"
-                "- INSTANT ZERO-DELAY LANGUAGE SWITCHING: You MUST detect the language of the student's IMMEDIATE most recent question or speech turn, and reply in that EXACT same language on your very next turn!\n"
-                "- If the student asks in English, respond in articulate, natural, friendly English.\n"
-                "- If the student asks the next question in Hindi (or Hinglish, e.g., 'यह क्या है?', 'मुझे समझ नहीं आया', 'हिंदी में बताओ', 'ye kya hai samjhao'), you MUST IMMEDIATELY switch to natural, fluent conversational Hindi on that exact turn!\n"
-                "- If the student asks the next question in Telugu (or Telugish, e.g., 'ఈ కాన్సెప్ట్ ఏంటి?', 'నాకు అర్థం కాలేదు', 'తెలుగులో చెప్పు', 'idi enti cheppandi'), you MUST IMMEDIATELY switch to natural, fluent conversational Telugu on that exact turn!\n"
-                "- If the student switches back to English, immediately switch back to English.\n"
-                "- NEVER stay in the previous language when the user has switched. Always match and mirror the student's chosen language on the instant turn without delay.\n"
-                "- Keep technical, coding, and scientific keywords (e.g. Python, function, titration, Newton's law) intact while speaking naturally in their chosen language.\n"
-            )
+        # Instant Multilingual Language Mirroring Directive (Requirement 5)
+        sys_inst += (
+            "\n\nMANDATORY MULTILINGUAL QUESTION MATCHING (CRITICAL RULE):\n"
+            "- You MUST ALWAYS speak the exact language of the student's question on every single turn!\n"
+            "- If the student asks in Telugu (or Teluglish, e.g., 'ఈ కాన్సెప్ట్ ఏంటి?', 'నాకు అర్థం కాలేదు', 'తెలుగులో చెప్పు', 'idi enti cheppu brother'): You MUST reply in sweet, natural conversational Telugu (or Teluglish)!\n"
+            "- If the student asks in Hindi (or Hinglish, e.g., 'यह क्या है?', 'मुझे समझ नहीं आया', 'हिंदी में बताओ', 'ye kya hai samjhao'): You MUST reply in simple, warm conversational Hindi (or Hinglish)!\n"
+            "- If the student asks in English: You MUST reply in articulate, natural English!\n"
+            "- If the student asks in Tamil, Kannada, Marathi, Spanish, etc.: Reply in that language!\n"
+            "- ZERO-DELAY LANGUAGE SWITCHING: If the student switches languages from one turn to the next, switch INSTANTLY on that exact turn without delay.\n"
+            "- NEVER reply in English when the student asked their question in Hindi, Telugu, or another language!\n"
+            "- Keep technical, coding, and scientific keywords (e.g. Python, function, titration, Newton's law) intact while speaking naturally in their chosen language.\n"
+        )
 
         if tutor_subj == 'math':
             sys_inst += "SUBJECT FOCUS: Currently helping with Mathematics! Explain concepts like addition, fractions, algebra, or geometry using simple physical analogies. "
@@ -689,6 +782,38 @@ class GeminiLiveWorker(QThread):
             sys_inst += "SUBJECT FOCUS: Currently helping with Languages & Reading! Expand vocabulary, teach correct grammar, or guide reading comprehensions. "
         else:
             sys_inst += "SUBJECT FOCUS: You are ready to tutor on any academic school subject: math, science, history, geography, languages, or reading. "
+
+        # Comprehensive Architecture Intelligence & Self-Awareness Module (Requirement 2)
+        sys_inst += (
+            "\n\nVEDIKA SYSTEM ARCHITECTURE INTELLIGENCE & SELF-AWARENESS:\n"
+            "You possess complete, end-to-end intelligence about your own technical architecture, codebase, and how you were built:\n"
+            "1. DESKTOP COMPANION & UI:\n"
+            "   - Built in Python using PySide6 (Qt6) as a transparent, frameless, top-most desktop window ('ui/transparent_window.py').\n"
+            "   - 2D Canvas rendering engine with real-time sprite physics, momentum throws, and speech capsules ('engine/renderer.py').\n"
+            "   - Dynamic audio equalizer listening element ('_draw_listening_indicator') that displays real-time animated bars only when you hear the student speaking.\n"
+            "   - Dedicated Push-to-Talk button ('Hold to Speak') rendered directly on the companion window for 100% controlled speech during product demos and videos.\n"
+            "2. LIVE VOICE AI ENGINE:\n"
+            "   - Connected directly to Google Gemini Multimodal Live API using the 'google-genai' SDK over full-duplex WebSockets ('engine/gemini_live.py').\n"
+            "   - Audio Input: 16kHz 16-bit mono PCM captured via PyAudio, passed through WebRTC Block-NLMS Acoustic Echo Cancellation (AEC) and Voice Activity Detection (VAD).\n"
+            "   - Audio Output: 24,000Hz Web Audio PCM buffer scheduled for gapless, zero-latency playback via PyAudio speaker streams.\n"
+            "3. 3 INTERACTION MODES:\n"
+            "   - Mode 1 (Alt+V Hotkey): Toggles continuous full-duplex voice conversation.\n"
+            "   - Mode 2 (Double Click on Pet): Toggles continuous talking for quick, easy access.\n"
+            "   - Mode 3 (Push-to-Talk / Hold-to-Speak): User holds the button or Spacebar while speaking and releases when finished, providing 100% control for recording product videos and demonstrations.\n"
+            "4. SCREEN SCANNING & VISION:\n"
+            "   - 'ScreenCapturer' captures primary screen downscaled to 1280x720 JPEG, sent via realtime blob input.\n"
+            "   - 'PointerOverlay' displays a sleek holographic laser scanline beam and HUD corner brackets during scans, and laser sonar dots at (x,y) screen coordinates.\n"
+            "5. PERSISTENT MEMORY & LMS WEBAPP INTEGRATION:\n"
+            "   - Persistent SQLite database ('data/memory.db') storing turns, student profile, struggles, and masteries ('engine/memory.py').\n"
+            "   - Real-time Next.js LMS WebApp bridge on port 5001 / Cloud Relay connecting live courses, lessons, and coding problems.\n"
+            "AUTONOMOUS ERROR DIAGNOSTICS & SELF-HEALING:\n"
+            "When any error occurs or when the student asks 'How were you built?', 'Why did you fail?', 'What is this error?', or asks you to diagnose an issue:\n"
+            "- You know your architecture inside and out. Analyze and think of the root cause autonomously.\n"
+            "- If an API 429 quota error happens: Explain that your Gemini API key rotated to a backup key automatically.\n"
+            "- If microphone silence or device error happens: Advise checking Windows microphone privacy settings or default recording device.\n"
+            "- If connection drops: Explain that the WebSocket stream blipped and auto-reconnected via your failsafe watchdog.\n"
+            "- If asked to refresh or unfreeze: Advise pressing Alt+V or double-clicking you to reboot the session.\n"
+        )
 
         # Real-time Language Adaptation Directive
         sys_inst += (
@@ -766,7 +891,12 @@ class GeminiLiveWorker(QThread):
             "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, 'update_student_profile(name, stage, field_of_study, hobbies, favorite_topics)' to remember student details, or 'clear_student_memory' to clear history.\n"
             "12. STUDY TIMER: Call 'set_study_timer(duration_seconds, label)' when the student asks to set a timer, reminder, or study countdown (e.g. 'set a 10 min timer', 'remind me in 5 minutes').\n"
             "13. PERSONAL STUDY NOTEPAD & ADDING POINTS: Call 'add_study_note(note_content, topic, timestamp, create_new)' whenever the student asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', 'add a few points', 'add points to my notes', 'write points in my personal notes', or in any language (Hindi: 'नोट्स में पॉइंट्स जोड़ दो', Telugu: 'నోట్స్ లో పాయింట్స్ యాడ్ చేయి'). "
-            "CRITICAL NOTE-TAKING MANDATE: You have 100% active, full access to their study notebook through this tool! NEVER tell the student that this functionality is unavailable or that you cannot take notes. Always execute 'add_study_note' immediately, and warmly confirm in the student's active language that the points have been added to their personal notes!"
+            "CRITICAL NOTE-TAKING MANDATE: You have 100% active, full access to their study notebook through this tool! NEVER tell the student that this functionality is unavailable or that you cannot take notes. Always execute 'add_study_note' immediately, and warmly confirm in the student's active language that the points have been added to their personal notes!\n"
+            "14. CODEBASE KNOWLEDGE GRAPH & ARCHITECTURE (GRAPHIFY):\n"
+            "When the student, developer, or user asks about how any part of the project is coded, what files exist, which function handles a feature, or asks to explain the architecture (e.g. 'How does voice streaming work in code?', 'Which file handles the transparent window?', 'Show me the code for echo cancellation'):\n"
+            "- IMMEDIATELY call 'search_code_graph(query)' to traverse the 3,300+ node Graphify Knowledge Graph.\n"
+            "- If you need to inspect actual lines of code to quote or explain them line-by-line, call 'get_code_snippet(file_path, start_line, end_line)'.\n"
+            "- Summarize the findings concisely and accurately using your natural voice, explaining the exact files and functions involved."
         )
 
         config = types.LiveConnectConfig(
@@ -783,14 +913,12 @@ class GeminiLiveWorker(QThread):
             ),
             input_audio_transcription=types.AudioTranscriptionConfig(),
             output_audio_transcription=types.AudioTranscriptionConfig(),
-            realtime_input_config=types.RealtimeInputConfig(
-                turn_coverage="TURN_INCLUDES_ONLY_ACTIVITY",
-            ),
             tools=[
                 play_animation, open_website, play_music, stop_voice_chat, navigate_webapp,
                 trigger_puzzle_hint, trigger_pet_action, capture_user_screen, point_to_screen_location,
                 recall_previous_questions, search_learning_memory, update_student_profile,
-                save_student_memory, clear_student_memory, set_study_timer, add_study_note
+                save_student_memory, clear_student_memory, set_study_timer, add_study_note,
+                search_code_graph, get_code_snippet
             ]
         )
 
@@ -828,9 +956,13 @@ class GeminiLiveWorker(QThread):
                 print("[GeminiLiveWorker] Connected successfully.")
                 self.client.connection_established.emit()
                 
-                # Check for initial greeting prompt (Only sent ONCE per user session):
-                if not getattr(self.client, "initial_greeting_sent", False):
+                # Check for initial greeting prompt (Only sent ONCE per user session, strictly guarded against double greeting):
+                now = time.time()
+                last_greet = getattr(self.client, "last_greeting_timestamp", 0.0)
+                is_ptt = getattr(self.client, "is_push_to_talk", False) or getattr(self.client, "is_ptt_holding", False)
+                if not is_ptt and not getattr(self.client, "initial_greeting_sent", False) and (now - last_greet > 45.0):
                     self.client.initial_greeting_sent = True
+                    self.client.last_greeting_timestamp = now
 
                     # Scenario 1: Proactive video moment prompt triggered by "Ask Vedika at [timestamp]" button
                     if getattr(self.client, "pending_initial_prompt", None):
@@ -873,6 +1005,9 @@ class GeminiLiveWorker(QThread):
                             await session.send_realtime_input(text=greeting_text)
                     else:
                         await session.send_realtime_input(text=greeting_text)
+                elif is_ptt:
+                    self.client.initial_greeting_sent = True
+                    print("[GeminiLiveWorker] Session started via Push-to-Talk: Bypassing canned greeting to respond directly to user speech.")
                 else:
                     print("[GeminiLiveWorker] Session active/reconnected. Skipping greeting prompt to preserve conversation context.")
 
@@ -901,15 +1036,7 @@ class GeminiLiveWorker(QThread):
                             self.notify_failure("Worker streaming task lost connection")
                             break
 
-                    # Check speech pause watchdog (if user finished speaking >12s ago and no model response came back)
-                    if getattr(self, "awaiting_turn_response", False):
-                        if getattr(self.client, "is_speaking", False) or getattr(self, "is_playing_audio", False) or (self.audio_out_queue and not self.audio_out_queue.empty()):
-                            self.awaiting_turn_response = False
-                        elif time.time() - getattr(self, "speech_pause_timestamp", 0) > 12.0:
-                            self.awaiting_turn_response = False
-                            print("[GeminiLiveWorker] Watchdog: 12s elapsed with no Gemini Live response after speech. Triggering session refresh...")
-                            self.notify_failure("Speech response timeout after 12s")
-                            break
+
 
                 for t in tasks:
                     if not t.done():
@@ -929,25 +1056,53 @@ class GeminiLiveWorker(QThread):
             if chunk is None:
                 break
                 
-            if isinstance(chunk, dict) and "text" in chunk:
-                text_val = chunk["text"]
-                print(f"[SEND] Dispatching realtime text prompt to Gemini Live API: {text_val[:80]}...")
-                if self.session and self.client.is_active:
-                    try:
-                        self.suppress_mic_for_prompt = True
-                        self.awaiting_turn_response = False
-                        if self.session_send_lock:
-                            async with self.session_send_lock:
+            # If session is still establishing connection, wait until session is ready so zero audio chunks are dropped
+            while not self.session and self.client.is_active and not getattr(self, "_stopping_audio", False):
+                await asyncio.sleep(0.04)
+            if not self.client.is_active or getattr(self, "_stopping_audio", False):
+                break
+                
+            if isinstance(chunk, dict):
+                if "text" in chunk:
+                    text_val = chunk["text"]
+                    print(f"[SEND] Dispatching realtime text prompt to Gemini Live API: {text_val[:80]}...")
+                    if self.session and self.client.is_active:
+                        try:
+                            self.suppress_mic_for_prompt = True
+                            self.awaiting_turn_response = False
+                            if self.session_send_lock:
+                                async with self.session_send_lock:
+                                    await self.session.send_realtime_input(text=text_val)
+                            else:
                                 await self.session.send_realtime_input(text=text_val)
-                        else:
-                            await self.session.send_realtime_input(text=text_val)
-                    except Exception as e:
-                        print(f"[GeminiLiveWorker] Error sending realtime text prompt: {e}")
-                continue
+                        except Exception as e:
+                            print(f"[GeminiLiveWorker] Error sending realtime text prompt: {e}")
+                    continue
+                elif chunk.get("end_of_turn"):
+                    print("[SEND] Dispatching end_of_turn (turn_complete=True) to Gemini Live API...")
+                    if self.session and self.client.is_active:
+                        try:
+                            self.awaiting_turn_response = True
+                            if self.session_send_lock:
+                                async with self.session_send_lock:
+                                    await self.session.send_client_content(turn_complete=True)
+                            else:
+                                await self.session.send_client_content(turn_complete=True)
+                            print("[SEND] end_of_turn (turn_complete=True) successfully transmitted to Gemini Live!")
+                        except Exception as e:
+                            print(f"[GeminiLiveWorker] Error sending end_of_turn: {e}")
+                    continue
 
             n += 1
             if n % 20 == 0:
                 print(f"[SEND] Sent {n} audio chunks to Gemini Live API.")
+
+            # CRITICAL GEMINI LIVE API PROTOCOL:
+            # If a server tool call is awaiting FunctionResponse, suppress sending realtime audio chunks.
+            # Interleaving audio chunks while a tool call is pending triggers Google WebSocket 1011 (Internal Error).
+            if getattr(self, "is_tool_pending", False) or getattr(self.client, "tool_executing", False):
+                await asyncio.sleep(0.02)
+                continue
             if self.session and self.client.is_active:
                 try:
                     if self.session_send_lock:
@@ -976,10 +1131,23 @@ class GeminiLiveWorker(QThread):
             speaking_sustained_counter = 0
             input_audio_buffer = bytearray()
             while self.client.is_active and self.mic_stream and not getattr(self, "_stopping_audio", False):
+                # Strict Voice Mode Protocol:
+                # 1. Continuous Mode (Alt+V): mic streams continuously using VAD
+                # 2. Push-to-Talk (Hold to Speak): mic ONLY streams while button/key is physically held down
+                is_continuous = getattr(self.client, "is_continuous_mode", False)
+                is_ptt = getattr(self.client, "is_push_to_talk", False)
+                is_holding = getattr(self.client, "is_ptt_holding", False)
+
+                if not is_continuous and not (is_ptt and is_holding):
+                    input_audio_buffer.clear()
+                    await asyncio.sleep(0.04)
+                    continue
+
                 # Mute mic audio when session is paused, audio is stopping, tool is executing,
                 # proactive prompt is in flight, or tutor is actively speaking (unless barge-in is explicitly enabled)
                 if (getattr(self.client, "is_paused", False) or 
                     getattr(self, "_stopping_audio", False) or 
+                    getattr(self, "is_tool_pending", False) or
                     getattr(self.client, "tool_executing", False) or
                     getattr(self, "suppress_mic_for_prompt", False) or
                     (self.client.is_speaking and not getattr(self.client, "enable_barge_in", False))):
@@ -1021,7 +1189,16 @@ class GeminiLiveWorker(QThread):
                     residual, residual_rms = self.aec.process(chunk)
                     samples = np.frombuffer(chunk, dtype=np.int16)
                     raw_rms = np.sqrt(np.mean(samples.astype(np.float64)**2)) if len(samples) > 0 else 0.0
-                    threshold = self.client.noise_threshold
+
+                    # Count chunks recorded while user actively holds Push-to-Talk
+                    if is_holding:
+                        self.client.ptt_chunks_recorded = getattr(self.client, "ptt_chunks_recorded", 0) + 1
+
+                    # Dynamic ambient noise floor tracking (exponential moving average during ambient pauses)
+                    if not self.vad_active:
+                        self.ambient_floor = 0.95 * getattr(self, "ambient_floor", 120.0) + 0.05 * raw_rms
+
+                    effective_threshold = max(self.client.noise_threshold, getattr(self, "ambient_floor", 120.0) * 1.35)
 
                     # Active User Interruption Handling (Tier A + B Block-NLMS AEC Residual VAD)
                     if self.client.is_speaking:
@@ -1047,12 +1224,16 @@ class GeminiLiveWorker(QThread):
 
                     n += 1
                     if n % 40 == 0:
-                        print(f"[MIC] Read {n} chunks. Active speech: {self.vad_active} (Raw RMS={raw_rms:.1f}, AEC Residual RMS={residual_rms:.1f})")
+                        print(f"[MIC] Read {n} chunks. Active speech: {self.vad_active} (Raw RMS={raw_rms:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}, Eff Threshold={effective_threshold:.1f}, AEC Residual RMS={residual_rms:.1f})")
                     
-                    if raw_rms >= threshold:
+                    if raw_rms >= effective_threshold:
                         if not self.vad_active:
                             self.vad_active = True
-                            print(f"[VAD] Speech detected (RMS={raw_rms:.1f} >= {threshold:.1f}), streaming audio to Gemini Live.")
+                            print(f"[VAD] Speech detected (RMS={raw_rms:.1f} >= {effective_threshold:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}), streaming audio to Gemini Live.")
+                            # Strictly only emit listening UI signal if in continuous mode or actively holding PTT
+                            if is_continuous or is_holding:
+                                if hasattr(self.client, "user_listening_state_changed"):
+                                    self.client.user_listening_state_changed.emit(True)
                         self.hangover_counter = 16  # ~800ms natural speech hangover to prevent chopping words
                     else:
                         if self.hangover_counter > 0:
@@ -1060,11 +1241,41 @@ class GeminiLiveWorker(QThread):
                         else:
                             if self.vad_active:
                                 self.vad_active = False
-                                print("[VAD] User paused speaking. Awaiting model response...")
+                                print(f"[VAD] User paused speaking (Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}). Awaiting model response...")
+                                if hasattr(self.client, "user_listening_state_changed"):
+                                    self.client.user_listening_state_changed.emit(False)
                                 self.speech_pause_timestamp = time.time()
                                 self.awaiting_turn_response = True
-                            continue  # Gated silence: discard silent chunks to save bandwidth
-                    
+
+                                # Continuous Mode: automatically flush silence and dispatch end_of_turn to trigger immediate Gemini Live response
+                                if is_continuous:
+                                    silence_chunk = b'\x00\x00' * 800
+                                    for _ in range(3):
+                                        await self.async_queue.put(silence_chunk)
+                                    await self.async_queue.put({"end_of_turn": True})
+                                    print("[VAD] Continuous Mode: Speech turn completed, dispatched end_of_turn!")
+
+                    # Continuous Mode silence gating: buffer up to 2 chunks (100ms) when quiet, flush when speech begins
+                    if is_continuous:
+                        if not self.vad_active:
+                            if not hasattr(self, "pre_speech_buffer"):
+                                self.pre_speech_buffer = []
+                            self.pre_speech_buffer.append(chunk)
+                            if len(self.pre_speech_buffer) > 2:
+                                self.pre_speech_buffer.pop(0)
+                            continue
+                        else:
+                            if hasattr(self, "pre_speech_buffer") and self.pre_speech_buffer:
+                                for pre_chunk in self.pre_speech_buffer:
+                                    await self.async_queue.put(pre_chunk)
+                                self.pre_speech_buffer.clear()
+
+                    # Keep queue lean to prevent audio latency buildup
+                    if self.async_queue.qsize() > 40:
+                        try:
+                            self.async_queue.get_nowait()
+                        except Exception:
+                            pass
                     await self.async_queue.put(chunk)
         except asyncio.CancelledError:
             pass
@@ -1107,14 +1318,15 @@ class GeminiLiveWorker(QThread):
                     pcm_buffer.extend(chunk)
                     self.is_playing_audio = True
 
-                # Prebuffer at start of speech turn to prevent PortAudio buffer starvation
+                # Immediate low-latency playback: start as soon as ~33ms (1600 bytes) are buffered, timeout occurs, or turn completes
                 if prebuffering:
-                    if len(pcm_buffer) < PREBUFFER_BYTES and not getattr(self.client, "turn_completed_received", False):
+                    if chunk is None or len(pcm_buffer) >= 1600 or getattr(self.client, "turn_completed_received", False):
+                        prebuffering = False
+                    else:
                         continue
-                    prebuffering = False
 
-                # Buffer PCM chunks to 2400 bytes (50ms of 24kHz mono) for smooth, non-stuttering PyAudio playback
-                min_chunk_bytes = 2400
+                # Buffer PCM chunks to 1600 bytes (~33ms of 24kHz mono) for ultra-fast, gapless PyAudio playback
+                min_chunk_bytes = 1600
                 while len(pcm_buffer) >= min_chunk_bytes or (chunk is None and len(pcm_buffer) > 0 and self.audio_out_queue.empty()):
                     self.is_playing_audio = True
                     send_len = min_chunk_bytes if len(pcm_buffer) >= min_chunk_bytes else len(pcm_buffer)
@@ -1189,6 +1401,11 @@ class GeminiLiveWorker(QThread):
                                 self.client.user_dialogue_buffer = user_text
                                 self.client.user_sentiment_detected.emit(user_text, sentiment)
                                 
+                                # Detect user input language for multilingual question matching (Requirement 5)
+                                detected_lang = detect_user_language(user_text)
+                                self.detected_language = detected_lang
+                                self.client.current_language = detected_lang
+
                                 clean_call = re.sub(r'[^a-zA-Z\s]', '', user_text).strip().lower()
                                 is_calling_name = clean_call in ("vedika", "vedika vedika", "vedika vedika vedika", "hey vedika", "hi vedika", "vedika are you there")
                                 status_preview = "Hey! Yeah tell me? 😊" if is_calling_name else "Thinking... 🤔"
@@ -1210,7 +1427,8 @@ class GeminiLiveWorker(QThread):
                         model_turn = sc.model_turn
                         if model_turn:
                             for part in model_turn.parts:
-                                if hasattr(part, "text") and part.text:
+                                # Deduplicate text: only emit part.text if output_transcription wasn't already emitted (Requirement 6)
+                                if not ai_delta and hasattr(part, "text") and part.text:
                                     self.current_turn_model_text += part.text
                                     self.client.text_received.emit(part.text)
                                 if hasattr(part, "inline_data") and part.inline_data:
@@ -1261,6 +1479,19 @@ class GeminiLiveWorker(QThread):
                     
                     tc = response.tool_call
                     if tc:
+                        # Immediately pause mic and audio streaming to prevent race condition 1011 error
+                        self.is_tool_pending = True
+                        if hasattr(self.client, 'tool_executing'):
+                            self.client.tool_executing = True
+
+                        # Drain any audio chunks that were queued right before tool_call
+                        if self.async_queue:
+                            while not self.async_queue.empty():
+                                try:
+                                    self.async_queue.get_nowait()
+                                except Exception:
+                                    break
+
                         function_responses = []
                         for fc in tc.function_calls:
                             func_name = fc.name
@@ -1590,6 +1821,12 @@ class GeminiLiveWorker(QThread):
                                     )
                             except Exception as e:
                                 print(f"[GeminiLiveWorker] Error sending tool response: {e}")
+                            finally:
+                                # Safe grace period for model to start turn output before mic resumes
+                                await asyncio.sleep(0.35)
+                                self.is_tool_pending = False
+                                if hasattr(self.client, 'tool_executing'):
+                                    self.client.tool_executing = False
                 
                 if not self.client.is_active or getattr(self, "_stopping_audio", False):
                     break
@@ -1620,6 +1857,8 @@ class GeminiLiveClient(QObject):
     session_activated = Signal()
     speaking_started = Signal()
     speaking_stopped = Signal()
+    user_listening_state_changed = Signal(bool)
+    error_occurred = Signal(str, str)
 
     say_dialogue_requested = Signal(str, str, float)  # user_text, ai_text, duration
     user_sentiment_detected = Signal(str, dict)  # user_text, sentiment dict
@@ -1647,6 +1886,13 @@ class GeminiLiveClient(QObject):
         self.audio_output_io = None
         
         self.is_active = False
+        self.is_continuous_mode = False
+        self.is_push_to_talk = False
+        self.is_ptt_holding = False
+        self.last_greeting_timestamp = 0.0
+        self.last_spoken_sentence = ""
+        self.last_spoken_sentence_time = 0.0
+        self.current_language = "english"
         self.text_buffer = ""
         self.user_dialogue_buffer = ""
         self.status = "disconnected"
@@ -1655,7 +1901,7 @@ class GeminiLiveClient(QObject):
         self.model_name = "gemini-3.1-flash-live-preview"
         self.tutor_language = os.environ.get("TUTOR_LANGUAGE", "all")
         self.tutor_subject = os.environ.get("TUTOR_SUBJECT", "all")
-        self.noise_threshold = 150.0
+        self.noise_threshold = 280.0
         
         # Configurable voice interruption (barge-in) settings (Default: Disabled for 100% smooth playback)
         enable_barge_str = os.getenv("ENABLE_BARGE_IN", "False").strip().lower()
@@ -1768,7 +2014,7 @@ class GeminiLiveClient(QObject):
             self.current_key_index = 0
 
         self.model_name = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-live-preview")
-        self.noise_threshold = float(os.environ.get("VOICE_NOISE_THRESHOLD", "150.0"))
+        self.noise_threshold = float(os.environ.get("VOICE_NOISE_THRESHOLD", "280.0"))
 
     @Slot()
     def start(self):
@@ -1826,10 +2072,42 @@ class GeminiLiveClient(QObject):
             return False
         
         self.is_paused = not self.is_paused
+        w = getattr(self, "worker_thread", None)
         if self.is_paused:
             self.on_interrupted()
+            if self._reconnect_timer.isActive():
+                self._reconnect_timer.stop()
+            if self.mic_enable_timer.isActive():
+                self.mic_enable_timer.stop()
+            if w:
+                w.suppress_mic_for_prompt = False
+                w.is_tool_pending = False
+                w.vad_active = False
+                w.hangover_counter = 0
+                if getattr(w, "async_queue", None):
+                    while not w.async_queue.empty():
+                        try:
+                            w.async_queue.get_nowait()
+                        except Exception:
+                            break
             print("[GeminiLiveClient] Session paused (Muted).")
         else:
+            self.turn_completed_received = False
+            self.is_speaking = False
+            if self.mic_enable_timer.isActive():
+                self.mic_enable_timer.stop()
+            if w:
+                w.suppress_mic_for_prompt = False
+                w.is_tool_pending = False
+                w.vad_active = False
+                w.hangover_counter = 0
+                w.last_interruption_time = time.time()
+                if getattr(w, "async_queue", None):
+                    while not w.async_queue.empty():
+                        try:
+                            w.async_queue.get_nowait()
+                        except Exception:
+                            break
             print("[GeminiLiveClient] Session resumed (Unmuted).")
         return self.is_paused
 
@@ -1841,19 +2119,16 @@ class GeminiLiveClient(QObject):
         if w and getattr(w, "loop", None) and w.loop.is_running() and getattr(w, "async_queue", None) and self.status == "connected":
             w.suppress_mic_for_prompt = True
             def _enqueue():
-                # Flush ONLY pending mic audio PCM chunks (bytes) from queue so prompt is processed cleanly.
-                # Text prompt dicts from other callers (e.g. video moment) are intentionally preserved.
+                # Flush pending mic audio PCM chunks (bytes) from queue so prompt is processed cleanly.
                 temp_text_items = []
                 while not w.async_queue.empty():
                     try:
                         item = w.async_queue.get_nowait()
                         if isinstance(item, dict) and "text" in item:
-                            temp_text_items.append(item)  # Preserve queued text prompts
+                            temp_text_items.append(item)
                     except Exception:
                         break
-                # Re-queue preserved text items before the new prompt
-                for saved_item in temp_text_items:
-                    w.async_queue.put_nowait(saved_item)
+                # Only keep latest text prompt if duplicate or related
                 w.async_queue.put_nowait({"text": prompt_text})
             w.loop.call_soon_threadsafe(_enqueue)
             print(f"[GeminiLiveClient] Dispatched realtime text prompt to active session: {prompt_text[:80]}...")
@@ -1872,6 +2147,9 @@ class GeminiLiveClient(QObject):
             
         self._is_stopping = True
         self.is_active = False
+        self.is_continuous_mode = False
+        self.is_push_to_talk = False
+        self.is_ptt_holding = False
         self.is_paused = False  # Reset mute state on stop!
         self.user_explicitly_started_voice = False
         self.is_speaking = False
@@ -1948,20 +2226,118 @@ class GeminiLiveClient(QObject):
             self.audio_sink = None
             self.audio_output_io = None
 
+    def format_graceful_error(self, raw_error: str) -> tuple[str, str]:
+        """Converts raw exceptions and codes into human-graceful sentences for Vedika while preserving technical context."""
+        err = str(raw_error).strip()
+        err_lower = err.lower()
+        tech = err[:140]
+
+        if any(k in err_lower for k in ["429", "resourceexhausted", "quota"]):
+            graceful = "I'm catching my breath for a second! Our API quota is taking a quick rest. I'll be back shortly! 🌸"
+        elif any(k in err_lower for k in ["403", "unauthenticated", "invalid_argument", "api_key"]):
+            graceful = "My security key needs a quick check in .env. Let me re-verify my credentials! 🔑"
+        elif any(k in err_lower for k in ["1011", "internal server error", "overloaded"]):
+            graceful = "The cloud mind had a momentary hiccup. I am re-aligning our connection right now! ⚡"
+        elif any(k in err_lower for k in ["timeout", "timed out", "deadline"]):
+            graceful = "My connection timed out for just a heartbeat. Let me reconnect seamlessly! ⏳"
+        elif any(k in err_lower for k in ["pyaudio", "audio device", "input stream", "wave", "microphone"]):
+            graceful = "I'm having a little trouble hearing through your microphone. Please check your default audio device! 🎙️"
+        elif any(k in err_lower for k in ["connection refused", "network", "getaddrinfo", "dns", "disconnect"]):
+            graceful = "Our network link dropped for a second. Connecting right back to you! 🌐"
+        else:
+            graceful = "I ran into a small surprise, but don't worry—I'm sorting it out right now! ✨"
+
+        return graceful, tech
+
+    def start_push_to_talk(self):
+        """Starts Push-to-Talk mode: ensures session is active, unmutes mic, and sets listening indicator."""
+        # If continuous mode is actively running, user is already live; do not disrupt
+        if getattr(self, "is_continuous_mode", False):
+            return
+
+        print("[GeminiLiveClient] Push-to-Talk: PRESSED")
+        self.is_push_to_talk = True
+        self.is_ptt_holding = True
+        self.ptt_press_start_time = time.time()
+        self.ptt_chunks_recorded = 0
+        
+        if not self.is_active or self.status != "connected":
+            self.start()
+        
+        self.is_paused = False
+        w = getattr(self, "worker_thread", None)
+        if w:
+            w.suppress_mic_for_prompt = False
+            w.vad_active = True
+        self.user_listening_state_changed.emit(True)
+
+    def stop_push_to_talk(self):
+        """Stops Push-to-Talk mode: signals end of speech turn to worker."""
+        if getattr(self, "is_continuous_mode", False):
+            return
+
+        print("[GeminiLiveClient] Push-to-Talk: RELEASED")
+        self.is_ptt_holding = False
+        self.user_listening_state_changed.emit(False)
+
+        # Debounce rapid micro-clicks (<150ms press duration and <2 recorded audio chunks)
+        press_duration = time.time() - getattr(self, "ptt_press_start_time", 0.0)
+        chunks = getattr(self, "ptt_chunks_recorded", 0)
+        if press_duration < 0.15 and chunks < 2:
+            print(f"[GeminiLiveClient] Push-to-Talk micro-click ignored (duration={press_duration*1000:.0f}ms, chunks={chunks}).")
+            return
+
+        w = getattr(self, "worker_thread", None)
+        if w:
+            w.vad_active = False
+            w.hangover_counter = 0
+
+            # Thread-safe enqueue to worker thread async_queue
+            if getattr(w, "loop", None) and not w.loop.is_closed() and getattr(w, "async_queue", None):
+                def _finish_ptt_turn():
+                    try:
+                        # 1. Flush small trailing silence burst (150ms = 3 chunks of zeros) to close audio envelope
+                        silence_chunk = b'\x00\x00' * 800  # 1600 bytes at 16kHz 16-bit mono
+                        for _ in range(3):
+                            w.async_queue.put_nowait(silence_chunk)
+                        # 2. Append end_of_turn message so send_audio_loop calls session.send_client_content(turn_complete=True)
+                        w.async_queue.put_nowait({"end_of_turn": True})
+                        print("[GeminiLiveClient] Successfully dispatched end_of_turn to worker queue!")
+                    except Exception as e:
+                        print(f"[GeminiLiveClient] Error enqueuing end_of_turn: {e}")
+
+                w.loop.call_soon_threadsafe(_finish_ptt_turn)
+
     @Slot()
     def on_connection_established(self):
         print("[GeminiLive] Connected to Gemini Live API directly!")
         self.reconnect_count = 0
         self.status = "connected"
         self.state_changed.emit("connected")
-        self.say_requested.emit("Voice chat connected! 🎙️", 2.5)
+        
+        # Only announce connected if no pending initial prompt is already taking over speech
+        has_pending = bool(getattr(self, "pending_initial_prompt", None))
+        if not getattr(self, "is_paused", False) and not has_pending:
+            # Let initial greeting or prompt be the only greeting (fixes duplicate speech)
+            pass
         
         self.initialize_active_session()
 
     @Slot(str)
     def on_connection_failed(self, error_message):
         print(f"[GeminiLive] Connection dropped or failed: {error_message}")
+        graceful, tech = self.format_graceful_error(error_message)
+        self.error_occurred.emit(graceful, tech)
+        if hasattr(self.pet, 'set_error'):
+            self.pet.set_error(graceful, tech, 6.0)
+
         if not self.is_active and self.status == "disconnected":
+            return
+
+        is_paused = getattr(self, "is_paused", False)
+        # If user intentionally paused, do NOT loop reconnect or say anything aloud
+        if is_paused:
+            print("[GeminiLive] Connection dropped while session paused. Reconnect deferred until unpaused.")
             return
 
         if self._reconnect_timer.isActive() or getattr(self, "_is_reconnecting", False):
@@ -1974,11 +2350,11 @@ class GeminiLiveClient(QObject):
         self._is_starting = False
         self._is_stopping = False
         
-        # Only rotate key on authentication, invalid key, or quota/resource-exhausted errors
+        # Only rotate key on authentication, invalid key, quota, or 1011 internal server errors
         err_lower = str(error_message).lower()
         is_key_error = any(k in err_lower for k in [
             "403", "429", "quota", "resourceexhausted", "api_key",
-            "unauthenticated", "invalid_argument", "permissiondenied"
+            "unauthenticated", "invalid_argument", "permissiondenied", "1011"
         ])
         if is_key_error and self.gemini_keys and len(self.gemini_keys) > 1:
             old_index = self.current_key_index
@@ -1988,8 +2364,6 @@ class GeminiLiveClient(QObject):
             print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
 
         print(f"[GeminiLive] Auto-reconnecting session (attempt {self.reconnect_count})...")
-        if hasattr(self, 'say_requested') and (self.reconnect_count == 1 or self.reconnect_count % 3 == 0):
-            self.say_requested.emit("Just give me a moment... 🔄", 2.5)
             
         self._greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
         
@@ -2004,8 +2378,9 @@ class GeminiLiveClient(QObject):
             print("[GeminiLive] Reconnect already scheduled or running; debouncing.")
             return
 
+        was_paused = getattr(self, "is_paused", False)
         self.reconnect_count = 0
-        if hasattr(self, 'say_requested'):
+        if not was_paused and hasattr(self, 'say_requested'):
             self.say_requested.emit("Just give me a moment... 🔄", 2.5)
 
         self._greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
@@ -2017,6 +2392,7 @@ class GeminiLiveClient(QObject):
         print("[GeminiLive] Executing serialized voice session reconnect...")
         self._is_reconnecting = True
         try:
+            was_paused = getattr(self, "is_paused", False)
             self._last_active_worker = None
             if self.worker_thread:
                 old_worker = self.worker_thread
@@ -2036,6 +2412,8 @@ class GeminiLiveClient(QObject):
             self.is_active = False
 
             self.start()
+            if was_paused:
+                self.is_paused = True
             if getattr(self, "_greeting_was_sent", False):
                 self.initial_greeting_sent = True
         except Exception as e:
@@ -2062,7 +2440,7 @@ class GeminiLiveClient(QObject):
     # Unused on_ready_read_mic slot (mic capture migrated to read_mic_loop inside GeminiLiveWorker).
 
     def _group_into_sentence_chunks(self, text, max_words_per_chunk=10):
-        """Groups raw streamed text into crisp, readable sentence chunks."""
+        """Groups raw streamed text into crisp, readable sentence chunks and deduplicates identical repeats."""
         import re
         if not text or not text.strip():
             return []
@@ -2074,6 +2452,9 @@ class GeminiLiveClient(QObject):
         chunks = []
         current_chunk = ""
         for part in raw_parts:
+            # Check for immediate repeat within same turn
+            if current_chunk and part.lower() == current_chunk.lower():
+                continue
             if not current_chunk:
                 current_chunk = part
             else:
@@ -2081,10 +2462,12 @@ class GeminiLiveClient(QObject):
                 if combined_words <= max_words_per_chunk:
                     current_chunk += " " + part
                 else:
-                    chunks.append(current_chunk)
+                    if not chunks or chunks[-1].lower() != current_chunk.lower():
+                        chunks.append(current_chunk)
                     current_chunk = part
         if current_chunk:
-            chunks.append(current_chunk)
+            if not chunks or chunks[-1].lower() != current_chunk.lower():
+                chunks.append(current_chunk)
         return chunks
 
     def _step_word_stream(self):
@@ -2185,20 +2568,29 @@ class GeminiLiveClient(QObject):
         if not is_playing:
             print("[GeminiLive] Turn completed and speaker already idle. Re-enabling mic immediately.")
             self.turn_completed_received = False
+            if self.worker_thread:
+                self.worker_thread.suppress_mic_for_prompt = False
             if self.is_speaking:
                 self.is_speaking = False
                 self.speaking_stopped.emit()
         else:
             print("[GeminiLive] Turn completed; audio still playing from buffer. Waiting for playback to finish before re-enabling mic.")
-            # Re-enable fallback safety timer to re-enable mic after 5.0 seconds in case of lag
-            self.mic_enable_timer.start(5000)
+            # Generous safety timer (25s) so long AI responses are never cut off by premature mic unmuting
+            self.mic_enable_timer.start(25000)
 
     @Slot()
     def enable_mic_after_speaking(self):
-        if not self.is_active:
+        if not self.is_active or getattr(self, "is_paused", False):
             return
-        print("[GeminiLive] Microphone re-enabled after speaking (Failsafe timeout).")
+        w = getattr(self, "worker_thread", None)
+        if w and (getattr(w, "is_playing_audio", False) or (w.audio_out_queue and not w.audio_out_queue.empty())):
+            print("[GeminiLive] Speaker is still playing audio buffer. Extending mic mute by 5s...")
+            self.mic_enable_timer.start(5000)
+            return
+        print("[GeminiLive] Microphone re-enabled after speaking (Playback complete).")
         self.turn_completed_received = False
+        if w:
+            w.suppress_mic_for_prompt = False
         if self.is_speaking:
             self.is_speaking = False
             self.speaking_stopped.emit()
@@ -2217,6 +2609,7 @@ class GeminiLiveClient(QObject):
         # its own asyncio event loop — do NOT drain asyncio.Queue directly from this Qt main thread.
         if self.worker_thread:
             self.worker_thread.flush_speaker = True
+            self.worker_thread.suppress_mic_for_prompt = False
 
         self.word_stream_timer.stop()
         self.sentence_chunks = []

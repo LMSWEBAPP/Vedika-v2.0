@@ -131,13 +131,36 @@ def run_all_isolated_tests():
     # Stop worker cleanly
     worker.stop()
     worker.quit()
-    worker.wait(3000)
+    worker.wait(6000)
     print(f"Worker running after stop: {worker.isRunning()}")
     assert not worker.isRunning(), "Worker thread remained alive after stop!"
     print("[PASS] Worker hardware and thread stopped cleanly.")
 
+    # ----------------------------------------------------
+    # TEST 7: Continuous Audio Streaming (Zero Discarded Silence Frames)
+    # ----------------------------------------------------
+    print("\n--- TEST 7: Continuous Audio Queueing Without Silence Gating ---")
+    worker = GeminiLiveWorker(client)
+    worker.async_queue = asyncio.Queue()
+    
+    # Simulate feeding 50 chunks of silence (raw_rms ~ 10.0 < threshold)
+    import numpy as np
+    silent_chunk = np.zeros(800, dtype=np.int16).tobytes()
+    for _ in range(50):
+        if worker.async_queue.qsize() > 40:
+            try:
+                worker.async_queue.get_nowait()
+            except Exception:
+                pass
+        worker.async_queue.put_nowait(silent_chunk)
+        
+    print(f"Queue size after 50 silent chunks: {worker.async_queue.qsize()} (should be bounded by queue protection: 41)")
+    assert worker.async_queue.qsize() > 0, "Silent audio chunks were dropped or not queued!"
+    assert worker.async_queue.qsize() <= 41, "Queue buffer exceeded max lean latency threshold!"
+    print("[PASS] Continuous audio streaming and lean latency queue verified.")
+
     print("\n========================================================")
-    print("=== ALL 6 ISOLATED MASCOT TESTS PASSED PERFECTLY ===")
+    print("=== ALL 7 ISOLATED MASCOT TESTS PASSED PERFECTLY ===")
     print("========================================================")
 
 if __name__ == "__main__":

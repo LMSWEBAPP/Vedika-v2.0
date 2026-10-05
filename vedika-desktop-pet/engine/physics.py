@@ -26,9 +26,11 @@ class PhysicsEngine:
         if self.is_static:
             self.vx = 0.0
             self.vy = 0.0
+            self.enforce_screen_bounds(screen_width, screen_height)
             return
 
         if self.is_dragging:
+            self.enforce_screen_bounds(screen_width, screen_height)
             return  # Positions are set manually during drag
 
         # Apply gravity if not on ground
@@ -40,7 +42,7 @@ class PhysicsEngine:
         self.y += self.vy * dt
 
         # Ground collisions (e.g. taskbar boundary)
-        ground_y = screen_height - self.height
+        ground_y = max(0.0, float(screen_height - self.height))
         if self.y >= ground_y:
             self.y = ground_y
             self.vy = 0.0
@@ -59,13 +61,31 @@ class PhysicsEngine:
             self.vx = -self.vx * self.bounce
             
         # Right boundary check
-        elif self.x > screen_width - self.width:
-            self.x = screen_width - self.width
+        max_x = max(0.0, float(screen_width - self.width))
+        if self.x > max_x:
+            self.x = max_x
             self.vx = -self.vx * self.bounce
 
         # Top boundary check (prevent launching off screen top)
         if self.y < 0:
             self.y = 0
+            self.vy = 0.0
+
+    def enforce_screen_bounds(self, screen_width, screen_height):
+        """Strict fail-safe to guarantee pet is never placed outside the monitor screen."""
+        max_x = max(0.0, float(screen_width - self.width))
+        max_y = max(0.0, float(screen_height - self.height))
+        if self.x < 0:
+            self.x = 0.0
+            self.vx = 0.0
+        elif self.x > max_x:
+            self.x = max_x
+            self.vx = 0.0
+        if self.y < 0:
+            self.y = 0.0
+            self.vy = 0.0
+        elif self.y > max_y:
+            self.y = max_y
             self.vy = 0.0
 
     def apply_impulse(self, vx, vy):

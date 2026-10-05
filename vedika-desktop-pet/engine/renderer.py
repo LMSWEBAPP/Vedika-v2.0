@@ -1,3 +1,4 @@
+import math
 from PySide6.QtGui import QPainter, QColor, QFont, QFontMetrics, QPen, QBrush, QPolygonF
 from PySide6.QtCore import Qt, QRectF, QPointF
 
@@ -8,13 +9,26 @@ class Renderer:
         self.user_speech_text = ""
         self.speech_timer = 0.0
         self.max_duration = 3.0
-        self.bubble_height = 48  # Increased height offset for responsive 2-line dialogue bubble
+        self.bubble_height = 58  # Increased height offset for responsive 2-line dialogue bubble and graceful error card
 
         # Aesthetic Study Timer Capsule State
         self.timer_active = False
         self.timer_seconds = 0.0
         self.timer_total = 0.0
         self.timer_label = "Study Timer"
+
+        # Graceful Error Notification State
+        self.error_text = ""
+        self.error_tech_text = ""
+        self.error_timer = 0.0
+
+        # Dynamic Voice Listening Indicator State
+        self.is_listening = False
+        self.listen_anim_phase = 0.0
+
+        # Dedicated Push-to-Talk Button State
+        self.is_ptt_pressed = False
+        self.ptt_button_rect = QRectF()
 
     def set_speech(self, text, duration=3.0, user_text=None):
         """Displays a responsive speech capsule above the pet."""
@@ -48,6 +62,20 @@ class Renderer:
         self.speech_timer = calculated_duration
         self.max_duration = calculated_duration
 
+    def set_error(self, graceful_text, tech_text=None, duration=7.0):
+        """Displays a distinct, graceful error notification block."""
+        self.error_text = str(graceful_text).strip() if graceful_text else ""
+        self.error_tech_text = str(tech_text).strip() if tech_text else ""
+        self.error_timer = float(duration)
+
+    def set_listening(self, is_listening: bool):
+        """Controls real-time dynamic listening indicator state."""
+        self.is_listening = bool(is_listening)
+
+    def set_ptt_pressed(self, is_pressed: bool):
+        """Updates Push-to-Talk visual state."""
+        self.is_ptt_pressed = bool(is_pressed)
+
     def start_timer(self, seconds: float, label: str = "Study Timer"):
         """Starts the aesthetic timer capsule displayed below the pet."""
         self.timer_seconds = float(seconds)
@@ -62,13 +90,23 @@ class Renderer:
         self.timer_seconds = 0.0
 
     def update(self, dt):
-        """Updates text display timers and countdown timers."""
+        """Updates text display timers, countdown timers, and animations."""
         if self.speech_timer > 0.0:
             self.speech_timer -= dt
             if self.speech_timer <= 0.0:
                 self.speech_text = ""
                 self.user_speech_text = ""
                 self.speech_timer = 0.0
+
+        if self.error_timer > 0.0:
+            self.error_timer -= dt
+            if self.error_timer <= 0.0:
+                self.error_text = ""
+                self.error_tech_text = ""
+                self.error_timer = 0.0
+
+        if self.is_listening:
+            self.listen_anim_phase = (self.listen_anim_phase + dt * 6.5) % (2.0 * math.pi)
 
         if self.timer_active:
             self.timer_seconds -= dt
@@ -80,30 +118,36 @@ class Renderer:
 
     def draw(self, painter, scale, window_w=None):
         """
-        Renders the pet, compact speech capsule, and bottom timer capsule
-        with full breathing room to prevent border clipping.
+        Renders the pet, compact speech capsule, dynamic listening element,
+        graceful error card, and bottom timer/PTT capsules with full breathing room.
         """
         scaled_bubble_offset = int(self.bubble_height * scale)
         scaled_pet_w = int(self.pet.physics.width)
         scaled_pet_h = int(self.pet.physics.height)
         
-        # Calculate horizontal center and pet draw offset
+        # Calculate horizontal position: horizontally center mascot in the window
         actual_win_w = window_w if window_w else scaled_pet_w
-        pet_x = (actual_win_w - scaled_pet_w) // 2
-        cx = actual_win_w / 2.0
+        pet_x = max(int(6 * scale), (actual_win_w - scaled_pet_w) // 2)
+        cx = pet_x + (scaled_pet_w / 2.0)
 
         # 1. Draw Pet Sprite
         pixmap = self.pet.sprite.get_current_pixmap()
         if pixmap:
             painter.drawPixmap(pet_x, scaled_bubble_offset, scaled_pet_w, scaled_pet_h, pixmap)
 
-        # 2. Draw Responsive Dual-Line Speech Capsule (Positioned above pet head)
-        if self.speech_text or self.user_speech_text:
+        # 2. Draw Error Block OR Speech Capsule (Positioned above pet head)
+        if self.error_text:
+            self._draw_graceful_error_card(painter, cx, actual_win_w, scaled_bubble_offset, scale)
+        elif self.speech_text or self.user_speech_text:
             self._draw_compact_speech_pill(painter, cx, actual_win_w, scaled_bubble_offset, scale)
 
-        # 3. Draw Aesthetic Timer Capsule (Positioned cleanly below the pet)
+        # 3. Draw Mic Icon & Equalizer Listening Bars placed BELOW Vedika Mascot (centered)
+        bottom_y = scaled_bubble_offset + scaled_pet_h + int(5 * scale)
+        self._draw_bottom_voice_controls(painter, cx, bottom_y, scale)
+
+        # 4. Draw Aesthetic Timer Capsule (Positioned cleanly below the voice controls if active)
         if self.timer_active:
-            self._draw_timer_capsule(painter, cx, actual_win_w, scaled_bubble_offset + scaled_pet_h, scale)
+            self._draw_timer_capsule(painter, cx, actual_win_w, bottom_y + int(24 * scale), scale)
 
     def _draw_compact_speech_pill(self, painter, cx, win_w, bubble_h, scale):
         """Draws a responsive 2-line glassmorphism speech capsule with dual User & AI dialogue or wrapped text."""
@@ -162,7 +206,7 @@ class Renderer:
                     pill_h = line_h + (padding_v * 2)
                     num_lines = 1
 
-        pill_x = cx - (pill_w / 2.0)
+        pill_x = max(6.0, min(cx - (pill_w / 2.0), win_w - pill_w - 6.0))
         # Sits with a 2px gap right above the pet's head
         pill_y = max(2.0, bubble_h - pill_h - int(3 * scale))
         pill_rect = QRectF(pill_x, pill_y, pill_w, pill_h)
@@ -261,7 +305,7 @@ class Renderer:
         capsule_w = min(max_cap_w, text_w + padding_h * 2)
         capsule_h = fm.height() + padding_v * 2
         
-        capsule_x = cx - (capsule_w / 2.0)
+        capsule_x = max(6.0, min(cx - (capsule_w / 2.0), win_w - capsule_w - 6.0))
         capsule_y = top_y + int(4 * scale)
 
         capsule_rect = QRectF(capsule_x, capsule_y, capsule_w, capsule_h)
@@ -283,3 +327,141 @@ class Renderer:
             Qt.AlignmentFlag.AlignCenter,
             timer_text
         )
+
+    def _draw_graceful_error_card(self, painter, cx, win_w, bubble_h, scale):
+        """Displays a graceful sentence text block when a sudden system error or connection drop occurs."""
+        if not self.error_text:
+            return
+
+        # Requirement 2: Error warning looking very small -> enlarge font to clear, legible size!
+        font_size = max(10, int(10.5 * scale))
+        font = QFont("Segoe UI", font_size)
+        font.setWeight(QFont.Weight.DemiBold)
+        painter.setFont(font)
+        fm = QFontMetrics(font)
+        line_h = fm.height()
+
+        # Generous bounds
+        max_card_w = min(win_w - 12, max(int(win_w * 0.92), int(260 * scale)))
+        padding_h = max(10, int(12 * scale))
+        padding_v = max(5, int(6 * scale))
+        line_spacing = max(2, int(3 * scale))
+        max_text_w = max_card_w - (padding_h * 2)
+
+        has_tech = bool(self.error_tech_text)
+        line1 = fm.elidedText(f"⚠️ {self.error_text}", Qt.TextElideMode.ElideRight, max_text_w)
+        line2 = fm.elidedText(f"ℹ️ {self.error_tech_text}", Qt.TextElideMode.ElideRight, max_text_w) if has_tech else ""
+
+        w1 = fm.horizontalAdvance(line1)
+        w2 = fm.horizontalAdvance(line2) if line2 else 0
+        card_w = min(max_card_w, max(w1, w2) + padding_h * 2)
+        card_h = (line_h * (2 if line2 else 1)) + (padding_v * 2) + (line_spacing if line2 else 0)
+
+        # Requirement 1: Clamp card_x safely so it is NEVER cut on the left side!
+        card_x = max(6.0, min(cx - (card_w / 2.0), win_w - card_w - 6.0))
+        card_y = max(2.0, bubble_h - card_h - int(3 * scale))
+        card_rect = QRectF(card_x, card_y, card_w, card_h)
+        corner_radius = min(8.0, card_h / 3.0)
+
+        # Soft amber/coral glow
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(244, 63, 94, 75))
+        painter.drawRoundedRect(card_rect.adjusted(-2, 1, 2, 3), corner_radius, corner_radius)
+
+        # Dark ruby obsidian glass body
+        painter.setPen(QPen(QColor(251, 113, 133, 240), max(1, int(1.2 * scale))))
+        painter.setBrush(QBrush(QColor(18, 10, 14, 250)))
+        painter.drawRoundedRect(card_rect, corner_radius, corner_radius)
+
+        # Downward indicator arrow pointing toward pet head
+        arrow = QPolygonF()
+        by = card_y + card_h
+        arrow_h = int(3 * scale)
+        arrow.append(QPointF(cx - int(3.5 * scale), by))
+        arrow.append(QPointF(cx + int(3.5 * scale), by))
+        arrow.append(QPointF(cx, by + arrow_h))
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor(18, 10, 14, 250)))
+        painter.drawPolygon(arrow)
+
+        # Requirement 2: Pure bright white text for maximum clarity and contrast
+        painter.setPen(QColor(255, 255, 255))
+        r1 = QRectF(card_x + padding_h, card_y + padding_v, card_w - padding_h * 2, line_h)
+        painter.drawText(r1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, line1)
+
+        if line2:
+            painter.setPen(QColor(241, 245, 249))  # Clean bright platinum white
+            r2 = QRectF(card_x + padding_h, card_y + padding_v + line_h + line_spacing, card_w - padding_h * 2, line_h)
+            painter.drawText(r2, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, line2)
+
+    def _draw_bottom_voice_controls(self, painter, cx, top_y, scale):
+        """
+        Draws the mic icon (Hold to Speak) and dancing equalizer listening bars 
+        PLACED DIRECTLY BELOW VEDIKA MASCOT, centered horizontally with ZERO backgrounds.
+        """
+        icon_size = max(20, int(22 * scale))
+        gap = int(6 * scale)
+        bar_w = max(2.0, 2.5 * scale)
+        bar_spacing = max(1.5, 2.0 * scale)
+        total_bars_w = (4 * bar_w) + (3 * bar_spacing)
+        total_ctrl_w = icon_size + gap + total_bars_w
+
+        # Center the voice control cluster directly underneath Vedika's body (at cx)
+        start_x = cx - (total_ctrl_w / 2.0)
+        center_y = top_y + (icon_size / 2.0)
+
+        # 1. Mic Icon (Hold to Speak target - NO BACKGROUND)
+        self.ptt_button_rect = QRectF(start_x, top_y, icon_size, icon_size)
+
+        is_held = self.is_ptt_pressed
+        main_app = getattr(self.pet, 'main_app', None)
+        client = getattr(main_app, 'gemini_client', None) if main_app else None
+        is_continuous = bool(client and getattr(client, 'is_continuous_mode', False))
+        is_active = is_held or is_continuous
+
+        # Subtle radiant glow halo when active/held (no box or pill!)
+        if is_active:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(244, 63, 94, 75))  # Soft coral-crimson pulse
+            painter.drawEllipse(self.ptt_button_rect.center(), icon_size * 0.65, icon_size * 0.65)
+
+        # Draw the Mic Icon cleanly without any background
+        painter.setFont(QFont("Segoe UI Emoji", max(11, int(13 * scale))))
+        painter.setPen(QColor(244, 63, 94) if is_active else QColor(56, 189, 248))
+        painter.drawText(self.ptt_button_rect, Qt.AlignmentFlag.AlignCenter, "🎙️")
+
+        # 2. Equalizer Listening Bars (Right beside the mic icon below Vedika - ZERO BACKGROUND)
+        bars_x = start_x + icon_size + gap
+        base_y = center_y + int(6 * scale)
+        phase = self.listen_anim_phase
+
+        # 4 dynamic animated equalizer bars when listening
+        if self.is_listening:
+            h_vals = [
+                3.0 + 6.0 * (math.sin(phase) + 1.0) / 2.0,
+                3.0 + 11.0 * (math.sin(phase + 1.2) + 1.0) / 2.0,
+                3.0 + 8.5 * (math.sin(phase + 2.4) + 1.0) / 2.0,
+                3.0 + 5.5 * (math.sin(phase + 3.6) + 1.0) / 2.0,
+            ]
+            bar_color = QColor(52, 211, 153)  # Bright neon emerald
+        elif is_continuous:
+            # Idle gentle breath bars in continuous chat mode
+            h_vals = [2.5, 4.0, 3.5, 2.5]
+            bar_color = QColor(56, 189, 248, 160)  # Calm glowing cyan
+        else:
+            # Clean resting dots when dormant
+            h_vals = [2.0, 2.0, 2.0, 2.0]
+            bar_color = QColor(148, 163, 184, 110)  # Muted slate dots
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(bar_color))
+        for i, bh in enumerate(h_vals):
+            bx = bars_x + i * (bar_w + bar_spacing)
+            by = base_y - bh
+            painter.drawRoundedRect(QRectF(bx, by, bar_w, bh), 1.0, 1.0)
+
+    def _draw_side_by_side_voice_controls(self, painter, pet_x, pet_y, pet_w, pet_h, scale):
+        """Backward compatibility helper redirecting to bottom voice controls."""
+        cx = pet_x + (pet_w / 2.0)
+        self._draw_bottom_voice_controls(painter, cx, pet_y + pet_h + int(5 * scale), scale)

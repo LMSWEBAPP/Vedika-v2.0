@@ -156,9 +156,9 @@ class DesktopActivityTracker:
         curr_anim_name = self.main_app.pet.sprite.current_animation.name if self.main_app.pet.sprite.current_animation else ""
         curr_state_name = self.main_app.pet.state_machine.current_state.name if self.main_app.pet.state_machine.current_state else ""
 
-        # If voice chat is active and pet is currently speaking or thinking/searching, preserve speech/search animation
+        # If voice chat is active and pet is currently speaking, thinking, listening, or emoting, preserve conversation animations
         if is_voice_chat_active:
-            if curr_state_name in ("speak", "searching") or curr_anim_name in ("speak", "searching"):
+            if curr_state_name in ("speak", "searching", "waiting", "reading", "review") or curr_anim_name in ("speak", "searching", "wave", "reading", "review"):
                 return
 
         # Preserve sleep animation if pet went to sleep while idle

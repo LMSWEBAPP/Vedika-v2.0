@@ -1,0 +1,19 @@
+# Graphify ignore patterns
+scratch/
+*.mp4
+*.zip
+*.csv
+node_modules/
+**/node_modules/**
+.next/
+**/.next/**
+dist/
+build/
+*.pyc
+__pycache__/
+**/*__pycache__*/**
+.git/
+logs/
+*.log
+viva-interview-panel-template/
+glacier_source.html

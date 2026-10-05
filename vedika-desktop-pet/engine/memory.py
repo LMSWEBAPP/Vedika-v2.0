@@ -4,7 +4,9 @@ import sqlite3
 import datetime
 from typing import List, Dict, Optional
 
-DB_DIR = "data"
+ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
+PET_ROOT = os.path.dirname(ENGINE_DIR)
+DB_DIR = os.path.join(PET_ROOT, "data")
 DB_PATH = os.path.join(DB_DIR, "memory.db")
 
 # Basic PII regex filter to ensure sensitive personal details are never saved
@@ -59,17 +61,60 @@ class MemoryManager:
         os.makedirs(os.path.dirname(self.db_path) if os.path.dirname(self.db_path) else ".", exist_ok=True)
         self._init_db()
 
+    def _recover_malformed_db(self):
+        """Self-healing routine: backs up corrupted SQLite DB, removes it, and reinitializes a fresh schema."""
+        import shutil
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup = f"{self.db_path}.corrupt_{ts}"
+        print(f"[MemoryManager] Warning: Malformed SQLite DB detected. Backing up to {backup} and rebuilding fresh DB...")
+        try:
+            if os.path.exists(self.db_path):
+                shutil.copy2(self.db_path, backup)
+            for ext in ["", "-shm", "-wal"]:
+                p = self.db_path + ext
+                if os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
+        except Exception as ex:
+            print(f"[MemoryManager] Error during corrupt DB backup: {ex}")
+
     def _get_connection(self) -> sqlite3.Connection:
         """Opens a short-lived SQLite connection with WAL mode enabled for concurrent thread safety."""
-        conn = sqlite3.connect(self.db_path, timeout=10.0)
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA synchronous=NORMAL;")
-        conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            conn = sqlite3.connect(self.db_path, timeout=10.0)
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+            conn.row_factory = sqlite3.Row
+            return conn
+        except sqlite3.DatabaseError as e:
+            if "malformed" in str(e).lower() or "corrupt" in str(e).lower() or "encrypted" in str(e).lower():
+                self._recover_malformed_db()
+                self._init_db_schema()
+                conn = sqlite3.connect(self.db_path, timeout=10.0)
+                conn.execute("PRAGMA journal_mode=WAL;")
+                conn.execute("PRAGMA synchronous=NORMAL;")
+                conn.row_factory = sqlite3.Row
+                return conn
+            raise
 
     def _init_db(self):
+        """Initializes database schema with self-healing fallback."""
+        try:
+            self._init_db_schema()
+        except sqlite3.DatabaseError as e:
+            if "malformed" in str(e).lower() or "corrupt" in str(e).lower() or "encrypted" in str(e).lower():
+                self._recover_malformed_db()
+                self._init_db_schema()
+            else:
+                raise
+
+    def _init_db_schema(self):
         """Initializes database schema with constraints for clean upserts."""
-        with self._get_connection() as conn:
+        with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS student_profile (
                     key TEXT PRIMARY KEY,
@@ -157,8 +202,15 @@ class MemoryManager:
 
         clean_role = "student" if role.lower().startswith("student") or role.lower().startswith("user") else "tutor"
         clean_subj = subject.strip().lower() if subject else "general"
-        sent_label = sentiment.get("label", "") if sentiment else ""
-        sent_score = float(sentiment.get("score", 0.0)) if sentiment else 0.0
+        if isinstance(sentiment, dict):
+            sent_label = str(sentiment.get("label", ""))
+            sent_score = float(sentiment.get("score", 0.0))
+        elif isinstance(sentiment, str):
+            sent_label = sentiment
+            sent_score = 0.0
+        else:
+            sent_label = ""
+            sent_score = 0.0
 
         with self._get_connection() as conn:
             conn.execute("""
