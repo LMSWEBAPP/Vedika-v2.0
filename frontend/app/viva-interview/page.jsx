@@ -286,6 +286,7 @@ export default function VivaInterviewPage() {
   const isNewExaminerTurnRef = useRef(true);
 
   // Gemini Live Audio & WebSocket Refs (Identical to VoiceAgentView)
+  const liveSessionRef = useRef(null);
   const liveWsRef = useRef(null);
   const liveAudioCtxRef = useRef(null);
   const liveProcessorRef = useRef(null);
@@ -724,6 +725,10 @@ export default function VivaInterviewPage() {
 
   // Disconnect Gemini Live WebSocket & Release Audio (Identical to VoiceAgentView)
   const disconnectGeminiLive = (preserveMessage = false) => {
+    if (liveSessionRef.current) {
+      try { liveSessionRef.current.close(); } catch (e) {}
+      liveSessionRef.current = null;
+    }
     if (liveWsRef.current) {
       try { liveWsRef.current.close(); } catch (e) {}
       liveWsRef.current = null;
@@ -1177,7 +1182,252 @@ export default function VivaInterviewPage() {
     reader.readAsDataURL(file);
   };
 
-  // Start Gemini Live Bidirectional WebSocket Voice Examination (with Dual-Port Fallback & Auto-Reconnect History Replay)
+  // Process real-time agent speech transcription chunks
+  const handleAgentTranscriptionChunk = (textChunk) => {
+    if (!textChunk) return;
+    
+    if (/next\s+key\s+topic|move\s+to\s+our\s+next\s+topic/i.test(textChunk)) {
+      setCurrentStageInfo((prev) => ({
+        ...prev,
+        topicIndex: prev.topicIndex + 1,
+        questionType: 'main',
+        followUpIndex: 0
+      }));
+    }
+
+    if (/(write\s+(a\s+)?(program|code|function|query|script|algorithm)|in\s+the\s+scratchpad|open\s+the\s+scratchpad)/i.test(textChunk)) {
+      setIsScratchpadOpen(true);
+    }
+
+    const isConclusion = /concludes\s+your\s+oral\s+examination|scorecard\s+report\s+is\s+ready/i.test(textChunk);
+    if (isConclusion) {
+      setTimeout(() => {
+        handleFinishLiveExam();
+      }, 3500);
+    }
+
+    setLiveConversation((prev) => {
+      if (!isNewExaminerTurnRef.current && prev.length > 0 && prev[prev.length - 1].sender === 'examiner') {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          text: (updated[updated.length - 1].text ? updated[updated.length - 1].text + ' ' : '') + textChunk
+        };
+        return updated;
+      }
+      isNewExaminerTurnRef.current = false;
+      return [...prev, { id: Math.random().toString(36).slice(2), sender: 'examiner', text: textChunk, timestamp: new Date() }];
+    });
+  };
+
+  // Process candidate speech transcription chunks
+  const handleUserTranscriptionChunk = (userText) => {
+    if (!userText?.trim()) return;
+    isNewExaminerTurnRef.current = true;
+    setLiveConversation((prev) => [
+      ...prev,
+      { id: Math.random().toString(36).slice(2), sender: 'candidate', text: userText, timestamp: new Date() }
+    ]);
+  };
+
+  // Configure continuous 16kHz PCM audio stream processor
+  const setupLiveMicProcessor = (stream, audioCtx, onChunk) => {
+    if (liveProcessorRef.current) {
+      try { liveProcessorRef.current.disconnect(); } catch {}
+      liveProcessorRef.current = null;
+    }
+    if (liveSourceRef.current) {
+      try { liveSourceRef.current.disconnect(); } catch {}
+      liveSourceRef.current = null;
+    }
+    const source = audioCtx.createMediaStreamSource(stream);
+    liveSourceRef.current = source;
+    const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    liveProcessorRef.current = processor;
+
+    const silentGain = audioCtx.createGain();
+    silentGain.gain.value = 0;
+    source.connect(processor);
+    processor.connect(silentGain);
+    silentGain.connect(audioCtx.destination);
+
+    processor.onaudioprocess = (e) => {
+      if (
+        liveIsMutedRef.current || 
+        liveAudioSourcesQueueRef.current.length > 0
+      ) return;
+
+      const float32Data = e.inputBuffer.getChannelData(0);
+      const pcmBuffer = new ArrayBuffer(float32Data.length * 2);
+      const dataView = new DataView(pcmBuffer);
+      let offset = 0;
+      for (let i = 0; i < float32Data.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, float32Data[i]));
+        dataView.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      }
+      let binary = '';
+      const bytes = new Uint8Array(pcmBuffer);
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      onChunk(btoa(binary));
+    };
+  };
+
+  // Direct Browser-to-Gemini-Live Connection (Zero-Latency WebSockets for Cloud / Vercel Deployments)
+  const connectDirectGeminiLive = async (activeTopic, activeSubject, activeDifficulty, activeLevel) => {
+    try {
+      setLiveConnectionStatus('connecting');
+      setLiveStatusMessage('Connecting directly to Gemini Live Voice Examiner...');
+
+      const tokenRes = await fetch('/api/voice/token');
+      if (!tokenRes.ok) {
+        const errBody = await tokenRes.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Gemini API key is not configured on server.');
+      }
+      const { key, model } = await tokenRes.json();
+
+      const { GoogleGenAI, Modality } = await import('@google/genai');
+      const ai = new GoogleGenAI({
+        apiKey: key,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+
+      const VALID_LIVE_MODELS = [
+        'gemini-3.1-flash-live-preview',
+        'gemini-2.5-flash-native-audio-latest',
+        'gemini-3.8-live'
+      ];
+      const liveModel = (model && VALID_LIVE_MODELS.includes(model)) ? model : 'gemini-3.1-flash-live-preview';
+
+      const promptTopic = activeTopic || (sessionMode === 'viva' ? (vivaSource === 'custom' ? customVivaTopic : selectedExperiment) : (topic || programmingLanguage || 'Full Stack Web Development'));
+      const promptLevel = activeLevel || level || 'College';
+      const promptDifficulty = activeDifficulty || difficulty || 'Medium';
+
+      let systemPrompt = '';
+      let initialGreeting = '';
+
+      if (sessionMode === 'interview') {
+        systemPrompt =
+          'You are an authentic, experienced, and highly engaging Senior Technical Interviewer conducting a live oral engineering discussion. Speak with natural, warm human cadence like an engineering colleague. ' +
+          'Target Engineering Track: ' + (promptTopic || 'Full Stack Web Development') + '. ' +
+          'Candidate Target Seniority: ' + promptLevel + '. ' +
+          'Primary Tech Stack / Language: ' + (programmingLanguage || 'JavaScript / Python') + '. ' +
+          'Interview Difficulty Bar: ' + promptDifficulty.toUpperCase() + '. ' +
+          'CRITICAL INTERVIEW RULES: ' +
+          '1. Greet the candidate warmly, set a relaxed and professional engineering discussion tone, and immediately ask your first practical technical question. ' +
+          '2. Frame questions around real-world production scenarios, architecture trade-offs, edge cases, scalability, concurrency, and clean code principles (e.g., "Let\'s say you\'re building...", "Suppose we hit a bottleneck in...", "Walk me through how you would handle..."). ' +
+          '3. Keep your spoken responses concise (strictly 1 to 2 sentences maximum) so that the candidate has the floor to speak. ' +
+          '4. Listen closely to the candidate\'s answer. Pick up a specific technical concept, claim, or gap from their answer, and ask an organic, focused follow-up probe (e.g., "You mentioned X... how would that behave under Y condition?"). Keep the interview feeling like an authentic person-to-person inquiry where you drill down into their reasoning. ' +
+          '5. NEVER reveal scores, grades, or correct model answers during the live interview. Keep all assessments concealed until the session finishes. ' +
+          '6. AVOID robotic AI phrasing or generic textbook definition questions. Sound like a real senior engineer discussing production systems.';
+        
+        initialGreeting = `Hello! Please greet the candidate warmly, introduce yourself as the Senior Technical Interviewer for ${promptTopic}, and ask your first practical interview question.`;
+      } else {
+        systemPrompt =
+          'You are a warm, encouraging, sharp, and authentic university professor conducting an oral academic viva defense. Speak with natural, engaging human conversational cadence. ' +
+          'Academic Subject / Topic: ' + (promptTopic || 'Core Subject Syllabus') + '. ' +
+          'Academic Tier: ' + promptLevel + ' Level. ' +
+          'Examination Rigor Tier: ' + promptDifficulty.toUpperCase() + '. ' +
+          'CRITICAL EXAMINER RULES: ' +
+          '1. Greet the student warmly, announce the examination topic (' + (promptTopic || 'Academic Syllabus') + '), and ask your first oral viva question. ' +
+          '2. Frame questions around real experimental observations, parameter changes, physical thought experiments, governing principles, and practical edge cases (e.g., "Suppose in the lab we suddenly double the...", "Walk me through what happens to the readings if...", "If you had to explain the core intuition to a peer..."). ' +
+          '3. Keep your spoken questions and responses concise (strictly 1 to 2 sentences maximum) so the student can explain and defend their understanding. ' +
+          '4. Listen carefully to the student\'s explanation. Pick up a specific point, formula, observation, or gap from their answer, and ask an organic follow-up probe that drills deeper into that specific claim. Maintain a supportive, person-to-person conversational cadence. ' +
+          '5. NEVER give away answers, scores, or evaluations during the viva defense. Keep all assessments strictly concealed until the examination concludes. ' +
+          '6. AVOID dry robotic textbook recitation. Make the dialogue feel like an authentic, lively oral examination.';
+        
+        initialGreeting = `Hello Professor! Please greet the student warmly, announce the viva examination topic on ${promptTopic}, and ask your first oral viva question.`;
+      }
+
+      const stream = liveMicStreamRef.current || await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      liveMicStreamRef.current = stream;
+
+      const audioCtx = liveAudioCtxRef.current || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      liveAudioCtxRef.current = audioCtx;
+      if (audioCtx.state === 'suspended') {
+        try { await audioCtx.resume(); } catch (e) {}
+      }
+
+      const liveSession = await ai.live.connect({
+        model: liveModel,
+        callbacks: {
+          onmessage: (message) => {
+            const content = message.serverContent;
+            if (!content) return;
+            for (const part of content.modelTurn?.parts || []) {
+              if (part.inlineData?.data) {
+                playLivePcmAudioChunk(part.inlineData.data);
+              }
+            }
+            if (content.outputTranscription?.text) {
+              handleAgentTranscriptionChunk(content.outputTranscription.text);
+            }
+            if (content.interrupted) {
+              stopAllLiveAudioPlaybacks();
+              setLiveConnectionStatus('connected');
+              setLiveStatusMessage('Examiner was interrupted. Listening now...');
+              isNewExaminerTurnRef.current = true;
+            }
+            if (content.inputTranscription?.text?.trim()) {
+              handleUserTranscriptionChunk(content.inputTranscription.text);
+            }
+          },
+          onclose: (e) => {
+            console.warn('[Gemini Live Direct] Session closed:', e);
+            if (e?.code && e.code !== 1000) {
+              setLiveConnectionStatus('error');
+              setLiveStatusMessage(`Voice session ended (Code ${e.code}: ${e.reason || 'Connection lost'}).`);
+            }
+          },
+          onerror: (err) => {
+            console.error('[Gemini Live Direct] Session error:', err);
+            setLiveConnectionStatus('error');
+            setLiveStatusMessage(`Gemini Live error: ${err?.message || 'Connection failed'}.`);
+          }
+        },
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Zephyr' }
+            }
+          },
+          systemInstruction: systemPrompt,
+          outputAudioTranscription: {},
+          inputAudioTranscription: {}
+        }
+      });
+
+      liveSessionRef.current = liveSession;
+      setLiveConnectionStatus('connected');
+      setLiveStatusMessage(sessionMode === 'interview' ? 'AI Technical Interviewer connected! Discussion starting...' : 'AI Oral Examiner connected! Viva defense starting...');
+
+      setupLiveMicProcessor(stream, audioCtx, (base64Data) => {
+        if (!liveSessionRef.current || liveIsMutedRef.current) return;
+        try {
+          liveSessionRef.current.sendRealtimeInput({
+            audio: {
+              data: base64Data,
+              mimeType: 'audio/pcm;rate=16000'
+            }
+          });
+        } catch (e) {
+          console.warn('[Gemini Live Direct] Mic send warning:', e);
+        }
+      });
+
+      try {
+        liveSession.sendRealtimeInput({ text: initialGreeting });
+      } catch (e) {
+        console.warn('[Gemini Live Direct] Greeting send error:', e);
+      }
+    } catch (err) {
+      console.error('[Gemini Live Direct] Connection error:', err);
+      setLiveConnectionStatus('error');
+      setLiveStatusMessage(`Connection failed: ${err.message || err}.`);
+    }
+  };
+
+  // Start Gemini Live Bidirectional Voice Examination (Dedicated WebSocket with Direct Gemini Live Fallback)
   const startGeminiLiveSession = async (activeTopic, activeSubject, activeDifficulty, activeLevel, isReconnect = false, forcePort = null) => {
     try {
       setLiveConnectionStatus('connecting');
@@ -1199,9 +1449,22 @@ export default function VivaInterviewPage() {
         try { await audioCtx.resume(); } catch (e) {}
       }
 
+      const isLocalHost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '[::1]'
+      );
+
+      // If in production on Vercel and no external WebSocket URL is configured, connect directly to Gemini Live immediately
+      if (!isLocalHost && !process.env.NEXT_PUBLIC_VOICE_WS_URL) {
+        console.log('[Viva Live] Production environment without external WS URL detected. Connecting directly to Gemini Live API...');
+        await connectDirectGeminiLive(activeTopic, activeSubject, activeDifficulty, activeLevel);
+        return;
+      }
+
       // Dual-Port Strategy: Try dedicated voice port 5001 first, fallback to current window host (port 3000)
       const primaryWsHost = process.env.NEXT_PUBLIC_VOICE_WS_URL || process.env.NEXT_PUBLIC_WS_URL || (
-        typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        isLocalHost
           ? 'ws://localhost:5001'
           : `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${typeof window !== 'undefined' ? window.location.host : 'localhost'}`
       );
@@ -1211,7 +1474,7 @@ export default function VivaInterviewPage() {
 
       const voiceSid = 'viva-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
-      let wsUrl = `${targetWsHost}/api/ws?mode=${sessionMode}&topic=${encodeURIComponent(activeTopic)}&difficulty=${activeDifficulty}&level=${activeLevel}&programmingLanguage=${encodeURIComponent(programmingLanguage)}&sessionId=${voiceSid}`;
+      let wsUrl = `${targetWsHost}/api/ws?mode=${sessionMode}&topic=${encodeURIComponent(activeTopic || '')}&difficulty=${activeDifficulty || 'Medium'}&level=${activeLevel || 'College'}&programmingLanguage=${encodeURIComponent(programmingLanguage || '')}&sessionId=${voiceSid}`;
       if (jwtToken) wsUrl += `&token=${encodeURIComponent(jwtToken)}`;
       if (isReconnect) wsUrl += `&reconnect=true`;
 
@@ -1221,16 +1484,16 @@ export default function VivaInterviewPage() {
       const connTimeout = setTimeout(() => {
         if (ws.readyState !== WebSocket.OPEN) {
           liveWsHadErrorRef.current = true;
-          ws.close();
+          try { ws.close(); } catch {}
           if (!forcePort && targetWsHost !== fallbackWsHost) {
-            console.warn('[WS] Primary port 5050 timed out. Falling back to port 3000...');
+            console.warn('[WS] Primary port 5001 timed out. Falling back to port 3000...');
             startGeminiLiveSession(activeTopic, activeSubject, activeDifficulty, activeLevel, isReconnect, fallbackWsHost);
             return;
           }
-          setLiveConnectionStatus('error');
-          setLiveStatusMessage('Connection timed out. Verify the voice server or web application server is running.');
+          console.warn('[WS] Dedicated WebSocket unreachable. Connecting directly to Gemini Live API...');
+          connectDirectGeminiLive(activeTopic, activeSubject, activeDifficulty, activeLevel);
         }
-      }, 5000);
+      }, 3000);
 
       ws.onopen = () => {
         clearTimeout(connTimeout);
@@ -1250,98 +1513,43 @@ export default function VivaInterviewPage() {
           }
         }
 
-        if (!liveSourceRef.current) {
-          const source = audioCtx.createMediaStreamSource(stream);
-          liveSourceRef.current = source;
-          const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-          liveProcessorRef.current = processor;
-          
-          const silentGain = audioCtx.createGain();
-          silentGain.gain.value = 0;
-          source.connect(processor);
-          processor.connect(silentGain);
-          silentGain.connect(audioCtx.destination);
-
-          processor.onaudioprocess = (e) => {
-            if (
-              ws.readyState !== WebSocket.OPEN || 
-              liveIsMutedRef.current || 
-              liveAudioSourcesQueueRef.current.length > 0
-            ) return;
-
-            const float32Data = e.inputBuffer.getChannelData(0);
-            const pcmBuffer = new ArrayBuffer(float32Data.length * 2);
-            const dataView = new DataView(pcmBuffer);
-            let offset = 0;
-            for (let i = 0; i < float32Data.length; i++, offset += 2) {
-              let s = Math.max(-1, Math.min(1, float32Data[i]));
-              dataView.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-            }
-            let binary = '';
-            const bytes = new Uint8Array(pcmBuffer);
-            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-            ws.send(JSON.stringify({ type: 'audio', data: btoa(binary) }));
-          };
-        }
+        setupLiveMicProcessor(stream, audioCtx, (base64Data) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'audio', data: base64Data }));
+          }
+        });
       };
 
       ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'status') {
-          setLiveStatusMessage(message.message);
-        } else if (message.type === 'error') {
-          setLiveStatusMessage(message.message);
-          setLiveConnectionStatus('error');
-        } else if (message.type === 'audio') {
-          playLivePcmAudioChunk(message.data);
-        } else if (message.type === 'interrupted') {
-          stopAllLiveAudioPlaybacks();
-          setLiveConnectionStatus('connected');
-          setLiveStatusMessage('Examiner was interrupted. Listening now...');
-          isNewExaminerTurnRef.current = true;
-        } else if (message.type === 'flow-update') {
-          setCurrentStageInfo({
-            topicName: message.topicName || activeTopic,
-            questionType: message.questionType || 'main',
-            topicIndex: message.topicIndex || 1,
-            followUpIndex: message.followUpIndex || 0
-          });
-          isNewExaminerTurnRef.current = true;
-        } else if (message.type === 'agent-transcription') {
-          const textChunk = message.text || '';
-          
-          if (/next\s+key\s+topic|move\s+to\s+our\s+next\s+topic/i.test(textChunk)) {
-            setCurrentStageInfo((prev) => ({
-              ...prev,
-              topicIndex: prev.topicIndex + 1,
-              questionType: 'main',
-              followUpIndex: 0
-            }));
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === 'status') {
+            setLiveStatusMessage(message.message);
+          } else if (message.type === 'error') {
+            setLiveStatusMessage(message.message);
+            setLiveConnectionStatus('error');
+          } else if (message.type === 'audio') {
+            playLivePcmAudioChunk(message.data);
+          } else if (message.type === 'interrupted') {
+            stopAllLiveAudioPlaybacks();
+            setLiveConnectionStatus('connected');
+            setLiveStatusMessage('Examiner was interrupted. Listening now...');
+            isNewExaminerTurnRef.current = true;
+          } else if (message.type === 'flow-update') {
+            setCurrentStageInfo({
+              topicName: message.topicName || activeTopic,
+              questionType: message.questionType || 'main',
+              topicIndex: message.topicIndex || 1,
+              followUpIndex: message.followUpIndex || 0
+            });
+            isNewExaminerTurnRef.current = true;
+          } else if (message.type === 'agent-transcription') {
+            handleAgentTranscriptionChunk(message.text || '');
+          } else if (message.type === 'user-transcription') {
+            handleUserTranscriptionChunk(message.text || '');
           }
-
-          if (/(write\s+(a\s+)?(program|code|function|query|script|algorithm)|in\s+the\s+scratchpad|open\s+the\s+scratchpad)/i.test(textChunk)) {
-            setIsScratchpadOpen(true);
-          }
-
-          const isConclusion = /concludes\s+your\s+oral\s+examination|scorecard\s+report\s+is\s+ready/i.test(textChunk);
-          if (isConclusion) {
-            setTimeout(() => {
-              handleFinishLiveExam();
-            }, 3500);
-          }
-
-          setLiveConversation((prev) => {
-            if (!isNewExaminerTurnRef.current && prev.length > 0 && prev[prev.length - 1].sender === 'examiner') {
-              const updated = [...prev];
-              updated[updated.length - 1] = { ...updated[updated.length - 1], text: updated[updated.length - 1].text + ' ' + textChunk };
-              return updated;
-            }
-            isNewExaminerTurnRef.current = false;
-            return [...prev, { id: Math.random().toString(36).slice(2), sender: 'examiner', text: textChunk, timestamp: new Date() }];
-          });
-        } else if (message.type === 'user-transcription') {
-          isNewExaminerTurnRef.current = true;
-          setLiveConversation((prev) => [...prev, { id: Math.random().toString(36).slice(2), sender: 'candidate', text: message.text, timestamp: new Date() }]);
+        } catch (err) {
+          console.error('[WS] Message parse error:', err);
         }
       };
 
@@ -1363,14 +1571,15 @@ export default function VivaInterviewPage() {
       ws.onerror = () => {
         clearTimeout(connTimeout);
         liveWsHadErrorRef.current = true;
-        // Dual-port fallback on error if we haven't tried port 3000 yet
+        try { ws.close(); } catch {}
+        // Dual-port fallback on error if we haven't tried host port yet
         if (!forcePort && targetWsHost !== fallbackWsHost) {
-          console.warn('[WS] Primary port 5050 error. Falling back to port 3000...');
+          console.warn('[WS] Primary port error. Falling back to host port...');
           startGeminiLiveSession(activeTopic, activeSubject, activeDifficulty, activeLevel, isReconnect, fallbackWsHost);
           return;
         }
-        setLiveConnectionStatus('error');
-        setLiveStatusMessage('Connection failed. Verify the voice server or web application server is running.');
+        console.warn('[WS] Dedicated WebSocket server unreachable. Connecting directly to Gemini Live API...');
+        connectDirectGeminiLive(activeTopic, activeSubject, activeDifficulty, activeLevel);
       };
     } catch (err) {
       setLiveConnectionStatus('error');
@@ -5026,13 +5235,39 @@ export default function VivaInterviewPage() {
                   <span style={{
                     fontSize: '0.85rem',
                     fontWeight: 700,
-                    color: liveConnectionStatus === 'tutor-speaking' ? 'var(--purple)' : liveConnectionStatus === 'connected' ? '#10B981' : 'var(--text)'
+                    color: liveConnectionStatus === 'tutor-speaking' ? 'var(--purple)' : liveConnectionStatus === 'connected' ? '#10B981' : (liveConnectionStatus === 'error' ? 'var(--red, #ef4444)' : 'var(--text)')
                   }}>
                     {liveConnectionStatus === 'tutor-speaking' && '🎙️ AI Examiner Speaking...'}
                     {liveConnectionStatus === 'connected' && '👂 AI Examiner Listening (Speak in English)...'}
                     {liveConnectionStatus === 'connecting' && 'Connecting to Live Gemini Examiner...'}
                     {liveConnectionStatus === 'disconnected' && 'Live Examiner Offline'}
-                    {liveConnectionStatus === 'error' && 'Connection Error'}
+                    {liveConnectionStatus === 'error' && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span>Connection Error</span>
+                        <button
+                          onClick={() => {
+                            const activeTopic = activeSessionTopic || (sessionMode === 'viva' ? (vivaSource === 'custom' ? customVivaTopic : selectedExperiment) : (topic || programmingLanguage));
+                            const activeSubject = sessionMode === 'viva' ? (vivaSource === 'custom' ? 'Custom Academic Topic' : selectedSubject) : 'Technical Engineering';
+                            startGeminiLiveSession(activeTopic, activeSubject, difficulty, level);
+                          }}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: 6,
+                            color: 'var(--red, #ef4444)',
+                            padding: '2px 8px',
+                            fontSize: '0.725rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          <RefreshCw size={11} /> Retry
+                        </button>
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -5251,6 +5486,34 @@ export default function VivaInterviewPage() {
                       })()}
                     </p>
 
+                    {liveConnectionStatus === 'error' && (
+                      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => {
+                            const activeTopic = activeSessionTopic || (sessionMode === 'viva' ? (vivaSource === 'custom' ? customVivaTopic : selectedExperiment) : (topic || programmingLanguage));
+                            const activeSubject = sessionMode === 'viva' ? (vivaSource === 'custom' ? 'Custom Academic Topic' : selectedSubject) : 'Technical Engineering';
+                            startGeminiLiveSession(activeTopic, activeSubject, difficulty, level);
+                          }}
+                          style={{
+                            padding: '8px 18px',
+                            borderRadius: 10,
+                            background: 'var(--purple)',
+                            color: '#fff',
+                            border: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                          }}
+                        >
+                          <RefreshCw size={14} /> Retry Connection
+                        </button>
+                      </div>
+                    )}
+
                     {/* Speech bubble pointer pointing down to Pet Mascot */}
                     <div style={{
                       position: 'absolute',
@@ -5266,22 +5529,34 @@ export default function VivaInterviewPage() {
                   </div>
 
                   {/* AUDIO EXAMINER INDICATOR */}
-                  <div style={{
-                    width: isMobile ? 120 : 140,
-                    height: isMobile ? 120 : 140,
-                    borderRadius: '50%',
-                    background: 'rgba(139, 92, 246, 0.12)',
-                    border: '2px solid var(--purple)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '12px auto'
-                  }}>
-                    <Mic size={48} color={isRecording ? 'var(--red, #ef4444)' : 'var(--purple, #8b5cf6)'} />
+                  <div 
+                    onClick={() => {
+                      if (liveConnectionStatus === 'error' || liveConnectionStatus === 'disconnected') {
+                        const activeTopic = activeSessionTopic || (sessionMode === 'viva' ? (vivaSource === 'custom' ? customVivaTopic : selectedExperiment) : (topic || programmingLanguage));
+                        const activeSubject = sessionMode === 'viva' ? (vivaSource === 'custom' ? 'Custom Academic Topic' : selectedSubject) : 'Technical Engineering';
+                        startGeminiLiveSession(activeTopic, activeSubject, difficulty, level);
+                      }
+                    }}
+                    style={{
+                      width: isMobile ? 120 : 140,
+                      height: isMobile ? 120 : 140,
+                      borderRadius: '50%',
+                      background: liveConnectionStatus === 'error' ? 'rgba(239, 68, 68, 0.12)' : (liveConnectionStatus === 'connected' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(139, 92, 246, 0.12)'),
+                      border: `2px solid ${liveConnectionStatus === 'error' ? 'var(--red, #ef4444)' : (liveConnectionStatus === 'connected' ? '#10B981' : 'var(--purple)')}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '12px auto',
+                      cursor: (liveConnectionStatus === 'error' || liveConnectionStatus === 'disconnected') ? 'pointer' : 'default',
+                      boxShadow: liveConnectionStatus === 'connected' ? '0 0 20px rgba(16, 185, 129, 0.25)' : (liveConnectionStatus === 'tutor-speaking' ? '0 0 20px rgba(139, 92, 246, 0.25)' : 'none'),
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Mic size={48} color={liveConnectionStatus === 'error' ? 'var(--red, #ef4444)' : (liveConnectionStatus === 'connected' ? '#10B981' : 'var(--purple, #8b5cf6)')} />
                   </div>
 
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: 4 }}>
-                    AI Voice Examiner • Speak naturally through your microphone
+                  <span style={{ fontSize: '0.75rem', color: liveConnectionStatus === 'error' ? 'var(--red, #ef4444)' : 'var(--muted)', marginTop: 4 }}>
+                    {liveConnectionStatus === 'error' ? 'Click microphone to retry connection' : 'AI Voice Examiner • Speak naturally through your microphone'}
                   </span>
                 </div>
 
