@@ -154,6 +154,30 @@ export default function LayoutWrapper({ children }) {
       }
     });
 
+    // Listen for mascot-commanded back navigation ("go back", "previous page")
+    const unsubscribeNavBack = bridge.onNavigateBack(() => {
+      console.log('[LayoutWrapper] Desktop Mascot requested NAVIGATE_BACK. Current path:', pathname);
+      if (pathname?.startsWith('/lesson/')) {
+        let storedCourseId = '';
+        if (typeof window !== 'undefined') {
+          storedCourseId = localStorage.getItem('selected_course_id') || '';
+        }
+        if (storedCourseId) {
+          router.push(`/courses?course=${encodeURIComponent(storedCourseId)}`);
+        } else {
+          router.push('/courses');
+        }
+      } else if (pathname === '/courses') {
+        window.dispatchEvent(new CustomEvent('courses_navigate_back_step'));
+      } else {
+        try {
+          router.back();
+        } catch (_) {
+          router.push('/');
+        }
+      }
+    });
+
     // Notify mascot of page changes
     let activity = 'browsing';
     if (pathname?.startsWith('/vedika-labs/math') || pathname?.startsWith('/labs/math')) activity = 'math_tutor';
@@ -167,6 +191,7 @@ export default function LayoutWrapper({ children }) {
 
     return () => {
       unsubscribeNav();
+      unsubscribeNavBack();
     };
   }, [pathname, router]);
 

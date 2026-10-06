@@ -7,11 +7,14 @@ import re
 import socket
 import datetime
 
-# Force IPv4 resolution for network connections to bypass ISP IPv6 blackholes (common on Windows)
+# Force IPv4 resolution for network connections with safe dual-stack fallback
 _orig_getaddrinfo = socket.getaddrinfo
 def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     if family == 0 or family == socket.AF_UNSPEC:
-        family = socket.AF_INET
+        try:
+            return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+        except Exception:
+            pass
     return _orig_getaddrinfo(host, port, family, type, proto, flags)
 socket.getaddrinfo = _prefer_ipv4_getaddrinfo
 
@@ -392,14 +395,15 @@ class CloudRelayPoller(QThread):
                     break
                 time.sleep(0.1)
 
-class GlobalF9HoldToSpeakTracker(QObject):
-    """System-wide global keyboard tracker for F9 Hold-to-Speak.
+class GlobalF9HotkeyTracker(QObject):
+    """System-wide global keyboard tracker for physical F9 Pause/Resume toggle.
     Works universally across Windows (in browsers, LMS webapp, coding editors, games)
     regardless of which window has OS focus, with zero lag and <0.01% CPU."""
     def __init__(self, main_app):
         super().__init__()
         self.main_app = main_app
-        self.is_holding = False
+        self.is_down = False
+        self.last_press_time = 0.0
         self.timer = QTimer(self)
         self.timer.setInterval(20)  # Check every 20ms (50Hz) for instantaneous physical key response
         self.timer.timeout.connect(self._poll_f9_key)
@@ -409,26 +413,21 @@ class GlobalF9HoldToSpeakTracker(QObject):
         try:
             import ctypes
             # 0x78 is VK_F9 on Windows
-            is_down = bool(ctypes.windll.user32.GetAsyncKeyState(0x78) & 0x8000)
-            if is_down and not self.is_holding:
-                self.is_holding = True
-                print("[GlobalHotKey F9] PRESSED (Global System-Wide Hold-to-Speak Active) 🎙️")
-                if hasattr(self.main_app, 'window') and self.main_app.window:
-                    if hasattr(self.main_app.window.pet, 'renderer'):
-                        self.main_app.window.pet.renderer.set_ptt_pressed(True)
-                    self.main_app.window.update()
-                self.main_app.start_push_to_talk()
-            elif not is_down and self.is_holding:
-                self.is_holding = False
-                print("[GlobalHotKey F9] RELEASED (Sending speech turn to Vedika) 🚀")
-                if hasattr(self.main_app, 'window') and self.main_app.window:
-                    if hasattr(self.main_app.window.pet, 'renderer'):
-                        self.main_app.window.pet.renderer.set_ptt_pressed(False)
-                        self.main_app.window.pet.renderer.set_listening(False)
-                    self.main_app.window.update()
-                self.main_app.stop_push_to_talk()
+            current_down = bool(ctypes.windll.user32.GetAsyncKeyState(0x78) & 0x8000)
+            now = time.time()
+            if current_down and not self.is_down:
+                self.is_down = True
+                if now - self.last_press_time > 0.25:  # 250ms debounce
+                    self.last_press_time = now
+                    print("[GlobalHotKey F9] Physical F9 pressed -> Toggling Voice Chat Pause/Resume ⏯️")
+                    self.main_app.toggle_gemini_pause_f9()
+            elif not current_down and self.is_down:
+                self.is_down = False
         except Exception:
             pass
+
+# Backwards compatibility alias
+GlobalF9HoldToSpeakTracker = GlobalF9HotkeyTracker
 
 class DesktopPetApp(QObject):
     yt_resolved_signal = Signal(str)
@@ -510,10 +509,13 @@ class DesktopPetApp(QObject):
         self.gemini_client.stop_voice_requested.connect(self.pause_voice_by_gemini)
         self.gemini_client.session_activated.connect(self.on_gemini_session_activated)
         self.gemini_client.navigate_webapp_requested.connect(self.on_navigate_webapp_requested)
+        self.gemini_client.navigate_back_requested.connect(self.on_navigate_back_requested)
         self.gemini_client.trigger_hint_requested.connect(self.on_trigger_hint_requested)
         self.gemini_client.trigger_action_requested.connect(self.on_trigger_action_requested)
         self.gemini_client.timer_requested.connect(self.on_timer_requested)
         self.gemini_client.broadcast_webapp_requested.connect(self.broadcast_to_webapp)
+        if hasattr(self.gemini_client, 'user_speech_confirmed'):
+            self.gemini_client.user_speech_confirmed.connect(self.on_user_speech_confirmed)
 
         # Initialize PointerOverlay & ScreenCapturer on Main GUI Thread
         from ui.pointer_overlay import PointerOverlay
@@ -563,8 +565,15 @@ class DesktopPetApp(QObject):
         # Pre-warm Gemini Live connection in standby mode on startup (eliminates cold connection lag on first PTT)
         QTimer.singleShot(600, self._prewarm_gemini_voice)
 
-        # Global System-Wide F9 Hold-to-Speak Tracker (works everywhere in Windows even while browsing/typing)
-        self.global_f9_tracker = GlobalF9HoldToSpeakTracker(self)
+        # Global System-Wide F9 Hotkey Tracker (works everywhere in Windows even while browsing/typing)
+        self.global_f9_tracker = GlobalF9HotkeyTracker(self)
+
+        # 120-Second Idle Voice Auto-Pause Timer (conserves API tokens and mutes ambient noise)
+        self.last_user_speech_time = time.time()
+        self.idle_auto_pause_timer = QTimer(self)
+        self.idle_auto_pause_timer.setInterval(3000)  # Check every 3 seconds
+        self.idle_auto_pause_timer.timeout.connect(self._check_idle_speech_timeout)
+        self.idle_auto_pause_timer.start()
 
         # Start game loop timer (60 FPS)
         self.last_time = time.time()
@@ -760,6 +769,7 @@ class DesktopPetApp(QObject):
         client = self.gemini_client
         if not client.is_active:
             print("[F9 Hotkey] Starting Gemini Live Voice Chat...")
+            self.last_user_speech_time = time.time()
             if self.pet:
                 self.pet.say("Voice Chat started! 🚀", duration=2.5)
             client.start()
@@ -777,8 +787,10 @@ class DesktopPetApp(QObject):
                 self.pet.say("Voice Chat paused! ⏸️", duration=2.5)
         else:
             print("[F9 Hotkey] Resumed Gemini Live Voice Chat.")
+            self.last_user_speech_time = time.time()
             if self.pet:
                 self.pet.state_machine.change_state("waiting")
+                self.pet.say("Voice Chat resumed! 🎙️", duration=2.5)
 
     def start_push_to_talk(self):
         """Dedicated Push-to-Talk activation: activates mic stream while button/key is held."""
@@ -810,6 +822,39 @@ class DesktopPetApp(QObject):
         """Real-time slot: highlights listening element ONLY when Vedika is actively hearing user speech."""
         if self.pet:
             self.pet.set_listening(is_listening)
+        if is_listening:
+            self.last_user_speech_time = time.time()
+
+    @Slot()
+    def on_user_speech_confirmed(self):
+        """Refreshes idle timer whenever user finishes speaking a genuine phrase >= 200ms."""
+        self.last_user_speech_time = time.time()
+
+    def _check_idle_speech_timeout(self):
+        """Auto-pauses voice chat after 120 seconds of user silence to conserve tokens and mute background noise."""
+        client = getattr(self, 'gemini_client', None)
+        if not client or not client.is_active or getattr(client, 'is_paused', False):
+            return
+
+        idle_seconds = time.time() - getattr(self, 'last_user_speech_time', time.time())
+        if idle_seconds >= 120.0:
+            print(f"[MainApp] User idle for {idle_seconds:.1f}s (>= 120s). Auto-pausing voice session to save tokens.")
+            self.last_user_speech_time = time.time()
+            client.toggle_pause()
+            if self.pet:
+                self.pet.state_machine.change_state("idle")
+                self.pet.say("Voice Chat auto-paused (idle 2m). Press F9 to resume! ⏸️", duration=4.0)
+
+    @Slot()
+    def on_navigate_back_requested(self):
+        """Dispatches step-by-step NAVIGATE_BACK command to browser WebApp tabs."""
+        print("[MainApp] WebApp NAVIGATE_BACK requested -> broadcasting to browser tabs.")
+        back_cmd = {
+            "type": "NAVIGATE_BACK",
+            "timestamp": int(time.time() * 1000),
+            "id": f"nav_back_{int(time.time() * 1000)}"
+        }
+        self.broadcast_to_webapp(back_cmd)
 
     @Slot(str, str)
     def on_gemini_error_occurred(self, graceful_text: str, tech_text: str):
@@ -1204,16 +1249,20 @@ class DesktopPetApp(QObject):
                 concept_summary = payload.get("conceptSummary") or payload.get("overview") or ""
                 snippet = payload.get("transcriptSnippet") or ""
 
-                # Debounce rapid duplicate clicks within 2.0s
-                now_ts = time.time()
-                last_moment_ts = getattr(self, "_last_video_moment_ts", 0.0)
+                now = time.time()
+                moment_key = f"{payload.get('lessonId', '')}:{lesson_str}:{time_str}:{topic_str}"
                 last_moment_key = getattr(self, "_last_video_moment_key", "")
-                current_moment_key = f"{payload.get('lessonId', '')}:{time_str}:{topic_str}"
-                if (now_ts - last_moment_ts < 2.0) and (last_moment_key == current_moment_key):
-                    print(f"[WS Bridge] Debounced duplicate video moment request: {current_moment_key}")
+                last_moment_time = getattr(self, "_last_video_moment_time", 0.0)
+
+                # Debounce duplicate video moment requests within 6 seconds or while tutor is currently explaining
+                is_speaking = hasattr(self, "gemini_client") and self.gemini_client and self.gemini_client.is_speaking
+                if (moment_key == last_moment_key and (now - last_moment_time < 6.0)) or (is_speaking and moment_key == last_moment_key):
+                    print(f"[WS Bridge] Debounced duplicate Ask Vedika Video Moment ({moment_key}). Tutor already explaining.")
                     return
-                self._last_video_moment_ts = now_ts
-                self._last_video_moment_key = current_moment_key
+
+                self._last_video_moment_key = moment_key
+                self._last_video_moment_time = now
+                self.last_user_speech_time = now
 
                 if hasattr(self, 'gemini_client') and self.gemini_client:
                     self.gemini_client.active_webapp_context = {
@@ -1230,17 +1279,6 @@ class DesktopPetApp(QObject):
                         "conceptSummary": concept_summary,
                         "route": f"/lesson/{payload.get('lessonId', '')}"
                     }
-                
-                # Debounce duplicate video moments within 5 seconds to prevent repeating explanations
-                now = time.time()
-                moment_key = f"{lesson_str}_{time_str}_{topic_str}"
-                last_key = getattr(self, "_last_video_moment_key", None)
-                last_time = getattr(self, "_last_video_moment_time", 0.0)
-                if last_key == moment_key and (now - last_time < 5.0):
-                    print(f"[WS Bridge] Debounced duplicate Ask Vedika Video Moment ({moment_key}) within 5.0s.")
-                    return
-                self._last_video_moment_key = moment_key
-                self._last_video_moment_time = now
 
                 print(f"[WS Bridge] Ask Vedika Video Moment received: {lesson_str} @ {time_str} ({topic_str})")
                 self.set_active_animation("explaining")

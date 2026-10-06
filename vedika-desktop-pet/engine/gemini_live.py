@@ -9,11 +9,14 @@ import asyncio
 import socket
 from queue import Queue as ThreadSafeQueue
 
-# Force IPv4 resolution for network connections to bypass ISP IPv6 blackholes (common on Windows)
+# Force IPv4 resolution for network connections with safe dual-stack fallback
 _orig_getaddrinfo = socket.getaddrinfo
 def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     if family == 0 or family == socket.AF_UNSPEC:
-        family = socket.AF_INET
+        try:
+            return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+        except Exception:
+            pass
     return _orig_getaddrinfo(host, port, family, type, proto, flags)
 socket.getaddrinfo = _prefer_ipv4_getaddrinfo
 
@@ -499,9 +502,23 @@ class GeminiLiveWorker(QThread):
               * '/vedika-labs/math?tab=graph&mode=quadratic' (Quadratic Parabolas)
               * '/vedika-labs/math?tab=whiteboard' (Math AI Canvas)
             - Other Pages: '/courses', '/code-puzzle', '/viva-interview', '/resources', '/quizzes', '/assignments', '/jobs', '/progress'."""
+            route_str = str(route).strip()
+            if route_str.lower() in ("back", "previous", "go_back", "/back", "return"):
+                print("[GeminiLiveWorker] Tool call: navigate_webapp(route='back') -> emitting navigate_back_requested")
+                if hasattr(self.client, 'navigate_back_requested'):
+                    self.client.navigate_back_requested.emit()
+                return {"status": "success", "action": "navigated_back"}
+
             if hasattr(self.client, 'navigate_webapp_requested'):
-                self.client.navigate_webapp_requested.emit(route)
-            return {"status": "success", "navigated_route": route}
+                self.client.navigate_webapp_requested.emit(route_str)
+            return {"status": "success", "navigated_route": route_str}
+
+        def go_back_webapp() -> dict:
+            """Navigates back to the previous page or hierarchy step in the Vedika WebApp (e.g. from lesson player back to course syllabus, or from course syllabus back to category list). Use whenever the student asks to 'go back', 'previous page', 'return', or 'back'."""
+            print("[GeminiLiveWorker] Tool call: go_back_webapp() -> emitting navigate_back_requested")
+            if hasattr(self.client, 'navigate_back_requested'):
+                self.client.navigate_back_requested.emit()
+            return {"status": "success", "action": "navigated_back"}
 
         def trigger_puzzle_hint(hint_level: int = 1) -> dict:
             """Triggers a helpful hint on the student's active coding problem or puzzle in the Vedika WebApp."""
@@ -925,7 +942,7 @@ class GeminiLiveWorker(QThread):
             input_audio_transcription=types.AudioTranscriptionConfig(),
             output_audio_transcription=types.AudioTranscriptionConfig(),
             tools=[
-                play_animation, open_website, play_music, stop_voice_chat, navigate_webapp,
+                play_animation, open_website, play_music, stop_voice_chat, navigate_webapp, go_back_webapp,
                 trigger_puzzle_hint, trigger_pet_action, capture_user_screen, point_to_screen_location,
                 recall_previous_questions, search_learning_memory, update_student_profile,
                 save_student_memory, clear_student_memory, set_study_timer, add_study_note,
@@ -1140,6 +1157,8 @@ class GeminiLiveWorker(QThread):
         try:
             n = 0
             speaking_sustained_counter = 0
+            consecutive_speech_chunks = 0
+            confirmed_speech_chunks = 0
             input_audio_buffer = bytearray()
             while self.client.is_active and self.mic_stream and not getattr(self, "_stopping_audio", False):
                 # Strict Voice Mode Protocol:
@@ -1151,6 +1170,8 @@ class GeminiLiveWorker(QThread):
 
                 if not is_continuous and not (is_ptt and is_holding):
                     input_audio_buffer.clear()
+                    consecutive_speech_chunks = 0
+                    confirmed_speech_chunks = 0
                     await asyncio.sleep(0.04)
                     continue
 
@@ -1163,6 +1184,8 @@ class GeminiLiveWorker(QThread):
                     getattr(self, "suppress_mic_for_prompt", False) or
                     (self.client.is_speaking and not getattr(self.client, "enable_barge_in", False))):
                     input_audio_buffer.clear()
+                    consecutive_speech_chunks = 0
+                    confirmed_speech_chunks = 0
                     await asyncio.sleep(0.05)
                     continue
 
@@ -1207,9 +1230,9 @@ class GeminiLiveWorker(QThread):
 
                     # Dynamic ambient noise floor tracking (exponential moving average during ambient pauses)
                     if not self.vad_active:
-                        self.ambient_floor = 0.95 * getattr(self, "ambient_floor", 120.0) + 0.05 * raw_rms
+                        self.ambient_floor = 0.95 * getattr(self, "ambient_floor", 140.0) + 0.05 * raw_rms
 
-                    effective_threshold = max(self.client.noise_threshold, getattr(self, "ambient_floor", 120.0) * 1.35)
+                    effective_threshold = max(self.client.noise_threshold, getattr(self, "ambient_floor", 140.0) * 1.45)
 
                     # Active User Interruption Handling (Tier A + B Block-NLMS AEC Residual VAD)
                     if self.client.is_speaking:
@@ -1235,36 +1258,50 @@ class GeminiLiveWorker(QThread):
 
                     n += 1
                     if n % 40 == 0:
-                        print(f"[MIC] Read {n} chunks. Active speech: {self.vad_active} (Raw RMS={raw_rms:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}, Eff Threshold={effective_threshold:.1f}, AEC Residual RMS={residual_rms:.1f})")
+                        print(f"[MIC] Read {n} chunks. Active speech: {self.vad_active} (Raw RMS={raw_rms:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 140.0):.1f}, Eff Threshold={effective_threshold:.1f}, AEC Residual RMS={residual_rms:.1f})")
                     
                     if raw_rms >= effective_threshold:
-                        if not self.vad_active:
-                            self.vad_active = True
-                            print(f"[VAD] Speech detected (RMS={raw_rms:.1f} >= {effective_threshold:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}), streaming audio to Gemini Live.")
-                            # Strictly only emit listening UI signal if in continuous mode or actively holding PTT
-                            if is_continuous or is_holding:
-                                if hasattr(self.client, "user_listening_state_changed"):
-                                    self.client.user_listening_state_changed.emit(True)
-                        self.hangover_counter = 16  # ~800ms natural speech hangover to prevent chopping words
+                        consecutive_speech_chunks += 1
+                        # Require at least 3 consecutive frames (~150ms) above threshold to eliminate transient click / noise spikes
+                        if consecutive_speech_chunks >= 3:
+                            if not self.vad_active:
+                                self.vad_active = True
+                                confirmed_speech_chunks = consecutive_speech_chunks
+                                print(f"[VAD] Confirmed speech detected (RMS={raw_rms:.1f} >= {effective_threshold:.1f}, Ambient Floor={getattr(self, 'ambient_floor', 140.0):.1f}), streaming audio to Gemini Live.")
+                                if is_continuous or is_holding:
+                                    if hasattr(self.client, "user_listening_state_changed"):
+                                        self.client.user_listening_state_changed.emit(True)
+                            else:
+                                confirmed_speech_chunks += 1
+                            self.hangover_counter = 14  # ~700ms natural speech hangover
                     else:
+                        consecutive_speech_chunks = 0
                         if self.hangover_counter > 0:
                             self.hangover_counter -= 1
                         else:
                             if self.vad_active:
                                 self.vad_active = False
-                                print(f"[VAD] User paused speaking (Ambient Floor={getattr(self, 'ambient_floor', 120.0):.1f}). Awaiting model response...")
+                                print(f"[VAD] User finished speaking segment ({confirmed_speech_chunks} confirmed speech frames). Ambient Floor={getattr(self, 'ambient_floor', 140.0):.1f}.")
                                 if hasattr(self.client, "user_listening_state_changed"):
                                     self.client.user_listening_state_changed.emit(False)
-                                self.speech_pause_timestamp = time.time()
-                                self.awaiting_turn_response = True
 
-                                # Continuous Mode: automatically flush silence and dispatch end_of_turn to trigger immediate Gemini Live response
-                                if is_continuous:
-                                    silence_chunk = b'\x00\x00' * 800
-                                    for _ in range(3):
-                                        await self.async_queue.put(silence_chunk)
-                                    await self.async_queue.put({"end_of_turn": True})
-                                    print("[VAD] Continuous Mode: Speech turn completed, dispatched end_of_turn!")
+                                # Noise Gating Filter: Only commit turn if user voiced >= 4 chunks (~200ms)
+                                if confirmed_speech_chunks >= 4:
+                                    if hasattr(self.client, "user_speech_confirmed"):
+                                        self.client.user_speech_confirmed.emit()
+                                    self.speech_pause_timestamp = time.time()
+                                    self.awaiting_turn_response = True
+
+                                    # Continuous Mode: automatically flush silence and dispatch end_of_turn to trigger immediate Gemini Live response
+                                    if is_continuous:
+                                        silence_chunk = b'\x00\x00' * 800
+                                        for _ in range(3):
+                                            await self.async_queue.put(silence_chunk)
+                                        await self.async_queue.put({"end_of_turn": True})
+                                        print(f"[VAD] Continuous Mode: Speech turn completed ({confirmed_speech_chunks} frames), dispatched end_of_turn!")
+                                else:
+                                    print(f"[VAD] Filtered transient acoustic artifact ({confirmed_speech_chunks} frames < 4). Suppressed false turn.")
+                                confirmed_speech_chunks = 0
 
                     # Continuous Mode silence gating: buffer up to 2 chunks (100ms) when quiet, flush when speech begins
                     if is_continuous:
@@ -1558,15 +1595,37 @@ class GeminiLiveWorker(QThread):
                                     )
                                 )
                             elif func_name == "navigate_webapp":
-                                route = args.get("route", "/")
-                                print(f"[GeminiLiveWorker] Executing tool navigate_webapp: route='{route}'")
-                                self.client.navigate_webapp_requested.emit(route)
-                                
+                                route = str(args.get("route", "/")).strip()
+                                if route.lower() in ("back", "previous", "go_back", "/back", "return"):
+                                    print(f"[GeminiLiveWorker] Executing tool navigate_webapp: route='{route}' -> emitting navigate_back_requested")
+                                    if hasattr(self.client, "navigate_back_requested"):
+                                        self.client.navigate_back_requested.emit()
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=func_name,
+                                            id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
+                                            response={"status": "success", "action": "navigated_back"}
+                                        )
+                                    )
+                                else:
+                                    print(f"[GeminiLiveWorker] Executing tool navigate_webapp: route='{route}'")
+                                    self.client.navigate_webapp_requested.emit(route)
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=func_name,
+                                            id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
+                                            response={"status": "success", "navigated_route": route}
+                                        )
+                                    )
+                            elif func_name == "go_back_webapp":
+                                print("[GeminiLiveWorker] Executing tool go_back_webapp -> emitting navigate_back_requested")
+                                if hasattr(self.client, "navigate_back_requested"):
+                                    self.client.navigate_back_requested.emit()
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
                                         id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
-                                        response={"status": "success", "navigated_route": route}
+                                        response={"status": "success", "action": "navigated_back"}
                                     )
                                 )
                             elif func_name == "trigger_puzzle_hint":
@@ -1847,8 +1906,14 @@ class GeminiLiveWorker(QThread):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"[GeminiLiveWorker] Receive loop error: {e}")
-                self.notify_failure(f"WebSocket error/closure: {e}")
+                err_str = str(e)
+                print(f"[GeminiLiveWorker] Receive loop error: {err_str}")
+                is_goaway = any(k in err_str.lower() for k in ["1008", "goaway", "session duration reached"])
+                if is_goaway:
+                    print("[GeminiLiveWorker] Normal Gemini session lifetime rotation (1008 / GoAway limit). Reconnecting silently in background.")
+                    self.notify_failure("1008_GOAWAY_SILENT_ROTATION")
+                else:
+                    self.notify_failure(f"WebSocket error/closure: {e}")
                 break
 
 class GeminiLiveClient(QObject):
@@ -1859,6 +1924,8 @@ class GeminiLiveClient(QObject):
     play_music_requested = Signal(str)  # query string
     stop_voice_requested = Signal()  # stop signal
     navigate_webapp_requested = Signal(str)  # route string
+    navigate_back_requested = Signal()  # step-by-step back navigation signal
+    user_speech_confirmed = Signal()  # emitted when user completes >= 200ms speech (resets idle timer)
     trigger_hint_requested = Signal(int)  # hint level
     trigger_action_requested = Signal(str, str)  # action, target
     screen_capture_requested = Signal(object, object)  # future, loop
@@ -1912,7 +1979,7 @@ class GeminiLiveClient(QObject):
         self.model_name = "gemini-3.1-flash-live-preview"
         self.tutor_language = os.environ.get("TUTOR_LANGUAGE", "all")
         self.tutor_subject = os.environ.get("TUTOR_SUBJECT", "all")
-        self.noise_threshold = 280.0
+        self.noise_threshold = 350.0
         
         # Configurable voice interruption (barge-in) settings (Default: Disabled for 100% smooth playback)
         enable_barge_str = os.getenv("ENABLE_BARGE_IN", "False").strip().lower()
@@ -2337,10 +2404,18 @@ class GeminiLiveClient(QObject):
     @Slot(str)
     def on_connection_failed(self, error_message):
         print(f"[GeminiLive] Connection dropped or failed: {error_message}")
-        graceful, tech = self.format_graceful_error(error_message)
-        self.error_occurred.emit(graceful, tech)
-        if hasattr(self.pet, 'set_error'):
-            self.pet.set_error(graceful, tech, 6.0)
+        err_lower = str(error_message).lower()
+        is_silent_rotation = "1008_goaway_silent_rotation" in err_lower or any(k in err_lower for k in ["1008", "goaway", "session duration reached"])
+
+        if is_silent_rotation:
+            print("[GeminiLive] Silent session rotation active. Suppressing vocal error notification and preserving greeting suppression.")
+            self._greeting_was_sent = True
+            self.initial_greeting_sent = True
+        else:
+            graceful, tech = self.format_graceful_error(error_message)
+            self.error_occurred.emit(graceful, tech)
+            if hasattr(self.pet, 'set_error'):
+                self.pet.set_error(graceful, tech, 6.0)
 
         if not self.is_active and self.status == "disconnected":
             return

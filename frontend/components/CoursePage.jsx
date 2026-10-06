@@ -275,6 +275,9 @@ export default function CoursePage() {
     setSelectedCategory(finalCat);
     setActiveDrilldownCategory(finalCat);
     if (typeof window !== 'undefined') {
+      try {
+        window.history.pushState({ inCategory: true, category: finalCat }, '', `/courses?category=${encodeURIComponent(finalCat)}`);
+      } catch (_) {}
       setTimeout(() => {
         const el = document.getElementById('courses-section') || document.getElementById('all-courses-grid') || categoriesContainerRef.current;
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -392,13 +395,51 @@ export default function CoursePage() {
 
     // Browser back/forward navigation support
     const handlePopState = () => {
-      setSelectedCourse(null);
-      setActiveDrilldownCategory(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('selected_course_id');
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const cId = params.get('course') || params.get('courseId');
+      const cat = params.get('category');
+      if (cId) {
+        const targetCourse = courses.find(c => String(c.id) === String(cId) || String(c.name) === String(cId));
+        if (targetCourse) {
+          handleSelectCourse(targetCourse);
+          return;
+        }
       }
+      setSelectedCourse(null);
+      if (cat) {
+        setActiveDrilldownCategory(cat);
+        setSelectedCategory(cat);
+      } else {
+        setActiveDrilldownCategory(null);
+        setSelectedCategory('All');
+      }
+      localStorage.removeItem('selected_course_id');
     };
     window.addEventListener('popstate', handlePopState);
+
+    // Step-by-step back navigation event (from mascot NAVIGATE_BACK or custom back triggers)
+    const handleStepwiseBack = () => {
+      if (selectedCourse) {
+        setSelectedCourse(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('selected_course_id');
+          const catParam = activeDrilldownCategory ? `?category=${encodeURIComponent(activeDrilldownCategory)}` : '';
+          window.history.pushState({}, '', `/courses${catParam}`);
+        }
+      } else if (activeDrilldownCategory) {
+        setActiveDrilldownCategory(null);
+        setSelectedCategory('All');
+        if (typeof window !== 'undefined') {
+          window.history.pushState({}, '', '/courses');
+        }
+      } else {
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          window.history.back();
+        }
+      }
+    };
+    window.addEventListener('courses_navigate_back_step', handleStepwiseBack);
 
     // Listen for cross-tab or cross-component course updates
     const handleCoursesUpdated = () => {
@@ -440,6 +481,7 @@ export default function CoursePage() {
     return () => {
       window.removeEventListener('reset_courses_view', handleResetCoursesView);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('courses_navigate_back_step', handleStepwiseBack);
       window.removeEventListener('courses_updated', handleCoursesUpdated);
       window.removeEventListener('storage', handleCoursesUpdated);
       window.removeEventListener('focus', handleCoursesUpdated);
@@ -451,7 +493,7 @@ export default function CoursePage() {
     if (typeof window !== 'undefined' && course) {
       localStorage.setItem('selected_course_id', course.id);
       try {
-        window.history.pushState({ inCourse: true, courseId: course.id }, '', '/courses');
+        window.history.pushState({ inCourse: true, courseId: course.id }, '', `/courses?course=${encodeURIComponent(course.id)}`);
       } catch (e) {}
     }
 
@@ -587,6 +629,8 @@ export default function CoursePage() {
                 setSelectedCourse(null);
                 if (typeof window !== 'undefined') {
                   localStorage.removeItem('selected_course_id');
+                  const catParam = activeDrilldownCategory ? `?category=${encodeURIComponent(activeDrilldownCategory)}` : '';
+                  window.history.pushState({}, '', `/courses${catParam}`);
                 }
               }}
               style={{
@@ -980,6 +1024,9 @@ export default function CoursePage() {
               onClick={() => {
                 setActiveDrilldownCategory(null);
                 setSelectedCategory('All');
+                if (typeof window !== 'undefined') {
+                  window.history.pushState({}, '', '/courses');
+                }
               }}
               style={{
                 display: 'inline-flex',

@@ -13,7 +13,9 @@ class MascotBridge {
     this.pollTimer = null;
     this.listeners = new Set();
     this.navListeners = new Set();
+    this.navBackListeners = new Set();
     this.statusListeners = new Set();
+    this.executedCommandIds = new Set();
     this.pendingQueue = [];
     this.tabId = typeof window !== 'undefined'
       ? (sessionStorage.getItem('vedika_mascot_tab_id') || Math.random().toString(36).substring(2, 9))
@@ -181,8 +183,55 @@ class MascotBridge {
     const type = msg.type || msg.event;
     const payload = msg.payload || {};
 
+    // 1. Deduplication and freshness check
+    const cmdId = msg.id || payload.id;
+    const cmdTime = msg.timestamp || payload.timestamp;
+    if (cmdId) {
+      if (this.executedCommandIds.has(cmdId)) {
+        console.log('[MascotBridge] Ignored duplicate command:', cmdId);
+        return;
+      }
+      this.executedCommandIds.add(cmdId);
+      if (this.executedCommandIds.size > 200) {
+        const first = this.executedCommandIds.values().next().value;
+        this.executedCommandIds.delete(first);
+      }
+    }
+    if (cmdTime && (Date.now() - cmdTime > 6000)) {
+      console.log('[MascotBridge] Ignored stale command (>6s old):', type, cmdTime);
+      return;
+    }
+
+    if (type === 'NAVIGATE_BACK') {
+      console.log('[MascotBridge] Received NAVIGATE_BACK command from mascot.');
+      if (this.navBackListeners.size > 0) {
+        this.navBackListeners.forEach((fn) => {
+          try { fn(); } catch (e) { console.error('[MascotBridge] navBackListener error:', e); }
+        });
+      } else if (typeof window !== 'undefined') {
+        window.history.back();
+      }
+      return;
+    }
+
     if (type === 'NAVIGATE_WEBAPP' && payload.route) {
       const targetRoute = payload.route;
+      const currentFull = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+      const currentPathOnly = typeof window !== 'undefined' ? window.location.pathname : '';
+
+      // Skip redundant navigation if active tab is already exactly at target route
+      if (targetRoute === currentFull || targetRoute === currentPathOnly) {
+        console.log('[MascotBridge] Already at target route, skipping redundant navigation:', targetRoute);
+        this.send({
+          type: 'NAVIGATE_ACK',
+          payload: {
+            route: targetRoute,
+            currentPath: currentPathOnly
+          }
+        });
+        return;
+      }
+
       console.log('[MascotBridge] Navigating active tab to:', targetRoute);
 
       // Confirm receipt back to mascot immediately
@@ -190,7 +239,7 @@ class MascotBridge {
         type: 'NAVIGATE_ACK',
         payload: {
           route: targetRoute,
-          currentPath: typeof window !== 'undefined' ? window.location.pathname : ''
+          currentPath: currentPathOnly
         }
       });
 
@@ -325,6 +374,11 @@ class MascotBridge {
     return () => this.navListeners.delete(callback);
   }
 
+  onNavigateBack(callback) {
+    this.navBackListeners.add(callback);
+    return () => this.navBackListeners.delete(callback);
+  }
+
   onStatusChange(callback) {
     this.statusListeners.add(callback);
     try { callback(this.isConnected); } catch (e) {}
@@ -360,6 +414,7 @@ export function getMascotBridge() {
       sendVoiceTutorState: () => false,
       subscribe: () => () => {},
       onNavigate: () => () => {},
+      onNavigateBack: () => () => {},
       onStatusChange: () => () => {}
     };
   }

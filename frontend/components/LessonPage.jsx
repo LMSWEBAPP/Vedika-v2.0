@@ -142,6 +142,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   const [forcePause, setForcePause] = useState(false);
   const recognitionRef = useRef(null);
   const dictationBaseTextRef = useRef('');
+  const isExplainingRef = useRef(false);
 
   // Course Announcements state
   const [announcements, setAnnouncements] = useState([]);
@@ -426,6 +427,11 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   // TAB 1: ASK VEDIKA HANDLER
   // --------------------------------------------------------------------------
   const handleExplainMoment = async (optionalSecs) => {
+    if (explainerLoading || isExplainingRef.current) {
+      console.log('[LessonPage] Ask Vedika explain moment already in flight, debouncing.');
+      return;
+    }
+    isExplainingRef.current = true;
     setForcePause(true);
     setTimeout(() => setForcePause(false), 400);
 
@@ -530,6 +536,9 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       } catch (e) {}
     } finally {
       setExplainerLoading(false);
+      setTimeout(() => {
+        isExplainingRef.current = false;
+      }, 2500);
     }
   };
 
@@ -997,7 +1006,14 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
-              onClick={() => router.push('/courses')}
+              onClick={() => {
+                const cId = lesson?.courseId || (typeof window !== 'undefined' ? localStorage.getItem('selected_course_id') : '');
+                if (cId) {
+                  router.push(`/courses?course=${encodeURIComponent(cId)}`);
+                } else {
+                  router.push('/courses');
+                }
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
