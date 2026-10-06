@@ -226,33 +226,39 @@ export default function LayoutWrapper({ children }) {
   const isViewportLocked = isFixedPage || isHomePage;
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: (isViewportLocked || isLabPage) ? '100vh' : 'auto',
-      minHeight: '100vh',
-      maxHeight: (isViewportLocked || isLabPage) ? '100vh' : 'none',
-      background: isHomePage ? '#02050c' : 'var(--bg)',
-      color: isHomePage ? '#f8fafc' : 'var(--text)',
-      width: '100%',
-      position: 'relative',
-      overflow: (isViewportLocked || isLabPage) ? 'hidden' : 'visible'
-    }}>
+    <div
+      className={`app-layout-root ${isViewportLocked ? 'viewport-locked' : ''} ${isHomePage ? 'home-layout' : ''}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: (isViewportLocked || isLabPage) ? '100vh' : 'auto',
+        minHeight: '100vh',
+        maxHeight: (isViewportLocked || isLabPage) ? '100vh' : 'none',
+        background: isHomePage ? '#02050c' : 'var(--bg)',
+        color: isHomePage ? '#f8fafc' : 'var(--text)',
+        width: '100%',
+        position: 'relative',
+        overflow: (isViewportLocked || isLabPage) ? 'hidden' : 'visible'
+      }}
+    >
       {/* Present Navbar displayed consistently on every page */}
       <Header />
-      <main style={{
-        position: 'relative',
-        width: '100%',
-        boxSizing: 'border-box',
-        overflowY: isLabPage ? 'auto' : (isViewportLocked ? 'hidden' : 'auto'),
-        overflowX: 'hidden',
-        height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
-        maxHeight: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
-        minHeight: 'calc(100vh - 54px)',
-        marginTop: isAskVedika ? 0 : '54px',
-        paddingTop: 0,
-        background: isHomePage ? '#02050c' : 'var(--bg)'
-      }}>
+      <main
+        className={`app-main-content ${isViewportLocked ? 'viewport-locked' : ''} ${isHomePage ? 'home-main' : ''}`}
+        style={{
+          position: 'relative',
+          width: '100%',
+          boxSizing: 'border-box',
+          overflowY: isLabPage ? 'auto' : (isViewportLocked ? 'hidden' : 'auto'),
+          overflowX: 'hidden',
+          height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+          maxHeight: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+          minHeight: 'calc(100vh - 54px)',
+          marginTop: isAskVedika ? 0 : '54px',
+          paddingTop: 0,
+          background: isHomePage ? '#02050c' : 'var(--bg)'
+        }}
+      >
         {children}
       </main>
     </div>

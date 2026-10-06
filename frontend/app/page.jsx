@@ -5,7 +5,7 @@ import HeroSection from '@/components/HeroSection';
 
 export default function HomePage() {
   return (
-    <div style={{ height: '100%', width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#02050c' }}>
+    <div className="home-page-container" style={{ width: '100%', position: 'relative', backgroundColor: '#02050c' }}>
       <HeroSection />
     </div>
   );

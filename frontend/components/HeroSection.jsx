@@ -72,44 +72,6 @@ export default function HeroSection() {
     speed: 0.37,
   };
 
-  const [particlesConfig, setParticlesConfig] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('vedika_hero_particles_config_v7');
-        if (saved) return { ...DEFAULT_PARTICLES, ...JSON.parse(saved) };
-      } catch (e) {}
-    }
-    return DEFAULT_PARTICLES;
-  });
-
-  const [showTuningDock, setShowTuningDock] = useState(false);
-  const [copiedToast, setCopiedToast] = useState(false);
-
-  const handleParticleChange = (key, value) => {
-    setParticlesConfig(prev => {
-      const next = { ...prev, [key]: Number(value) };
-      try {
-        localStorage.setItem('vedika_hero_particles_config_v7', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
-  };
-
-  const copyConfigToClipboard = () => {
-    const text = JSON.stringify(particlesConfig, null, 2);
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedToast(true);
-      setTimeout(() => setCopiedToast(false), 2200);
-    });
-  };
-
-  const resetConfig = () => {
-    setParticlesConfig(DEFAULT_PARTICLES);
-    try {
-      localStorage.setItem('vedika_hero_particles_config_v7', JSON.stringify(DEFAULT_PARTICLES));
-    } catch (e) {}
-  };
-
   // Fluid reveal parameters
   const FIXED_RADIUS = 28;
   const DECAY_RATE = 0.055;
@@ -177,13 +139,13 @@ export default function HeroSection() {
       const timeline = gsap.timeline();
 
       if (titleLead) {
-        timeline.fromTo(titleLead, { y: '-0.5rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, 0);
+        timeline.from(titleLead, { y: '-0.5rem', opacity: 0, duration: 0.8, ease: 'power2.out' }, 0);
       }
       if (titleSubline) {
-        timeline.fromTo(titleSubline, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, twoFrames);
+        timeline.from(titleSubline, { y: '0.4rem', opacity: 0, duration: 0.8, ease: 'power2.out' }, 0.25);
       }
       if (desc) {
-        timeline.fromTo(desc, { y: '0.4rem', autoAlpha: 0 }, { y: '0rem', autoAlpha: 1, duration: fourtyFrames, ease: customEaseIn }, sixFrames);
+        timeline.from(desc, { y: '0.4rem', opacity: 0, duration: 0.8, ease: 'power2.out' }, 0.4);
       }
     } catch (err) {
       console.warn('GSAP animation error:', err);
@@ -526,7 +488,7 @@ export default function HeroSection() {
               <ParticlesBackground
                 count={9500}
                 opacity={0.94}
-                {...particlesConfig}
+                {...DEFAULT_PARTICLES}
               />
             </div>
 
@@ -584,206 +546,6 @@ export default function HeroSection() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ── Ring Particles Customization Dock (LEFT SIDE) ── */}
-      <div className={styles.tuningDockWrapper}>
-        {/* Toggle Button */}
-        {!showTuningDock ? (
-          <button
-            onClick={() => setShowTuningDock(true)}
-            title="Open Particle Rings Tuner"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 16px',
-              borderRadius: 24,
-              background: 'rgba(10, 18, 38, 0.88)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(56, 189, 248, 0.45)',
-              color: '#38BDF8',
-              fontSize: 12.5,
-              fontWeight: 700,
-              boxShadow: 'none',
-              transform: 'none',
-              transition: 'none',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#38BDF8';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.45)';
-            }}
-          >
-            <span style={{ fontSize: 15 }}>🪐</span>
-            <span>Tune Particle Rings</span>
-          </button>
-        ) : (
-          /* Glassmorphic Tuning Panel */
-          <div
-            style={{
-              width: 310,
-              maxHeight: 'calc(100vh - 120px)',
-              overflowY: 'auto',
-              background: 'rgba(7, 12, 28, 0.94)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              borderRadius: 20,
-              padding: '16px 18px',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), 0 0 32px rgba(56, 189, 248, 0.2)',
-              color: '#F1F5F9',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12
-            }}
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>🪐</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', letterSpacing: '0.02em' }}>Particle Rings Tuner</span>
-              </div>
-              <button
-                onClick={() => setShowTuningDock(false)}
-                title="Close Tuner"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#94A3B8',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  transition: 'none'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Sliders list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 11.5 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#38BDF8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: -2 }}>
-                Orientation & Transform
-              </div>
-              {[
-                { key: 'posX', label: 'Position X (Horizontal)', min: -80, max: 80, step: 0.5, color: '#38BDF8' },
-                { key: 'posY', label: 'Position Y (Vertical)', min: -80, max: 80, step: 0.5, color: '#38BDF8' },
-                { key: 'posZ', label: 'Position Z (Depth)', min: -120, max: 80, step: 1, color: '#38BDF8' },
-                { key: 'scale', label: 'Ring Scale', min: 0.4, max: 2.8, step: 0.02, color: '#38BDF8' },
-                { key: 'rotX', label: 'Tilt X (Pitch)', min: -180, max: 180, step: 1, color: '#38BDF8' },
-                { key: 'rotY', label: 'Tilt Y (Yaw)', min: -180, max: 180, step: 1, color: '#38BDF8' },
-                { key: 'rotZ', label: 'Roll Z (Roll)', min: -180, max: 180, step: 1, color: '#38BDF8' },
-              ].map(({ key, label, min, max, step, color }) => (
-                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
-                    <span>{label}</span>
-                    <span style={{ color: color, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{particlesConfig[key] ?? DEFAULT_PARTICLES[key]}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={particlesConfig[key] ?? DEFAULT_PARTICLES[key]}
-                    onChange={(e) => handleParticleChange(key, e.target.value)}
-                    style={{
-                      width: '100%',
-                      accentColor: color,
-                      cursor: 'pointer',
-                      height: 4
-                    }}
-                  />
-                </div>
-              ))}
-
-              {/* Rings & Dust FX controls */}
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#FACC15', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4, marginBottom: -2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
-                Density, Dust & Speed FX
-              </div>
-              {[
-                { key: 'ringRotationSpeed', label: 'Ring Rotation Speed', min: 0.0, max: 2.0, step: 0.02, color: '#C084FC' },
-                { key: 'speed', label: 'Particle Flow Speed', min: 0.05, max: 1.8, step: 0.02, color: '#A855F7' },
-                { key: 'ringDensity', label: 'Ring Density (Thickness & Count)', min: 0.2, max: 2.5, step: 0.05, color: '#38BDF8' },
-                { key: 'dustIntensity', label: 'Golden Dust Intensity (Sparkle)', min: 0.1, max: 3.0, step: 0.05, color: '#FACC15' },
-              ].map(({ key, label, min, max, step, color }) => (
-                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
-                    <span style={{ color: '#E2E8F0', fontWeight: 600 }}>{label}</span>
-                    <span style={{ color: color, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{particlesConfig[key] ?? DEFAULT_PARTICLES[key]}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={particlesConfig[key] ?? DEFAULT_PARTICLES[key]}
-                    onChange={(e) => handleParticleChange(key, e.target.value)}
-                    style={{
-                      width: '100%',
-                      accentColor: color,
-                      cursor: 'pointer',
-                      height: 5
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 8, paddingTop: 6, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <button
-                onClick={copyConfigToClipboard}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '8px 12px',
-                  borderRadius: 10,
-                  background: copiedToast ? '#10B981' : 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
-                  border: 'none',
-                  color: '#FFFFFF',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'none',
-                  boxShadow: 'none'
-                }}
-              >
-                {copiedToast ? '✓ Copied!' : '📋 Copy Values'}
-              </button>
-              <button
-                onClick={resetConfig}
-                title="Reset to default alignment"
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 10,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#CBD5E1',
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'none',
-                  boxShadow: 'none'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

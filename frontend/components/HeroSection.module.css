@@ -434,6 +434,8 @@
   pointer-events: none;
   z-index: 15;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: calc(100% - 24px);
+  box-sizing: border-box;
 }
 
 .idleHintActive {
@@ -458,26 +460,6 @@
   letter-spacing: 0.03em;
   color: #e2e8f0;
   white-space: nowrap;
-}
-
-.tuningDockWrapper {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 9000;
-}
-
-@media (max-width: 768px) {
-  .tuningDockWrapper {
-    bottom: 12px;
-    left: 12px;
-  }
-}
-
-@media (max-width: 520px) {
-  .tuningDockWrapper {
-    display: none !important;
-  }
 }
 
 @keyframes pulseGlow {
@@ -535,54 +517,131 @@
 }
 
 /* ========================================================= */
-/* RESPONSIVE DESIGN                                         */
+/* RESPONSIVE DESIGN ARCHITECTURE                            */
 /* ========================================================= */
 @media (max-width: 960px) {
+  .heroSection {
+    height: auto;
+    min-height: calc(100vh - 54px);
+    padding: clamp(1.75rem, 3.5vw, 2.5rem) clamp(1rem, 3vw, 2rem) 3.5rem clamp(1rem, 3vw, 2rem);
+    overflow-y: visible;
+    overflow-x: hidden;
+  }
   .container {
     grid-template-columns: 1fr;
-    gap: 2.5rem;
+    gap: clamp(1.75rem, 3.5vw, 2.5rem);
+    max-width: 720px;
   }
   .contentCol {
     max-width: 100%;
     align-items: center;
     text-align: center;
   }
+  .titleBlock {
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .titleH1 {
+    align-items: center;
+  }
+  .titleRow {
+    justify-content: center;
+  }
+  .titleRowVedika {
+    font-size: clamp(3.2rem, 13vw, 5.2rem);
+    letter-spacing: -0.025em;
+  }
+  .titleRowAiTutor {
+    font-size: clamp(1.85rem, 7.5vw, 3.1rem);
+    letter-spacing: 0.035em;
+    padding-left: 0;
+  }
+  .titleSubline {
+    font-size: clamp(1.15rem, 3.6vw, 1.65rem);
+    margin-top: 0.5rem;
+    text-align: center;
+  }
   .description {
-    max-width: 100%;
+    max-width: 580px;
+    font-size: clamp(0.92rem, 2.6vw, 1.1rem);
+    line-height: 1.6;
+    margin: 0.5rem auto 0 auto;
+    text-align: center;
   }
   .stageFrame {
-    max-width: 520px;
+    max-width: min(100%, 480px);
+    aspect-ratio: 1.2 / 1;
     margin: 0 auto;
+  }
+  .visualCol {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .stageParticlesWrapper {
+    width: 220%;
+    height: 220%;
   }
 }
 
 @media (max-width: 680px) {
   .heroSection {
-    height: auto;
-    min-height: calc(100vh - 54px);
-    padding: 2rem 1.25rem 3rem 1.25rem;
-    overflow-y: visible;
+    padding: 1.25rem 0.85rem 3rem 0.85rem;
   }
-  .stageFrame {
-    aspect-ratio: 1.15 / 1;
-    max-width: 400px;
-    max-height: 360px;
+  .titleBlock {
+    margin-bottom: 0.6rem;
   }
   .titleRowVedika {
-    font-size: clamp(2.5rem, 11vw, 3.8rem);
+    font-size: clamp(3.05rem, 13.5vw, 4.2rem);
   }
   .titleRowAiTutor {
-    font-size: clamp(1.5rem, 6.5vw, 2.4rem);
+    font-size: clamp(1.75rem, 7.8vw, 2.45rem);
+  }
+  .wordGap {
+    width: clamp(0.55rem, 1.8vw, 0.95rem);
+  }
+  .stageFrame {
+    max-width: min(100%, 400px);
+    aspect-ratio: 1.15 / 1;
+    max-height: 360px;
   }
   .description {
     font-size: 0.95rem;
     line-height: 1.6;
   }
   .idleHint {
-    padding: 0.35rem 0.85rem;
+    padding: 0.28rem 0.75rem;
+    max-width: calc(100vw - 32px);
   }
   .hintQuoteText {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 360px) {
+  .heroSection {
+    padding: 1rem 0.65rem 2.5rem 0.65rem;
+  }
+  .titleLead {
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+  }
+  .titleRowVedika {
+    font-size: clamp(2.65rem, 12vw, 3.1rem);
+  }
+  .titleRowAiTutor {
+    font-size: clamp(1.5rem, 6.8vw, 1.85rem);
+  }
+  .stageFrame {
+    max-width: 100%;
+    max-height: 310px;
+  }
+  .description {
+    font-size: 0.88rem;
+    line-height: 1.55;
   }
 }
 

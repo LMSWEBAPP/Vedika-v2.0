@@ -115,6 +115,9 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Small mobile devices (< 480px) touch target safeguards */
@@ -271,3 +274,34 @@ button:not(.carousel-nav-arrow):not(.showcase-nav-btn):active,
 .showcase-nav-btn:active {
   transform: translateY(-50%) !important;
 }
+
+/* Scoped Responsive Layout for Home Page: Strict 100vh lock on Desktop/Laptop (>=960px), natural scrolling on Tablet/Mobile (<960px) */
+.home-page-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #02050c;
+}
+
+@media (max-width: 960px) {
+  .home-layout.viewport-locked {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+  }
+  .home-main.viewport-locked {
+    height: auto !important;
+    max-height: none !important;
+    min-height: calc(100vh - 54px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  .home-page-container {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+  }
+}
+

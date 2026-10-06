@@ -461,6 +461,9 @@
   .navMenu {
     display: none;
   }
+  .getStartedBtn {
+    display: none;
+  }
   .mobileToggleBtn {
     display: flex;
   }
@@ -488,11 +491,6 @@
     font-size: 0.56rem;
     letter-spacing: 0.12em;
   }
-  .getStartedBtn {
-    padding: 0.45rem 0.85rem;
-    font-size: 0.8rem;
-    gap: 0.35rem;
-  }
   .rightActions {
     gap: 0.5rem;
   }
@@ -502,9 +500,12 @@
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .header {
-    padding: 0 0.65rem;
+    padding: 0 0.75rem;
+  }
+  .brandSubtitle {
+    display: none;
   }
   .userName {
     display: none;
@@ -512,11 +513,29 @@
   .profileCapsule {
     padding: 3px 6px 3px 3px;
   }
-  .brandSubtitle {
-    display: none;
+  .rightActions {
+    gap: 0.45rem;
   }
-  .getStartedBtn {
-    padding: 0.4rem 0.7rem;
-    font-size: 0.76rem;
+  .mobileToggleBtn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    padding: 0 0.5rem;
+  }
+  .brandTitle,
+  .brandTitleOneLine {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+  }
+  .logoWrap {
+    gap: 0.5rem;
+  }
+  .mobileToggleBtn {
+    width: 32px;
+    height: 32px;
   }
 }
