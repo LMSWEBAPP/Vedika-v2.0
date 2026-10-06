@@ -185,8 +185,9 @@ export default function BiologyLab() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#07080F');
 
+    const isMobileView = width < 768;
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-    camera.position.set(0, 2, 7);
+    camera.position.set(0, isMobileView ? 0.6 : 2, isMobileView ? 8.2 : 7);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -197,6 +198,7 @@ export default function BiologyLab() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.target.set(0, isMobileView ? 0.2 : 0, 0);
     controls.maxPolarAngle = Math.PI / 2 + 0.1;
 
     // Lights
@@ -572,7 +574,7 @@ export default function BiologyLab() {
       renderer.dispose();
       controls.dispose();
     };
-  }, []);
+  }, [labMode]);
 
   if (labMode === 'phet') {
     return (
@@ -871,8 +873,8 @@ export default function BiologyLab() {
       <div style={{
         flex: 1,
         width: '100%',
-        minHeight: isStacked ? 340 : 700,
-        height: isStacked ? 380 : '100%',
+        minHeight: isStacked ? 380 : 700,
+        height: isStacked ? 440 : '100%',
         order: isStacked ? 1 : 2,
         position: 'relative',
         display: 'flex',
@@ -880,7 +882,7 @@ export default function BiologyLab() {
       }}>
         
         {/* Three.js Canvas container */}
-        <div ref={mountRef} style={{ width: '100%', height: isStacked ? 380 : '100%', minHeight: isStacked ? 340 : 700, zIndex: 1 }} />
+        <div ref={mountRef} style={{ width: '100%', height: isStacked ? 440 : '100%', minHeight: isStacked ? 380 : 700, zIndex: 1 }} />
 
         {/* Live Lotka-Volterra SVG Graph Plot overlay */}
         {selectedExperiment === 'ecosystem' && historyData.length > 1 && (

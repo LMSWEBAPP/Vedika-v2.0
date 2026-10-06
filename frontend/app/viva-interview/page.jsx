@@ -2381,12 +2381,30 @@ export default function VivaInterviewPage() {
               flex: 1 !important;
               opacity: 1 !important;
               pointer-events: auto !important;
+              padding: 16px 14px 40px !important;
             }
             .box-container.right-open .box2-content {
               flex: 1 !important;
               opacity: 1 !important;
-              padding: 16px 12px !important;
+              padding: 16px 14px 40px !important;
               pointer-events: auto !important;
+            }
+            .step-progress-wrapper {
+              margin: 36px 0 24px 0 !important;
+            }
+            .hero-actor-container {
+              bottom: 20px !important;
+              width: 36px !important;
+              height: 36px !important;
+              margin-left: -18px !important;
+            }
+            .hero-sprite-frame {
+              width: 36px !important;
+              height: 36px !important;
+              background-size: 216px 36px !important;
+            }
+            .hero-sprite-frame.settled {
+              background-position: -180px 0px !important;
             }
           }
 
@@ -2767,10 +2785,13 @@ export default function VivaInterviewPage() {
             {/* Top Bar: Back Button */}
             <div style={{
               display: 'flex',
-              justifyContent: 'flex-start',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: 6,
-              flexShrink: 0
+              marginBottom: isMobile ? 12 : 6,
+              paddingTop: isMobile ? 4 : 0,
+              flexShrink: 0,
+              position: 'relative',
+              zIndex: 10
             }}>
               <button
                 type="button"
@@ -2801,6 +2822,56 @@ export default function VivaInterviewPage() {
                 <ArrowLeft size={15} />
                 <span>Back</span>
               </button>
+
+              {isMobile && (
+                <div style={{
+                  display: 'flex',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 20,
+                  padding: 2,
+                  gap: 2
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRightOpen(false);
+                      setSessionMode('viva');
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 16,
+                      border: 'none',
+                      background: !isRightOpen && sessionMode === 'viva' ? 'rgba(124, 58, 237, 0.4)' : 'transparent',
+                      color: !isRightOpen && sessionMode === 'viva' ? '#FFFFFF' : '#94A3B8',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Viva
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRightOpen(true);
+                      setSessionMode('interview');
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 16,
+                      border: 'none',
+                      background: isRightOpen || sessionMode === 'interview' ? 'rgba(14, 165, 233, 0.4)' : 'transparent',
+                      color: isRightOpen || sessionMode === 'interview' ? '#FFFFFF' : '#94A3B8',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Interview
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Saved Session Restore Alert (if exists) */}
@@ -2946,7 +3017,7 @@ export default function VivaInterviewPage() {
 
             {/* STEP 1: CHOOSE TOPIC */}
             {setupStep === 1 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
                     fontSize: isMobile ? '1.35rem' : '1.6rem',
@@ -3125,7 +3196,7 @@ export default function VivaInterviewPage() {
 
             {/* STEP 2: ACADEMIC LEVEL & SYLLABUS DEPTH */}
             {setupStep === 2 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
                     fontSize: isMobile ? '1.35rem' : '1.5rem',
@@ -3246,7 +3317,7 @@ export default function VivaInterviewPage() {
 
             {/* STEP 3: ORAL VIVA ENGINE & DIFFICULTY */}
             {setupStep === 3 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
                     fontSize: isMobile ? '1.35rem' : '1.5rem',
@@ -3379,7 +3450,7 @@ export default function VivaInterviewPage() {
 
             {/* STEP 4: REVIEW & START */}
             {setupStep === 4 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
                     fontSize: isMobile ? '1.3rem' : '1.45rem',
@@ -3761,15 +3832,97 @@ export default function VivaInterviewPage() {
         boxSizing: 'border-box',
         position: 'relative'
       }}>
-        {/* Top Spacer matching Box 1 Back Button height to keep steppers aligned */}
+        {/* Top Bar: Back Button */}
         <div style={{
           display: 'flex',
-          justifyContent: 'flex-start',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          height: 31,
-          marginBottom: 6,
-          flexShrink: 0
-        }} />
+          marginBottom: isMobile ? 12 : 6,
+          paddingTop: isMobile ? 4 : 0,
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 10
+        }}>
+          <button
+            type="button"
+            onClick={handleGoBack}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 9999,
+              padding: '5px 14px',
+              color: '#94A3B8',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#FFFFFF';
+              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#94A3B8';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            }}
+          >
+            <ArrowLeft size={15} />
+            <span>Back</span>
+          </button>
+
+          {isMobile && (
+            <div style={{
+              display: 'flex',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 20,
+              padding: 2,
+              gap: 2
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRightOpen(false);
+                  setSessionMode('viva');
+                }}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 16,
+                  border: 'none',
+                  background: !isRightOpen && sessionMode === 'viva' ? 'rgba(124, 58, 237, 0.4)' : 'transparent',
+                  color: !isRightOpen && sessionMode === 'viva' ? '#FFFFFF' : '#94A3B8',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Viva
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRightOpen(true);
+                  setSessionMode('interview');
+                }}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 16,
+                  border: 'none',
+                  background: isRightOpen || sessionMode === 'interview' ? 'rgba(14, 165, 233, 0.4)' : 'transparent',
+                  color: isRightOpen || sessionMode === 'interview' ? '#FFFFFF' : '#94A3B8',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Interview
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
         <div className="step-progress-wrapper">
@@ -3852,7 +4005,7 @@ export default function VivaInterviewPage() {
 
         {/* STEP 1: TARGET ROLE */}
         {interviewStep === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
                 fontSize: isMobile ? '1.5rem' : '1.85rem',
@@ -3995,7 +4148,7 @@ export default function VivaInterviewPage() {
 
         {/* STEP 2: SENIORITY & TECH STACK */}
         {interviewStep === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
                 fontSize: isMobile ? '1.5rem' : '1.85rem',
@@ -4113,7 +4266,7 @@ export default function VivaInterviewPage() {
 
         {/* STEP 3: RIGOR & INTERVIEW MODE */}
         {interviewStep === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
                 fontSize: isMobile ? '1.5rem' : '1.85rem',
@@ -4248,7 +4401,7 @@ export default function VivaInterviewPage() {
 
         {/* STEP 4: REVIEW & START INTERVIEW */}
         {interviewStep === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
                 fontSize: isMobile ? '1.5rem' : '1.85rem',

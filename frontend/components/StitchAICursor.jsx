@@ -108,69 +108,89 @@ export default function StitchAICursor({
           }}
         >
           <defs>
-            <linearGradient id="penBarrelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="50%" stopColor={accentColor} />
-              <stop offset="100%" stopColor="#1E1B4B" />
+            {/* Pure Crisp White Pen Barrel Gradient with soft metallic reflection */}
+            <linearGradient id="whitePenBarrelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="45%" stopColor="#F8FAFC" />
+              <stop offset="85%" stopColor="#E2E8F0" />
+              <stop offset="100%" stopColor="#CBD5E1" />
             </linearGradient>
-            <linearGradient id="penNibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F8FAFC" />
-              <stop offset="40%" stopColor="#E2E8F0" />
+            {/* Polished Silver / Chrome Trim Gradient */}
+            <linearGradient id="chromeTrimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="50%" stopColor="#CBD5E1" />
               <stop offset="100%" stopColor="#94A3B8" />
             </linearGradient>
-            <linearGradient id="penGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FDE047" />
-              <stop offset="100%" stopColor="#CA8A04" />
+            {/* Precision Stainless Steel Nib Cone Gradient */}
+            <linearGradient id="whitePenNibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#F8FAFC" />
+              <stop offset="60%" stopColor="#E2E8F0" />
+              <stop offset="100%" stopColor="#94A3B8" />
             </linearGradient>
           </defs>
 
-          {/* Pen Barrel */}
+          {/* White Pen Barrel Body */}
           <polygon
             points="7,25 22,10 28,16 13,31"
-            fill="url(#penBarrelGrad)"
-            stroke="rgba(255, 255, 255, 0.4)"
-            strokeWidth="0.75"
+            fill="url(#whitePenBarrelGrad)"
+            stroke="#94A3B8"
+            strokeWidth="0.8"
           />
 
-          {/* Pen Top Cap Finial */}
+          {/* White Pen Barrel Subtle Highlight Ridge */}
+          <line
+            x1="10"
+            y1="22"
+            x2="24"
+            y2="13"
+            stroke="rgba(255, 255, 255, 0.9)"
+            strokeWidth="1.2"
+          />
+
+          {/* Pen Top Cap Finial (Clean White + Chrome Trim) */}
           <path
             d="M 22 10 L 25 7 C 27 5 30 5 32 7 C 34 9 34 12 32 14 L 28 16 Z"
-            fill="#1E293B"
-            stroke="url(#penGoldGrad)"
-            strokeWidth="0.75"
+            fill="#FFFFFF"
+            stroke="url(#chromeTrimGrad)"
+            strokeWidth="0.8"
           />
 
-          {/* Metallic Gold Ring / Grip */}
+          {/* Chrome Pen Clip Accent */}
+          <line
+            x1="24"
+            y1="8"
+            x2="17"
+            y2="18"
+            stroke="url(#chromeTrimGrad)"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+
+          {/* Metallic Silver Grip Ring */}
           <polygon
             points="5,27 7,25 13,31 11,33"
-            fill="url(#penGoldGrad)"
-            stroke="#FEF08A"
+            fill="url(#chromeTrimGrad)"
+            stroke="#94A3B8"
             strokeWidth="0.5"
           />
 
-          {/* Fountain Pen Nib Base */}
+          {/* Pen Nib Cone */}
           <polygon
             points="2,34 5,27 11,33"
-            fill="url(#penNibGrad)"
-            stroke="#CBD5E1"
+            fill="url(#whitePenNibGrad)"
+            stroke="#94A3B8"
             strokeWidth="0.75"
           />
 
-          {/* Nib Slit & Ink Breather Hole */}
+          {/* Fine Writing Tip Slit */}
           <line
             x1="2"
             y1="34"
-            x2="8"
-            y2="28"
-            stroke="#1E293B"
-            strokeWidth="0.75"
+            x2="7"
+            y2="29"
+            stroke="#475569"
+            strokeWidth="0.65"
             strokeLinecap="round"
-          />
-          <circle
-            cx="8"
-            cy="28"
-            r="1"
-            fill="#1E293B"
           />
 
           {/* Active Ink Point at Nib Tip */}

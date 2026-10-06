@@ -825,7 +825,7 @@ export default function CodePuzzle() {
   // Resizable split percentages
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
-  const [mobileActiveView, setMobileActiveView] = useState('editor'); // 'editor' | 'panel'
+  const [mobileActiveView, setMobileActiveView] = useState('editor'); // 'editor' | 'console' | 'guide' | 'visualizer' | 'preview'
   const [bottomSplitPercent, setBottomSplitPercent] = useState(38);
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(460);
@@ -833,6 +833,16 @@ export default function CodePuzzle() {
   const isDraggingRightRef = useRef(false);
   const centerContainerRef = useRef(null);
   const validateStepRef = useRef(null);
+
+  // Auto-fit xterm on mobile when console tab is selected
+  useEffect(() => {
+    if (isMobile && mobileActiveView === 'console') {
+      const timer = setTimeout(() => {
+        fitAddonRef.current?.fit();
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile, mobileActiveView]);
 
   // ── Synchronize active code, errors, and puzzle state with Desktop Mascot ──
   useEffect(() => {
@@ -1471,6 +1481,9 @@ export default function CodePuzzle() {
       if (activeRightTab !== 'preview' && activeBottomTab !== 'preview') {
         setActiveRightTab('preview');
       }
+      if (isMobile) {
+        setMobileActiveView('preview');
+      }
       if (terminalInstanceRef.current) {
         terminalInstanceRef.current.writeln(`\x1b[32m✔ [Web Sandbox] Compiled ${webFiles.map(f => f.name).join(', ')} successfully at ${new Date().toLocaleTimeString()}!\x1b[0m`);
       }
@@ -1480,6 +1493,9 @@ export default function CodePuzzle() {
     // Python Execution
     if (!isReady || isRunning || !activePuzzle) return;
     setActiveBottomTab('console');
+    if (isMobile) {
+      setMobileActiveView('console');
+    }
     if (terminalInstanceRef.current) {
       terminalInstanceRef.current.clear();
       terminalInstanceRef.current.writeln('\x1b[35m--- Executing Python Code ---\x1b[0m');
@@ -1494,6 +1510,7 @@ export default function CodePuzzle() {
   const handleVisualizeCode = () => {
     if (category === 'html') {
       setActiveRightTab('preview');
+      if (isMobile) setMobileActiveView('preview');
       return;
     }
     if (!isReady || isRunning || !activePuzzle) return;
@@ -1501,6 +1518,7 @@ export default function CodePuzzle() {
     setTraceData(null);
     setTraceError(null);
     setActiveRightTab('visualizer');
+    if (isMobile) setMobileActiveView('visualizer');
 
     if (terminalInstanceRef.current) {
       terminalInstanceRef.current.clear();
@@ -2073,6 +2091,27 @@ export default function CodePuzzle() {
             <ChevronLeft size={16} />
           </button>
 
+          {isMobile && (
+            <button
+              onClick={() => setIsExplorerOpen(!isExplorerOpen)}
+              title="Toggle File Catalog"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                background: isExplorerOpen ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                border: isExplorerOpen ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                color: isExplorerOpen ? '#C084FC' : '#94A3B8',
+                cursor: 'pointer'
+              }}
+            >
+              <FolderTree size={15} />
+            </button>
+          )}
+
           {/* Breadcrumb Path with Clickable Destinations */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
             <button
@@ -2159,40 +2198,108 @@ export default function CodePuzzle() {
           </div>
         </div>
 
-        {/* Mobile View Selector */}
+        {/* Mobile View Selector (4 Dedicated Views: Editor, Console, Guide, Visualizer/Preview) */}
         {isMobile && (
-          <div style={{ display: 'flex', width: '100%', background: 'rgba(255, 255, 255, 0.06)', borderRadius: 8, padding: 2, gap: 2, order: 3 }}>
+          <div style={{
+            display: 'flex',
+            width: '100%',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 10,
+            padding: 3,
+            gap: 3,
+            order: 3
+          }}>
             <button
               onClick={() => setMobileActiveView('editor')}
               style={{
                 flex: 1,
-                background: mobileActiveView === 'editor' ? '#A855F7' : 'transparent',
+                background: mobileActiveView === 'editor' ? 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' : 'transparent',
                 color: mobileActiveView === 'editor' ? '#fff' : '#94A3B8',
                 border: 'none',
-                borderRadius: 6,
-                padding: '6px 10px',
-                fontSize: 12,
+                borderRadius: 7,
+                padding: '7px 4px',
+                fontSize: 11.5,
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4
               }}
             >
-              💻 Code Editor
+              <Code size={13} />
+              <span>Editor</span>
             </button>
             <button
-              onClick={() => setMobileActiveView('panel')}
+              onClick={() => setMobileActiveView('console')}
               style={{
                 flex: 1,
-                background: mobileActiveView === 'panel' ? '#A855F7' : 'transparent',
-                color: mobileActiveView === 'panel' ? '#fff' : '#94A3B8',
+                background: mobileActiveView === 'console' ? 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)' : 'transparent',
+                color: mobileActiveView === 'console' ? '#fff' : '#94A3B8',
                 border: 'none',
-                borderRadius: 6,
-                padding: '6px 10px',
-                fontSize: 12,
+                borderRadius: 7,
+                padding: '7px 4px',
+                fontSize: 11.5,
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4
               }}
             >
-              {category === 'html' ? (activeRightTab === 'preview' ? '🌐 Live Preview' : '📖 Guide') : (activeRightTab === 'visualizer' ? '⚡ Visualizer' : '📖 Guide')}
+              <TerminalIcon size={13} />
+              <span>Console</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileActiveView('guide');
+                setActiveRightTab('guide');
+              }}
+              style={{
+                flex: 1,
+                background: mobileActiveView === 'guide' ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' : 'transparent',
+                color: mobileActiveView === 'guide' ? '#fff' : '#94A3B8',
+                border: 'none',
+                borderRadius: 7,
+                padding: '7px 4px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4
+              }}
+            >
+              <BookOpen size={13} />
+              <span>Guide</span>
+            </button>
+            <button
+              onClick={() => {
+                const targetTab = category === 'html' ? 'preview' : 'visualizer';
+                setMobileActiveView(targetTab);
+                setActiveRightTab(targetTab);
+              }}
+              style={{
+                flex: 1,
+                background: (mobileActiveView === 'visualizer' || mobileActiveView === 'preview') ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' : 'transparent',
+                color: (mobileActiveView === 'visualizer' || mobileActiveView === 'preview') ? '#fff' : '#94A3B8',
+                border: 'none',
+                borderRadius: 7,
+                padding: '7px 4px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4
+              }}
+            >
+              {category === 'html' ? <Globe size={13} /> : <Zap size={13} />}
+              <span>{category === 'html' ? 'Preview' : 'Visualizer'}</span>
             </button>
           </div>
         )}
@@ -2332,11 +2439,11 @@ export default function CodePuzzle() {
 
         {/* ── 1. LEFT ACTIVITY BAR (44px width) ── */}
         <div style={{
-          width: 44,
+          width: isMobile ? 0 : 44,
+          display: isMobile ? 'none' : 'flex',
           flexShrink: 0,
           background: '#07090F',
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           padding: '10px 0',
@@ -2399,7 +2506,7 @@ export default function CodePuzzle() {
         {/* ── 2. COLLAPSIBLE FILE EXPLORER (210px width) ── */}
         <div style={{
           position: isMobile ? 'absolute' : 'relative',
-          left: isMobile ? 44 : 'auto',
+          left: isMobile ? 0 : 44,
           top: isMobile ? 0 : 'auto',
           bottom: isMobile ? 0 : 'auto',
           zIndex: isMobile ? 35 : 'auto',
@@ -2623,7 +2730,7 @@ export default function CodePuzzle() {
           ref={centerContainerRef}
           style={{
             flex: 1,
-            display: (isMobile && mobileActiveView === 'panel') ? 'none' : 'flex',
+            display: (isMobile && (mobileActiveView === 'guide' || mobileActiveView === 'visualizer' || mobileActiveView === 'preview')) ? 'none' : 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             minHeight: 0,
@@ -2631,7 +2738,13 @@ export default function CodePuzzle() {
           }}
         >
           {/* Top: Editor Canvas & Multi-Tabs */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+          <div style={{
+            flex: 1,
+            display: (isMobile && mobileActiveView === 'console') ? 'none' : 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            minHeight: 0
+          }}>
             {/* Editor Tab Bar */}
             <div style={{
               height: 36,
@@ -2852,7 +2965,7 @@ export default function CodePuzzle() {
           {category !== 'html' && (
             <>
               {/* Horizontal Resizer Bar */}
-              {!isTerminalCollapsed && (
+              {!isTerminalCollapsed && !isMobile && (
                 <div
                   onMouseDown={handleBottomMouseDown}
                   style={{
@@ -2869,13 +2982,14 @@ export default function CodePuzzle() {
 
               {/* ── 4. BOTTOM PANEL (Console Terminal) ── */}
               <div style={{
-                height: isTerminalCollapsed ? 36 : `${bottomSplitPercent}%`,
-                display: 'flex',
+                height: isMobile ? '100%' : (isTerminalCollapsed ? 36 : `${bottomSplitPercent}%`),
+                flex: isMobile ? 1 : 'none',
+                display: (isMobile && mobileActiveView !== 'console') ? 'none' : 'flex',
                 flexDirection: 'column',
                 background: '#07090F',
                 overflow: 'hidden',
                 flexShrink: 0,
-                transition: 'height 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                transition: isMobile ? 'none' : 'height 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
               }}>
                 {/* Panel Header */}
                 <div style={{
@@ -2999,7 +3113,7 @@ export default function CodePuzzle() {
           width: isMobile ? '100%' : (isTablet ? 360 : rightPanelWidth),
           background: '#090C15',
           borderLeft: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
-          display: (isMobile && mobileActiveView === 'editor') ? 'none' : 'flex',
+          display: (isMobile && (mobileActiveView === 'editor' || mobileActiveView === 'console')) ? 'none' : 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
           flexShrink: 0

@@ -2307,48 +2307,50 @@ export default function GeneralTutor() {
               gap: 10
             }}
           >
-          {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar */}
-          <button
-            type="button"
-            data-leftnav-toggle="true"
-            onClick={() => {
-              setShowLeftNav(prev => {
-                if (!prev) setLeftNavView('menu');
-                return !prev;
-              });
-            }}
-            title={showLeftNav ? "Close navigation (Ctrl+B)" : "Open navigation (Ctrl+B)"}
-            aria-label="Toggle Navigation Menu"
-            style={{
-              pointerEvents: 'auto',
-              width: isMobile ? 42 : 48,
-              height: isMobile ? 42 : 48,
-              borderRadius: isMobile ? 21 : 24,
-              background: showLeftNav ? 'rgba(168, 85, 247, 0.35)' : 'rgba(15, 23, 42, 0.85)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: showLeftNav ? '1px solid rgba(168, 85, 247, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
-              boxShadow: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: showLeftNav ? '#FFFFFF' : '#94A3B8',
-              cursor: 'pointer',
-              flexShrink: 0,
-              position: 'relative'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = '#FFFFFF';
-              e.currentTarget.style.borderColor = '#A855F7';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
-              e.currentTarget.style.borderColor = showLeftNav ? 'rgba(168, 85, 247, 0.7)' : 'rgba(255, 255, 255, 0.16)';
-            }}
-          >
-            <PanelLeft size={isMobile ? 16 : 18} />
-          </button>
+          {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar (Desktop Only) */}
+          {!isMobile && (
+            <button
+              type="button"
+              data-leftnav-toggle="true"
+              onClick={() => {
+                setShowLeftNav(prev => {
+                  if (!prev) setLeftNavView('menu');
+                  return !prev;
+                });
+              }}
+              title={showLeftNav ? "Close navigation (Ctrl+B)" : "Open navigation (Ctrl+B)"}
+              aria-label="Toggle Navigation Menu"
+              style={{
+                pointerEvents: 'auto',
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                background: showLeftNav ? 'rgba(168, 85, 247, 0.35)' : 'rgba(15, 23, 42, 0.85)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                border: showLeftNav ? '1px solid rgba(168, 85, 247, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
+                boxShadow: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: showLeftNav ? '#FFFFFF' : '#94A3B8',
+                cursor: 'pointer',
+                flexShrink: 0,
+                position: 'relative'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.borderColor = '#A855F7';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
+                e.currentTarget.style.borderColor = showLeftNav ? 'rgba(168, 85, 247, 0.7)' : 'rgba(255, 255, 255, 0.16)';
+              }}
+            >
+              <PanelLeft size={18} />
+            </button>
+          )}
 
           {/* Full Creative Omnibar - Always active by default */}
           <div
@@ -2358,7 +2360,7 @@ export default function GeneralTutor() {
                 pointerEvents: 'auto',
                 flex: 1,
                 minWidth: 0,
-                background: 'rgba(12, 16, 28, 0.92)',
+                background: 'rgba(12, 16, 28, 0.94)',
                 backdropFilter: 'blur(28px)',
                 WebkitBackdropFilter: 'blur(28px)',
                 border: '1px solid rgba(168, 85, 247, 0.38)',
@@ -2388,69 +2390,106 @@ export default function GeneralTutor() {
                 </div>
               )}
 
-              {/* Main Input Row: Tool buttons + Textarea + Controls + Send */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, position: 'relative' }}>
-                {/* Autocomplete @ menu for PDFs */}
-                {showAtMenu && filteredDocs.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 'calc(100% + 10px)',
-                    left: 0,
-                    right: 0,
-                    maxHeight: '220px',
-                    overflowY: 'auto',
-                    background: 'rgba(15, 19, 34, 0.98)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(168, 85, 247, 0.4)',
-                    borderRadius: 12,
-                    boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
-                    zIndex: 150,
-                    padding: '6px 0'
-                  }}>
-                    <div style={{ padding: '6px 14px', fontSize: 10, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.06em', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 4 }}>
-                      CHOOSE PDF TO ATTACH (@)
-                    </div>
-                    {filteredDocs.map((doc, idx) => (
-                      <div
-                        key={doc.id}
-                        onMouseEnter={() => setAtMenuIndex(idx)}
-                        style={{
-                          padding: '8px 14px',
-                          fontSize: 12.5,
-                          color: '#F1F5F9',
-                          cursor: 'pointer',
-                          background: idx === atMenuIndex ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8
-                        }}
-                      >
-                        <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                          <span>📄</span>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                          <span style={{ fontSize: 10, color: '#64748B' }}>({new Date(doc.creation).toLocaleDateString()})</span>
-                        </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (confirm(`Are you sure you want to delete "${doc.name}" from your library?`)) {
-                              await handleLibraryDelete(doc.id);
-                            }
-                          }}
-                          style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.7 }}
-                          title="Delete from library"
-                        >
-                          <Trash size={12} />
-                        </button>
-                      </div>
-                    ))}
+              {/* Autocomplete @ menu for PDFs */}
+              {showAtMenu && filteredDocs.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 10px)',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  background: 'rgba(15, 19, 34, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                  borderRadius: 12,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+                  zIndex: 150,
+                  padding: '6px 0'
+                }}>
+                  <div style={{ padding: '6px 14px', fontSize: 10, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.06em', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 4 }}>
+                    CHOOSE PDF TO ATTACH (@)
                   </div>
-                )}
+                  {filteredDocs.map((doc, idx) => (
+                    <div
+                      key={doc.id}
+                      onMouseEnter={() => setAtMenuIndex(idx)}
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: 12.5,
+                        color: '#F1F5F9',
+                        cursor: 'pointer',
+                        background: idx === atMenuIndex ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                      }}
+                    >
+                      <div onClick={() => handleAttachDoc(doc)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                        <span>📄</span>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                        <span style={{ fontSize: 10, color: '#64748B' }}>({new Date(doc.creation).toLocaleDateString()})</span>
+                      </div>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${doc.name}" from your library?`)) {
+                            await handleLibraryDelete(doc.id);
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.7 }}
+                        title="Delete from library"
+                      >
+                        <Trash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
 
-                {/* Left quick actions: Menu toggle, PDF & Voice */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 3 }}>
+              {/* Row 1: Full-Width Clean Textarea (Never squished on any screen!) */}
+              <div style={{ width: '100%', position: 'relative' }}>
+                <textarea
+                  ref={inputRef}
+                  value={topic}
+                  onChange={handleTextareaChange}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  placeholder={isMobile ? "Ask Vedika anything..." : "Type a topic, ask for an infographic, or type @ to attach PDF..."}
+                  rows={1}
+                  onKeyDown={handleKeyDown}
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#F8FAFC',
+                    fontSize: isMobile ? 14 : 14.5,
+                    lineHeight: 1.5,
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                    padding: '2px 0 4px',
+                    minHeight: isMobile ? 32 : 28,
+                    maxHeight: 130,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Row 2: Bottom Action Row (Tools on Left, Mode & Send on Right) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                paddingTop: 4,
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                gap: 8
+              }}>
+                {/* Left quick actions: Sparkles/Menu toggle, PDF & Voice */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <button
                     type="button"
                     data-leftnav-toggle="true"
@@ -2515,36 +2554,8 @@ export default function GeneralTutor() {
                   </button>
                 </div>
 
-                {/* Center: Textarea (Never squished or overlapping send button) */}
-                <div style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <textarea
-                    ref={inputRef}
-                    value={topic}
-                    onChange={handleTextareaChange}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setIsInputFocused(false)}
-                    placeholder="Type a topic, ask for an infographic, or type @ to attach PDF..."
-                    rows={1}
-                    onKeyDown={handleKeyDown}
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      color: '#F8FAFC',
-                      fontSize: 13.5,
-                      lineHeight: 1.5,
-                      resize: 'none',
-                      fontFamily: 'inherit',
-                      padding: '4px 0',
-                      minHeight: 24,
-                      maxHeight: 120
-                    }}
-                  />
-                </div>
-
                 {/* Right tools cluster: Config Popover, Pin button, Send Button */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 2, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {/* Mode & Depth Pill Popover */}
                   <div style={{ position: 'relative' }} ref={configDropdownRef}>
                     <button
@@ -2554,7 +2565,7 @@ export default function GeneralTutor() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 5,
-                        padding: '5px 9px',
+                        padding: '4px 9px',
                         borderRadius: 9999,
                         background: 'rgba(255, 255, 255, 0.06)',
                         border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -2685,8 +2696,8 @@ export default function GeneralTutor() {
                     onClick={handleSend}
                     disabled={loading}
                     style={{
-                      width: 38,
-                      height: 38,
+                      width: 36,
+                      height: 36,
                       borderRadius: 12,
                       background: loading ? T.dim : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
                       border: 'none',
@@ -2695,8 +2706,8 @@ export default function GeneralTutor() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      boxShadow: 'none',
-                      transition: 'none'
+                      boxShadow: '0 2px 10px rgba(168, 85, 247, 0.35)',
+                      transition: 'all 0.15s ease'
                     }}
                   >
                     {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}

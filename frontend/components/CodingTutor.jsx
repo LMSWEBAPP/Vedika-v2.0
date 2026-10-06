@@ -2699,7 +2699,7 @@ export default function CodingTutor() {
               WebkitBackdropFilter: 'blur(24px)',
               border: showLeftNav ? '1px solid rgba(6, 182, 212, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
               boxShadow: 'none',
-              display: 'flex',
+              display: isMobile ? 'none' : 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
@@ -2831,30 +2831,8 @@ export default function CodingTutor() {
                 </div>
               )}
 
-              {/* Main Textarea Line */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 8,
-                    cursor: uploading ? 'not-allowed' : 'pointer',
-                    color: uploading ? '#06B6D4' : '#94A3B8',
-                    padding: '6px 8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s'
-                  }}
-                  title="Upload PDF Context"
-                >
-                  {uploading ? <Loader2 size={16} className="custom-spin" /> : <Paperclip size={16} />}
-                </button>
-
+              {/* Row 1: Full-Width Clean Textarea (Never squished on any screen!) */}
+              <div style={{ width: '100%', position: 'relative' }}>
                 <textarea
                   ref={inputRef}
                   value={topic}
@@ -2888,161 +2866,245 @@ export default function CodingTutor() {
                   }}
                   onFocus={() => setIsInputFocused(true)}
                   onBlur={() => setIsInputFocused(false)}
-                  placeholder="Ask a coding question, debug an algorithm, or type @..."
+                  placeholder={isMobile ? "Ask Coding Tutor anything..." : "Ask a coding question, debug an algorithm, or type @..."}
                   rows={1}
                   onKeyDown={handleKeyDown}
                   style={{
-                    flex: 1,
+                    width: '100%',
                     background: 'transparent',
                     border: 'none',
                     outline: 'none',
                     color: '#F1F5F9',
-                    fontSize: 13.5,
+                    fontSize: isMobile ? 14 : 14.5,
                     lineHeight: 1.5,
                     resize: 'none',
                     fontFamily: 'inherit',
-                    padding: 0,
-                    minHeight: 24,
-                    maxHeight: 110
+                    padding: '2px 0 4px',
+                    minHeight: isMobile ? 32 : 28,
+                    maxHeight: 130,
+                    boxSizing: 'border-box'
                   }}
                 />
+              </div>
 
-                {/* Mode & Depth Config Pill Button inside input */}
-                <div style={{ position: 'relative', flexShrink: 0 }} ref={configDropdownRef}>
+              {/* Row 2: Bottom Action Row (Tools on Left, Mode & Send on Right) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                paddingTop: 4,
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                gap: 8
+              }}>
+                {/* Left quick actions: Menu toggle (mobile), PDF & Voice */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <button
                     type="button"
-                    onClick={() => setIsConfigOpen(prev => !prev)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      padding: '4px 9px',
-                      borderRadius: 9999,
-                      background: 'rgba(255, 255, 255, 0.07)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      color: '#CBD5E1',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.15s ease'
+                    data-leftnav-toggle="true"
+                    onClick={() => {
+                      setShowLeftNav(prev => {
+                        if (!prev) setLeftNavView('menu');
+                        return !prev;
+                      });
                     }}
-                    title="Change learning mode & explanation depth"
+                    style={{
+                      display: isMobile ? 'flex' : 'none',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'none',
+                      border: 'none',
+                      color: showLeftNav ? '#06B6D4' : '#94A3B8',
+                      cursor: 'pointer',
+                      padding: 6,
+                      borderRadius: 8,
+                      transition: 'all 0.15s'
+                    }}
+                    title="Menu"
                   >
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.amber, flexShrink: 0 }} />
-                    <span>{mode} &middot; {length}</span>
-                    <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    <PanelLeft size={16} />
                   </button>
 
-                  {/* Popover */}
-                  {isConfigOpen && (
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 'calc(100% + 10px)',
-                      right: 0,
-                      background: 'rgba(15, 19, 34, 0.98)',
-                      backdropFilter: 'blur(20px)',
-                      WebkitBackdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(6, 182, 212, 0.35)',
-                      borderRadius: 14,
-                      padding: '12px 14px',
-                      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      color: uploading ? '#06B6D4' : '#94A3B8',
+                      padding: 6,
+                      borderRadius: 8,
                       display: 'flex',
-                      flexDirection: 'column',
-                      gap: 10,
-                      zIndex: 250,
-                      minWidth: 230
-                    }}>
-                      <div>
-                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-                          Learning Mode
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                          {MODES.map(m => {
-                            const isSel = mode === m;
-                            return (
-                              <button
-                                key={m}
-                                type="button"
-                                onClick={() => setMode(m)}
-                                style={{
-                                  padding: '5px 8px',
-                                  borderRadius: 8,
-                                  fontSize: 11,
-                                  fontWeight: isSel ? 700 : 500,
-                                  background: isSel ? `${modeColors[m] || '#06B6D4'}25` : 'rgba(255, 255, 255, 0.04)',
-                                  border: isSel ? `1px solid ${modeColors[m] || '#06B6D4'}` : '1px solid transparent',
-                                  color: isSel ? (modeColors[m] || '#FFFFFF') : '#94A3B8',
-                                  cursor: 'pointer',
-                                  textAlign: 'center',
-                                  transition: 'all 0.12s'
-                                }}
-                              >
-                                {m}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      alignItems: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    title="Upload PDF Context"
+                  >
+                    {uploading ? <Loader2 size={16} className="custom-spin" /> : <Paperclip size={16} />}
+                  </button>
 
-                      <div>
-                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-                          Explanation Depth
-                        </div>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {LENGTHS.map(l => {
-                            const isSel = length === l;
-                            return (
-                              <button
-                                key={l}
-                                type="button"
-                                onClick={() => setLength(l)}
-                                style={{
-                                  flex: 1,
-                                  padding: '5px 8px',
-                                  borderRadius: 8,
-                                  fontSize: 11,
-                                  fontWeight: isSel ? 700 : 500,
-                                  background: isSel ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.04)',
-                                  border: isSel ? '1px solid #06B6D4' : '1px solid transparent',
-                                  color: isSel ? '#FFFFFF' : '#94A3B8',
-                                  cursor: 'pointer',
-                                  textAlign: 'center',
-                                  transition: 'all 0.12s'
-                                }}
-                              >
-                                {l}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('voice')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94A3B8',
+                      padding: 6,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    title="Switch to Voice AI"
+                  >
+                    <Mic size={16} />
+                  </button>
                 </div>
 
-                {/* Send Button */}
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={loading}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 12,
-                    background: loading ? '#334155' : 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
-                    border: 'none',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: 'none',
-                    transition: 'none'
-                  }}
-                >
-                  {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}
-                </button>
+                {/* Right tools cluster: Config Popover, Send Button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {/* Mode & Depth Config Pill Button inside input */}
+                  <div style={{ position: 'relative' }} ref={configDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfigOpen(prev => !prev)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '4px 9px',
+                        borderRadius: 9999,
+                        background: 'rgba(255, 255, 255, 0.07)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#CBD5E1',
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Change learning mode & explanation depth"
+                    >
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: modeColors[mode] || T.amber, flexShrink: 0 }} />
+                      <span>{mode} &middot; {length}</span>
+                      <ChevronDown size={11} color="#94A3B8" style={{ transform: isConfigOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    </button>
+
+                    {/* Popover */}
+                    {isConfigOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 10px)',
+                        right: 0,
+                        background: 'rgba(15, 19, 34, 0.98)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        borderRadius: 14,
+                        padding: '12px 14px',
+                        boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        zIndex: 250,
+                        minWidth: 230
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                            Learning Mode
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                            {MODES.map(m => {
+                              const isSel = mode === m;
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() => setMode(m)}
+                                  style={{
+                                    padding: '5px 8px',
+                                    borderRadius: 8,
+                                    fontSize: 11,
+                                    fontWeight: isSel ? 700 : 500,
+                                    background: isSel ? `${modeColors[m] || '#06B6D4'}25` : 'rgba(255, 255, 255, 0.04)',
+                                    border: isSel ? `1px solid ${modeColors[m] || '#06B6D4'}` : '1px solid transparent',
+                                    color: isSel ? (modeColors[m] || '#FFFFFF') : '#94A3B8',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    transition: 'all 0.12s'
+                                  }}
+                                >
+                                  {m}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                            Explanation Depth
+                          </div>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {LENGTHS.map(l => {
+                              const isSel = length === l;
+                              return (
+                                <button
+                                  key={l}
+                                  type="button"
+                                  onClick={() => setLength(l)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '5px 8px',
+                                    borderRadius: 8,
+                                    fontSize: 11,
+                                    fontWeight: isSel ? 700 : 500,
+                                    background: isSel ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                                    border: isSel ? '1px solid #06B6D4' : '1px solid transparent',
+                                    color: isSel ? '#FFFFFF' : '#94A3B8',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    transition: 'all 0.12s'
+                                  }}
+                                >
+                                  {l}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Send Button */}
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={loading}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 12,
+                      background: loading ? '#334155' : 'linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)',
+                      border: 'none',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 2px 10px rgba(6, 182, 212, 0.35)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {loading ? <Loader2 size={16} color="#fff" className="custom-spin" /> : <Send size={16} color="#fff" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

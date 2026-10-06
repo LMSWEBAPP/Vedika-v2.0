@@ -230,24 +230,38 @@ function StitchLiveOverlay({
         />
       )}
 
-      {/* Solidified Node Highlight Rings (celebratory luminous accents) */}
+      {/* Solidified Multi-colored Nodes with high-contrast labels */}
       {drawnNodes.map((n, idx) => {
         const colorIdx = n.colorIdx ?? (idx % NODE_PALETTES.length);
         const palette = NODE_PALETTES[colorIdx];
         return (
           <g key={`node-highlight-${idx}`}>
             <rect
-              x={n.x - 2}
-              y={n.y - 2}
-              width={n.w + 4}
-              height={n.h + 4}
+              x={n.x}
+              y={n.y}
+              width={n.w}
+              height={n.h}
               rx={10}
               ry={10}
-              fill="none"
+              fill={palette.fillGrad?.[0] || '#1E293B'}
               stroke={palette.stroke}
-              strokeWidth="2"
-              style={{ filter: `drop-shadow(0 0 8px ${palette.stroke}90)` }}
+              strokeWidth="2.5"
+              style={{ filter: `drop-shadow(0 0 10px ${palette.stroke}80)` }}
             />
+            {n.text && (
+              <text
+                x={n.x + n.w / 2}
+                y={n.y + n.h / 2 + 4}
+                textAnchor="middle"
+                fill="#FFFFFF"
+                fontSize="11.5"
+                fontWeight="700"
+                fontFamily="var(--font-outfit), sans-serif"
+                pointerEvents="none"
+              >
+                {n.text.length > 28 ? `${n.text.slice(0, 26)}…` : n.text}
+              </text>
+            )}
           </g>
         );
       })}

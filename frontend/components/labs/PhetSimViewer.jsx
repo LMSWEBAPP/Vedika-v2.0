@@ -8,8 +8,10 @@ import {
 import { PHET_SIMULATIONS, LAB_SUBJECT_METADATA } from '@/lib/phet-simulations';
 import { T } from '@/lib/lms-data';
 import MathEquationRenderer from '@/components/labs/MathEquationRenderer';
+import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 
 export default function PhetSimViewer({ subject = 'physics', activeSimId, onSelectSim, onViewModeChange, currentViewMode = 'phet' }) {
+  const isMobile = useMediaQuery(isMobileMQ);
   const sims = PHET_SIMULATIONS[subject] || [];
   const activeSim = sims.find(s => s.id === activeSimId) || sims[0];
   const subjectMeta = LAB_SUBJECT_METADATA[subject] || LAB_SUBJECT_METADATA.physics;
@@ -171,28 +173,29 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '14px 20px',
+        padding: isMobile ? '10px 12px' : '14px 20px',
         background: 'rgba(15, 20, 32, 0.95)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        gap: 12,
+        gap: 10,
         flexWrap: 'wrap'
       }}>
         {/* Left: Experiment Selector & Subject Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <span style={{
             background: subjectMeta.gradient,
             color: '#fff',
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 800,
-            padding: '4px 10px',
+            padding: '3px 8px',
             borderRadius: 20,
             textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap'
           }}>
             HTML5 {subject.toUpperCase()} LAB
           </span>
 
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flex: isMobile ? 1 : 'none', minWidth: 160, maxWidth: isMobile ? '100%' : '320px' }}>
             <select
               value={activeSim?.id}
               onChange={(e) => {
@@ -200,16 +203,20 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
                 onSelectSim && onSelectSim(e.target.value);
               }}
               style={{
+                width: '100%',
                 background: 'rgba(255, 255, 255, 0.07)',
                 color: '#fff',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
-                padding: '8px 36px 8px 14px',
+                padding: '7px 32px 7px 12px',
                 borderRadius: 8,
-                fontSize: 14,
+                fontSize: isMobile ? 12.5 : 14,
                 fontWeight: 600,
                 cursor: 'pointer',
                 outline: 'none',
-                appearance: 'none'
+                appearance: 'none',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden'
               }}
             >
               {sims.map(sim => (
@@ -218,7 +225,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
                 </option>
               ))}
             </select>
-            <ChevronDown size={16} color="#aaa" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <ChevronDown size={15} color="#aaa" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>
         </div>
 
@@ -228,52 +235,57 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
           background: 'rgba(0, 0, 0, 0.4)',
           borderRadius: 10,
           padding: 3,
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          width: isMobile ? '100%' : 'auto'
         }}>
           <button
             onClick={() => onViewModeChange && onViewModeChange('phet')}
             style={{
-              padding: '6px 14px',
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center',
+              padding: isMobile ? '6px 8px' : '6px 14px',
               borderRadius: 8,
               border: 'none',
               background: currentViewMode === 'phet' ? subjectMeta.accentColor : 'transparent',
               color: currentViewMode === 'phet' ? '#fff' : '#999',
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: isMobile ? 11.5 : 13,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 5,
               transition: 'all 0.2s'
             }}
           >
-            <Maximize2 size={14} />
-            Interactive HTML5 Sim
+            <Maximize2 size={13} />
+            HTML5 Sim
           </button>
           <button
             onClick={() => onViewModeChange && onViewModeChange('3d')}
             style={{
-              padding: '6px 14px',
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center',
+              padding: isMobile ? '6px 8px' : '6px 14px',
               borderRadius: 8,
               border: 'none',
               background: currentViewMode === '3d' ? subjectMeta.accentColor : 'transparent',
               color: currentViewMode === '3d' ? '#fff' : '#999',
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: isMobile ? 11.5 : 13,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 5,
               transition: 'all 0.2s'
             }}
           >
-            <Layers size={14} />
-            3D WebGL Canvas
+            <Layers size={13} />
+            3D Canvas
           </button>
         </div>
 
         {/* Right: Quick Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
           <button
             onClick={handleReloadIframe}
             title="Reset / Reload Simulation"
@@ -281,17 +293,17 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
               background: 'rgba(255, 255, 255, 0.08)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               color: '#fff',
-              padding: '8px 12px',
+              padding: isMobile ? '6px 10px' : '8px 12px',
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: isMobile ? 12 : 13,
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6
+              gap: 5
             }}
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={13} />
             Reset
           </button>
 
@@ -302,17 +314,17 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
               background: 'rgba(255, 255, 255, 0.08)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               color: '#fff',
-              padding: '8px 12px',
+              padding: isMobile ? '6px 10px' : '8px 12px',
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: isMobile ? 12 : 13,
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6
+              gap: 5
             }}
           >
-            <Maximize2 size={14} />
+            <Maximize2 size={13} />
             Fullscreen
           </button>
         </div>
@@ -324,9 +336,11 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
         alignItems: 'center',
         background: '#0D111A',
         borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        padding: '0 16px',
-        gap: 8,
-        overflowX: 'auto'
+        padding: '0 12px',
+        gap: 6,
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none'
       }}>
         {[
           { id: 'sim', label: 'Interactive Canvas', icon: Layers },
@@ -342,13 +356,13 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '12px 16px',
+                padding: isMobile ? '10px 12px' : '12px 16px',
                 border: 'none',
                 background: 'transparent',
                 color: isActive ? subjectMeta.accentColor : '#888',
                 borderBottom: isActive ? `2px solid ${subjectMeta.accentColor}` : '2px solid transparent',
                 fontWeight: isActive ? 700 : 500,
-                fontSize: 13,
+                fontSize: isMobile ? 12 : 13,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -356,7 +370,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
                 whiteSpace: 'nowrap'
               }}
             >
-              <Icon size={15} />
+              <Icon size={isMobile ? 14 : 15} />
               {tab.label}
             </button>
           );
@@ -368,7 +382,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
         
         {/* TAB 1: PhET Simulation iFrame View */}
         {activeTab === 'sim' && (
-          <div style={{ width: '100%', height: 740, minHeight: 700, position: 'relative' }}>
+          <div style={{ width: '100%', height: isMobile ? 'calc(100vh - 280px)' : 740, minHeight: isMobile ? 400 : 700, position: 'relative' }}>
             {isLoading && (
               <div style={{
                 position: 'absolute',
@@ -393,7 +407,7 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
               </div>
             )}
 
-            <div style={{ width: '100%', height: '100%', minHeight: 700, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '100%', minHeight: isMobile ? 400 : 700, overflow: 'hidden', position: 'relative' }}>
               <iframe
                 ref={iframeRef}
                 src={`/api/phet-proxy?sim=${activeSim?.id}&url=${encodeURIComponent(activeSim?.embedUrl || '')}`}
@@ -402,9 +416,9 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
                 allowFullScreen
                 style={{
                   width: '100%',
-                  height: 'calc(100% + 44px)',
-                  marginBottom: '-44px',
-                  minHeight: 744,
+                  height: isMobile ? '100%' : 'calc(100% + 44px)',
+                  marginBottom: isMobile ? 0 : '-44px',
+                  minHeight: isMobile ? 400 : 744,
                   border: 'none',
                   background: '#000'
                 }}

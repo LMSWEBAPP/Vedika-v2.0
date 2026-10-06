@@ -767,6 +767,8 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
+      paddingTop: isMobile ? 48 : 0,
+      boxSizing: 'border-box',
       background: 'transparent',
       color: T.text,
       fontFamily: 'var(--font-outfit), "Segoe UI", sans-serif',
@@ -777,6 +779,8 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
       bottom: 0,
       left: isMobile ? 0 : (sidebarCollapsed ? 70 : 220),
       right: 0,
+      paddingTop: isMobile ? 48 : 0,
+      boxSizing: 'border-box',
       zIndex: voiceZ,
       display: 'flex',
       background: T.bg,
@@ -801,9 +805,9 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: isMobile ? '0 12px' : '0 24px',
-          height: isMobile ? 50 : 56,
-          background: inline ? 'rgba(15, 23, 42, 0.65)' : T.s1,
+          padding: isMobile ? '0 10px' : '0 24px',
+          height: isMobile ? 52 : 56,
+          background: inline ? 'rgba(15, 23, 42, 0.85)' : T.s1,
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           borderBottom: `1px solid ${T.border}`,
@@ -819,19 +823,20 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#CBD5E1',
+                  background: 'rgba(168, 85, 247, 0.25)',
+                  border: '1px solid rgba(168, 85, 247, 0.55)',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                   fontSize: 12.5,
-                  fontWeight: 600,
-                  padding: '5px 12px',
+                  fontWeight: 700,
+                  padding: '6px 12px',
                   borderRadius: 10,
                   fontFamily: 'inherit',
-                  transition: 'all 0.15s'
+                  transition: 'all 0.15s',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.35)'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)'; e.currentTarget.style.borderColor = '#A855F7'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#CBD5E1'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.35)'; e.currentTarget.style.borderColor = '#C084FC'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)'; e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.55)'; }}
                 title="Return to Text Chat"
               >
                 <ArrowLeft size={15} />
@@ -888,11 +893,12 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               style={{
                 background: 'rgba(15, 23, 42, 0.8)',
                 color: '#CBD5E1',
-                fontSize: 11.5,
+                fontSize: isMobile ? 10.5 : 11.5,
                 fontWeight: 600,
                 border: `1px solid ${T.border}`,
                 borderRadius: 8,
-                padding: '5px 8px',
+                padding: '4px 6px',
+                maxWidth: isMobile ? 85 : 'none',
                 cursor: isActive ? 'not-allowed' : 'pointer',
                 outline: 'none',
                 fontFamily: 'inherit',
@@ -913,11 +919,12 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
               style={{
                 background: 'rgba(15, 23, 42, 0.8)',
                 color: '#CBD5E1',
-                fontSize: 11.5,
+                fontSize: isMobile ? 10.5 : 11.5,
                 fontWeight: 600,
                 border: `1px solid ${T.border}`,
                 borderRadius: 8,
-                padding: '5px 8px',
+                padding: '4px 6px',
+                maxWidth: isMobile ? 95 : 'none',
                 cursor: isActive ? 'not-allowed' : 'pointer',
                 outline: 'none',
                 fontFamily: 'inherit',
