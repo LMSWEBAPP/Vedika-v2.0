@@ -314,13 +314,13 @@ export default function Dashboard() {
       {/* ──────────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.14fr 0.86fr',
+        gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1.14fr 0.86fr',
         alignItems: 'center',
         gap: isMobile ? 20 : 36,
         padding: isMobile ? '8px 0' : '4px 0 8px 0',
-        minHeight: isMobile ? 'auto' : 540,
-        height: isMobile ? 'auto' : 'calc(100vh - 88px)',
-        maxHeight: isMobile ? 'auto' : 'calc(100vh - 88px)',
+        minHeight: (isMobile || isTablet) ? 'auto' : 540,
+        height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 88px)',
+        maxHeight: (isMobile || isTablet) ? 'none' : 'calc(100vh - 88px)',
         marginBottom: 24,
         position: 'relative'
       }}>
@@ -331,7 +331,9 @@ export default function Dashboard() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          paddingLeft: isMobile ? 12 : 'clamp(44px, 5.5vw, 92px)',
+          alignItems: isMobile ? 'center' : 'flex-start',
+          textAlign: isMobile ? 'center' : 'left',
+          paddingLeft: isMobile ? 0 : 'clamp(24px, 4vw, 92px)',
           gap: isMobile ? 8 : 12
         }}>
           <style>{`
@@ -427,7 +429,7 @@ export default function Dashboard() {
             <div
               className="hero-title-row hero-title-row-1"
               style={{
-                fontSize: isMobile ? 'clamp(46px, 12vw, 68px)' : 'clamp(82px, 8.8vw, 138px)',
+                fontSize: isMobile ? 'clamp(30px, 9.2vw, 52px)' : 'clamp(82px, 8.8vw, 138px)',
                 fontWeight: 900,
                 lineHeight: 0.94,
                 letterSpacing: '-0.035em',
@@ -458,7 +460,7 @@ export default function Dashboard() {
             <div
               className="hero-title-row hero-title-row-2"
               style={{
-                fontSize: isMobile ? 'clamp(40px, 10.5vw, 60px)' : 'clamp(72px, 7.8vw, 122px)',
+                fontSize: isMobile ? 'clamp(22px, 6.5vw, 38px)' : 'clamp(72px, 7.8vw, 122px)',
                 fontWeight: 850,
                 lineHeight: 0.98,
                 letterSpacing: '-0.03em',

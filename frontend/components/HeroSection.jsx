@@ -587,7 +587,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Ring Particles Customization Dock (LEFT SIDE) ── */}
-      <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 9000 }}>
+      <div className={styles.tuningDockWrapper}>
         {/* Toggle Button */}
         {!showTuningDock ? (
           <button

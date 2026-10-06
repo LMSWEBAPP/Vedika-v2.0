@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Play, Pause, RotateCcw, RotateCw, Bot } from 'lucide-react';
 import { T } from '@/lib/lms-data';
+import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 
 function formatTime(seconds) {
   const total = Math.max(0, Math.floor(seconds || 0));
@@ -23,6 +24,7 @@ export default function VideoPlayerWithAI({
   onSeekComplete,
   forcePause
 }) {
+  const isMobile = useMediaQuery(isMobileMQ);
   const activeVideoId = videoId || 'rfscVS0vtbw';
   const containerRef = useRef(null);
   const playerRef = useRef(null);
@@ -538,14 +540,15 @@ export default function VideoPlayerWithAI({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 12,
-        padding: '10px 18px',
+        gap: isMobile ? 8 : 12,
+        padding: isMobile ? '8px 10px' : '10px 18px',
         background: '#0B0F19',
         borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        color: '#FFFFFF'
+        color: '#FFFFFF',
+        flexWrap: isMobile ? 'wrap' : 'nowrap'
       }}>
         {/* Left Controls: Play/Pause, -5s, +5s, Digital Clock */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, flexWrap: 'wrap' }}>
           {/* Play/Pause Button */}
           <button
             type="button"
@@ -554,8 +557,8 @@ export default function VideoPlayerWithAI({
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 34,
-              height: 34,
+              width: isMobile ? 30 : 34,
+              height: isMobile ? 30 : 34,
               borderRadius: '50%',
               background: isPlaying ? 'rgba(255, 255, 255, 0.08)' : '#2563EB',
               color: '#FFFFFF',
@@ -567,9 +570,9 @@ export default function VideoPlayerWithAI({
             title={isPlaying ? 'Pause video' : 'Play video'}
           >
             {isPlaying ? (
-              <Pause size={15} style={{ fill: '#FFFFFF' }} />
+              <Pause size={isMobile ? 13 : 15} style={{ fill: '#FFFFFF' }} />
             ) : (
-              <Play size={15} style={{ fill: '#FFFFFF', marginLeft: 2 }} />
+              <Play size={isMobile ? 13 : 15} style={{ fill: '#FFFFFF', marginLeft: 2 }} />
             )}
           </button>
 
@@ -580,12 +583,12 @@ export default function VideoPlayerWithAI({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '6px 9px',
+              gap: 3,
+              padding: isMobile ? '4px 6px' : '6px 9px',
               borderRadius: 8,
               background: 'transparent',
               color: '#94A3B8',
-              fontSize: 11.5,
+              fontSize: isMobile ? 11 : 11.5,
               fontWeight: 500,
               border: 'none',
               cursor: 'pointer',
@@ -601,7 +604,7 @@ export default function VideoPlayerWithAI({
             }}
             title="Rewind 5 seconds"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={isMobile ? 12 : 14} />
             <span style={{ fontFamily: 'monospace' }}>-5s</span>
           </button>
 
@@ -612,12 +615,12 @@ export default function VideoPlayerWithAI({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '6px 9px',
+              gap: 3,
+              padding: isMobile ? '4px 6px' : '6px 9px',
               borderRadius: 8,
               background: 'transparent',
               color: '#94A3B8',
-              fontSize: 11.5,
+              fontSize: isMobile ? 11 : 11.5,
               fontWeight: 500,
               border: 'none',
               cursor: 'pointer',
@@ -633,7 +636,7 @@ export default function VideoPlayerWithAI({
             }}
             title="Forward 5 seconds"
           >
-            <RotateCw size={14} />
+            <RotateCw size={isMobile ? 12 : 14} />
             <span style={{ fontFamily: 'monospace' }}>+5s</span>
           </button>
 
@@ -641,10 +644,10 @@ export default function VideoPlayerWithAI({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 5,
-            paddingLeft: 8,
+            gap: 4,
+            paddingLeft: isMobile ? 4 : 8,
             borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-            fontSize: 12,
+            fontSize: isMobile ? 11 : 12,
             fontFamily: 'monospace',
             color: '#CBD5E1',
             letterSpacing: '0.02em'
@@ -668,21 +671,21 @@ export default function VideoPlayerWithAI({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 5,
-              padding: '4px 9px',
+              gap: 4,
+              padding: isMobile ? '3px 7px' : '4px 9px',
               borderRadius: 6,
               background: useHtml5Fallback ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.07)',
               border: `1px solid ${useHtml5Fallback ? 'rgba(59, 130, 246, 0.45)' : 'rgba(255, 255, 255, 0.12)'}`,
               color: useHtml5Fallback ? '#60A5FA' : '#94A3B8',
-              fontSize: 11,
+              fontSize: isMobile ? 10 : 11,
               fontWeight: 500,
               cursor: 'pointer',
-              marginLeft: 6,
+              marginLeft: isMobile ? 2 : 6,
               transition: 'all 0.15s ease'
             }}
             title={useHtml5Fallback ? "Using direct HTML5 video stream. Click to switch to YouTube" : "Click to switch to direct HTML5 video stream"}
           >
-            <span>{useHtml5Fallback ? '🎥 HTML5 Video' : '📺 YouTube'}</span>
+            <span>{useHtml5Fallback ? (isMobile ? '🎥 HTML5' : '🎥 HTML5 Video') : (isMobile ? '📺 YT' : '📺 YouTube')}</span>
           </button>
         </div>
 
@@ -699,12 +702,12 @@ export default function VideoPlayerWithAI({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 7,
+            gap: 6,
             borderRadius: 9999,
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.22))',
             border: '1px solid rgba(245, 158, 11, 0.45)',
-            padding: '7px 15px',
-            fontSize: 12,
+            padding: isMobile ? '5px 11px' : '7px 15px',
+            fontSize: isMobile ? 11 : 12,
             fontWeight: 600,
             color: '#FBBF24',
             cursor: 'pointer',
@@ -723,8 +726,8 @@ export default function VideoPlayerWithAI({
             e.currentTarget.style.boxShadow = '0 2px 10px rgba(245, 158, 11, 0.12)';
           }}
         >
-          <Bot size={14} style={{ color: '#FCD34D' }} />
-          <span>Ask Vedika at {formatTime(activeDisplayTime)}</span>
+          <Bot size={isMobile ? 13 : 14} style={{ color: '#FCD34D' }} />
+          <span>{isMobile ? `Ask (${formatTime(activeDisplayTime)})` : `Ask Vedika at ${formatTime(activeDisplayTime)}`}</span>
         </button>
       </div>
     </div>

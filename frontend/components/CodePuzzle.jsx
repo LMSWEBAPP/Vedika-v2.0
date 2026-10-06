@@ -2198,7 +2198,7 @@ export default function CodePuzzle() {
         )}
 
         {/* Right: Actions (Save, Reset, Run Code) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, flexWrap: 'wrap' }}>
           {/* Courses Quick Navigation Button */}
           <button
             onClick={() => {
@@ -2212,7 +2212,7 @@ export default function CodePuzzle() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '6px 12px',
+              padding: isMobile ? '6px 8px' : '6px 12px',
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2225,7 +2225,7 @@ export default function CodePuzzle() {
             title="Browse all courses"
           >
             <BookOpen size={14} color="#38BDF8" />
-            <span>Courses</span>
+            {!isMobile && <span>Courses</span>}
           </button>
           {/* Save Button */}
           <button
@@ -2234,7 +2234,7 @@ export default function CodePuzzle() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '6px 12px',
+              padding: isMobile ? '6px 8px' : '6px 12px',
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2247,7 +2247,7 @@ export default function CodePuzzle() {
             title="Save code to local storage"
           >
             {saveToast ? <Check size={14} color="#34D399" /> : <Save size={14} />}
-            <span>{saveToast ? 'Saved' : 'Save'}</span>
+            {!isMobile && <span>{saveToast ? 'Saved' : 'Save'}</span>}
           </button>
 
           {/* Reset Button */}
@@ -2257,7 +2257,7 @@ export default function CodePuzzle() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '6px 12px',
+              padding: isMobile ? '6px 8px' : '6px 12px',
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2270,7 +2270,7 @@ export default function CodePuzzle() {
             title="Reset code to starter template"
           >
             <RotateCcw size={14} />
-            <span>Reset</span>
+            {!isMobile && <span>Reset</span>}
           </button>
 
           {/* Ask Vedika Code Help Button */}
@@ -2280,7 +2280,7 @@ export default function CodePuzzle() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '6px 13px',
+              padding: isMobile ? '6px 9px' : '6px 13px',
               borderRadius: 8,
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.22))',
               border: '1px solid rgba(245, 158, 11, 0.45)',
@@ -2294,7 +2294,7 @@ export default function CodePuzzle() {
             title="Ask Vedika AI Tutor to inspect your code, explain errors, and guide your fix"
           >
             <Sparkles size={13} color="#FBBF24" />
-            <span>Ask Vedika</span>
+            <span>{isMobile ? 'Ask AI' : 'Ask Vedika'}</span>
           </button>
 
           {/* Run Code Button */}
@@ -2304,13 +2304,13 @@ export default function CodePuzzle() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 7,
-              padding: '6px 16px',
+              gap: 6,
+              padding: isMobile ? '6px 11px' : '6px 16px',
               borderRadius: 8,
               background: (category === 'programming' && isRunning) ? '#6B21A8' : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
               border: 'none',
               color: '#fff',
-              fontSize: 12.5,
+              fontSize: 12,
               fontWeight: 700,
               cursor: (category === 'programming' && (!isReady || isRunning)) ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(168, 85, 247, 0.35)',
@@ -2322,7 +2322,7 @@ export default function CodePuzzle() {
             ) : (
               <Play size={13} fill="#fff" />
             )}
-            <span>{category === 'html' ? (webCompileSuccess ? 'Live Updated!' : 'Run Web Preview') : (isRunning ? 'Running...' : 'Run Code')}</span>
+            <span>{category === 'html' ? (webCompileSuccess ? (isMobile ? 'Updated' : 'Live Updated!') : (isMobile ? 'Preview' : 'Run Web Preview')) : (isRunning ? '...' : (isMobile ? 'Run' : 'Run Code'))}</span>
           </button>
         </div>
       </div>
@@ -2398,7 +2398,13 @@ export default function CodePuzzle() {
 
         {/* ── 2. COLLAPSIBLE FILE EXPLORER (210px width) ── */}
         <div style={{
-          width: isExplorerOpen ? 210 : 0,
+          position: isMobile ? 'absolute' : 'relative',
+          left: isMobile ? 44 : 'auto',
+          top: isMobile ? 0 : 'auto',
+          bottom: isMobile ? 0 : 'auto',
+          zIndex: isMobile ? 35 : 'auto',
+          width: isExplorerOpen ? (isMobile ? 240 : 210) : 0,
+          boxShadow: (isMobile && isExplorerOpen) ? '12px 0 40px rgba(0, 0, 0, 0.85)' : 'none',
           transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           background: '#0A0E1A',
           borderRight: isExplorerOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
@@ -2409,7 +2415,7 @@ export default function CodePuzzle() {
           userSelect: 'none'
         }}>
           {isExplorerOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: 210 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: isMobile ? 240 : 210 }}>
               {/* Explorer Header */}
               <div style={{
                 height: 36,
@@ -2750,16 +2756,19 @@ export default function CodePuzzle() {
 
             {/* Editor Action Toolbar (Run Code, Visualize Code, Check Step) */}
             <div style={{
-              height: 40,
+              height: isMobile ? 'auto' : 40,
+              minHeight: 40,
               background: '#080A12',
               borderTop: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 12px',
+              padding: isMobile ? '6px 8px' : '0 12px',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              gap: 8,
               flexShrink: 0
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <button
                   onClick={handleRunCode}
                   disabled={category === 'programming' && (!isReady || isRunning)}
@@ -2779,7 +2788,7 @@ export default function CodePuzzle() {
                   }}
                 >
                   <Play size={12} fill="#000" />
-                  <span>{category === 'html' ? (webCompileSuccess ? 'Live Updated!' : 'Run Web Preview') : (isRunning ? 'Running...' : 'Run Code')}</span>
+                  <span>{category === 'html' ? (webCompileSuccess ? (isMobile ? 'Updated' : 'Live Updated!') : (isMobile ? 'Preview' : 'Run Web Preview')) : (isRunning ? 'Running...' : 'Run Code')}</span>
                 </button>
 
                 {category === 'programming' && (
@@ -2802,12 +2811,12 @@ export default function CodePuzzle() {
                     }}
                   >
                     <Zap size={12} fill="currentColor" />
-                    <span>Visualize Code</span>
+                    <span>Visualize</span>
                   </button>
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <button
                   onClick={handleManualCheck}
                   disabled={isValidating || !activePuzzle}
@@ -2829,10 +2838,12 @@ export default function CodePuzzle() {
                   <span>Check Step</span>
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
-                  <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
-                  <span>Spaces: 4</span>
-                </div>
+                {!isMobile && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
+                    <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+                    <span>Spaces: 4</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

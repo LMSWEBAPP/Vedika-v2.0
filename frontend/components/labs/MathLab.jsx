@@ -16,6 +16,7 @@ import {
 import { T } from '@/lib/lms-data';
 import { getMascotBridge } from '@/lib/mascotBridge';
 import MathEquationRenderer from '@/components/labs/MathEquationRenderer';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 
 // Preprocess LaTeX math syntax safely into clean formatted KaTeX math
 function preprocessLaTeX(text) {
@@ -647,6 +648,9 @@ function CustomMathMarkdown({ content }) {
 // MAIN MATH LAB COMPONENT
 // ----------------------------------------------------
 export default function MathLab() {
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const isStacked = isMobile || isTablet;
   const [activeTab, setActiveTab] = useState('whiteboard');
   const [visualizerSubTab, setVisualizerSubTab] = useState('pythagoras');
 
@@ -1326,41 +1330,52 @@ Respond ONLY with valid JSON in this exact structure:
         background: 'rgba(13, 17, 23, 0.85)',
         backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '16px 24px',
+        padding: isMobile ? '12px 14px' : '16px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 50,
+        flexWrap: 'wrap',
+        gap: 12
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{
-            width: 42,
-            height: 42,
+            width: isMobile ? 36 : 42,
+            height: isMobile ? 36 : 42,
             borderRadius: 12,
             background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)'
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
+            flexShrink: 0
           }}>
-            <Calculator size={24} color="#FFF" />
+            <Calculator size={isMobile ? 20 : 24} color="#FFF" />
           </div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: '#FFF' }}>Vedika Math Lab</h1>
-            <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.6)' }}>
+            <h1 style={{ fontSize: isMobile ? 17 : 20, fontWeight: 800, margin: 0, color: '#FFF' }}>Vedika Math Lab</h1>
+            <span style={{ fontSize: isMobile ? 11 : 12, color: 'rgba(255, 255, 255, 0.6)' }}>
               Smart Crop Selection OCR & Interactive Visual Experiments
             </span>
           </div>
         </div>
 
         {/* TABS */}
-        <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.06)', padding: 4, borderRadius: 10, gap: 4 }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255, 255, 255, 0.06)',
+          padding: 4,
+          borderRadius: 10,
+          gap: 4,
+          overflowX: 'auto',
+          maxWidth: '100%'
+        }}>
           {[
-            { id: 'whiteboard', label: 'Whiteboard & Plotter', icon: Edit3 },
-            { id: 'ai_tutor', label: 'AI Math Tutor', icon: Sparkles },
-            { id: 'visualizers', label: 'Visual Concepts', icon: Triangle }
+            { id: 'whiteboard', label: isMobile ? 'Whiteboard' : 'Whiteboard & Plotter', icon: Edit3 },
+            { id: 'ai_tutor', label: isMobile ? 'AI Tutor' : 'AI Math Tutor', icon: Sparkles },
+            { id: 'visualizers', label: isMobile ? 'Concepts' : 'Visual Concepts', icon: Triangle }
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -1368,18 +1383,19 @@ Respond ONLY with valid JSON in this exact structure:
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 16px',
+                gap: 6,
+                padding: isMobile ? '6px 10px' : '8px 16px',
                 borderRadius: 8,
                 border: 'none',
                 background: activeTab === id ? 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)' : 'transparent',
                 color: activeTab === id ? '#FFF' : 'rgba(255, 255, 255, 0.7)',
                 fontWeight: 600,
-                fontSize: 13,
-                cursor: 'pointer'
+                fontSize: isMobile ? 12 : 13,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
-              <Icon size={16} />
+              <Icon size={isMobile ? 14 : 16} />
               {label}
             </button>
           ))}
@@ -1387,11 +1403,11 @@ Respond ONLY with valid JSON in this exact structure:
       </header>
 
       {/* MAIN CONTAINER */}
-      <main style={{ flex: 1, padding: '24px 24px 90px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <main style={{ flex: 1, padding: isMobile ? '14px 12px 90px' : '24px 24px 90px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* TAB 1: WHITEBOARD & REAL-TIME PLOTTER */}
         {activeTab === 'whiteboard' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isStacked ? '1fr' : '1fr 1fr', gap: isMobile ? 16 : 24 }}>
 
             {/* LEFT: WHITEBOARD & SELECTION CROP TOOL */}
             <div style={{ background: '#0D1117', borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1800,7 +1816,7 @@ Respond ONLY with valid JSON in this exact structure:
         {/* TAB 3: VISUAL CONCEPTS */}
         {activeTab === 'visualizers' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: 12 }}>
+            <div style={{ display: 'flex', gap: isMobile ? 8 : 12, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: 12, overflowX: 'auto', maxWidth: '100%' }}>
               {[
                 { id: 'pythagoras', label: 'Pythagoras Theorem', icon: Triangle },
                 { id: 'sector', label: 'Circle Sector & Clock/Wiper', icon: Compass },
@@ -1815,14 +1831,15 @@ Respond ONLY with valid JSON in this exact structure:
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '10px 18px',
+                    padding: isMobile ? '8px 12px' : '10px 18px',
                     borderRadius: 8,
                     border: 'none',
                     background: visualizerSubTab === id ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
                     color: visualizerSubTab === id ? '#A78BFA' : 'rgba(255, 255, 255, 0.6)',
                     fontWeight: 600,
-                    fontSize: 14,
-                    cursor: 'pointer'
+                    fontSize: isMobile ? 12 : 14,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   <Icon size={16} />

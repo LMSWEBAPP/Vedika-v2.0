@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Sun, Moon, ChevronDown, Brain, Code2 } from 'lucide-react';
 import { T, getTheme, setTheme } from '@/lib/lms-data';
@@ -8,12 +8,23 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 
 export default function MobileNav({ title, accent, items, extras, dropdownItems, zBase = 0 }) {
   const [open, setOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
-  const Z_BAR = 1001 + zBase;
-  const Z_OVERLAY = 1002 + zBase;
+  const Z_BAR = 999998 + zBase;
+  const Z_OVERLAY = 999999 + zBase;
+
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   if (!isMobile) return null;
 
@@ -128,7 +139,7 @@ export default function MobileNav({ title, accent, items, extras, dropdownItems,
                 </button>
 
                 <div style={{
-                  maxHeight: dropdownOpen ? '420px' : '0px',
+                  maxHeight: dropdownOpen ? '650px' : '0px',
                   opacity: dropdownOpen ? 1 : 0,
                   overflow: 'hidden',
                   transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, margin 0.35s cubic-bezier(0.4, 0, 0.2, 1)',

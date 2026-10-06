@@ -241,7 +241,8 @@
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  width: 1080px;
+  width: min(1080px, 92vw);
+  max-width: 95vw;
   height: 58px;
   border-radius: 50%;
   border-bottom: 2px solid rgba(var(--active-color-rgb), 0.5);
@@ -970,25 +971,47 @@
 
   .vedika-labs-stage-viewport {
     height: 350px;
+    max-width: 100vw;
   }
 
   .vedika-hologram-card {
-    width: 170px;
-    height: 280px;
+    width: 140px;
+    height: 250px;
+    margin-left: -70px;
+    margin-top: -125px;
   }
 
   .vedika-bot-character-img {
-    width: 175px;
-    max-height: 200px;
+    width: 160px;
+    max-height: 180px;
   }
 
   .pedestal-disk-outer {
-    width: 290px;
-    height: 65px;
+    width: 260px;
+    height: 55px;
   }
 
   .metrics-banner-inner {
     grid-template-columns: 1fr;
     gap: 10px;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .vedika-labs-stage-viewport {
+    height: 320px;
+  }
+
+  .vedika-hologram-card {
+    width: 125px;
+    height: 220px;
+    margin-left: -62.5px;
+    margin-top: -110px;
+  }
+
+  .pedestal-disk-outer {
+    width: 220px;
+    height: 48px;
   }
 }

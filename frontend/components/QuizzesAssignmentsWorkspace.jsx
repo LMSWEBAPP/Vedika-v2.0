@@ -702,6 +702,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             padding: 18px 14px !important;
           }
         }
+
+        @media (max-width: 640px) {
+          .box1-content, .box-container.right-open .box2-content {
+            padding: 12px 8px 24px 8px !important;
+          }
+        }
       `}</style>
 
       <div className={`box-container ${isAssignmentsOpen ? 'right-open' : ''}`}>

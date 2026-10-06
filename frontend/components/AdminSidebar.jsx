@@ -31,6 +31,16 @@ export default function AdminSidebar({ isCollapsed = false, onToggleCollapse }) 
   const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
 
+  useEffect(() => {
+    if (isMobile) {
+      const el = document.createElement('style');
+      el.id = 'admin-sidebar-mobile-pad';
+      el.textContent = '.sidebar-content-area { padding-top: 48px !important; }';
+      document.head.appendChild(el);
+      return () => { document.getElementById('admin-sidebar-mobile-pad')?.remove(); };
+    }
+  }, [isMobile]);
+
   const handleLogout = () => {
     localStorage.removeItem('frappe_user');
     router.replace('/login');

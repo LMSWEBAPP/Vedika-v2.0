@@ -190,7 +190,7 @@ export default function LoginPage() {
           background: T.s1,
           border: `1px solid ${T.border}`,
           borderRadius: 20,
-          padding: '36px 32px',
+          padding: 'clamp(20px, 5vw, 36px) clamp(16px, 4vw, 32px)',
           boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
           position: 'relative',
           overflow: 'hidden'
@@ -328,7 +328,7 @@ export default function LoginPage() {
               <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 8, fontWeight: 500 }}>
                 Quick Test Accounts:
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
                 <button
                   type="button"
                   onClick={() => {

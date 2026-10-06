@@ -117,7 +117,7 @@ export default function ResourcesLibrary({ navigateTo }) {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ padding: 'clamp(14px, 3.5vw, 24px)', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box', fontFamily: 'var(--font-outfit), sans-serif' }}>
       {/* Back button and title */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
         <button
@@ -135,13 +135,13 @@ export default function ResourcesLibrary({ navigateTo }) {
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{
-            fontSize: 36, fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
+            fontSize: 'clamp(24px, 6vw, 36px)', fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
             background: `linear-gradient(to right, #60A5FA 0%, #8B5CF6 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
             PDF Library
           </h1>
-          <p style={{ color: T.muted, fontSize: 16, margin: 0, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+          <p style={{ color: T.muted, fontSize: 'clamp(13.5px, 3.5vw, 16px)', margin: 0, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
             Explore our vast collection of educational resources and find the perfect PDF for your learning journey.
           </p>
         </div>
@@ -171,7 +171,7 @@ export default function ResourcesLibrary({ navigateTo }) {
         {/* Dropdowns */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(170px, 100%), 1fr))',
           gap: 12,
           alignItems: 'center'
         }}>
@@ -282,7 +282,7 @@ export default function ResourcesLibrary({ navigateTo }) {
         /* Grid Mode */
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
           gap: 20,
           marginBottom: 32
         }}>

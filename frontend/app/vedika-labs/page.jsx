@@ -13,6 +13,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import { LabThematicArt } from './LabCardArt';
 import './vedika-labs.css';
 
@@ -138,12 +139,12 @@ function vedikaLabsReducer(state, action) {
  * Memoized Hologram Card Component
  * Only re-renders when its own `isSelected` or `slot` changes
  */
-const HologramCard = memo(function HologramCard({ lab, idx, isSelected, slot, onSelect, onLaunch }) {
-  const transX = slot.x;
+const HologramCard = memo(function HologramCard({ lab, idx, isSelected, slot, slotScale = 1, onSelect, onLaunch }) {
+  const transX = Math.round(slot.x * slotScale);
   const transY = slot.y;
-  const transZ = slot.z + (isSelected ? 16 : 0);
+  const transZ = Math.round(slot.z * slotScale) + (isSelected ? 16 : 0);
   const rotX = slot.rotX;
-  const rotY = slot.rotY;
+  const rotY = Math.round(slot.rotY * (slotScale < 1 ? 0.6 : 1));
   const rotZ = slot.rotZ;
   const scaleVal = isSelected ? 1.02 : 0.98;
 
@@ -242,6 +243,9 @@ const MetricsBanner = memo(function MetricsBanner() {
 
 export default function VedikaLabsHub() {
   const router = useRouter();
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const slotScale = isMobile ? 0.38 : (isTablet ? 0.68 : 1);
   const [state, dispatch] = useReducer(vedikaLabsReducer, initialState);
   const { activeIdx, isNavigating } = state;
   const activeLab = LABS_DATA[activeIdx] || LABS_DATA[0];
@@ -340,6 +344,7 @@ export default function VedikaLabsHub() {
                     idx={idx}
                     isSelected={idx === activeIdx}
                     slot={FIXED_SLOTS[idx]}
+                    slotScale={slotScale}
                     onSelect={handleSelectLab}
                     onLaunch={handleLaunchLab}
                   />
@@ -352,11 +357,11 @@ export default function VedikaLabsHub() {
           <div className="vedika-labs-pedestal-stage" style={{ pointerEvents: 'none' }}>
             <div className="vedika-labs-bot-foreground" style={{ pointerEvents: 'none' }}>
               <div className="bot-pedestal-shadow" style={{ pointerEvents: 'none' }} />
-              <div style={{ width: 345, height: 345, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ width: isMobile ? 220 : 345, height: isMobile ? 220 : 345, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                 <VedikaParticleBot
                   src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
-                  width={345}
-                  height={345}
+                  width={isMobile ? 220 : 345}
+                  height={isMobile ? 220 : 345}
                   inline={true}
                   colorMode="vibrant"
                   intensity={activeLab.id === 'physics' || activeLab.id === 'chemistry' ? 1.65 : 1.0}

@@ -101,7 +101,7 @@ export default function ResourcesDSACompanyWise({ navigateTo }) {
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ padding: 'clamp(14px, 3.5vw, 24px)', maxWidth: 1000, margin: '0 auto', boxSizing: 'border-box', fontFamily: 'var(--font-outfit), sans-serif' }}>
       {/* Back button and title */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
         <button
@@ -125,13 +125,13 @@ export default function ResourcesDSACompanyWise({ navigateTo }) {
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{
-            fontSize: 32, fontWeight: 800, color: T.text, margin: '0 0 6px 0', letterSpacing: '-0.03em',
+            fontSize: 'clamp(22px, 5.5vw, 32px)', fontWeight: 800, color: T.text, margin: '0 0 6px 0', letterSpacing: '-0.03em',
             background: `linear-gradient(to right, #60A5FA 0%, #A7F3D0 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
             {selectedCompany ? `${selectedCompany.name} Questions` : 'Company-Wise Questions'}
           </h1>
-          <p style={{ color: T.muted, fontSize: 15, margin: 0 }}>
+          <p style={{ color: T.muted, fontSize: 'clamp(13.5px, 3.5vw, 15px)', margin: 0 }}>
             Practice coding interview questions asked by top tech companies.
           </p>
         </div>
@@ -158,7 +158,7 @@ export default function ResourcesDSACompanyWise({ navigateTo }) {
 
           {/* Grid of Companies */}
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 28
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: 16, marginBottom: 28
           }}>
             {paginatedCompanies.map((company) => (
               <motion.div
@@ -244,8 +244,8 @@ export default function ResourcesDSACompanyWise({ navigateTo }) {
                   <div
                     key={idx}
                     style={{
-                      padding: '16px 20px', borderBottom: idx === paginatedQuestions.length - 1 ? 'none' : `1px solid ${T.border}`,
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16
+                      padding: '14px 16px', borderBottom: idx === paginatedQuestions.length - 1 ? 'none' : `1px solid ${T.border}`,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap'
                     }}
                   >
                     <div>

@@ -70,7 +70,7 @@ export default function ResourcesCheatSheets({ navigateTo }) {
   const filteredSheets = getFilteredSheets();
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ padding: 'clamp(14px, 3.5vw, 24px)', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box', fontFamily: 'var(--font-outfit), sans-serif' }}>
       {/* Back button and header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
         <button
@@ -88,13 +88,13 @@ export default function ResourcesCheatSheets({ navigateTo }) {
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{
-            fontSize: 36, fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
+            fontSize: 'clamp(24px, 6vw, 36px)', fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
             background: `linear-gradient(to right, #34D399 0%, #059669 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
             Cheat Sheets
           </h1>
-          <p style={{ color: T.muted, fontSize: 16, margin: 0, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+          <p style={{ color: T.muted, fontSize: 'clamp(13.5px, 3.5vw, 16px)', margin: 0, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
             Quick reference guides for developers and learners. Find the most important commands and concepts in one place.
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function ResourcesCheatSheets({ navigateTo }) {
 
       {/* Stats Counter */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 36
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 16, marginBottom: 36
       }}>
         <div style={{ background: T.s1, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.12)', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: '#3B82F6', flexShrink: 0, paddingLeft: 10 }}>
@@ -184,7 +184,7 @@ export default function ResourcesCheatSheets({ navigateTo }) {
             </div>
 
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: 16
             }}>
               {sheets.map(sheet => (
                 <motion.div
@@ -239,7 +239,7 @@ export default function ResourcesCheatSheets({ navigateTo }) {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: 16
             }}>
               {filteredSheets.map(sheet => (
                 <motion.div

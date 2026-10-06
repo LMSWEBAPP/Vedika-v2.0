@@ -460,6 +460,26 @@
   white-space: nowrap;
 }
 
+.tuningDockWrapper {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9000;
+}
+
+@media (max-width: 768px) {
+  .tuningDockWrapper {
+    bottom: 12px;
+    left: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .tuningDockWrapper {
+    display: none !important;
+  }
+}
+
 @keyframes pulseGlow {
   0%, 100% {
     transform: scale(1);
@@ -518,9 +538,15 @@
 /* RESPONSIVE DESIGN                                         */
 /* ========================================================= */
 @media (max-width: 1140px) {
+  .heroSection {
+    height: auto;
+    min-height: calc(100vh - 54px);
+    padding: 2.5rem 2rem 3rem 2rem;
+    overflow-y: visible;
+  }
   .container {
     grid-template-columns: 1fr;
-    gap: 3.5rem;
+    gap: 3rem;
   }
   .contentCol {
     max-width: 100%;
@@ -528,30 +554,89 @@
     text-align: center;
   }
   .description {
-    max-width: 100%;
+    max-width: 600px;
   }
   .stageFrame {
-    max-width: 600px;
+    max-width: 540px;
+    margin: 0 auto;
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
   .heroSection {
-    padding: 5rem 1.25rem 2rem 1.25rem;
+    padding: 2rem 1.25rem 3rem 1.25rem;
+  }
+  .container {
+    gap: 2.25rem;
   }
   .stageFrame {
-    aspect-ratio: 1.15 / 1;
+    aspect-ratio: 1.18 / 1;
+    max-width: 440px;
+    max-height: 400px;
   }
-  .titleH1 {
-    font-size: clamp(2.4rem, 10vw, 3.2rem);
+  .titleRowVedika {
+    font-size: clamp(3rem, 12vw, 5rem);
+    letter-spacing: -0.025em;
   }
-  .titleRow2 {
-    padding-left: 0.2rem;
+  .titleRowAiTutor {
+    font-size: clamp(1.8rem, 6.8vw, 3rem);
+    padding-left: 0.1rem;
+  }
+  .description {
+    font-size: 0.98rem;
+    line-height: 1.65;
   }
   .idleHint {
     padding: 0.35rem 0.85rem;
   }
   .hintQuoteText {
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroSection {
+    padding: 1.5rem 0.85rem 2.5rem 0.85rem;
+  }
+  .container {
+    gap: 1.75rem;
+  }
+  .titleLead {
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+  }
+  .titleRowVedika {
+    font-size: clamp(2.35rem, 11.5vw, 3.4rem);
+    letter-spacing: -0.02em;
+  }
+  .titleRowAiTutor {
+    font-size: clamp(1.4rem, 6.8vw, 2.1rem);
+  }
+  .wordGap {
+    width: 0.5rem;
+  }
+  .description {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .stageFrame {
+    max-width: 100%;
+    aspect-ratio: 1.1 / 1;
+    max-height: 320px;
+  }
+  .hintQuoteText {
+    font-size: 0.68rem;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* Touch Device Optimization: Disable desktop hovering pointer dot */
+@media (hover: none) {
+  .fluidPointerDot {
+    display: none !important;
+  }
+  .stageFrame {
+    cursor: default;
   }
 }

@@ -8,6 +8,7 @@ import {
   RotateCcw, Play, Pause, Activity, Eye, Info as InfoIcon, Maximize2
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 
 import PhetSimViewer from '@/components/labs/PhetSimViewer';
 import { getMascotBridge } from '@/lib/mascotBridge';
@@ -22,6 +23,9 @@ const ORGANELLES = [
 ];
 
 export default function BiologyLab() {
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const isStacked = isMobile || isTablet;
   const [labMode, setLabMode] = useState('phet'); // 'phet' | '3d'
   const [activePhetSim, setActivePhetSim] = useState('natural-selection');
   const [selectedExperiment, setSelectedExperiment] = useState('cell');
@@ -587,10 +591,10 @@ export default function BiologyLab() {
   return (
     <div style={{
       display: 'flex',
-      flexDirection: 'row',
+      flexDirection: isStacked ? 'column' : 'row',
       flex: 1,
       minHeight: '100%',
-      minHeight: 'calc(100vh - 54px)',
+      minHeight: isStacked ? 'auto' : 'calc(100vh - 54px)',
       background: '#07080F',
       color: '#DDE3F2',
       fontFamily: 'var(--font-outfit), sans-serif',
@@ -598,15 +602,17 @@ export default function BiologyLab() {
       paddingBottom: 90
     }}>
       
-      {/* --- LEFT COLUMN: Parameter sidebar panel --- */}
+      {/* --- PARAMETER SIDEBAR PANEL --- */}
       <div style={{
-        width: 360,
-        minHeight: 700,
+        width: isStacked ? '100%' : 360,
+        minHeight: isStacked ? 'auto' : 700,
         background: '#0C0F1C',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        borderRight: isStacked ? 'none' : '1px solid rgba(255,255,255,0.06)',
+        borderBottom: isStacked ? '1px solid rgba(255,255,255,0.06)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
+        order: isStacked ? 2 : 1,
         zIndex: 5
       }}>
         {/* Lab Header */}
@@ -861,11 +867,20 @@ export default function BiologyLab() {
 
       </div>
 
-      {/* --- RIGHT COLUMN: 3D Canvas + SVG Line Chart Overlay --- */}
-      <div style={{ flex: 1, minHeight: 700, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      {/* --- 3D CANVAS + SVG LINE CHART OVERLAY --- */}
+      <div style={{
+        flex: 1,
+        width: '100%',
+        minHeight: isStacked ? 340 : 700,
+        height: isStacked ? 380 : '100%',
+        order: isStacked ? 1 : 2,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         
         {/* Three.js Canvas container */}
-        <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: 700, zIndex: 1 }} />
+        <div ref={mountRef} style={{ width: '100%', height: isStacked ? 380 : '100%', minHeight: isStacked ? 340 : 700, zIndex: 1 }} />
 
         {/* Live Lotka-Volterra SVG Graph Plot overlay */}
         {selectedExperiment === 'ecosystem' && historyData.length > 1 && (

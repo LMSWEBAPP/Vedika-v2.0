@@ -967,9 +967,11 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
       flexDirection: 'column',
       width: '100%',
       background: T.bg,
-      height: 'calc(100vh - 64px)',
-      maxHeight: 'calc(100vh - 64px)',
-      overflow: 'hidden',
+      minHeight: '100%',
+      height: isStackedLayout ? 'auto' : 'calc(100vh - 64px)',
+      maxHeight: isStackedLayout ? 'none' : 'calc(100vh - 64px)',
+      overflowY: isStackedLayout ? 'auto' : 'hidden',
+      overflowX: 'hidden',
       fontFamily: 'var(--font-outfit), sans-serif',
       boxSizing: 'border-box',
       padding: isMobile ? '8px 10px' : '10px 20px'
@@ -978,10 +980,10 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
         width: '100%',
         maxWidth: 1600,
         margin: '0 auto',
-        height: '100%',
+        height: isStackedLayout ? 'auto' : '100%',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: isStackedLayout ? 'visible' : 'hidden'
       }}>
         {/* Navigation Bar */}
         <div style={{
@@ -990,10 +992,10 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
           alignItems: 'center',
           marginBottom: 10,
           flexWrap: 'wrap',
-          gap: 10,
+          gap: 8,
           flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={() => router.push('/courses')}
               style={{
@@ -1277,13 +1279,13 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                 <div style={{
                   flex: 1,
                   minWidth: 0,
-                  height: '100%',
+                  height: isStackedLayout ? '520px' : '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   borderRadius: '16px',
                   border: `1.5px solid ${panelColor}`,
                   background: T.s1,
-                  padding: '14px',
+                  padding: isMobile ? '12px' : '14px',
                   boxShadow: `0 8px 32px rgba(0, 0, 0, 0.35), 0 0 20px ${panelColor}15`,
                   overflow: 'hidden',
                   boxSizing: 'border-box',
@@ -2062,29 +2064,29 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               );
             })()}
 
-          {/* 4 Companion Tabs (Floating beside panel, background box removed, merging with panel when selected) */}
+          {/* 4 Companion Tabs (Floating beside panel on desktop, horizontal bar above drawer on mobile/tablet) */}
           <div style={{
-            width: isExpanded ? '92px' : '100%',
-            flex: isExpanded ? '0 0 92px' : 1,
-            maxWidth: isExpanded ? '92px' : '100%',
+            width: isStackedLayout ? '100%' : (isExpanded ? '92px' : '100%'),
+            flex: isStackedLayout ? 'none' : (isExpanded ? '0 0 92px' : 1),
+            maxWidth: isStackedLayout ? '100%' : (isExpanded ? '92px' : '100%'),
             flexShrink: 0,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: isStackedLayout ? 'row' : 'column',
             justifyContent: 'center',
             alignItems: 'center',
             background: 'transparent',
             border: 'none',
             boxShadow: 'none',
-            padding: '6px 0',
+            padding: isStackedLayout ? '4px 0' : '6px 0',
             overflow: 'visible',
             minWidth: 0,
-            height: '100%',
+            height: isStackedLayout ? 'auto' : '100%',
             boxSizing: 'border-box',
             position: 'relative',
             zIndex: 2
           }}>
             <CompanionTabs
-              vertical={true}
+              vertical={!isStackedLayout}
               activeTab={isExpanded ? activeCompanionTab : null}
               isExpanded={isExpanded}
               onSelectTab={(tabId) => {

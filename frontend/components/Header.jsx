@@ -31,25 +31,25 @@ export default function Header() {
   }, []);
 
   const handleScheduleHideTopNav = useCallback(() => {
-    if (coursesDropdownOpen || profileDropdownOpen) return;
+    if (coursesDropdownOpen || profileDropdownOpen || mobileMenuOpen) return;
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
       setIsTopNavVisible(false);
     }, 850);
-  }, [coursesDropdownOpen, profileDropdownOpen]);
+  }, [coursesDropdownOpen, profileDropdownOpen, mobileMenuOpen]);
 
   useEffect(() => {
     if (!isAskVedika) return;
     const handleMouseMove = (e) => {
       if (e.clientY <= 55) {
         handleShowTopNav();
-      } else if (e.clientY > 135 && !coursesDropdownOpen && !profileDropdownOpen) {
+      } else if (e.clientY > 135 && !coursesDropdownOpen && !profileDropdownOpen && !mobileMenuOpen) {
         handleScheduleHideTopNav();
       }
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isAskVedika, coursesDropdownOpen, profileDropdownOpen, handleShowTopNav, handleScheduleHideTopNav]);
+  }, [isAskVedika, coursesDropdownOpen, profileDropdownOpen, mobileMenuOpen, handleShowTopNav, handleScheduleHideTopNav]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,6 +68,18 @@ export default function Header() {
     setCoursesDropdownOpen(false);
     setProfileDropdownOpen(false);
   }, [pathname]);
+
+  // Lock body scroll when mobile menu drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -95,6 +107,7 @@ export default function Header() {
       localStorage.removeItem('frappe_user');
       localStorage.removeItem('frappe_sid');
       setUser(null);
+      setMobileMenuOpen(false);
       router.push('/login');
     }
   };
@@ -121,7 +134,7 @@ export default function Header() {
         <button
           type="button"
           className={styles.logoWrap}
-          onClick={() => router.push('/')}
+          onClick={() => { setMobileMenuOpen(false); router.push('/'); }}
           aria-label="Vedika AI Tutor Home"
         >
           <div className={styles.starIcon}>
@@ -335,7 +348,7 @@ export default function Header() {
             type="button"
             className={styles.mobileToggleBtn}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -358,7 +371,7 @@ export default function Header() {
         }}
       >
         <span>Courses</span>
-        <BookOpen size={16} />
+        <BookOpen size={18} color="#38bdf8" />
       </button>
       <button
         type="button"
@@ -366,7 +379,7 @@ export default function Header() {
         onClick={() => { setMobileMenuOpen(false); router.push('/quizzes'); }}
       >
         <span>Quizzes</span>
-        <Award size={16} />
+        <Award size={18} color="#a855f7" />
       </button>
       <button
         type="button"
@@ -374,7 +387,7 @@ export default function Header() {
         onClick={() => { setMobileMenuOpen(false); router.push('/assignments'); }}
       >
         <span>Assignments</span>
-        <FileText size={16} />
+        <FileText size={18} color="#00f298" />
       </button>
       <button
         type="button"
@@ -382,23 +395,23 @@ export default function Header() {
         onClick={() => { setMobileMenuOpen(false); router.push('/resources'); }}
       >
         <span>Resources</span>
-        <FolderOpen size={16} />
+        <FolderOpen size={18} color="#ff9900" />
       </button>
       <button
         type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-ai') || pathname === '/general-tutor' || pathname === '/coding-tutor' ? styles.mobileNavActive : ''}`}
+        className={`${styles.mobileNavLink} ${isAiActive ? styles.mobileNavActive : ''}`}
         onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
       >
         <span>Vedika AI</span>
-        <Brain size={16} />
+        <Brain size={18} color="#c084fc" />
       </button>
       <button
         type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/vedika-labs') ? styles.mobileNavActive : ''}`}
+        className={`${styles.mobileNavLink} ${isLabsActive ? styles.mobileNavActive : ''}`}
         onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
       >
         <span>Vedika Labs</span>
-        <FlaskConical size={16} />
+        <FlaskConical size={18} color="#38bdf8" />
       </button>
       <button
         type="button"
@@ -406,7 +419,7 @@ export default function Header() {
         onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
       >
         <span>Jobs</span>
-        <Briefcase size={16} />
+        <Briefcase size={18} color="#34d399" />
       </button>
       <button
         type="button"
@@ -414,16 +427,44 @@ export default function Header() {
         onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
       >
         <span>Progress</span>
-        <BarChart3 size={16} />
+        <BarChart3 size={18} color="#f59e0b" />
       </button>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '6px 0' }} />
 
       {user ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ padding: '0 14px', fontSize: 13, color: '#94a3b8' }}>
+          <div style={{ padding: '4px 12px', fontSize: 13, color: '#94a3b8' }}>
             Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
           </div>
+          <button
+            type="button"
+            className={styles.mobileNavLink}
+            onClick={() => { setMobileMenuOpen(false); router.push('/profile'); }}
+          >
+            <span>My Profile</span>
+            <UserIcon size={18} color="#818cf8" />
+          </button>
+          {(user?.role === 'Administrator' || user?.role === 'super_admin' || user?.is_super_admin) && (
+            <button
+              type="button"
+              className={styles.mobileNavLink}
+              onClick={() => { setMobileMenuOpen(false); router.push('/admin'); }}
+            >
+              <span>Admin Portal</span>
+              <LayoutDashboard size={18} color="#38bdf8" />
+            </button>
+          )}
+          {(user?.role === 'super_admin' || user?.is_super_admin) && (
+            <button
+              type="button"
+              className={styles.mobileNavLink}
+              onClick={() => { setMobileMenuOpen(false); router.push('/super-admin'); }}
+            >
+              <span>Super Admin Console</span>
+              <ShieldCheck size={18} color="#a855f7" />
+            </button>
+          )}
           <button
             type="button"
             className={styles.mobileNavLink}
@@ -431,18 +472,18 @@ export default function Header() {
             style={{ color: '#f87171' }}
           >
             <span>Sign Out</span>
-            <LogOut size={16} />
+            <LogOut size={18} color="#f87171" />
           </button>
         </div>
       ) : (
         <button
           type="button"
           className={styles.getStartedBtn}
-          style={{ justifyContent: 'center', width: '100%', padding: '12px' }}
+          style={{ justifyContent: 'center', width: '100%', padding: '14px', borderRadius: '12px' }}
           onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
         >
           <span>Get Started / Log In</span>
-          <ArrowRight size={15} />
+          <ArrowRight size={16} />
         </button>
       )}
     </div>
@@ -455,11 +496,11 @@ export default function Header() {
         <div
           onMouseEnter={handleShowTopNav}
           className={styles.topDetectionStrip}
-          style={{ pointerEvents: isTopNavVisible ? 'none' : 'auto' }}
+          style={{ pointerEvents: (isTopNavVisible || mobileMenuOpen) ? 'none' : 'auto' }}
         />
 
         {/* Discreet floating handle when hidden to show navigation is available on hover */}
-        {!isTopNavVisible && (
+        {!isTopNavVisible && !mobileMenuOpen && (
           <div
             onMouseEnter={handleShowTopNav}
             onClick={handleShowTopNav}
@@ -476,9 +517,9 @@ export default function Header() {
           onMouseEnter={handleShowTopNav}
           onMouseLeave={handleScheduleHideTopNav}
           style={{
-            transform: isTopNavVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
-            opacity: isTopNavVisible ? 1 : 0,
-            pointerEvents: isTopNavVisible ? 'auto' : 'none',
+            transform: (isTopNavVisible || mobileMenuOpen) ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
+            opacity: (isTopNavVisible || mobileMenuOpen) ? 1 : 0,
+            pointerEvents: (isTopNavVisible || mobileMenuOpen) ? 'auto' : 'none',
           }}
         >
           {navContent}

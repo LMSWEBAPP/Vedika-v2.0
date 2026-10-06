@@ -8,6 +8,7 @@ import {
   ChevronRight, HelpCircle, Activity, Lightbulb, Compass, AlertCircle, Maximize2
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 
 import PhetSimViewer from '@/components/labs/PhetSimViewer';
 import { getMascotBridge } from '@/lib/mascotBridge';
@@ -30,6 +31,9 @@ class HelixPath extends THREE.Curve {
 }
 
 export default function PhysicsLab() {
+  const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
+  const isStacked = isMobile || isTablet;
   const [labMode, setLabMode] = useState('phet'); // 'phet' | '3d'
   const [activePhetSim, setActivePhetSim] = useState('circuit-construction-kit-dc');
   const [selectedExperiment, setSelectedExperiment] = useState('pendulum');
@@ -770,10 +774,10 @@ export default function PhysicsLab() {
   return (
     <div style={{
       display: 'flex',
-      flexDirection: 'row',
+      flexDirection: isStacked ? 'column' : 'row',
       flex: 1,
       minHeight: '100%',
-      minHeight: 'calc(100vh - 54px)',
+      minHeight: isStacked ? 'auto' : 'calc(100vh - 54px)',
       background: '#07080F',
       color: '#DDE3F2',
       fontFamily: 'var(--font-outfit), sans-serif',
@@ -781,15 +785,17 @@ export default function PhysicsLab() {
       paddingBottom: 90
     }}>
       
-      {/* --- LEFT COLUMN: Parameters Sidebar (Width: 380px) --- */}
+      {/* --- PARAMETERS SIDEBAR (Width: 360px on desktop, full width below canvas on mobile) --- */}
       <div style={{
-        width: 360,
-        minHeight: 700,
+        width: isStacked ? '100%' : 360,
+        minHeight: isStacked ? 'auto' : 700,
         background: '#0C0F1C',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        borderRight: isStacked ? 'none' : '1px solid rgba(255,255,255,0.06)',
+        borderBottom: isStacked ? '1px solid rgba(255,255,255,0.06)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
+        order: isStacked ? 2 : 1,
         zIndex: 5
       }}>
         {/* Lab Header */}
@@ -1273,11 +1279,20 @@ export default function PhysicsLab() {
 
       </div>
 
-      {/* --- RIGHT COLUMN: 3D Canvas + Energy Chart Overlay --- */}
-      <div style={{ flex: 1, minHeight: 700, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      {/* --- 3D CANVAS + ENERGY CHART OVERLAY --- */}
+      <div style={{
+        flex: 1,
+        width: '100%',
+        minHeight: isStacked ? 340 : 700,
+        height: isStacked ? 380 : '100%',
+        order: isStacked ? 1 : 2,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         
         {/* Render Three.js Canvas container */}
-        <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: 700, zIndex: 1 }} />
+        <div ref={mountRef} style={{ width: '100%', height: isStacked ? 380 : '100%', minHeight: isStacked ? 340 : 700, zIndex: 1 }} />
 
         {/* Dynamic Live Energy SVG overlay (bottom overlay block) */}
         {selectedExperiment === 'pendulum' && (

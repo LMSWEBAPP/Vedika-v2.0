@@ -34,16 +34,17 @@ export default function ResourcesHub({ navigateTo }) {
 
   return (
     <div style={{
-      padding: '40px 24px',
+      padding: 'clamp(20px, 5vw, 40px) clamp(14px, 4vw, 24px)',
       maxWidth: 1000,
       margin: '0 auto',
+      boxSizing: 'border-box',
       fontFamily: 'var(--font-outfit), sans-serif'
     }}>
       {/* Title Header */}
-      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 6vw, 48px)' }}>
         <h1 style={{
           color: T.text,
-          fontSize: 36,
+          fontSize: 'clamp(24px, 6vw, 36px)',
           fontWeight: 800,
           margin: '0 0 12px 0',
           letterSpacing: '-0.03em',
@@ -53,7 +54,7 @@ export default function ResourcesHub({ navigateTo }) {
         }}>
           Welcome, Student!
         </h1>
-        <p style={{ color: T.muted, fontSize: 16, margin: 0 }}>
+        <p style={{ color: T.muted, fontSize: 'clamp(14px, 3.5vw, 16px)', margin: 0 }}>
           Ready to explore our digital library?
         </p>
       </div>
@@ -61,9 +62,10 @@ export default function ResourcesHub({ navigateTo }) {
       {/* Grid of Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: 24,
-        width: '100%'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(270px, 100%), 1fr))',
+        gap: 'clamp(16px, 3vw, 24px)',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         {cards.map(({ id, title, description, gradient, btnText, Icon }) => (
           <motion.div

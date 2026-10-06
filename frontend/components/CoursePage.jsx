@@ -562,9 +562,11 @@ export default function CoursePage() {
           display: 'flex',
           flexDirection: 'column',
           width: '100%',
-          height: '100%',
-          maxHeight: '100%',
-          overflowY: isEnrolled ? 'auto' : 'hidden',
+          height: isMobile ? 'auto' : '100%',
+          minHeight: '100%',
+          maxHeight: isMobile ? 'none' : '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           background: T.bg,
           boxSizing: 'border-box'
         }}
@@ -875,9 +877,10 @@ export default function CoursePage() {
       display: 'flex',
       flexDirection: 'column',
       width: '100%',
-      height: '100%',
-      maxHeight: '100%',
-      overflowY: isMobile ? 'auto' : 'hidden',
+      height: isMobile ? 'auto' : '100%',
+      minHeight: '100%',
+      maxHeight: isMobile ? 'none' : '100%',
+      overflowY: 'auto',
       overflowX: 'hidden',
       background: T.bg,
       boxSizing: 'border-box'
@@ -886,11 +889,11 @@ export default function CoursePage() {
         width: '100%',
         maxWidth: 1440,
         margin: '0 auto',
-        padding: isMobile ? '8px 12px' : '10px 24px 6px',
+        padding: isMobile ? '8px 12px 24px' : '10px 24px 6px',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
-        height: '100%',
+        height: isMobile ? 'auto' : '100%',
         justifyContent: 'flex-start'
       }} className="no-scrollbar">
         {/* Compact Top Action Toolbar: Search & Practice Playground */}

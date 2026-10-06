@@ -328,6 +328,26 @@
 
 /* Mobile drawer and responsiveness */
 @media (max-width: 768px) {
+  .dsa-resources-page {
+    height: auto;
+    min-height: calc(100vh - 60px);
+    overflow: visible;
+  }
+
+  .dsa-resources-content-wrapper {
+    padding: 6px;
+  }
+
+  .dsa-resources-content {
+    padding: 8px;
+    border-radius: 8px;
+    gap: 8px;
+  }
+
+  .dsa-resources-markdown {
+    padding: 14px 10px;
+  }
+
   .dsa-resources-sidebar {
     display: none;
   }

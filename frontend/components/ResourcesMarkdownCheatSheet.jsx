@@ -185,7 +185,7 @@ export default function ResourcesMarkdownCheatSheet({ navigateTo, cheatSheetId }
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ padding: 'clamp(14px, 3.5vw, 24px)', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box', fontFamily: 'var(--font-outfit), sans-serif' }}>
       {/* Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
         <button
@@ -202,11 +202,11 @@ export default function ResourcesMarkdownCheatSheet({ navigateTo, cheatSheetId }
         </button>
 
         <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: T.text, margin: '0 0 6px 0', textTransform: 'capitalize' }}>
+          <h1 style={{ fontSize: 'clamp(22px, 5.5vw, 32px)', fontWeight: 800, color: T.text, margin: '0 0 6px 0', textTransform: 'capitalize' }}>
             {cheatSheet?.title}
           </h1>
           {cheatSheet?.intro && (
-            <p style={{ color: T.muted, fontSize: 15, margin: '0 auto', maxWidth: 700, lineHeight: 1.5 }}>
+            <p style={{ color: T.muted, fontSize: 'clamp(13.5px, 3.5vw, 15px)', margin: '0 auto', maxWidth: 700, lineHeight: 1.5 }}>
               {cheatSheet.intro}
             </p>
           )}
@@ -226,7 +226,7 @@ export default function ResourcesMarkdownCheatSheet({ navigateTo, cheatSheetId }
       {/* Grid of Sections */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
         {sections.map((section, sIdx) => (
-          <div key={sIdx} style={{ background: T.s1, border: `1px solid ${T.border}`, borderRadius: 16, padding: '24px 20px' }}>
+          <div key={sIdx} style={{ background: T.s1, border: `1px solid ${T.border}`, borderRadius: 16, padding: 'clamp(16px, 3vw, 24px) clamp(12px, 2.5vw, 20px)' }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: T.accent, margin: '0 0 16px 0', borderBottom: `1px solid ${T.border}`, paddingBottom: 6 }}>
               {section.title}
             </h2>
@@ -234,7 +234,7 @@ export default function ResourcesMarkdownCheatSheet({ navigateTo, cheatSheetId }
             {/* Subsection Cards inside grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
               gap: 16
             }}>
               {section.subsections.map((sub, subIdx) => (

@@ -179,7 +179,7 @@ export default function ProgressPage({ completed = {} }) {
 
       {/* Course Selector */}
       {enrolledCourses.length > 1 && (
-        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: T.muted, fontWeight: 500 }}>Select Course:</span>
           <select 
             value={selectedCourseId} 
@@ -200,7 +200,9 @@ export default function ProgressPage({ completed = {} }) {
               fontWeight: 600,
               cursor: 'pointer',
               outline: 'none',
-              minWidth: 200
+              maxWidth: '100%',
+              width: isMobile ? '100%' : 'auto',
+              minWidth: isMobile ? '100%' : 200
             }}
           >
             {enrolledCourses.map(course => (

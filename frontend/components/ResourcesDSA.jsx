@@ -23,7 +23,7 @@ export default function ResourcesDSA({ navigateTo }) {
   ];
 
   return (
-    <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto', fontFamily: 'var(--font-outfit), sans-serif' }}>
+    <div style={{ padding: 'clamp(14px, 3.5vw, 24px)', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box', fontFamily: 'var(--font-outfit), sans-serif' }}>
       {/* Back button and title */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 36 }}>
         <button
@@ -41,13 +41,13 @@ export default function ResourcesDSA({ navigateTo }) {
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{
-            fontSize: 36, fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
+            fontSize: 'clamp(24px, 6vw, 36px)', fontWeight: 800, color: T.text, margin: '0 0 10px 0', letterSpacing: '-0.03em',
             background: `linear-gradient(to right, #F97316 0%, #EF4444 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
             Data Structures & Algorithms
           </h1>
-          <p style={{ color: T.muted, fontSize: 16, margin: 0 }}>
+          <p style={{ color: T.muted, fontSize: 'clamp(13.5px, 3.5vw, 16px)', margin: 0 }}>
             Master DSA with company-specific questions and comprehensive learning resources.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function ResourcesDSA({ navigateTo }) {
 
       {/* Options */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(270px, 100%), 1fr))', gap: 'clamp(16px, 3vw, 24px)'
       }}>
         {options.map(({ id, title, description, gradient, Icon }) => (
           <motion.div

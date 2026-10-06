@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Briefcase, MapPin, Clock, Calendar, Globe, Search, ArrowRight, ExternalLink, X } from 'lucide-react';
 import { T } from '@/lib/lms-data';
-import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
+import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import { getJobs } from '@/lib/frappe';
 import PacmanPagination from '@/components/PacmanPagination';
 import './jobs.css';
@@ -12,6 +12,7 @@ const PAGE_SIZE = 3;
 
 export default function StudentJobsPage() {
   const isMobile = useMediaQuery(isMobileMQ);
+  const isTablet = useMediaQuery(isTabletMQ);
 
   // States
   const [jobs, setJobs] = useState([]);
@@ -66,12 +67,14 @@ export default function StudentJobsPage() {
 
   return (
     <div style={{
-      height: 'calc(100vh - 54px)',
-      maxHeight: 'calc(100vh - 54px)',
-      overflow: 'hidden',
+      minHeight: '100%',
+      height: isMobile ? 'auto' : 'calc(100vh - 54px)',
+      maxHeight: isMobile ? 'none' : 'calc(100vh - 54px)',
+      overflowY: isMobile ? 'auto' : 'hidden',
+      overflowX: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      padding: isMobile ? '16px' : '24px 32px 16px 32px',
+      padding: isMobile ? '14px 16px' : '24px 32px 16px 32px',
       maxWidth: 1320,
       margin: '0 auto',
       width: '100%',
@@ -211,7 +214,7 @@ export default function StudentJobsPage() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : (isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'),
             gap: 18,
             alignItems: 'stretch',
             width: '100%'
@@ -367,10 +370,10 @@ export default function StudentJobsPage() {
               {/* Meta details list */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                 gap: 12,
                 background: T.s2,
-                padding: 14,
+                padding: isMobile ? 10 : 14,
                 borderRadius: 8,
                 border: `1px solid ${T.border}`
               }}>
