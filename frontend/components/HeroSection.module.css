@@ -523,13 +523,13 @@
   .heroSection {
     height: auto;
     min-height: calc(100vh - 54px);
-    padding: clamp(1.75rem, 3.5vw, 2.5rem) clamp(1rem, 3vw, 2rem) 3.5rem clamp(1rem, 3vw, 2rem);
+    padding: clamp(0.6rem, 1.8vw, 1.2rem) clamp(1rem, 3vw, 2rem) 2.5rem clamp(1rem, 3vw, 2rem);
     overflow-y: visible;
     overflow-x: hidden;
   }
   .container {
     grid-template-columns: 1fr;
-    gap: clamp(1.75rem, 3.5vw, 2.5rem);
+    gap: clamp(1rem, 2.2vw, 1.5rem);
     max-width: 720px;
   }
   .contentCol {
@@ -539,7 +539,7 @@
   }
   .titleBlock {
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
   }
   .titleH1 {
     align-items: center;
@@ -548,62 +548,78 @@
     justify-content: center;
   }
   .titleRowVedika {
-    font-size: clamp(3.2rem, 13vw, 5.2rem);
+    font-size: clamp(3.5rem, 14.5vw, 5.6rem);
     letter-spacing: -0.025em;
   }
   .titleRowAiTutor {
-    font-size: clamp(1.85rem, 7.5vw, 3.1rem);
+    font-size: clamp(2.05rem, 8.5vw, 3.4rem);
     letter-spacing: 0.035em;
     padding-left: 0;
   }
   .titleSubline {
-    font-size: clamp(1.15rem, 3.6vw, 1.65rem);
-    margin-top: 0.5rem;
+    font-size: clamp(1.18rem, 3.8vw, 1.7rem);
+    margin-top: 0.45rem;
     text-align: center;
   }
   .description {
     max-width: 580px;
     font-size: clamp(0.92rem, 2.6vw, 1.1rem);
     line-height: 1.6;
-    margin: 0.5rem auto 0 auto;
+    margin: 0.45rem auto 0 auto;
     text-align: center;
   }
   .stageFrame {
     max-width: min(100%, 480px);
     aspect-ratio: 1.2 / 1;
     margin: 0 auto;
+    overflow: visible;
   }
   .visualCol {
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible; /* Never cut particle rings into a box shape */
+    display: flex;
+    justify-content: center;
   }
   .stageParticlesWrapper {
-    width: 220%;
-    height: 220%;
+    width: 200%;
+    height: 200%;
+    overflow: visible;
   }
 }
 
 @media (max-width: 680px) {
   .heroSection {
-    padding: 1.25rem 0.85rem 3rem 0.85rem;
+    padding: 0.45rem 0.75rem 2rem 0.75rem;
+  }
+  .container {
+    gap: 0.85rem;
   }
   .titleBlock {
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
   }
   .titleRowVedika {
-    font-size: clamp(3.05rem, 13.5vw, 4.2rem);
+    font-size: clamp(3.35rem, 15vw, 4.8rem);
   }
   .titleRowAiTutor {
-    font-size: clamp(1.75rem, 7.8vw, 2.45rem);
+    font-size: clamp(1.95rem, 8.8vw, 2.85rem);
   }
   .wordGap {
     width: clamp(0.55rem, 1.8vw, 0.95rem);
   }
   .stageFrame {
-    max-width: min(100%, 400px);
+    max-width: min(100%, 390px);
     aspect-ratio: 1.15 / 1;
-    max-height: 360px;
+    max-height: 350px;
+    overflow: visible;
+  }
+  .visualCol {
+    overflow: visible;
+  }
+  .stageParticlesWrapper {
+    width: 190%;
+    height: 190%;
+    overflow: visible;
   }
   .description {
     font-size: 0.95rem;
@@ -623,21 +639,25 @@
 
 @media (max-width: 360px) {
   .heroSection {
-    padding: 1rem 0.65rem 2.5rem 0.65rem;
+    padding: 0.35rem 0.6rem 1.75rem 0.6rem;
   }
   .titleLead {
     font-size: 0.76rem;
     letter-spacing: 0.14em;
   }
   .titleRowVedika {
-    font-size: clamp(2.65rem, 12vw, 3.1rem);
+    font-size: clamp(2.85rem, 13.5vw, 3.6rem);
   }
   .titleRowAiTutor {
-    font-size: clamp(1.5rem, 6.8vw, 1.85rem);
+    font-size: clamp(1.68rem, 7.8vw, 2.2rem);
   }
   .stageFrame {
     max-width: 100%;
-    max-height: 310px;
+    max-height: 300px;
+    overflow: visible;
+  }
+  .visualCol {
+    overflow: visible;
   }
   .description {
     font-size: 0.88rem;

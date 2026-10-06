@@ -1,11 +1,22 @@
 import os
+import sys
 import re
 import json
 import base64
 import time
 import datetime
 import asyncio
+import socket
 from queue import Queue as ThreadSafeQueue
+
+# Force IPv4 resolution for network connections to bypass ISP IPv6 blackholes (common on Windows)
+_orig_getaddrinfo = socket.getaddrinfo
+def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    if family == 0 or family == socket.AF_UNSPEC:
+        family = socket.AF_INET
+    return _orig_getaddrinfo(host, port, family, type, proto, flags)
+socket.getaddrinfo = _prefer_ipv4_getaddrinfo
+
 from PySide6.QtCore import QObject, QUrl, Slot, Signal, QIODevice, QByteArray, QTimer, QThread
 from PySide6.QtMultimedia import QAudioSource, QAudioSink, QAudioFormat, QMediaDevices, QAudio
 
@@ -2350,18 +2361,17 @@ class GeminiLiveClient(QObject):
         self._is_starting = False
         self._is_stopping = False
         
-        # Only rotate key on authentication, invalid key, quota, or 1011 internal server errors
+        # Check if error is quota, authentication, timeout, handshake, or repeated failure
         err_lower = str(error_message).lower()
         is_key_error = any(k in err_lower for k in [
             "403", "429", "quota", "resourceexhausted", "api_key",
-            "unauthenticated", "invalid_argument", "permissiondenied", "1011"
-        ])
+            "unauthenticated", "invalid_argument", "permissiondenied", "1011",
+            "timed out", "timeout", "handshake", "deadline"
+        ]) or (self.reconnect_count >= 2)
+
         if is_key_error and self.gemini_keys and len(self.gemini_keys) > 1:
-            old_index = self.current_key_index
-            import random
-            available_indices = [i for i in range(len(self.gemini_keys)) if i != old_index]
-            self.current_key_index = random.choice(available_indices)
-            print(f"[GeminiLive] Dynamic key rotation: Switched to key ending ...{self.gemini_keys[self.current_key_index][-4:]}")
+            self.current_key_index = (self.current_key_index + 1) % len(self.gemini_keys)
+            print(f"[GeminiLive] Dynamic key rotation: Switched to next key ending in ...{self.gemini_keys[self.current_key_index][-4:]} (Key {self.current_key_index + 1}/{len(self.gemini_keys)})")
 
         print(f"[GeminiLive] Auto-reconnecting session (attempt {self.reconnect_count})...")
             
@@ -2377,6 +2387,11 @@ class GeminiLiveClient(QObject):
         if self._reconnect_timer.isActive() or getattr(self, "_is_reconnecting", False):
             print("[GeminiLive] Reconnect already scheduled or running; debouncing.")
             return
+
+        # Rotate key on manual failsafe reboot to guarantee a fresh connection
+        if self.gemini_keys and len(self.gemini_keys) > 1:
+            self.current_key_index = (self.current_key_index + 1) % len(self.gemini_keys)
+            print(f"[GeminiLive] Failsafe key rotation: Switched to next key ending in ...{self.gemini_keys[self.current_key_index][-4:]}")
 
         was_paused = getattr(self, "is_paused", False)
         self.reconnect_count = 0

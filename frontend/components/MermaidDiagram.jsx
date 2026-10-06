@@ -142,14 +142,19 @@ const NODE_PALETTES = [
 /**
  * Calculates a smooth curved SVG bezier path between two coordinates
  */
-function getCurvedEdgePath(x1, y1, x2, y2) {
+function getCurvedEdgePath(x1, y1, x2, y2, isHorizontal = false) {
   const dx = x2 - x1;
   const dy = y2 - y1;
-  if (Math.abs(dx) < 3) {
+  if (Math.abs(dx) < 4 || Math.abs(dy) < 4) {
     return `M ${x1} ${y1} L ${x2} ${y2}`;
   }
-  const cy1 = y1 + Math.max(22, dy * 0.45);
-  const cy2 = y2 - Math.max(22, dy * 0.45);
+  if (isHorizontal) {
+    const cx1 = x1 + Math.max(20, dx * 0.5);
+    const cx2 = x2 - Math.max(20, dx * 0.5);
+    return `M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`;
+  }
+  const cy1 = y1 + Math.max(20, dy * 0.5);
+  const cy2 = y2 - Math.max(20, dy * 0.5);
   return `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`;
 }
 
@@ -189,13 +194,13 @@ function StitchLiveOverlay({
             key={`arrow-${idx}`}
             id={`stitchArrow_${idx}`}
             viewBox="0 0 10 10"
-            refX="7"
+            refX="8"
             refY="5"
-            markerWidth="6"
-            markerHeight="6"
+            markerWidth="7"
+            markerHeight="7"
             orient="auto-start-reverse"
           >
-            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={p.arrow} />
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={p.arrow} stroke={p.arrow} strokeWidth="0.5" />
           </marker>
         ))}
       </defs>
@@ -207,11 +212,11 @@ function StitchLiveOverlay({
         return (
           <g key={`edge-${idx}`}>
             <path
-              d={getCurvedEdgePath(e.x1, e.y1, e.x2, e.y2)}
+              d={getCurvedEdgePath(e.x1, e.y1, e.x2, e.y2, e.isHorizontal)}
               stroke={e.color || palette.arrow}
-              strokeWidth="2.5"
+              strokeWidth="2.75"
               fill="none"
-              style={{ filter: `drop-shadow(0 0 6px ${e.color || palette.arrow}80)` }}
+              style={{ filter: `drop-shadow(0 0 8px ${e.color || palette.arrow})` }}
               markerEnd={`url(#stitchArrow_${colorIdx})`}
             />
           </g>
@@ -221,12 +226,12 @@ function StitchLiveOverlay({
       {/* Active Laser Flow Edge while pen draws */}
       {activeEdge && (
         <path
-          d={getCurvedEdgePath(activeEdge.x1, activeEdge.y1, activeEdge.x2, activeEdge.y2)}
-          stroke={activeEdge.color || '#A855F7'}
-          strokeWidth="3"
+          d={getCurvedEdgePath(activeEdge.x1, activeEdge.y1, activeEdge.x2, activeEdge.y2, activeEdge.isHorizontal)}
+          stroke={activeEdge.color || '#38BDF8'}
+          strokeWidth="3.25"
           strokeDasharray="6 3"
           fill="none"
-          style={{ filter: `drop-shadow(0 0 8px ${activeEdge.color || '#A855F7'})` }}
+          style={{ filter: `drop-shadow(0 0 10px ${activeEdge.color || '#38BDF8'})` }}
         />
       )}
 
@@ -243,18 +248,18 @@ function StitchLiveOverlay({
               height={n.h}
               rx={10}
               ry={10}
-              fill={palette.fillGrad?.[0] || '#1E293B'}
-              stroke={palette.stroke}
+              fill="#151D32"
+              stroke={palette.stroke || '#38BDF8'}
               strokeWidth="2.5"
-              style={{ filter: `drop-shadow(0 0 10px ${palette.stroke}80)` }}
+              style={{ filter: `drop-shadow(0 4px 16px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 12px ${palette.stroke}88)` }}
             />
             {n.text && (
               <text
                 x={n.x + n.w / 2}
-                y={n.y + n.h / 2 + 4}
+                y={n.y + n.h / 2 + 5}
                 textAnchor="middle"
                 fill="#FFFFFF"
-                fontSize="11.5"
+                fontSize="12.5"
                 fontWeight="700"
                 fontFamily="var(--font-outfit), sans-serif"
                 pointerEvents="none"
@@ -275,11 +280,11 @@ function StitchLiveOverlay({
           height={Math.max(6, activeBox.h + 4)}
           rx={10}
           ry={10}
-          fill="rgba(56, 189, 248, 0.12)"
+          fill="rgba(56, 189, 248, 0.22)"
           stroke={activeBox.stroke || '#38BDF8'}
-          strokeWidth="2.5"
-          strokeDasharray="6 4"
-          style={{ filter: `drop-shadow(0 0 10px ${activeBox.stroke || '#38BDF8'})` }}
+          strokeWidth="2.75"
+          strokeDasharray="6 3"
+          style={{ filter: `drop-shadow(0 0 12px ${activeBox.stroke || '#38BDF8'})` }}
         />
       )}
 
@@ -288,9 +293,9 @@ function StitchLiveOverlay({
         <circle
           cx={activeWritingText.x}
           cy={activeWritingText.y}
-          r="3"
-          fill={activeWritingText.cursorColor || '#A855F7'}
-          style={{ filter: `drop-shadow(0 0 6px ${activeWritingText.cursorColor || '#A855F7'})` }}
+          r="3.5"
+          fill={activeWritingText.cursorColor || '#38BDF8'}
+          style={{ filter: `drop-shadow(0 0 8px ${activeWritingText.cursorColor || '#38BDF8'})` }}
         />
       )}
     </svg>
@@ -317,20 +322,42 @@ function extractDiagramLayout(container, activeZoom = 1) {
     const r = el.getBoundingClientRect();
     const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
     // Unscaled native coordinates relative to stage root
-    const x = (r.left - stageRect.left) / zoomFactor;
-    const y = (r.top - stageRect.top) / zoomFactor;
-    const w = Math.max(80, r.width / zoomFactor);
-    const h = Math.max(36, r.height / zoomFactor);
+    let x = (r.left - stageRect.left) / zoomFactor;
+    let y = (r.top - stageRect.top) / zoomFactor;
+    let w = Math.max(90, r.width / zoomFactor);
+    let h = Math.max(42, r.height / zoomFactor);
+
+    // Fallback: If bounding box calculation yielded 0s (e.g. initial paint timing)
+    if (r.width === 0 || r.height === 0) {
+      const transform = el.getAttribute('transform');
+      const match = transform && transform.match(/translate\(([^,\)]+)[,\s]+([^,\)]+)\)/);
+      if (match) {
+        x = parseFloat(match[1]) - 50;
+        y = parseFloat(match[2]) - 20;
+        w = 100;
+        h = 42;
+      }
+    }
+
     return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
   });
 
   let edges = [];
   for (let i = 0; i < nodes.length - 1; i++) {
+    const from = nodes[i];
+    const to = nodes[i + 1];
+    const isHorizontal = Math.abs(to.x - from.x) > Math.abs(to.y - from.y) * 1.35;
+    const x1 = isHorizontal ? from.x + from.w : from.x + from.w / 2;
+    const y1 = isHorizontal ? from.y + from.h / 2 : from.y + from.h;
+    const x2 = isHorizontal ? to.x : to.x + to.w / 2;
+    const y2 = isHorizontal ? to.y + to.h / 2 : to.y;
+
     edges.push({
-      x1: nodes[i].x + nodes[i].w / 2,
-      y1: nodes[i].y + nodes[i].h,
-      x2: nodes[i + 1].x + nodes[i + 1].w / 2,
-      y2: nodes[i + 1].y,
+      x1,
+      y1,
+      x2,
+      y2,
+      isHorizontal,
       colorIdx: i % NODE_PALETTES.length,
       color: NODE_PALETTES[i % NODE_PALETTES.length].arrow
     });
@@ -729,16 +756,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           themeVariables: {
             darkMode: true,
             background: 'transparent',
-            primaryColor: '#161D30',
-            primaryTextColor: '#F8FAFC',
-            primaryBorderColor: '#3B82F6',
+            primaryColor: '#151D32',
+            primaryTextColor: '#FFFFFF',
+            primaryBorderColor: '#38BDF8',
             lineColor: '#60A5FA',
             secondaryColor: '#1E1B4B',
             tertiaryColor: '#0F172A',
-            edgeLabelBackground: '#161D30',
+            edgeLabelBackground: '#151D32',
             fontFamily: 'var(--font-outfit), sans-serif',
-            fontSize: '11px',
-            nodeBorder: '1.25px'
+            fontSize: '13px',
+            nodeBorder: 'solid'
           },
           securityLevel: 'loose',
           flowchart: {
@@ -756,8 +783,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         // Render SVG dynamically
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
+        // Fix any transparent arrowheads or invalid borders generated by Mermaid defaults
+        cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
+        cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-          return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+          const s = style.replace(/max-width:\s*[^;]+;?/gi, '');
+          return `<svg ${attrs} style="${s}; max-width: 100%; margin: 0 auto; display: block;"`;
         });
         if (!cleanSvg.includes('style=')) {
           cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
@@ -780,8 +811,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             const simpleChart = `flowchart TD\n  Root["🎯 Concept Summary"]\n${points.slice(0, 5).map((p, idx) => `  P${idx + 1}["${p.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().slice(0, 36)}"]\n  Root --> P${idx + 1}`).join('\n')}`;
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
+            cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
+            cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-              return `<svg ${attrs} style="${style}; max-width: 100%; margin: 0 auto; display: block;"`;
+              const s = style.replace(/max-width:\s*[^;]+;?/gi, '');
+              return `<svg ${attrs} style="${s}; max-width: 100%; margin: 0 auto; display: block;"`;
             });
             if (!cleanSvg.includes('style=')) {
               cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');

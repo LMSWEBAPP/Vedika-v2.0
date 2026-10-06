@@ -46,6 +46,16 @@ function heroReducer(state, action) {
 export default function HeroSection() {
   const [state, dispatch] = useReducer(heroReducer, initialHeroState);
   const { mounted, imagesLoaded, cursorInStage, stageCursorPos, revealUnlocked } = state;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -489,6 +499,7 @@ export default function HeroSection() {
                 count={9500}
                 opacity={0.94}
                 {...DEFAULT_PARTICLES}
+                scale={isMobile ? 0.74 : DEFAULT_PARTICLES.scale}
               />
             </div>
 

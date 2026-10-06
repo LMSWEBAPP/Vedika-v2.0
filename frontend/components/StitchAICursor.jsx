@@ -83,124 +83,127 @@ export default function StitchAICursor({
         />
       ))}
 
-      {/* Writing Stylus / Fountain Pen Symbol (Tip points exactly at (x, y)) */}
+      {/* Modern Pure White Digital Stylus / Pen (Tip points exactly at (x, y)) */}
       <div
         className={`stitch-pen-wrapper ${isWriting ? 'writing-active' : ''}`}
         style={{
           position: 'absolute',
-          left: -2,
-          top: -34,
-          width: 36,
-          height: 36,
-          transformOrigin: '2px 34px',
+          left: -3,
+          top: -38,
+          width: 42,
+          height: 42,
+          transformOrigin: '3px 38px',
           animation: isWriting ? 'penWritingMicro 0.28s ease-in-out infinite alternate' : 'none'
         }}
       >
         <svg
-          width="36"
-          height="36"
-          viewBox="0 0 36 36"
+          width="42"
+          height="42"
+          viewBox="0 0 42 42"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           style={{
-            filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.65))',
+            filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35))',
             display: 'block'
           }}
         >
           <defs>
-            {/* Pure Crisp White Pen Barrel Gradient with soft metallic reflection */}
-            <linearGradient id="whitePenBarrelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            {/* Pure Brilliant White Pen Body Gradient */}
+            <linearGradient id="whitePenBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="45%" stopColor="#F8FAFC" />
-              <stop offset="85%" stopColor="#E2E8F0" />
-              <stop offset="100%" stopColor="#CBD5E1" />
+              <stop offset="60%" stopColor="#FFFFFF" />
+              <stop offset="85%" stopColor="#F1F5F9" />
+              <stop offset="100%" stopColor="#E2E8F0" />
             </linearGradient>
-            {/* Polished Silver / Chrome Trim Gradient */}
-            <linearGradient id="chromeTrimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+
+            {/* Polished Chrome / Platinum Metal Accent */}
+            <linearGradient id="chromeAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFFFFF" />
               <stop offset="50%" stopColor="#CBD5E1" />
               <stop offset="100%" stopColor="#94A3B8" />
             </linearGradient>
-            {/* Precision Stainless Steel Nib Cone Gradient */}
+
+            {/* Precision White Ceramic Nib Cone */}
             <linearGradient id="whitePenNibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F8FAFC" />
-              <stop offset="60%" stopColor="#E2E8F0" />
-              <stop offset="100%" stopColor="#94A3B8" />
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="50%" stopColor="#F8FAFC" />
+              <stop offset="100%" stopColor="#CBD5E1" />
             </linearGradient>
           </defs>
 
-          {/* White Pen Barrel Body */}
+          {/* White Pen Barrel Body (Long sleek stylus) */}
           <polygon
-            points="7,25 22,10 28,16 13,31"
-            fill="url(#whitePenBarrelGrad)"
-            stroke="#94A3B8"
-            strokeWidth="0.8"
-          />
-
-          {/* White Pen Barrel Subtle Highlight Ridge */}
-          <line
-            x1="10"
-            y1="22"
-            x2="24"
-            y2="13"
-            stroke="rgba(255, 255, 255, 0.9)"
+            points="8,29 26,11 32,17 14,35"
+            fill="url(#whitePenBodyGrad)"
+            stroke="#FFFFFF"
             strokeWidth="1.2"
           />
 
-          {/* Pen Top Cap Finial (Clean White + Chrome Trim) */}
-          <path
-            d="M 22 10 L 25 7 C 27 5 30 5 32 7 C 34 9 34 12 32 14 L 28 16 Z"
-            fill="#FFFFFF"
-            stroke="url(#chromeTrimGrad)"
-            strokeWidth="0.8"
-          />
-
-          {/* Chrome Pen Clip Accent */}
+          {/* Specular White Gloss Line along pen body */}
           <line
-            x1="24"
-            y1="8"
-            x2="17"
-            y2="18"
-            stroke="url(#chromeTrimGrad)"
+            x1="11"
+            y1="26"
+            x2="28"
+            y2="14"
+            stroke="#FFFFFF"
             strokeWidth="1.6"
             strokeLinecap="round"
           />
 
-          {/* Metallic Silver Grip Ring */}
-          <polygon
-            points="5,27 7,25 13,31 11,33"
-            fill="url(#chromeTrimGrad)"
-            stroke="#94A3B8"
-            strokeWidth="0.5"
+          {/* Stylus Top End Cap (Pure White Dome with Chrome Trim) */}
+          <path
+            d="M 26 11 L 30 7 C 32 5 35 5 37 7 C 39 9 39 12 37 14 L 32 17 Z"
+            fill="#FFFFFF"
+            stroke="url(#chromeAccentGrad)"
+            strokeWidth="1"
           />
 
-          {/* Pen Nib Cone */}
-          <polygon
-            points="2,34 5,27 11,33"
-            fill="url(#whitePenNibGrad)"
-            stroke="#94A3B8"
-            strokeWidth="0.75"
-          />
-
-          {/* Fine Writing Tip Slit */}
+          {/* Sleek Chrome Clip Accent */}
           <line
-            x1="2"
-            y1="34"
-            x2="7"
-            y2="29"
-            stroke="#475569"
-            strokeWidth="0.65"
+            x1="28"
+            y1="9"
+            x2="19"
+            y2="20"
+            stroke="url(#chromeAccentGrad)"
+            strokeWidth="1.8"
             strokeLinecap="round"
           />
 
-          {/* Active Ink Point at Nib Tip */}
+          {/* Silver Metal Ring between body and cone */}
+          <polygon
+            points="6,31 8,29 14,35 12,37"
+            fill="url(#chromeAccentGrad)"
+            stroke="#94A3B8"
+            strokeWidth="0.6"
+          />
+
+          {/* Ceramic Nib Cone tapering to drawing point */}
+          <polygon
+            points="3,38 6,31 12,37"
+            fill="url(#whitePenNibGrad)"
+            stroke="#CBD5E1"
+            strokeWidth="0.8"
+          />
+
+          {/* Precision Fine Drawing Tip */}
+          <line
+            x1="3"
+            y1="38"
+            x2="8"
+            y2="33"
+            stroke="#64748B"
+            strokeWidth="0.75"
+            strokeLinecap="round"
+          />
+
+          {/* Brilliant Radiant Ink Contact Point at Tip */}
           <circle
-            cx="2"
-            cy="34"
-            r="1.75"
-            fill={accentColor}
+            cx="3"
+            cy="38"
+            r="2.2"
+            fill={accentColor || '#38BDF8'}
             stroke="#FFFFFF"
-            strokeWidth="0.5"
+            strokeWidth="0.9"
           />
         </svg>
       </div>

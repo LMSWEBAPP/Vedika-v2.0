@@ -4,8 +4,16 @@ import json
 import time
 import traceback
 import re
-
+import socket
 import datetime
+
+# Force IPv4 resolution for network connections to bypass ISP IPv6 blackholes (common on Windows)
+_orig_getaddrinfo = socket.getaddrinfo
+def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    if family == 0 or family == socket.AF_UNSPEC:
+        family = socket.AF_INET
+    return _orig_getaddrinfo(host, port, family, type, proto, flags)
+socket.getaddrinfo = _prefer_ipv4_getaddrinfo
 
 # --- Multi-Session & Crash Logging System ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

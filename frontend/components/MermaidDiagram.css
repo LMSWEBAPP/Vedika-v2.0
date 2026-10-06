@@ -154,43 +154,94 @@ button.mermaid-expand-btn:hover,
   height: auto !important;
 }
 
-/* Custom Node & Edge Styling injected into SVG */
+/* Custom Node & Edge Styling injected into SVG: Vibrant, illuminated, high-contrast */
 .mermaid-svg-wrapper .node foreignObject {
   overflow: visible !important;
 }
 
-.mermaid-svg-wrapper .node rect,
-.mermaid-svg-wrapper .node circle,
-.mermaid-svg-wrapper .node ellipse,
-.mermaid-svg-wrapper .node polygon,
-.mermaid-svg-wrapper .node path {
-  fill: #1E293B !important;
+/* 1. Flowchart Node Boxes: High-contrast rich dark slate with vibrant glowing neon border */
+.mermaid-svg-wrapper .node .label-container,
+.mermaid-svg-wrapper .node:not(.label) > rect,
+.mermaid-svg-wrapper .node > polygon,
+.mermaid-svg-wrapper .node > circle,
+.mermaid-svg-wrapper .node > ellipse,
+.mermaid-svg-wrapper .node:not(.label) > path:not(.arrowMarkerPath) {
+  fill: #151D32 !important;
   stroke: #38BDF8 !important;
-  stroke-width: 1.75px !important;
-  rx: 8px !important;
-  ry: 8px !important;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+  stroke-width: 2.25px !important;
+  rx: 10px !important;
+  ry: 10px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 10px rgba(56, 189, 248, 0.35)) !important;
 }
 
-.mermaid-svg-wrapper .node .label {
+/* Hide any empty dummy rect inside .label that could obstruct text */
+.mermaid-svg-wrapper .node .label > rect,
+.mermaid-svg-wrapper .node .label rect:empty {
+  display: none !important;
+  fill: transparent !important;
+  stroke: none !important;
+}
+
+/* 2. Flowchart Node Labels & Text: Ultra-clear, bright white typography */
+.mermaid-svg-wrapper .node .label,
+.mermaid-svg-wrapper .node foreignObject,
+.mermaid-svg-wrapper .node foreignObject div,
+.mermaid-svg-wrapper .node .nodeLabel,
+.mermaid-svg-wrapper .node .nodeLabel p,
+.mermaid-svg-wrapper .node text,
+.mermaid-svg-wrapper .node tspan {
   color: #FFFFFF !important;
+  fill: #FFFFFF !important;
   font-family: var(--font-outfit), 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 700 !important;
-  font-size: 12px !important;
-  letter-spacing: -0.01em;
+  font-size: 13px !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
   overflow: visible !important;
   white-space: nowrap !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9) !important;
 }
 
-.mermaid-svg-wrapper .edgePath .path {
+/* 3. Flowchart Connector Arrows / Edges: Illuminated electric blue paths */
+.mermaid-svg-wrapper .edgePaths path,
+.mermaid-svg-wrapper .edgePath path,
+.mermaid-svg-wrapper path.flowchart-link,
+.mermaid-svg-wrapper path.edge-thickness-normal,
+.mermaid-svg-wrapper .edgePaths .path,
+.mermaid-svg-wrapper g[class*="edge"] path,
+.mermaid-svg-wrapper path[class*="flowchart"] {
   stroke: #60A5FA !important;
-  stroke-width: 2px !important;
-  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.6)) !important;
+  stroke-width: 2.5px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  fill: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.85)) !important;
 }
 
-.mermaid-svg-wrapper .marker {
+/* 4. Arrowhead Markers & Marker Paths: Solid, bright, clearly pointing arrowheads */
+.mermaid-svg-wrapper marker,
+.mermaid-svg-wrapper marker path,
+.mermaid-svg-wrapper marker polygon,
+.mermaid-svg-wrapper .arrowMarkerPath,
+.mermaid-svg-wrapper .arrowheadPath,
+.mermaid-svg-wrapper .marker,
+.mermaid-svg-wrapper [id*="pointEnd"] path,
+.mermaid-svg-wrapper [id*="arrow"] path {
   fill: #60A5FA !important;
   stroke: #60A5FA !important;
+  stroke-width: 1px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.9)) !important;
 }
 
 
