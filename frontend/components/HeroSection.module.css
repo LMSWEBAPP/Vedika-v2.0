@@ -537,16 +537,10 @@
 /* ========================================================= */
 /* RESPONSIVE DESIGN                                         */
 /* ========================================================= */
-@media (max-width: 1140px) {
-  .heroSection {
-    height: auto;
-    min-height: calc(100vh - 54px);
-    padding: 2.5rem 2rem 3rem 2rem;
-    overflow-y: visible;
-  }
+@media (max-width: 960px) {
   .container {
     grid-template-columns: 1fr;
-    gap: 3rem;
+    gap: 2.5rem;
   }
   .contentCol {
     max-width: 100%;
@@ -554,80 +548,41 @@
     text-align: center;
   }
   .description {
-    max-width: 600px;
+    max-width: 100%;
   }
   .stageFrame {
-    max-width: 540px;
+    max-width: 520px;
     margin: 0 auto;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 680px) {
   .heroSection {
+    height: auto;
+    min-height: calc(100vh - 54px);
     padding: 2rem 1.25rem 3rem 1.25rem;
-  }
-  .container {
-    gap: 2.25rem;
+    overflow-y: visible;
   }
   .stageFrame {
-    aspect-ratio: 1.18 / 1;
-    max-width: 440px;
-    max-height: 400px;
+    aspect-ratio: 1.15 / 1;
+    max-width: 400px;
+    max-height: 360px;
   }
   .titleRowVedika {
-    font-size: clamp(3rem, 12vw, 5rem);
-    letter-spacing: -0.025em;
+    font-size: clamp(2.5rem, 11vw, 3.8rem);
   }
   .titleRowAiTutor {
-    font-size: clamp(1.8rem, 6.8vw, 3rem);
-    padding-left: 0.1rem;
+    font-size: clamp(1.5rem, 6.5vw, 2.4rem);
   }
   .description {
-    font-size: 0.98rem;
-    line-height: 1.65;
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
   .idleHint {
     padding: 0.35rem 0.85rem;
   }
   .hintQuoteText {
     font-size: 0.72rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .heroSection {
-    padding: 1.5rem 0.85rem 2.5rem 0.85rem;
-  }
-  .container {
-    gap: 1.75rem;
-  }
-  .titleLead {
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
-  }
-  .titleRowVedika {
-    font-size: clamp(2.35rem, 11.5vw, 3.4rem);
-    letter-spacing: -0.02em;
-  }
-  .titleRowAiTutor {
-    font-size: clamp(1.4rem, 6.8vw, 2.1rem);
-  }
-  .wordGap {
-    width: 0.5rem;
-  }
-  .description {
-    font-size: 0.92rem;
-    line-height: 1.55;
-  }
-  .stageFrame {
-    max-width: 100%;
-    aspect-ratio: 1.1 / 1;
-    max-height: 320px;
-  }
-  .hintQuoteText {
-    font-size: 0.68rem;
-    white-space: normal;
-    text-align: center;
   }
 }
 

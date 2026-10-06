@@ -223,28 +223,36 @@ export default function LayoutWrapper({ children }) {
   }
 
   const isAskVedika = pathname === '/general-tutor' || pathname?.startsWith('/vedika-ai/ask') || pathname === '/coding-tutor' || pathname?.startsWith('/vedika-ai/code');
-  const isViewportLocked = isFixedPage && !isHomePage;
+  const isViewportLocked = isFixedPage || isHomePage;
 
   return (
-    <div
-      className={`app-layout-root ${isViewportLocked ? 'viewport-locked' : ''}`}
-      style={{
-        background: isHomePage ? '#02050c' : 'var(--bg)',
-        color: isHomePage ? '#f8fafc' : 'var(--text)',
-      }}
-    >
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: (isViewportLocked || isLabPage) ? '100vh' : 'auto',
+      minHeight: '100vh',
+      maxHeight: (isViewportLocked || isLabPage) ? '100vh' : 'none',
+      background: isHomePage ? '#02050c' : 'var(--bg)',
+      color: isHomePage ? '#f8fafc' : 'var(--text)',
+      width: '100%',
+      position: 'relative',
+      overflow: (isViewportLocked || isLabPage) ? 'hidden' : 'visible'
+    }}>
       {/* Present Navbar displayed consistently on every page */}
       <Header />
-      <main
-        className={`app-main-content ${isViewportLocked ? 'viewport-locked' : ''}`}
-        style={{
-          height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
-          minHeight: 'calc(100vh - 54px)',
-          marginTop: isAskVedika ? 0 : '54px',
-          paddingTop: 0,
-          background: isHomePage ? '#02050c' : 'var(--bg)'
-        }}
-      >
+      <main style={{
+        position: 'relative',
+        width: '100%',
+        boxSizing: 'border-box',
+        overflowY: isLabPage ? 'auto' : (isViewportLocked ? 'hidden' : 'auto'),
+        overflowX: 'hidden',
+        height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+        maxHeight: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
+        minHeight: 'calc(100vh - 54px)',
+        marginTop: isAskVedika ? 0 : '54px',
+        paddingTop: 0,
+        background: isHomePage ? '#02050c' : 'var(--bg)'
+      }}>
         {children}
       </main>
     </div>

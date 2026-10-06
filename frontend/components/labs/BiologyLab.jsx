@@ -25,7 +25,7 @@ const ORGANELLES = [
 export default function BiologyLab() {
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
-  const isStacked = isMobile || isTablet;
+  const isStacked = isMobile;
   const [labMode, setLabMode] = useState('phet'); // 'phet' | '3d'
   const [activePhetSim, setActivePhetSim] = useState('natural-selection');
   const [selectedExperiment, setSelectedExperiment] = useState('cell');

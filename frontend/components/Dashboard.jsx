@@ -314,13 +314,13 @@ export default function Dashboard() {
       {/* ──────────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1.14fr 0.86fr',
+        gridTemplateColumns: isMobile ? '1fr' : '1.14fr 0.86fr',
         alignItems: 'center',
         gap: isMobile ? 20 : 36,
         padding: isMobile ? '8px 0' : '4px 0 8px 0',
-        minHeight: (isMobile || isTablet) ? 'auto' : 540,
-        height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 88px)',
-        maxHeight: (isMobile || isTablet) ? 'none' : 'calc(100vh - 88px)',
+        minHeight: isMobile ? 'auto' : 540,
+        height: isMobile ? 'auto' : 'calc(100vh - 88px)',
+        maxHeight: isMobile ? 'none' : 'calc(100vh - 88px)',
         marginBottom: 24,
         position: 'relative'
       }}>

@@ -650,7 +650,7 @@ function CustomMathMarkdown({ content }) {
 export default function MathLab() {
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
-  const isStacked = isMobile || isTablet;
+  const isStacked = isMobile;
   const [activeTab, setActiveTab] = useState('whiteboard');
   const [visualizerSubTab, setVisualizerSubTab] = useState('pythagoras');
 

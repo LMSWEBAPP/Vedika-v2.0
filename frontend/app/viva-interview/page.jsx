@@ -3832,48 +3832,48 @@ export default function VivaInterviewPage() {
         boxSizing: 'border-box',
         position: 'relative'
       }}>
-        {/* Top Bar: Back Button */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: isMobile ? 12 : 6,
-          paddingTop: isMobile ? 4 : 0,
-          flexShrink: 0,
-          position: 'relative',
-          zIndex: 10
-        }}>
-          <button
-            type="button"
-            onClick={handleGoBack}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 9999,
-              padding: '5px 14px',
-              color: '#94A3B8',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#FFFFFF';
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#94A3B8';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-          >
-            <ArrowLeft size={15} />
-            <span>Back</span>
-          </button>
+        {/* Top Header / Spacer */}
+        {isMobile ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            paddingTop: 4,
+            flexShrink: 0,
+            position: 'relative',
+            zIndex: 10
+          }}>
+            <button
+              type="button"
+              onClick={handleGoBack}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 9999,
+                padding: '5px 14px',
+                color: '#94A3B8',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#94A3B8';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <ArrowLeft size={15} />
+              <span>Back</span>
+            </button>
 
-          {isMobile && (
             <div style={{
               display: 'flex',
               background: 'rgba(255, 255, 255, 0.04)',
@@ -3921,8 +3921,18 @@ export default function VivaInterviewPage() {
                 Interview
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* Top Spacer matching Box 1 Back Button height to keep steppers aligned on desktop */
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            height: 31,
+            marginBottom: 6,
+            flexShrink: 0
+          }} />
+        )}
 
         {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
         <div className="step-progress-wrapper">

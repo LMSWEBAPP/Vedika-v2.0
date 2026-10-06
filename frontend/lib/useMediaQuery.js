@@ -15,4 +15,4 @@ export function useMediaQuery(query) {
 
 export const BP = { mobile: 768, tablet: 1024 };
 export const isMobileMQ = `(max-width: ${BP.mobile - 1}px)`;
-export const isTabletMQ = `(max-width: ${BP.tablet - 1}px)`;
+export const isTabletMQ = `(min-width: ${BP.mobile}px) and (max-width: ${BP.tablet - 1}px)`;

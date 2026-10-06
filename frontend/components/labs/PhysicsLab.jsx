@@ -33,7 +33,7 @@ class HelixPath extends THREE.Curve {
 export default function PhysicsLab() {
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
-  const isStacked = isMobile || isTablet;
+  const isStacked = isMobile;
   const [labMode, setLabMode] = useState('phet'); // 'phet' | '3d'
   const [activePhetSim, setActivePhetSim] = useState('circuit-construction-kit-dc');
   const [selectedExperiment, setSelectedExperiment] = useState('pendulum');

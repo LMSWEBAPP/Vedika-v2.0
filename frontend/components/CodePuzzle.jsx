@@ -2924,7 +2924,7 @@ export default function CodePuzzle() {
                     }}
                   >
                     <Zap size={12} fill="currentColor" />
-                    <span>Visualize</span>
+                    <span>{isMobile ? 'Visualize' : 'Visualize Code'}</span>
                   </button>
                 )}
               </div>
