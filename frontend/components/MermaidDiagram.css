@@ -123,9 +123,15 @@ button.mermaid-expand-btn:hover,
   align-items: center;
   justify-content: flex-start;
   margin: 0 auto;
-  min-width: fit-content;
+  width: 100%;
+  max-width: 820px;
   transform-origin: top center;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mermaid-canvas-stage.modal-stage {
+  max-width: 1150px;
+  width: 100%;
 }
 
 .mermaid-svg-wrapper {
@@ -139,19 +145,15 @@ button.mermaid-expand-btn:hover,
   position: relative;
 }
 
-.mermaid-svg-wrapper svg {
-  max-width: 100% !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 auto;
-  display: block;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
-}
-
+.mermaid-svg-wrapper svg,
 .mermaid-svg-wrapper.modal-chart svg {
+  display: block !important;
+  width: 100% !important;
   max-width: 100% !important;
-  width: auto !important;
   height: auto !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
 }
 
 /* Custom Node & Edge Styling injected into SVG: Vibrant, illuminated, high-contrast */
@@ -203,7 +205,7 @@ button.mermaid-expand-btn:hover,
   padding: 0 !important;
   text-align: center !important;
   overflow: visible !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
   opacity: 1 !important;
   visibility: visible !important;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9) !important;
@@ -525,8 +527,7 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 
 .mermaid-svg-wrapper.modal-chart {
   margin: 0 auto;
-  min-width: fit-content;
-  align-self: flex-start;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -782,14 +783,14 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   }
 }
 
-/* Live Draw Building State on Mermaid SVG: Keep diagram crisp and visible with live animated overlay */
+/* Live Draw Building State on Mermaid SVG: Keep diagram crisp and visible at all times */
 .mermaid-svg-wrapper {
   opacity: 1;
   transition: opacity 0.3s ease;
 }
 
 .mermaid-svg-wrapper.building {
-  opacity: 0.98;
+  opacity: 1;
   transition: opacity 0.3s ease;
 }
 

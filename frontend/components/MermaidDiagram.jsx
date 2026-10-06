@@ -139,232 +139,7 @@ const NODE_PALETTES = [
   }
 ];
 
-/**
- * Calculates a smooth curved SVG bezier path between two coordinates
- */
-function getCurvedEdgePath(x1, y1, x2, y2, isHorizontal = false) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  if (Math.abs(dx) < 4 || Math.abs(dy) < 4) {
-    return `M ${x1} ${y1} L ${x2} ${y2}`;
-  }
-  if (isHorizontal) {
-    const cx1 = x1 + Math.max(20, dx * 0.5);
-    const cx2 = x2 - Math.max(20, dx * 0.5);
-    return `M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`;
-  }
-  const cy1 = y1 + Math.max(20, dy * 0.5);
-  const cy2 = y2 - Math.max(20, dy * 0.5);
-  return `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`;
-}
 
-/**
- * Interactive Live Drawing SVG Canvas:
- * Renders the flowchart visually in real-time as the pen drafts each box like Paint,
- * types text from left to right, keeps each box permanently on screen, and connects curved flow arrows.
- */
-function StitchLiveOverlay({
-  isBuilding,
-  drawnNodes = [],
-  activeBox = null,
-  activeWritingText = null,
-  drawnEdges = [],
-  activeEdge = null
-}) {
-  if (!isBuilding) return null;
-
-  return (
-    <svg
-      className="stitch-live-canvas-overlay"
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 15,
-        overflow: 'visible'
-      }}
-    >
-      <defs>
-        {/* Dynamic Arrow Markers per theme color */}
-        {NODE_PALETTES.map((p, idx) => (
-          <marker
-            key={`arrow-${idx}`}
-            id={`stitchArrow_${idx}`}
-            viewBox="0 0 10 10"
-            refX="8"
-            refY="5"
-            markerWidth="7"
-            markerHeight="7"
-            orient="auto-start-reverse"
-          >
-            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={p.arrow} stroke={p.arrow} strokeWidth="0.5" />
-          </marker>
-        ))}
-      </defs>
-
-      {/* Completed Illuminated Connections between nodes */}
-      {drawnEdges.map((e, idx) => {
-        const colorIdx = e.colorIdx ?? (idx % NODE_PALETTES.length);
-        const palette = NODE_PALETTES[colorIdx];
-        return (
-          <g key={`edge-${idx}`}>
-            <path
-              d={getCurvedEdgePath(e.x1, e.y1, e.x2, e.y2, e.isHorizontal)}
-              stroke={e.color || palette.arrow}
-              strokeWidth="2.75"
-              fill="none"
-              style={{ filter: `drop-shadow(0 0 8px ${e.color || palette.arrow})` }}
-              markerEnd={`url(#stitchArrow_${colorIdx})`}
-            />
-          </g>
-        );
-      })}
-
-      {/* Active Laser Flow Edge while pen draws */}
-      {activeEdge && (
-        <path
-          d={getCurvedEdgePath(activeEdge.x1, activeEdge.y1, activeEdge.x2, activeEdge.y2, activeEdge.isHorizontal)}
-          stroke={activeEdge.color || '#38BDF8'}
-          strokeWidth="3.25"
-          strokeDasharray="6 3"
-          fill="none"
-          style={{ filter: `drop-shadow(0 0 10px ${activeEdge.color || '#38BDF8'})` }}
-        />
-      )}
-
-      {/* Solidified Multi-colored Nodes with high-contrast labels */}
-      {drawnNodes.map((n, idx) => {
-        const colorIdx = n.colorIdx ?? (idx % NODE_PALETTES.length);
-        const palette = NODE_PALETTES[colorIdx];
-        return (
-          <g key={`node-highlight-${idx}`}>
-            <rect
-              x={n.x}
-              y={n.y}
-              width={n.w}
-              height={n.h}
-              rx={10}
-              ry={10}
-              fill="#151D32"
-              stroke={palette.stroke || '#38BDF8'}
-              strokeWidth="2.5"
-              style={{ filter: `drop-shadow(0 4px 16px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 12px ${palette.stroke}88)` }}
-            />
-            {n.text && (
-              <text
-                x={n.x + n.w / 2}
-                y={n.y + n.h / 2 + 5}
-                textAnchor="middle"
-                fill="#FFFFFF"
-                fontSize="12.5"
-                fontWeight="700"
-                fontFamily="var(--font-outfit), sans-serif"
-                pointerEvents="none"
-              >
-                {n.text.length > 28 ? `${n.text.slice(0, 26)}…` : n.text}
-              </text>
-            )}
-          </g>
-        );
-      })}
-
-      {/* Active Box Outline Being Drawn Live like Paint */}
-      {activeBox && (
-        <rect
-          x={activeBox.x - 2}
-          y={activeBox.y - 2}
-          width={Math.max(6, activeBox.w + 4)}
-          height={Math.max(6, activeBox.h + 4)}
-          rx={10}
-          ry={10}
-          fill="rgba(56, 189, 248, 0.22)"
-          stroke={activeBox.stroke || '#38BDF8'}
-          strokeWidth="2.75"
-          strokeDasharray="6 3"
-          style={{ filter: `drop-shadow(0 0 12px ${activeBox.stroke || '#38BDF8'})` }}
-        />
-      )}
-
-      {/* Active Text Indicator being typed */}
-      {activeWritingText && (
-        <circle
-          cx={activeWritingText.x}
-          cy={activeWritingText.y}
-          r="3.5"
-          fill={activeWritingText.cursorColor || '#38BDF8'}
-          style={{ filter: `drop-shadow(0 0 8px ${activeWritingText.cursorColor || '#38BDF8'})` }}
-        />
-      )}
-    </svg>
-  );
-}
-
-/**
- * Accurately extracts node coordinates and edge paths from the rendered Mermaid SVG
- * relative to the stage container, unscaled by current stage zoom.
- */
-function extractDiagramLayout(container, activeZoom = 1) {
-  if (!container) return { nodes: [], edges: [] };
-  const wrapper = container.querySelector('.mermaid-svg-wrapper');
-  if (!wrapper) return { nodes: [], edges: [] };
-  const svgEl = wrapper.querySelector('svg');
-  if (!svgEl) return { nodes: [], edges: [] };
-
-  const stageEl = container.querySelector('.mermaid-canvas-stage') || wrapper;
-  const stageRect = stageEl.getBoundingClientRect();
-  const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
-  const zoomFactor = activeZoom > 0 ? activeZoom : 1;
-
-  const nodes = rawNodeEls.map((el, idx) => {
-    const r = el.getBoundingClientRect();
-    const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
-    // Unscaled native coordinates relative to stage root
-    let x = (r.left - stageRect.left) / zoomFactor;
-    let y = (r.top - stageRect.top) / zoomFactor;
-    let w = Math.max(90, r.width / zoomFactor);
-    let h = Math.max(42, r.height / zoomFactor);
-
-    // Fallback: If bounding box calculation yielded 0s (e.g. initial paint timing)
-    if (r.width === 0 || r.height === 0) {
-      const transform = el.getAttribute('transform');
-      const match = transform && transform.match(/translate\(([^,\)]+)[,\s]+([^,\)]+)\)/);
-      if (match) {
-        x = parseFloat(match[1]) - 50;
-        y = parseFloat(match[2]) - 20;
-        w = 100;
-        h = 42;
-      }
-    }
-
-    return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
-  });
-
-  let edges = [];
-  for (let i = 0; i < nodes.length - 1; i++) {
-    const from = nodes[i];
-    const to = nodes[i + 1];
-    const isHorizontal = Math.abs(to.x - from.x) > Math.abs(to.y - from.y) * 1.35;
-    const x1 = isHorizontal ? from.x + from.w : from.x + from.w / 2;
-    const y1 = isHorizontal ? from.y + from.h / 2 : from.y + from.h;
-    const x2 = isHorizontal ? to.x : to.x + to.w / 2;
-    const y2 = isHorizontal ? to.y + to.h / 2 : to.y;
-
-    edges.push({
-      x1,
-      y1,
-      x2,
-      y2,
-      isHorizontal,
-      colorIdx: i % NODE_PALETTES.length,
-      color: NODE_PALETTES[i % NODE_PALETTES.length].arrow
-    });
-  }
-
-  return { nodes, edges };
-}
 
 export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
   const containerRef = useRef(null);
@@ -399,11 +174,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     label: '',
     isClicking: false
   });
-  const [drawnNodes, setDrawnNodes] = useState([]);
-  const [activeBox, setActiveBox] = useState(null);
-  const [activeWritingText, setActiveWritingText] = useState(null);
-  const [drawnEdges, setDrawnEdges] = useState([]);
-  const [activeEdge, setActiveEdge] = useState(null);
 
   const animTimeoutsRef = useRef([]);
 
@@ -414,11 +184,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
   const stopAndCleanAnimation = useCallback(() => {
     clearAnimTimeouts();
-    setDrawnNodes([]);
-    setActiveBox(null);
-    setActiveWritingText(null);
-    setDrawnEdges([]);
-    setActiveEdge(null);
     setIsBuilding(false);
     setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
     const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
@@ -427,18 +192,28 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       if (wrapper) {
         wrapper.classList.remove('building');
         wrapper.style.opacity = '1';
+        const allNodes = wrapper.querySelectorAll('.node, g.node');
+        allNodes.forEach((n) => {
+          n.style.opacity = '1';
+          n.style.transform = 'none';
+          n.style.filter = '';
+        });
+        const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path, marker, .arrowheadPath, .arrowMarkerPath, .edgeLabel, .edgeLabels');
+        allEdges.forEach((e) => {
+          e.style.opacity = '1';
+        });
       }
     });
   }, []);
 
   // Compute stable intrinsic fit zoom so diagram fills viewport comfortably with zero sudden jumps
   const computeFitZoom = useCallback((viewportEl, isModal) => {
-    if (!viewportEl) return isModal ? 0.75 : 0.85;
+    if (!viewportEl) return isModal ? 0.9 : 0.85;
     const svgEl = viewportEl.querySelector('svg');
-    if (!svgEl) return isModal ? 0.75 : 0.85;
+    if (!svgEl) return isModal ? 0.9 : 0.85;
 
-    let intrinsicW = 600;
-    let intrinsicH = 450;
+    let intrinsicW = 500;
+    let intrinsicH = 350;
 
     if (svgEl.viewBox?.baseVal?.width > 0 && svgEl.viewBox?.baseVal?.height > 0) {
       intrinsicW = svgEl.viewBox.baseVal.width;
@@ -448,27 +223,32 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       if (bbox && bbox.width > 0 && bbox.height > 0) {
         intrinsicW = bbox.width;
         intrinsicH = bbox.height;
-      } else {
-        intrinsicW = svgEl.scrollWidth || 600;
-        intrinsicH = svgEl.scrollHeight || 450;
       }
     }
 
     const vpH = viewportEl.clientHeight || (isModal ? 650 : 380);
     const vpW = viewportEl.clientWidth || (isModal ? 900 : 650);
 
-    const paddingX = isModal ? 70 : 30;
-    const paddingY = isModal ? 90 : 35;
+    const paddingX = isModal ? 60 : 30;
+    const paddingY = isModal ? 70 : 30;
 
-    const availW = Math.max(120, vpW - paddingX);
-    const availH = Math.max(120, vpH - paddingY);
+    const availW = Math.max(200, vpW - paddingX);
+    const availH = Math.max(200, vpH - paddingY);
 
-    const scaleW = availW / intrinsicW;
-    const scaleH = availH / intrinsicH;
+    const maxStageW = isModal ? 1150 : 780;
+    const targetW = Math.min(availW, maxStageW);
 
-    const ideal = Math.min(scaleW, scaleH);
-    const minZ = isModal ? 0.35 : 0.45;
-    const maxZ = isModal ? 1.15 : 1.0;
+    const aspect = intrinsicH / Math.max(40, intrinsicW);
+    const renderedH = targetW * aspect;
+
+    let ideal = 1.0;
+    if (renderedH > availH) {
+      ideal = availH / renderedH;
+    }
+
+    // Never collapse below minimum legible zoom!
+    const minZ = isModal ? 0.55 : 0.65;
+    const maxZ = isModal ? 1.4 : 1.15;
 
     return Number(Math.max(minZ, Math.min(maxZ, ideal)).toFixed(2));
   }, []);
@@ -500,175 +280,155 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     container.scrollTop = 0;
     container.scrollLeft = 0;
 
-    const currentZoom = isModal ? (modalZoomRef.current || 0.75) : zoom;
+    const currentZoom = isModal ? (modalZoomRef.current || 0.85) : zoom;
 
-    // Reset overlay elements
-    setDrawnNodes([]);
-    setActiveBox(null);
-    setActiveWritingText(null);
-    setDrawnEdges([]);
-    setActiveEdge(null);
-
-    // Measure layout from rendered DOM using current active scale
-    const { nodes, edges } = extractDiagramLayout(container, currentZoom);
-    if (nodes.length === 0) return;
-
-    // Hide raw Mermaid SVG while building
     const wrapper = container.querySelector('.mermaid-svg-wrapper');
-    if (wrapper) {
-      wrapper.classList.add('building');
-    }
+    if (!wrapper) return;
+    const svgEl = wrapper.querySelector('svg');
+    if (!svgEl) return;
+    const stageEl = container.querySelector('.mermaid-canvas-stage') || wrapper;
 
+    const stageRect = stageEl.getBoundingClientRect();
+    const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
+    const rawEdgeEls = Array.from(wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path'));
+    const rawMarkerEls = Array.from(wrapper.querySelectorAll('marker, .arrowMarkerPath, .arrowheadPath, [id*="pointEnd"] path, [id*="arrow"] path'));
+    const rawLabelEls = Array.from(wrapper.querySelectorAll('.edgeLabel, .edgeLabels'));
+
+    if (rawNodeEls.length === 0) return;
+
+    const zoomFactor = currentZoom > 0 ? currentZoom : 1;
+
+    const nodes = rawNodeEls.map((el, idx) => {
+      const r = el.getBoundingClientRect();
+      const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
+      let x = (r.left - stageRect.left) / zoomFactor;
+      let y = (r.top - stageRect.top) / zoomFactor;
+      let w = Math.max(80, r.width / zoomFactor);
+      let h = Math.max(36, r.height / zoomFactor);
+
+      if (r.width === 0 || r.height === 0) {
+        const transform = el.getAttribute('transform');
+        const match = transform && transform.match(/translate\(([^,\)]+)[,\s]+([^,\)]+)\)/);
+        if (match) {
+          x = parseFloat(match[1]);
+          y = parseFloat(match[2]);
+          w = 120;
+          h = 44;
+        }
+      }
+
+      return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
+    });
+
+    // 1. Initial State: Hide all nodes and edges with smooth transitions
+    nodes.forEach((n) => {
+      n.el.style.opacity = '0';
+      n.el.style.transform = 'scale(0.85)';
+      n.el.style.transformOrigin = 'center center';
+      n.el.style.transition = 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease';
+    });
+    rawEdgeEls.forEach((e) => {
+      e.style.opacity = '0';
+      e.style.transition = 'opacity 0.25s ease';
+    });
+    rawMarkerEls.forEach((m) => {
+      m.style.opacity = '0';
+      m.style.transition = 'opacity 0.25s ease';
+    });
+    rawLabelEls.forEach((l) => {
+      l.style.opacity = '0';
+      l.style.transition = 'opacity 0.25s ease';
+    });
+
+    wrapper.classList.add('building');
     setIsBuilding(true);
 
-    // Initial cursor coordinates: hover slightly above first node
+    // Initial position of white stylus pen (above first node)
     const firstNode = nodes[0];
     const startX = firstNode.x + firstNode.w / 2;
-    const startY = Math.max(30, firstNode.y - 45);
+    const startY = Math.max(20, firstNode.y - 35);
 
     setCursorState({
       x: startX,
       y: startY,
       visible: true,
-      status: '🧠 Synthesizing Architecture...',
-      label: 'Planning blocks & flows',
+      status: '🧠 Synthesizing Diagram...',
+      label: 'Vedika AI',
       isClicking: false
     });
 
-    let timeline = 300;
+    let timeline = 250;
 
-    // ── Phase 2: Highlight & Draw Each Box With Animated Pen ──
+    // Phase 2: Glide pen to each node, draw & permanently reveal it
     nodes.forEach((node, idx) => {
       const colorIdx = idx % NODE_PALETTES.length;
       const palette = NODE_PALETTES[colorIdx];
 
-      // Step 2A: Glide pen to top-left corner of the box
-      const tCorner = setTimeout(() => {
+      // 2A: Pen glides to the node
+      const tArrival = setTimeout(() => {
         setCursorState({
-          x: node.x,
-          y: node.y,
-          visible: true,
-          status: `Drawing Node (${idx + 1}/${nodes.length})`,
-          label: `${node.text.slice(0, 24)}...`,
-          isClicking: false,
-          accentColor: palette.stroke
-        });
-        setActiveBox({ x: node.x, y: node.y, w: 10, h: 10, stroke: palette.stroke });
-      }, timeline);
-      animTimeoutsRef.current.push(tCorner);
-
-      // Step 2B: Trace bounding box live
-      const paintFrames = [0.4, 0.75, 1.0];
-      paintFrames.forEach((pct, pIdx) => {
-        const tFrame = setTimeout(() => {
-          const curW = node.w * pct;
-          const curH = node.h * pct;
-          setActiveBox({ x: node.x, y: node.y, w: curW, h: curH, stroke: palette.stroke });
-          setCursorState({
-            x: node.x + curW,
-            y: node.y + curH,
-            visible: true,
-            status: `Drawing Node (${idx + 1}/${nodes.length})`,
-            label: `${Math.round(pct * 100)}%`,
-            isClicking: false,
-            accentColor: palette.stroke
-          });
-        }, timeline + 60 + (pIdx * 50));
-        animTimeoutsRef.current.push(tFrame);
-      });
-
-      // Step 2C: Solidify node with glowing accent halo
-      const tSolidify = setTimeout(() => {
-        setActiveBox(null);
-        setActiveWritingText(null);
-        setDrawnNodes((prev) => [...prev, { ...node, colorIdx, palette }]);
-        setCursorState((prev) => ({
-          ...prev,
           x: node.x + node.w / 2,
           y: node.y + node.h / 2,
-          status: 'Node Ready ✨',
-          label: `${node.text}`,
-          isClicking: false,
-          accentColor: palette.arrow
-        }));
-      }, timeline + 360);
-      animTimeoutsRef.current.push(tSolidify);
-
-      timeline += 450; // Snappy 450ms per node!
-    });
-
-    // ── Phase 3: Connect the Blocks with Flow Arrows ──
-    const tPauseNotice = setTimeout(() => {
-      setCursorState((prev) => ({
-        ...prev,
-        status: '🔗 Linking Flows...',
-        label: `Connecting ${edges.length} paths`,
-        isClicking: false,
-        accentColor: '#A855F7'
-      }));
-    }, timeline + 40);
-    animTimeoutsRef.current.push(tPauseNotice);
-
-    timeline += 120;
-    const EDGE_DURATION = 260;
-
-    edges.forEach((edge, edgeIdx) => {
-      const colorIdx = edge.colorIdx ?? (edgeIdx % NODE_PALETTES.length);
-      const edgeColor = edge.color || NODE_PALETTES[colorIdx].arrow;
-
-      const tStartLink = setTimeout(() => {
-        setCursorState({
-          x: edge.x1,
-          y: edge.y1,
           visible: true,
-          status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
-          label: '➔',
-          isClicking: false,
-          accentColor: edgeColor
+          status: `Drawing Node (${idx + 1}/${nodes.length})`,
+          label: node.text.slice(0, 22),
+          isClicking: true,
+          accentColor: palette.stroke
         });
-        setActiveEdge({ ...edge, x2: edge.x1, y2: edge.y1, color: edgeColor, colorIdx });
       }, timeline);
-      animTimeoutsRef.current.push(tStartLink);
+      animTimeoutsRef.current.push(tArrival);
 
-      const edgeSteps = [0.5, 1.0];
-      edgeSteps.forEach((pct, eIdx) => {
-        const tEdgeProg = setTimeout(() => {
-          const curX = edge.x1 + (edge.x2 - edge.x1) * pct;
-          const curY = edge.y1 + (edge.y2 - edge.y1) * pct;
-          setActiveEdge({ ...edge, x2: curX, y2: curY, color: edgeColor, colorIdx });
+      // 2B: Node illuminates and permanently reveals into view
+      const tReveal = setTimeout(() => {
+        node.el.style.opacity = '1';
+        node.el.style.transform = 'scale(1)';
+        node.el.style.filter = `drop-shadow(0 0 14px ${palette.stroke})`;
+        setCursorState((prev) => ({
+          ...prev,
+          isClicking: false,
+          status: `Node ${idx + 1} Ready ✨`
+        }));
+      }, timeline + 120);
+      animTimeoutsRef.current.push(tReveal);
+
+      // 2C: Settle glow filter to default neon border
+      const tSettle = setTimeout(() => {
+        node.el.style.filter = '';
+      }, timeline + 360);
+      animTimeoutsRef.current.push(tSettle);
+
+      // 2D: Draw connector arrow to next node if applicable
+      if (idx < nodes.length - 1) {
+        const nextNode = nodes[idx + 1];
+        const edgeEl = rawEdgeEls[idx];
+
+        const tEdge = setTimeout(() => {
+          // Pen moves along connector path
           setCursorState({
-            x: curX,
-            y: curY,
+            x: (node.x + nextNode.x) / 2 + node.w / 2,
+            y: (node.y + nextNode.y) / 2 + node.h / 2,
             visible: true,
-            status: `Connecting Flow (${edgeIdx + 1}/${edges.length})`,
+            status: 'Linking Flow ➔',
             label: '➔',
             isClicking: false,
-            accentColor: edgeColor
+            accentColor: palette.arrow
           });
-        }, timeline + 60 + (eIdx * 60));
-        animTimeoutsRef.current.push(tEdgeProg);
-      });
 
-      const tFinishLink = setTimeout(() => {
-        setActiveEdge(null);
-        setDrawnEdges((prev) => [...prev, { ...edge, color: edgeColor, colorIdx }]);
-        setCursorState({
-          x: edge.x2,
-          y: edge.y2,
-          visible: true,
-          status: `Linked ✨`,
-          label: 'Linked ✨',
-          isClicking: false,
-          accentColor: edgeColor
-        });
-      }, timeline + 220);
-      animTimeoutsRef.current.push(tFinishLink);
+          // Reveal edge and arrowheads permanently
+          if (edgeEl) edgeEl.style.opacity = '1';
+          rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
+          rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+        }, timeline + 400);
+        animTimeoutsRef.current.push(tEdge);
 
-      timeline += EDGE_DURATION;
+        timeline += 620; // 400ms node + 220ms edge
+      } else {
+        timeline += 440;
+      }
     });
 
-    // ── Phase 4: Settle & Complete ──
-    const tFinish = setTimeout(() => {
+    // Phase 3: Complete & Settle
+    const tComplete = setTimeout(() => {
       setCursorState((prev) => ({
         ...prev,
         status: 'Infographic Complete ✨',
@@ -676,22 +436,25 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         isClicking: false
       }));
 
-      const tHide = setTimeout(() => {
+      // Ensure every element has full opacity and clean transforms
+      nodes.forEach((n) => {
+        n.el.style.opacity = '1';
+        n.el.style.transform = 'none';
+        n.el.style.filter = '';
+      });
+      rawEdgeEls.forEach((e) => { e.style.opacity = '1'; });
+      rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
+      rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+
+      const tFadeCursor = setTimeout(() => {
         setCursorState((prev) => ({ ...prev, visible: false }));
-        const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
-        targets.forEach((root) => {
-          const w = root.querySelector('.mermaid-svg-wrapper');
-          if (w) {
-            w.classList.remove('building');
-            w.style.opacity = '1';
-          }
-        });
+        wrapper.classList.remove('building');
         setIsBuilding(false);
-      }, 350);
-      animTimeoutsRef.current.push(tHide);
-    }, timeline + 60);
-    animTimeoutsRef.current.push(tFinish);
-  }, [isModalOpen, autoFitModalChart]);
+      }, 400);
+      animTimeoutsRef.current.push(tFadeCursor);
+    }, timeline + 50);
+    animTimeoutsRef.current.push(tComplete);
+  }, [isModalOpen, zoom]);
 
   const handleSkipBuild = (targetEl) => {
     stopAndCleanAnimation(targetEl || (isModalOpen ? modalViewportRef.current : containerRef.current));
@@ -787,11 +550,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
         cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-          const s = style.replace(/max-width:\s*[^;]+;?/gi, '');
-          return `<svg ${attrs} style="${s}; max-width: 100%; margin: 0 auto; display: block;"`;
+          return `<svg ${attrs} style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;"`;
         });
         if (!cleanSvg.includes('style=')) {
-          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+          cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;" ');
         }
 
         if (isMounted) {
@@ -814,11 +576,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
             cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
-              const s = style.replace(/max-width:\s*[^;]+;?/gi, '');
-              return `<svg ${attrs} style="${s}; max-width: 100%; margin: 0 auto; display: block;"`;
+              return `<svg ${attrs} style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;"`;
             });
             if (!cleanSvg.includes('style=')) {
-              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="max-width: 100%; margin: 0 auto; display: block;" ');
+              cleanSvg = cleanSvg.replace(/<svg\s+/i, '<svg style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;" ');
             }
             if (isMounted) {
               setSvgHtml(cleanSvg);
@@ -845,7 +606,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     return () => {
       isMounted = false;
     };
-  }, [activeChartCode, points, autoFitModalChart]);
+  }, [activeChartCode, points, autoFitModalChart, autoFitInlineChart]);
 
   // Trigger Stitch AI live draw once the active viewport & its SVG nodes are mounted
   useEffect(() => {
@@ -885,7 +646,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       cancelled = true;
       clearInterval(timer);
     };
-  }, [svgHtml, isLiveDrawEnabled, isModalOpen, mounted, runLiveDrawAnimation]);
+  }, [svgHtml, isLiveDrawEnabled, isModalOpen, mounted, runLiveDrawAnimation, stopAndCleanAnimation]);
 
   const handleZoomIn = () => setZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 2.5));
   const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.3));
@@ -1272,15 +1033,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 transformOrigin: 'top center',
                 transition: 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
                 position: 'relative',
-                display: 'inline-flex',
+                display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
                 margin: '0 auto',
-                minWidth: 'fit-content'
+                width: '100%',
+                maxWidth: '820px'
               }}
             >
-              {/* Google Stitch AI Floating Cursor */}
+              {/* White Digital Stylus Pen Cursor */}
               <StitchAICursor
                 x={cursorState.x}
                 y={cursorState.y}
@@ -1288,17 +1050,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 status={cursorState.status}
                 label={cursorState.label}
                 isClicking={cursorState.isClicking}
-                accentColor={cursorState.accentColor || '#A855F7'}
-              />
-
-              {/* Dedicated Live Drawing Overlay Layer */}
-              <StitchLiveOverlay
-                isBuilding={isBuilding && !isModalOpen}
-                drawnNodes={drawnNodes}
-                activeBox={activeBox}
-                activeWritingText={activeWritingText}
-                drawnEdges={drawnEdges}
-                activeEdge={activeEdge}
+                accentColor={cursorState.accentColor || '#38BDF8'}
               />
 
               <div
@@ -1733,16 +1485,17 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       transformOrigin: 'top center',
                       transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
                       position: 'relative',
-                      display: 'inline-flex',
+                      display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'flex-start',
                       margin: '0 auto',
-                      minWidth: 'fit-content',
+                      width: '100%',
+                      maxWidth: '1150px',
                       paddingBottom: 80
                     }}
                   >
-                    {/* Stitch AI Cursor for Fullscreen Modal */}
+                    {/* White Digital Stylus Pen Cursor for Fullscreen Modal */}
                     <StitchAICursor
                       x={cursorState.x}
                       y={cursorState.y}
@@ -1750,24 +1503,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       status={cursorState.status}
                       label={cursorState.label}
                       isClicking={cursorState.isClicking}
-                      accentColor={cursorState.accentColor || '#A855F7'}
-                    />
-
-                    {/* Dedicated Live Drawing Overlay Layer */}
-                    <StitchLiveOverlay
-                      isBuilding={isBuilding && isModalOpen}
-                      drawnNodes={drawnNodes}
-                      activeBox={activeBox}
-                      activeWritingText={activeWritingText}
-                      drawnEdges={drawnEdges}
-                      activeEdge={activeEdge}
+                      accentColor={cursorState.accentColor || '#38BDF8'}
                     />
 
                     <div
                       className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
                       style={{
                         margin: '0 auto',
-                        minWidth: 'fit-content',
+                        width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
