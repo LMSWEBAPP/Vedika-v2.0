@@ -4,8 +4,8 @@ import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function POST(request) {
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    const auth = await authenticateRequest(request, { requireAuth: false });
+    if (!auth.authenticated && auth.response) return auth.response;
 
     const { code, puzzleId, stepIndex, stepDescription, problemStatement, allSteps } = await request.json();
 
@@ -26,9 +26,10 @@ If they have NOT completed the current step correctly (or have a syntax/logic er
 
 CRITICAL RULES:
 1. Do NOT return the entire corrected code block. Only provide a hint message.
-2. The hint message must be a single line of text (like a code comment, e.g., "Use max_val = arr[0] to initialize the variable with the first element").
+2. The hint message must be a single line of text (like a code comment, e.g., "Use max_val = arr[0] or max_value = arr[0] to initialize the variable").
 3. Make sure the 'line' number matches the exact 1-based line in the student's code where the error or missing logic is located (e.g. if the function definition is wrong, it should point to line 1).
-4. If there is a syntax error anywhere in the code that prevents execution or parsing, return passed = false, the line number of the syntax error, and a comment explaining the syntax error.`;
+4. If there is a syntax error anywhere in the code that prevents execution or parsing, return passed = false, the line number of the syntax error, and a comment explaining the syntax error.
+5. FLEXIBLE VARIABLE & CONSTRUCT ACCEPTANCE: Accept common equivalent variable names and styles (for example: max_value, max_val, maximum, max_num; count, cnt, even_count; reversed_str, rev, result). Do NOT reject or fail the student's solution merely because they wrote max_value instead of max_val. If the logic satisfies the step, return passed = true.`;
 
     const userPrompt = `Overall Problem: ${problemStatement}
 Steps list:

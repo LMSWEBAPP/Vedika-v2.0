@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StateField, StateEffect } from "@codemirror/state";
-import { EditorView, Decoration, WidgetType } from "@codemirror/view";
+import { EditorView, Decoration, WidgetType, keymap } from "@codemirror/view";
+import { indentUnit, indentOnInput } from '@codemirror/language';
+import { indentWithTab } from '@codemirror/commands';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
@@ -234,7 +236,7 @@ const FACULTY_PUZZLES = [
       },
       {
         id: "step2",
-        description: "Initialize a variable named `max_val` to the first element of `arr` (`arr[0]`).",
+        description: "Initialize a variable named `max_val` (or `max_value`) to the first element of `arr` (`arr[0]`).",
         shortTitle: "Initialize max_val"
       },
       {
@@ -244,12 +246,12 @@ const FACULTY_PUZZLES = [
       },
       {
         id: "step4",
-        description: "Inside the loop, write an `if` condition: if `num > max_val`, update `max_val = num`.",
+        description: "Inside the loop, write an `if` condition: if `num > max_val` (or `max_value`), update `max_val = num`.",
         shortTitle: "Update Max Condition"
       },
       {
         id: "step5",
-        description: "Return `max_val` after the loop finishes.",
+        description: "Return `max_val` (or `max_value`) after the loop finishes.",
         shortTitle: "Return Result"
       }
     ]
@@ -735,6 +737,184 @@ li button {
   }
 ];
 
+// ── Local Python Step & Indentation Validator ────────────────────────────────
+function validatePythonStepLocally(code, puzzleId, stepIndex) {
+  if (!code || typeof code !== 'string') {
+    return { passed: false, line: 1, message: 'Please write your Python solution code.' };
+  }
+
+  const rawLines = code.split('\n');
+  const lines = rawLines.map((line, idx) => {
+    const raw = line;
+    const trimmed = line.trim();
+    const noComment = trimmed.split('#')[0].trim();
+    const indentMatch = line.match(/^(\s*)/);
+    const indent = indentMatch ? indentMatch[1].length : 0;
+    return {
+      raw,
+      trimmed,
+      noComment,
+      indent,
+      lineNum: idx + 1
+    };
+  });
+
+  // Balanced parenthesis and bracket sanity checks
+  for (const l of lines) {
+    if (!l.noComment) continue;
+    const openParen = (l.noComment.match(/\(/g) || []).length;
+    const closeParen = (l.noComment.match(/\)/g) || []).length;
+    const openSquare = (l.noComment.match(/\[/g) || []).length;
+    const closeSquare = (l.noComment.match(/\]/g) || []).length;
+    if (openParen > closeParen && !l.noComment.endsWith(':')) {
+      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unclosed parenthesis () on this line.' };
+    }
+    if (openSquare > closeSquare) {
+      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unclosed square bracket [] on this line.' };
+    }
+  }
+
+  // 1. Find Max Puzzle
+  if (puzzleId === 'find_max') {
+    if (stepIndex === 0) {
+      const defLine = lines.find(l => /^def\s+find_max\s*\(/.test(l.noComment));
+      if (!defLine) {
+        return { passed: false, line: 1, message: 'Define function: def find_max(arr):' };
+      }
+      if (!defLine.noComment.endsWith(':')) {
+        return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def find_max(arr):' };
+      }
+      return { passed: true, line: 0, message: '' };
+    }
+
+    if (stepIndex === 1) {
+      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*arr\s*\[\s*0\s*\]/.test(l.noComment));
+      if (!initLine) {
+        const anyInit = lines.find(l => /arr\s*\[\s*0\s*\]/.test(l.noComment));
+        if (anyInit) {
+          return { passed: false, line: anyInit.lineNum, message: 'Assign arr[0] to a variable, e.g. max_value = arr[0] or max_val = arr[0].' };
+        }
+        return { passed: false, line: 2, message: 'Initialize variable: max_value = arr[0] (or max_val = arr[0]).' };
+      }
+      if (initLine.indent === 0) {
+        return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent this line with 4 spaces inside find_max.' };
+      }
+      return { passed: true, line: 0, message: '' };
+    }
+
+    if (stepIndex === 2) {
+      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+arr\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
+      if (!loopLine) {
+        return { passed: false, line: 3, message: 'Create a loop: for num in arr:' };
+      }
+      if (loopLine.indent === 0) {
+        return { passed: false, line: loopLine.lineNum, message: 'IndentationError: The for loop must be indented inside find_max (4 spaces).' };
+      }
+      return { passed: true, line: 0, message: '' };
+    }
+
+    if (stepIndex === 3) {
+      const ifLine = lines.find(l => /^if\s+.*>.*:/.test(l.noComment) || /^if\s+.*<.*:/.test(l.noComment));
+      const assignLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*$/.test(l.noComment) && !l.noComment.includes('arr[0]'));
+      const oneLiner = lines.find(l => /^if\s+.*[:]\s*[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*/.test(l.noComment));
+      if (!ifLine && !oneLiner) {
+        return { passed: false, line: 4, message: 'Inside the loop, write an if condition: if num > max_value:' };
+      }
+      if (!assignLine && !oneLiner) {
+        return { passed: false, line: (ifLine ? ifLine.lineNum + 1 : 4), message: 'Update max when greater: max_value = num' };
+      }
+      return { passed: true, line: 0, message: '' };
+    }
+
+    if (stepIndex === 4) {
+      const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
+      if (!retLine) {
+        return { passed: false, line: lines.length, message: 'Return the result: return max_value (or max_val).' };
+      }
+      if (retLine.indent > 4) {
+        return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
+      }
+      return { passed: true, line: 0, message: '' };
+    }
+  }
+
+  // 2. Reverse String Puzzle
+  if (puzzleId === 'reverse_str') {
+    if (stepIndex === 0) {
+      const defLine = lines.find(l => /^def\s+(reverse_string|reverse_str)\s*\(/.test(l.noComment));
+      if (!defLine) return { passed: false, line: 1, message: 'Define function: def reverse_string(s):' };
+      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def reverse_string(s):' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 1) {
+      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*['"]['"]/.test(l.noComment));
+      if (!initLine) return { passed: false, line: 2, message: 'Initialize empty string: reversed_str = ""' };
+      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside reverse_string.' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 2) {
+      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+s\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
+      if (!loopLine) return { passed: false, line: 3, message: 'Iterate characters: for char in s:' };
+      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside reverse_string.' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 3) {
+      const appendLine = lines.find(l => /\+\s*[a-zA-Z_]\w*/.test(l.noComment) && /=/.test(l.noComment));
+      if (!appendLine) return { passed: false, line: 4, message: 'Prepend character: reversed_str = char + reversed_str' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 4) {
+      const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
+      if (!retLine) return { passed: false, line: lines.length, message: 'Return result: return reversed_str' };
+      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
+      return { passed: true, line: 0, message: '' };
+    }
+  }
+
+  // 3. Count Evens Puzzle
+  if (puzzleId === 'count_evens') {
+    if (stepIndex === 0) {
+      const defLine = lines.find(l => /^def\s+count_evens\s*\(/.test(l.noComment));
+      if (!defLine) return { passed: false, line: 1, message: 'Define function: def count_evens(arr):' };
+      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def count_evens(arr):' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 1) {
+      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*0\b/.test(l.noComment));
+      if (!initLine) return { passed: false, line: 2, message: 'Initialize counter: count = 0' };
+      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside count_evens.' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 2) {
+      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+(arr|nums|my_list)\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
+      if (!loopLine) return { passed: false, line: 3, message: 'Iterate list: for num in arr:' };
+      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside count_evens.' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 3) {
+      const modLine = lines.find(l => /%\s*2\s*==\s*0/.test(l.noComment));
+      const incLine = lines.find(l => /(\+=\s*1|=\s*[a-zA-Z_]\w*\s*\+\s*1)/.test(l.noComment));
+      if (!modLine) return { passed: false, line: 4, message: 'Check even condition: if num % 2 == 0:' };
+      if (!incLine) return { passed: false, line: (modLine ? modLine.lineNum + 1 : 4), message: 'Increment counter: count += 1' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 4) {
+      const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
+      if (!retLine) return { passed: false, line: lines.length, message: 'Return result: return count' };
+      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
+      return { passed: true, line: 0, message: '' };
+    }
+  }
+
+  // Generic heuristic for other puzzles:
+  if (stepIndex === 0) {
+    const hasDef = lines.some(l => /^def\s+[a-zA-Z_]\w*\s*\(/.test(l.noComment));
+    if (!hasDef) return { passed: false, line: 1, message: 'Define your function signature with def function_name(...):' };
+  }
+
+  return { passed: true, line: 0, message: '' };
+}
+
 export default function CodePuzzle() {
   const router = useRouter();
 
@@ -890,24 +1070,20 @@ export default function CodePuzzle() {
           line: cursorPos?.line || 1
         }
       });
-      bridge.send({
-        type: 'PUZZLE_STUCK',
-        payload: {
-          puzzleTitle: activePuzzle?.title || 'Coding Problem',
-          studentCode: activeFile?.content || '',
-          lastError: err,
-          line: cursorPos?.line || 1
-        }
-      });
     } catch (_) {}
   }, [activePuzzle?.title, activeFile?.content, validationError, traceError, cursorPos]);
 
   // ── Code Change Handler (Updates Active File) ───────────────────────────────
   const handleCodeChange = useCallback((val) => {
+    // Normalize hard tabs to 4 spaces for Python files to avoid Python TabError
+    const normalizedVal = (category !== 'html' && activePythonFile.endsWith('.py'))
+      ? val.replace(/\t/g, '    ')
+      : val;
+
     if (category === 'html') {
       setWebFiles(prev => prev.map(f => f.name === activeWebFile ? { ...f, content: val } : f));
     } else {
-      setPythonFiles(prev => prev.map(f => f.name === activePythonFile ? { ...f, content: val } : f));
+      setPythonFiles(prev => prev.map(f => f.name === activePythonFile ? { ...f, content: normalizedVal } : f));
       setStepPassed(false);
       setValidationError(null);
 
@@ -916,8 +1092,8 @@ export default function CodePuzzle() {
         clearTimeout(debounceTimerRef.current);
       }
       debounceTimerRef.current = setTimeout(() => {
-        if (validateStepRef.current) validateStepRef.current(currentStepIndex, val);
-      }, 1500);
+        if (validateStepRef.current) validateStepRef.current(currentStepIndex, normalizedVal);
+      }, 700);
     }
   }, [category, activeWebFile, activePythonFile, currentStepIndex]);
 
@@ -1036,16 +1212,26 @@ export default function CodePuzzle() {
   // ── CodeMirror Extension by File Type ──────────────────────────────────────
   const editorExtensions = useMemo(() => {
     if (activeFileName.endsWith('.py')) {
-      return [python(), errorDecorationField];
+      return [
+        python(),
+        indentUnit.of("    "),
+        indentOnInput(),
+        keymap.of([indentWithTab]),
+        errorDecorationField
+      ];
     } else if (
       activeFileName.endsWith('.html') ||
       activeFileName.endsWith('.htm') ||
       activeFileName.endsWith('.css') ||
       activeFileName.endsWith('.js')
     ) {
-      return [html()];
+      return [
+        html(),
+        indentUnit.of("  "),
+        keymap.of([indentWithTab])
+      ];
     }
-    return [];
+    return [keymap.of([indentWithTab])];
   }, [activeFileName]);
 
   // ── Web Sandbox Compilation ────────────────────────────────────────────────
@@ -1322,11 +1508,33 @@ export default function CodePuzzle() {
       return;
     }
 
-    // Python API validation call
+    // Python step validation
     if (!activePuzzle || !activePuzzle.steps || !activePuzzle.steps[targetIndex]) return;
+    const pyCode = codeOverride !== null ? codeOverride : (pythonFiles.find(f => f.name === 'main.py')?.content || '');
+
+    // 1. Instant local validation for faculty puzzles
+    if (['find_max', 'reverse_str', 'count_evens'].includes(activePuzzle.id)) {
+      setIsValidating(true);
+      const localResult = validatePythonStepLocally(pyCode, activePuzzle.id, targetIndex);
+      if (localResult.passed) {
+        setValidationError(null);
+        setStepPassed(true);
+        setIsValidating(false);
+        return;
+      } else {
+        setValidationError({
+          line: localResult.line || 1,
+          message: localResult.message
+        });
+        setStepPassed(false);
+        setIsValidating(false);
+        return;
+      }
+    }
+
+    // 2. Fallback to API for AI-generated / custom puzzles
     setIsValidating(true);
     try {
-      const pyCode = codeOverride !== null ? codeOverride : (pythonFiles.find(f => f.name === 'main.py')?.content || '');
       const response = await fetch('/api/code-puzzle/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1354,14 +1562,16 @@ export default function CodePuzzle() {
         setStepPassed(false);
       }
     } catch (e) {
-      console.error(e);
-      // Resilient heuristic check if network or API is busy
-      const pyCode = codeOverride !== null ? codeOverride : (pythonFiles.find(f => f.name === 'main.py')?.content || '');
-      if (targetIndex === 0 && pyCode.includes('def ')) {
+      console.warn("[Validation API Fallback]", e);
+      const localFallback = validatePythonStepLocally(pyCode, activePuzzle.id, targetIndex);
+      if (localFallback.passed) {
         setValidationError(null);
         setStepPassed(true);
       } else {
-        setValidationError({ line: 1, message: "Validation check failed. Check syntax or structure." });
+        setValidationError({
+          line: localFallback.line || 1,
+          message: localFallback.message || "Check syntax or structure for this step."
+        });
         setStepPassed(false);
       }
     } finally {
@@ -2854,6 +3064,21 @@ export default function CodePuzzle() {
                 height="100%"
                 extensions={editorExtensions}
                 theme="dark"
+                indentWithTab={true}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  highlightSpecialChars: true,
+                  history: true,
+                  foldGutter: true,
+                  drawSelection: true,
+                  indentOnInput: true,
+                  syntaxHighlighting: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  tabSize: 4
+                }}
                 onChange={handleCodeChange}
                 onCreateEditor={(view) => {
                   editorViewRef.current = view;
