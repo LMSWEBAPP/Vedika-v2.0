@@ -4,6 +4,7 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ArrowLeft, Brain, Code, Zap, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
+import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import './vedika-ai.css';
 
 const CARDS = [
@@ -110,6 +111,7 @@ function hubReducer(state, action) {
 
 export default function VedikaAIHub() {
   const router = useRouter();
+  const isMobile = useMediaQuery(isMobileMQ);
   const [state, dispatch] = useReducer(hubReducer, initialHubState);
   const { activeIdx, isSettled, isNavigating, isWarping } = state;
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -390,8 +392,9 @@ export default function VedikaAIHub() {
             <VedikaParticleBot
               src={activeCard.botImage}
               colorMode="vibrant"
-              width={520}
-              height={560}
+              width={isMobile ? 210 : 520}
+              height={isMobile ? 210 : 560}
+              inline={true}
               isEntering={isWarping}
               onSettled={handleBotSettled}
             />

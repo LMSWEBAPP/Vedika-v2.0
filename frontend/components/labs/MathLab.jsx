@@ -229,27 +229,62 @@ function DynamicMathVisualizer({ spec }) {
 
   return (
     <div style={{
-      marginTop: 20,
-      background: '#07080F',
-      borderRadius: 14,
-      border: '1px solid rgba(139, 92, 246, 0.3)',
-      padding: 20,
-      boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+      marginTop: 16,
+      background: 'rgba(10, 15, 28, 0.92)',
+      borderRadius: 16,
+      border: '1px solid rgba(168, 85, 247, 0.3)',
+      padding: '14px 12px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+      width: '100%',
+      maxWidth: '100%',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <Box size={20} color="#8B5CF6" />
-        <h4 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#FFF' }}>
-          {spec.title || 'Dynamic Math Visualizer'}
-        </h4>
-        <span style={{ fontSize: 11, background: 'rgba(139, 92, 246, 0.2)', color: '#C4B5FD', padding: '2px 8px', borderRadius: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Box size={18} color="#C084FC" />
+          <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#FFF' }}>
+            {spec.title || 'Dynamic Math Visualizer'}
+          </h4>
+        </div>
+        <span style={{ fontSize: 11, background: 'rgba(168, 85, 247, 0.2)', color: '#E9D5FF', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
           Interactive Canvas
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, alignItems: 'center' }}>
+      <div className="math-visualizer-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 14,
+        alignItems: 'start',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
         {/* SVG VISUALIZER CANVAS */}
-        <div style={{ background: '#0D1117', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', padding: 16, textAlign: 'center' }}>
-          <svg width={380} height={260} style={{ background: '#07080F', borderRadius: 8 }}>
+        <div style={{
+          background: '#070B16',
+          borderRadius: 12,
+          border: '1px solid rgba(255,255,255,0.08)',
+          padding: '10px 8px',
+          textAlign: 'center',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
+        }}>
+          <svg
+            viewBox="0 0 380 260"
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              width: '100%',
+              maxWidth: 380,
+              height: 'auto',
+              background: '#050811',
+              borderRadius: 8,
+              display: 'block',
+              margin: '0 auto'
+            }}
+          >
             
             {/* 1. ANGLES / SUPPLEMENTARY / COMPLEMENTARY VISUALIZER */}
             {isAngleType && (() => {
@@ -1349,7 +1384,7 @@ Respond ONLY with valid JSON in this exact structure:
           </div>
         </header>
 
-        {/* 2. TAB SWITCHER CAPSULE (Whiteboard / Graph) */}
+        {/* 2. TAB SWITCHER CAPSULE (Whiteboard / Graph / AI Math Solve) */}
         <div className="math-lab-tabs-bar" role="tablist">
           <button
             role="tab"
@@ -1357,7 +1392,7 @@ Respond ONLY with valid JSON in this exact structure:
             className={`math-lab-tab ${activeTab === 'whiteboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('whiteboard')}
           >
-            <PenLine size={16} />
+            <PenLine size={15} />
             <span>Whiteboard</span>
           </button>
           <button
@@ -1366,8 +1401,17 @@ Respond ONLY with valid JSON in this exact structure:
             className={`math-lab-tab ${activeTab === 'graph' ? 'active' : ''}`}
             onClick={() => setActiveTab('graph')}
           >
-            <LineChart size={16} />
+            <LineChart size={15} />
             <span>Graph</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'ai_solver'}
+            className={`math-lab-tab ${activeTab === 'ai_solver' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ai_solver')}
+          >
+            <Sparkles size={15} />
+            <span>AI Math Solve</span>
           </button>
         </div>
 
@@ -1511,7 +1555,7 @@ Respond ONLY with valid JSON in this exact structure:
               </div>
             </section>
 
-            {/* 4. FULL-WIDTH RECOGNIZE BUTTON (matching image) */}
+            {/* 4. FULL-WIDTH RECOGNIZE BUTTON */}
             <button
               type="button"
               className="math-recognize-full-btn"
@@ -1528,32 +1572,59 @@ Respond ONLY with valid JSON in this exact structure:
               </span>
             </button>
 
-            {/* AI OCR Detection & Quick Plot Card */}
+            {/* AI OCR Detection & Quick Actions Card */}
             {aiExplanation && (
               <div className="math-ai-solution-card">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#C084FC', fontWeight: 700, fontSize: 14 }}>
                     <Sparkles size={16} /> AI OCR Detection
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('graph')}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 10,
-                      border: '1px solid rgba(168, 85, 247, 0.4)',
-                      background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.25))',
-                      color: '#FFFFFF',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}
-                  >
-                    View in Graph ➔
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('graph')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(168, 85, 247, 0.4)',
+                        background: 'rgba(168, 85, 247, 0.2)',
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      View in Graph ➔
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('ai_solver');
+                        if (recognizedText) {
+                          setTutorQuery(`Solve and explain step by step: ${recognizedText}`);
+                          handleAskTutor(`Solve and explain step by step: ${recognizedText}`);
+                        }
+                      }}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(236, 72, 153, 0.4)',
+                        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(168, 85, 247, 0.25))',
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      Solve with AI ➔
+                    </button>
+                  </div>
                 </div>
                 <p style={{ fontSize: 13, color: '#E2E8F0', margin: 0, lineHeight: 1.5 }}>
                   {aiExplanation}
@@ -1565,96 +1636,6 @@ Respond ONLY with valid JSON in this exact structure:
                 )}
               </div>
             )}
-
-            {/* AI Step-by-Step Math Solver Section */}
-            <div style={{ marginTop: 20, background: 'rgba(10, 15, 28, 0.88)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 20, padding: 16, backdropFilter: 'blur(16px)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <Sparkles size={18} color="#C084FC" />
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#FFF' }}>AI Step-by-Step Problem Solver</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                <input
-                  type="text"
-                  value={tutorQuery}
-                  onChange={(e) => setTutorQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAskTutor()}
-                  placeholder="Ask any math question or formula..."
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    borderRadius: 12,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: isListening ? '1px solid #EC4899' : '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#FFF',
-                    fontSize: 13,
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={toggleListening}
-                  title={isListening ? "Stop listening" : "Speak math question"}
-                  style={{
-                    padding: '0 12px',
-                    borderRadius: 12,
-                    border: isListening ? '1px solid #EC4899' : '1px solid rgba(168, 85, 247, 0.3)',
-                    background: isListening ? 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)' : 'rgba(168, 85, 247, 0.12)',
-                    color: '#FFF',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Mic size={16} color={isListening ? '#FFF' : '#C084FC'} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAskTutor()}
-                  disabled={isTutorThinking}
-                  style={{
-                    padding: '0 16px',
-                    borderRadius: 12,
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
-                    color: '#FFF',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: isTutorThinking ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6
-                  }}
-                >
-                  <Send size={15} />
-                  <span>{isTutorThinking ? 'Solving...' : 'Solve'}</span>
-                </button>
-              </div>
-
-              {(tutorResponse || isTutorThinking) && (
-                <div ref={tutorResponseRef} style={{ marginTop: 14 }}>
-                  {isTutorThinking ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#C084FC', padding: 12, fontSize: 13 }}>
-                      <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      Solving problem and formatting step-by-step math...
-                    </div>
-                  ) : (
-                    <div className="math-ai-solution-card" style={{ marginTop: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#34D399', fontWeight: 700, fontSize: 13 }}>
-                        <Lightbulb size={16} /> Step-by-Step AI Solution
-                      </div>
-                      <CustomMathMarkdown content={tutorResponse} />
-                      {parsedVisualSpec && (
-                        <SafeMathRenderer>
-                          <DynamicMathVisualizer spec={parsedVisualSpec} />
-                        </SafeMathRenderer>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
           </div>
         )}
@@ -1855,6 +1836,167 @@ Respond ONLY with valid JSON in this exact structure:
                 </div>
               </div>
 
+            </section>
+          </div>
+        )}
+
+        {/* 6. TAB 3: AI MATH SOLVER (Dedicated 3rd Option) */}
+        {activeTab === 'ai_solver' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <section className="math-solver-card" aria-label="AI Step-by-Step Math Solver">
+              {/* Header */}
+              <div className="math-card-header" style={{ marginBottom: 4 }}>
+                <div className="math-card-header-left">
+                  <Sparkles size={18} color="#C084FC" />
+                  <span className="math-card-title">AI Step-by-Step Math Solver</span>
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: '#94A3B8', margin: '0 0 12px', lineHeight: 1.45 }}>
+                Type or speak any equation or textbook math problem. Get instant formatted step-by-step solutions, formulas, and dynamic diagrams.
+              </p>
+
+              {/* Input Bar */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                <input
+                  type="text"
+                  value={tutorQuery}
+                  onChange={(e) => setTutorQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAskTutor()}
+                  placeholder="e.g. Total surface area formed by joining cylinder and hemisphere..."
+                  style={{
+                    flex: 1,
+                    padding: '12px 14px',
+                    borderRadius: 14,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: isListening ? '1.5px solid #EC4899' : '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#FFF',
+                    fontSize: 13.5,
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  title={isListening ? "Stop listening" : "Speak math question"}
+                  style={{
+                    padding: '0 14px',
+                    borderRadius: 14,
+                    border: isListening ? '1.5px solid #EC4899' : '1px solid rgba(168, 85, 247, 0.3)',
+                    background: isListening ? 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)' : 'rgba(168, 85, 247, 0.12)',
+                    color: '#FFF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: isListening ? '0 0 16px rgba(236, 72, 153, 0.5)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Mic size={17} color={isListening ? '#FFF' : '#C084FC'} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAskTutor()}
+                  disabled={isTutorThinking}
+                  style={{
+                    padding: '0 18px',
+                    borderRadius: 14,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
+                    color: '#FFF',
+                    fontWeight: 700,
+                    fontSize: 13.5,
+                    cursor: isTutorThinking ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 0 18px rgba(236, 72, 153, 0.45)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Send size={15} />
+                  <span>{isTutorThinking ? 'Solving...' : 'Solve'}</span>
+                </button>
+              </div>
+
+              {/* Quick Try Pills */}
+              <div style={{ marginTop: 12 }}>
+                <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                  Quick Try Problems:
+                </span>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    "Surface area of cylinder joined with hemisphere",
+                    "Area swept by 10cm minute hand in 5 minutes",
+                    "Total area cleaned by two 40cm wipers sweeping 115°",
+                    "Find hypotenuse of right triangle with base 6 and height 8",
+                    "Solve quadratic equation 2x² - 4x - 6 = 0"
+                  ].map(ex => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => { setTutorQuery(ex); handleAskTutor(ex); }}
+                      style={{
+                        padding: '5px 11px',
+                        borderRadius: 16,
+                        border: '1px solid rgba(168, 85, 247, 0.25)',
+                        background: 'rgba(168, 85, 247, 0.08)',
+                        color: '#C4B5FD',
+                        fontSize: 11.5,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {ex}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tutor Response */}
+              {(tutorResponse || isTutorThinking) && (
+                <div ref={tutorResponseRef} style={{ marginTop: 16 }}>
+                  {isTutorThinking ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#C084FC', padding: '16px 12px', fontSize: 13 }}>
+                      <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Solving math problem and generating step-by-step derivation...</span>
+                    </div>
+                  ) : (
+                    <div className="math-ai-solution-card" style={{ marginTop: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#34D399', fontWeight: 700, fontSize: 14 }}>
+                          <Lightbulb size={18} /> Step-by-Step AI Solution
+                        </div>
+                        {recognizedText && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('graph')}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: 8,
+                              border: '1px solid rgba(168, 85, 247, 0.4)',
+                              background: 'rgba(168, 85, 247, 0.15)',
+                              color: '#E9D5FF',
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Plot in Graph ➔
+                          </button>
+                        )}
+                      </div>
+                      <CustomMathMarkdown content={tutorResponse} />
+                      {parsedVisualSpec && (
+                        <SafeMathRenderer>
+                          <DynamicMathVisualizer spec={parsedVisualSpec} />
+                        </SafeMathRenderer>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           </div>
         )}

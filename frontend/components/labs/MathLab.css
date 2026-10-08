@@ -89,17 +89,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 42px;
+  gap: 5px;
+  height: 40px;
   border-radius: 14px;
   border: none;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   background: transparent;
   color: #94A3B8;
   outline: none;
+  white-space: nowrap;
 }
 
 .math-lab-tab.active {
@@ -344,6 +345,45 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 9. Dedicated AI Solver Card (Tab 3) */
+.math-solver-card {
+  background: rgba(10, 15, 28, 0.88);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 22px;
+  padding: 16px 14px 20px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* 10. Dynamic Visualizer Responsive Viewport Rules */
+.math-visualizer-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.math-visualizer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .math-visualizer-grid {
+    grid-template-columns: 1fr 280px;
+  }
 }
 
 /* Tablet & Desktop Scaling */
