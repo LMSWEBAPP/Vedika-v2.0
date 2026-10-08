@@ -686,27 +686,61 @@
     max-height: none;
     min-height: calc(100vh - 54px);
     overflow-y: auto;
+    overflow-x: hidden;
   }
+
   .vedika-ai-hub-inner {
-    flex-direction: column-reverse;
+    display: flex;
+    flex-direction: column;
     height: auto;
     max-height: none;
-    padding: 8px 16px 28px;
-    gap: 4px;
-  }
-  .vedika-ai-left-col {
-    flex: 1 1 auto;
+    padding: 10px 16px 36px;
+    gap: 8px;
     width: 100%;
     max-width: 440px;
     margin: 0 auto;
-    gap: 8px;
+    box-sizing: border-box;
   }
+
+  /* Flatten left column so its children (Header, Carousel, Controls) can be flex-ordered with the bot */
+  .vedika-ai-left-col {
+    display: contents;
+  }
+
+  /* 1. Header with Back to Dashboard Button on TOP */
+  .vedika-ai-header {
+    order: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    margin-bottom: 2px;
+  }
+
+  .vedika-ai-top-row {
+    margin-bottom: 3px;
+  }
+
+  .vedika-ai-main-title {
+    font-size: 1.55rem;
+    margin: 0;
+    line-height: 1.15;
+  }
+
+  .vedika-ai-subtitle {
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  /* 2. Particle Bot Section NEXT (under Header, above Carousel) */
   .vedika-ai-right-col {
+    order: 2;
     flex: 0 0 auto;
     width: 100%;
     height: 195px;
     min-height: 195px;
-    max-height: 200px;
+    max-height: 195px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -714,54 +748,116 @@
     position: relative;
     overflow: visible;
   }
+
   .vedika-ai-bot-wrapper {
     width: 195px;
     height: 195px;
     max-width: 195px;
     max-height: 195px;
     margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: pan-y;
   }
+
   .vedika-ai-shimmer-glow-bg {
-    width: 190px;
-    height: 190px;
+    width: 185px;
+    height: 185px;
   }
+
   .vedika-ai-quote-pill,
   .vedika-neon-doodle {
     display: none;
   }
-}
 
-@media (max-width: 768px) {
-  .vedika-ai-header {
-    gap: 2px;
-  }
-  .vedika-ai-top-row {
-    margin-bottom: 2px;
-  }
-  .vedika-ai-main-title {
-    font-size: 1.55rem;
-    margin: 0;
-  }
-  .vedika-ai-subtitle {
-    font-size: 0.85rem;
-  }
+  /* 3. Card Carousel NEXT (Vertical accordion as before, fit to mobile screen size) */
   .vedika-ai-accordion-carousel {
+    order: 3;
+    display: flex;
     flex-direction: column;
     height: auto;
     min-height: 0;
-    gap: 0;
+    gap: 6px;
     width: 100%;
+    touch-action: pan-y;
   }
 
-  /* In mobile carousel, collapsed cards are hidden so the active card fits cleanly on screen */
+  /* Collapsed cards: restored vertical bars stacked neatly */
   .vedika-ai-carousel-card.collapsed {
-    display: none !important;
+    display: flex !important;
+    flex: 0 0 46px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: 46px;
+    padding: 6px 14px;
+    flex-direction: row;
+    align-items: center;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
 
-  .vedika-ai-carousel-card.active {
+  .vedika-ai-carousel-card.collapsed:hover {
+    border-color: rgba(var(--card-rgb), 0.45);
+    background: rgba(var(--card-rgb), 0.1);
+  }
+
+  .vedika-ai-card-collapsed-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     width: 100%;
-    border-radius: 20px;
-    padding: 16px 14px;
+    gap: 8px;
+  }
+
+  .vedika-shrunken-card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--card-rgb), 0.18);
+    border: 1px solid rgba(var(--card-rgb), 0.35);
+    flex-shrink: 0;
+  }
+
+  .vedika-ai-collapsed-title-wrap {
+    padding: 0 8px;
+    justify-content: flex-start;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .vedika-ai-collapsed-title {
+    writing-mode: horizontal-tb;
+    transform: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vedika-shrunken-card-arrow {
+    color: rgba(255, 255, 255, 0.45);
+    flex-shrink: 0;
+  }
+
+  /* Active card: prominent card fitted to screen width */
+  .vedika-ai-carousel-card.active {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    border-radius: 18px;
+    padding: 14px 14px;
     margin: 0 auto;
     box-sizing: border-box;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), 0 0 20px var(--card-glow-soft);
@@ -770,20 +866,22 @@
   .vedika-ai-detail-desc {
     font-size: 0.82rem;
     line-height: 1.45;
-    margin: 6px 0 12px;
+    margin: 6px 0 10px;
   }
 
   .vedika-ai-launch-btn {
-    height: 42px;
-    font-size: 0.88rem;
+    height: 40px;
+    font-size: 0.86rem;
     border-radius: 12px;
   }
 
+  /* 4. Footer controls: dots and prev/next arrows */
   .vedika-ai-footer-controls {
+    order: 4;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-top: 8px;
+    margin-top: 4px;
   }
 }

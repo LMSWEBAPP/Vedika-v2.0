@@ -250,7 +250,13 @@ export default function VedikaAIHub() {
           </header>
 
           {/* Unified Expanding Tab Carousel */}
-          <div className="vedika-ai-accordion-carousel" role="region" aria-label="AI Assistants Carousel">
+          <div
+            className="vedika-ai-accordion-carousel"
+            role="region"
+            aria-label="AI Assistants Carousel"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {cards.map((card, idx) => {
               const isActive = idx === activeIdx;
               const { Icon } = card;
@@ -388,12 +394,16 @@ export default function VedikaAIHub() {
           <div className="vedika-ai-shimmer-glow-pulse" />
 
           {/* Interactive Particle Bot Canvas */}
-          <div className="vedika-ai-bot-wrapper">
+          <div
+            className="vedika-ai-bot-wrapper"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <VedikaParticleBot
               src={activeCard.botImage}
               colorMode="vibrant"
-              width={isMobile ? 210 : 520}
-              height={isMobile ? 210 : 560}
+              width={isMobile ? 200 : 520}
+              height={isMobile ? 200 : 560}
               inline={true}
               isEntering={isWarping}
               onSettled={handleBotSettled}
