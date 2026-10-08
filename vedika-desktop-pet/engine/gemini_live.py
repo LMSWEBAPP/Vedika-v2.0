@@ -206,6 +206,7 @@ class GeminiLiveWorker(QThread):
         self.session_id = str(int(time.time()))
         self.last_user_sentiment = None
         self.is_tool_pending = False
+        self.last_turn_dispatched_time = 0.0
 
     def run(self):
         self.loop = asyncio.new_event_loop()
@@ -309,8 +310,8 @@ class GeminiLiveWorker(QThread):
             print("[GeminiLiveWorker] Error: Worker event loop is closed or missing.")
             return b""
             
-        # 150ms stabilization pause allowing OS window focus transitions to complete
-        await asyncio.sleep(0.15)
+        # 40ms stabilization pause allowing OS window focus transitions to complete
+        await asyncio.sleep(0.04)
 
         fut = self.loop.create_future()
         print("[GeminiLiveWorker] Emitting screen_capture_requested signal to main thread...")
@@ -328,10 +329,14 @@ class GeminiLiveWorker(QThread):
             print(f"[GeminiLiveWorker] Screen capture bridge error: {e}")
             return b""
 
-    async def _reset_tool_executing_after_delay(self, delay=2.5):
+    async def _reset_tool_executing_after_delay(self, delay=0.5):
         await asyncio.sleep(delay)
         if hasattr(self, "client") and self.client:
             self.client.tool_executing = False
+
+    async def _reset_suppress_mic_after_delay(self, delay=1.0):
+        await asyncio.sleep(delay)
+        self.suppress_mic_for_prompt = False
 
     def execute_add_study_note(self, note_content: str, topic: str = "", timestamp: str = "", create_new: bool = False) -> dict:
         try:
@@ -438,7 +443,7 @@ class GeminiLiveWorker(QThread):
         
         # Define Python tool declarations matching user logic
         def play_animation(animation_name: str) -> dict:
-            """Triggers an animation on EVE (like wave, jump, failed, waiting, review, idle, run_left, run_right)."""
+            """Triggers a special physical trick animation (like jump, wave) ONLY when the student explicitly asks Vedika to perform a physical trick or animation (e.g. 'can you jump?', 'wave to me'). NEVER call this for normal speech, listening, thinking, or idle conversation, as the UI handles those states automatically."""
             self.client.animation_requested.emit(animation_name)
             return {"status": "success"}
 
@@ -538,20 +543,14 @@ class GeminiLiveWorker(QThread):
             return {"status": "success", "action": action, "target": target}
 
         async def capture_user_screen() -> dict:
-            """Captures and inspects the student's active computer screen in real time. MUST be called IMMEDIATELY whenever the student asks:
-            - 'What is on my screen?' / 'Can you see what I am doing?' / 'What am I looking at?'
-            - 'What is going on in this page?' / 'What is happening on this page?' / 'What is on this page?'
-            - 'What should I do here?' / 'What do I do next?' / 'Guide me on this page'
-            - 'Explain this page' / 'Help me with what is showing right now'
-            - 'How to write this code in another way?' / 'Show another way to write this code' / 'Rewrite this code'
-            - 'Check my code' / 'Why is my code failing?' / 'Help me solve this puzzle'
-            This feeds the live desktop screenshot directly to Gemini Multimodal Live, allowing you to visually analyze the page layout, code editor, 3D visualizers, text, buttons, and student work to provide concrete, step-by-step guidance."""
+            """Captures and inspects the student's active computer screen in real time when the student asks 'What is on my screen?', 'What is on this page?', 'Can you see what I am doing?'.
+            NOTE: If the student's code attempt or error is ALREADY provided in your context or prompt, explain and answer DIRECTLY from the code in context without calling capture_user_screen for instant zero-latency conversation. Only call capture_user_screen if visual screen layout or graphics must be inspected."""
             print("[GeminiLiveWorker] Tool call request received: capture_user_screen")
             self.client.tool_executing = True
             try:
                 # Trigger visual pet scan animation and speech bubble immediately
                 if hasattr(self.client, 'say_requested'):
-                    self.client.say_requested.emit("🔍 Scanning your screen... Analyzing visual context ✨", 3.0)
+                    self.client.say_requested.emit("🔍 Scanning your screen... Analyzing visual context ✨", 2.0)
                 if hasattr(self.client, 'animation_requested'):
                     self.client.animation_requested.emit("searching")
 
@@ -595,7 +594,7 @@ class GeminiLiveWorker(QThread):
                     print("[GeminiLiveWorker] Warning: Screenshot request returned empty bytes.")
                     return {"status": "error", "message": "Failed to capture screen image."}
             finally:
-                asyncio.create_task(self._reset_tool_executing_after_delay(2.5))
+                asyncio.create_task(self._reset_tool_executing_after_delay(0.5))
 
         def point_to_screen_location(x: float, y: float, label: str = "", action: str = "point") -> dict:
             """Points to or highlights a specific UI element, code line, error, or button on the student's screen using normalized coordinates (x: 0.0 to 1.0, y: 0.0 to 1.0)."""
@@ -645,7 +644,7 @@ class GeminiLiveWorker(QThread):
             }
 
         def update_student_profile(name: str = "", stage: str = "", field_of_study: str = "", hobbies: str = "", favorite_topics: str = "") -> dict:
-            """Updates student personalization info (e.g. when student introduces themselves, tells you their name, grade level, major, hobbies, or favorite subjects)."""
+            """Updates student personalization info ONLY when the student explicitly states a change to their name, grade level, major, or hobbies during active conversation. Do NOT call this on greeting or for already known profile details."""
             print(f"[GeminiLiveWorker] Tool call: update_student_profile(name='{name}', stage='{stage}', field='{field_of_study}')")
             upm = UserProfileManager()
             upm.update_user_info(
@@ -912,11 +911,11 @@ class GeminiLiveWorker(QThread):
             "4. If the user asks for a hint on their current puzzle, call 'trigger_puzzle_hint'.\n"
             "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route. When opening or navigating to the homepage, you MUST REMAIN COMPLETELY SILENT while the page is opening and the kid welcome voice is speaking. Do NOT talk over the welcome narration. Stay still in idle state until the student speaks to you.\n"
             "6. If the user asks to stop or pause voice chat, call 'stop_voice_chat' immediately.\n"
-            "7. You can also trigger pet visual animations on yourself ('wave', 'jump', 'failed', 'waiting', 'review', 'idle', 'explaining').\n"
-            "8. SCREEN VISION & CODE INSPECTION: When the user asks 'What is on my screen?', 'What is going on in this page?', 'What should I do here?', 'Can you see what I am doing?', 'Explain what is on my screen', 'Check my code', 'Why is my code failing', 'Where is my error', 'Help me solve this puzzle', 'How to write this code in another way', 'Show another way to write this', or asks any question about what is displaying on their active screen, code editor, 3D visualizer, or browser: IMMEDIATELY call 'capture_user_screen' tool function on your VERY FIRST turn! NEVER guess or assume what is on the screen without calling 'capture_user_screen'. Once the image is received, visually inspect the active page or code editor. In addition, read the active code snippet and puzzle/lesson title from your context. Identify the exact line number, syntax error, or logic flaw, and explain clearly and encouragingly how to write or fix the code (e.g. 'Looking at your code on line 4, another way to write this is...'). CRITICAL: When the student is asking about an active video lesson moment, do NOT capture the desktop screen; explain the lesson concepts being taught directly!\n"
-            "9. VISUAL POINTING & LASER HIGHLIGHT: When explaining code errors, UI buttons, syntax mistakes, or specific elements on the user's screen: IMMEDIATELY call 'point_to_screen_location(x, y, label)' with normalized coordinates (x: 0.0 to 1.0, y: 0.0 to 1.0) to highlight the exact position with a glowing laser pointer and sonar pulse for the student.\n"
+            "7. Trigger pet visual animations ('wave', 'jump') ONLY when the user explicitly asks for a trick or movement. Do NOT call 'play_animation' during normal dialogue or explanations.\n"
+            "8. SCREEN VISION & CODE INSPECTION: When the user asks 'What is on my screen?', 'What is going on in this page?', 'Can you see what I am doing?', or asks about what is visually displayed without code context: call 'capture_user_screen'. NOTE: When the student's active code or error is ALREADY provided in your context or prompt, explain and guide the student DIRECTLY without calling 'capture_user_screen' for instant zero-latency response! Only call 'capture_user_screen' if visual inspection of the screen layout/canvas is genuinely needed.\n"
+            "9. VISUAL POINTING & LASER HIGHLIGHT: When explaining code errors, UI buttons, syntax mistakes, or specific elements on the user's screen: call 'point_to_screen_location(x, y, label)' with normalized coordinates (x: 0.0 to 1.0, y: 0.0 to 1.0) to highlight the exact position with a glowing laser pointer and sonar pulse for the student.\n"
             "10. RECALL PREVIOUS QUESTIONS & MEMORY SEARCH: Call 'recall_previous_questions(limit)' when the student asks what was previously asked, or 'search_learning_memory(query, category)' to search stored academic insights and past discussions.\n"
-            "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, 'update_student_profile(name, stage, field_of_study, hobbies, favorite_topics)' to remember student details, or 'clear_student_memory' to clear history.\n"
+            "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, and 'update_student_profile' ONLY when the student explicitly tells you changes to their profile during conversation. Do not call them during regular chat.\n"
             "12. STUDY TIMER: Call 'set_study_timer(duration_seconds, label)' when the student asks to set a timer, reminder, or study countdown (e.g. 'set a 10 min timer', 'remind me in 5 minutes').\n"
             "13. PERSONAL STUDY NOTEPAD & ADDING POINTS: Call 'add_study_note(note_content, topic, timestamp, create_new)' whenever the student asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', 'add a few points', 'add points to my notes', 'write points in my personal notes', or in any language (Hindi: 'नोट्स में पॉइंट्स जोड़ दो', Telugu: 'నోట్స్ లో పాయింట్స్ యాడ్ చేయి'). "
             "CRITICAL NOTE-TAKING MANDATE: You have 100% active, full access to their study notebook through this tool! NEVER tell the student that this functionality is unavailable or that you cannot take notes. Always execute 'add_study_note' immediately, and warmly confirm in the student's active language that the points have been added to their personal notes!\n"
@@ -1103,8 +1102,10 @@ class GeminiLiveWorker(QThread):
                                     await self.session.send_realtime_input(text=text_val)
                             else:
                                 await self.session.send_realtime_input(text=text_val)
+                            asyncio.create_task(self._reset_suppress_mic_after_delay(1.0))
                         except Exception as e:
                             print(f"[GeminiLiveWorker] Error sending realtime text prompt: {e}")
+                            self.suppress_mic_for_prompt = False
                     continue
                 elif chunk.get("end_of_turn"):
                     print("[SEND] Dispatching end_of_turn (turn_complete=True) to Gemini Live API...")
@@ -1228,11 +1229,21 @@ class GeminiLiveWorker(QThread):
                     if is_holding:
                         self.client.ptt_chunks_recorded = getattr(self.client, "ptt_chunks_recorded", 0) + 1
 
-                    # Dynamic ambient noise floor tracking (exponential moving average during ambient pauses)
-                    if not self.vad_active:
-                        self.ambient_floor = 0.95 * getattr(self, "ambient_floor", 140.0) + 0.05 * raw_rms
+                    # Dynamic ambient noise floor tracking (Asymmetric adaptation during true ambient silence)
+                    # NEVER adapt while tutor is actively speaking or while audio is playing (speaker acoustic echo), and NEVER when VAD is active
+                    if not self.vad_active and not self.client.is_speaking and not getattr(self, "is_playing_audio", False):
+                        cur_floor = getattr(self, "ambient_floor", 140.0)
+                        if raw_rms < cur_floor:
+                            # Fast downward recovery to quiet room floor
+                            self.ambient_floor = 0.96 * cur_floor + 0.04 * raw_rms
+                        elif raw_rms < cur_floor * 1.35:
+                            # Very slow upward drift only for genuine slight background noise elevation
+                            self.ambient_floor = 0.998 * cur_floor + 0.002 * raw_rms
+                        # Hard ceiling clamp: ambient floor must NEVER exceed 260.0 to prevent deafening the microphone!
+                        self.ambient_floor = max(80.0, min(260.0, self.ambient_floor))
 
-                    effective_threshold = max(self.client.noise_threshold, getattr(self, "ambient_floor", 140.0) * 1.45)
+                    # Hard ceiling on effective threshold: never exceed 360.0 so human speech (RMS 400+) is NEVER rejected as silence!
+                    effective_threshold = max(self.client.noise_threshold, min(360.0, getattr(self, "ambient_floor", 140.0) * 1.35))
 
                     # Active User Interruption Handling (Tier A + B Block-NLMS AEC Residual VAD)
                     if self.client.is_speaking:
@@ -1273,7 +1284,7 @@ class GeminiLiveWorker(QThread):
                                         self.client.user_listening_state_changed.emit(True)
                             else:
                                 confirmed_speech_chunks += 1
-                            self.hangover_counter = 14  # ~700ms natural speech hangover
+                            self.hangover_counter = 22  # ~1100ms natural speech hangover prevents chopping sentences during natural pauses
                     else:
                         consecutive_speech_chunks = 0
                         if self.hangover_counter > 0:
@@ -1285,8 +1296,8 @@ class GeminiLiveWorker(QThread):
                                 if hasattr(self.client, "user_listening_state_changed"):
                                     self.client.user_listening_state_changed.emit(False)
 
-                                # Noise Gating Filter: Only commit turn if user voiced >= 4 chunks (~200ms)
-                                if confirmed_speech_chunks >= 4:
+                                # Noise Gating Filter: Only commit turn if user voiced >= 7 chunks (~350ms)
+                                if confirmed_speech_chunks >= 7:
                                     if hasattr(self.client, "user_speech_confirmed"):
                                         self.client.user_speech_confirmed.emit()
                                     self.speech_pause_timestamp = time.time()
@@ -1294,22 +1305,26 @@ class GeminiLiveWorker(QThread):
 
                                     # Continuous Mode: automatically flush silence and dispatch end_of_turn to trigger immediate Gemini Live response
                                     if is_continuous:
-                                        silence_chunk = b'\x00\x00' * 800
-                                        for _ in range(3):
-                                            await self.async_queue.put(silence_chunk)
-                                        await self.async_queue.put({"end_of_turn": True})
-                                        print(f"[VAD] Continuous Mode: Speech turn completed ({confirmed_speech_chunks} frames), dispatched end_of_turn!")
+                                        now = time.time()
+                                        # Turn debounce: avoid spamming rapid end_of_turn within 1.0s unless substantial speech occurred
+                                        if (now - getattr(self, "last_turn_dispatched_time", 0.0) > 1.0) or confirmed_speech_chunks >= 14:
+                                            self.last_turn_dispatched_time = now
+                                            silence_chunk = b'\x00\x00' * 800
+                                            for _ in range(3):
+                                                await self.async_queue.put(silence_chunk)
+                                            await self.async_queue.put({"end_of_turn": True})
+                                            print(f"[VAD] Continuous Mode: Speech turn completed ({confirmed_speech_chunks} frames), dispatched end_of_turn!")
                                 else:
-                                    print(f"[VAD] Filtered transient acoustic artifact ({confirmed_speech_chunks} frames < 4). Suppressed false turn.")
+                                    print(f"[VAD] Filtered transient acoustic artifact ({confirmed_speech_chunks} frames < 7). Suppressed false turn.")
                                 confirmed_speech_chunks = 0
 
-                    # Continuous Mode silence gating: buffer up to 2 chunks (100ms) when quiet, flush when speech begins
+                    # Continuous Mode silence gating: buffer up to 4 chunks (200ms) when quiet, flush when speech begins
                     if is_continuous:
                         if not self.vad_active:
                             if not hasattr(self, "pre_speech_buffer"):
                                 self.pre_speech_buffer = []
                             self.pre_speech_buffer.append(chunk)
-                            if len(self.pre_speech_buffer) > 2:
+                            if len(self.pre_speech_buffer) > 4:
                                 self.pre_speech_buffer.pop(0)
                             continue
                         else:
@@ -1485,6 +1500,7 @@ class GeminiLiveWorker(QThread):
                                     self.audio_out_queue.put_nowait(audio_bytes)
                                     if not self.client.is_speaking:
                                         self.client.is_speaking = True
+                                        self.suppress_mic_for_prompt = False
                                         self.client.speaking_started.emit()
                         
                         if sc.turn_complete:
@@ -1893,7 +1909,7 @@ class GeminiLiveWorker(QThread):
                                 print(f"[GeminiLiveWorker] Error sending tool response: {e}")
                             finally:
                                 # Safe grace period for model to start turn output before mic resumes
-                                await asyncio.sleep(0.35)
+                                await asyncio.sleep(0.04)
                                 self.is_tool_pending = False
                                 if hasattr(self.client, 'tool_executing'):
                                     self.client.tool_executing = False
