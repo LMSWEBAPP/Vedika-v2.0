@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Code, FileText } from 'lucide-react';
 import { T } from '@/lib/lms-data';
-import { HairlineShowcase } from '@/components/hairline';
 
 export default function ResourcesHub({ navigateTo }) {
   const cards = [
@@ -13,8 +12,7 @@ export default function ResourcesHub({ navigateTo }) {
       description: 'Browse our extensive collection of educational PDFs',
       gradient: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
       btnText: 'Explore Library',
-      Icon: BookOpen,
-      hairline: 'riffle'
+      Icon: BookOpen
     },
     {
       id: 'cheatsheets',
@@ -22,8 +20,7 @@ export default function ResourcesHub({ navigateTo }) {
       description: 'Access quick reference guides and study materials',
       gradient: 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)',
       btnText: 'Explore Sheets',
-      Icon: FileText,
-      hairline: 'cabinet'
+      Icon: FileText
     },
     {
       id: 'dsa',
@@ -31,8 +28,7 @@ export default function ResourcesHub({ navigateTo }) {
       description: 'Company-wise DSA questions and learning resources',
       gradient: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)',
       btnText: 'Start Practicing',
-      Icon: Code,
-      hairline: 'branches'
+      Icon: Code
     }
   ];
 
@@ -71,7 +67,7 @@ export default function ResourcesHub({ navigateTo }) {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {cards.map(({ id, title, description, gradient, btnText, Icon, hairline }) => (
+        {cards.map(({ id, title, description, gradient, btnText, Icon }) => (
           <motion.div
             key={id}
             whileHover={{ y: -6, scale: 1.02 }}
@@ -104,13 +100,7 @@ export default function ResourcesHub({ navigateTo }) {
                 justifyContent: 'center',
                 marginBottom: 8
               }}>
-                <HairlineShowcase
-                  figure={hairline}
-                  width={44}
-                  height={36}
-                  accentColor="#FFFFFF"
-                  intensity={0.85}
-                />
+                <Icon size={28} color="#fff" />
               </div>
               <div className="resources-hub-card-text">
                 <h2 className="resources-hub-card-title" style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>

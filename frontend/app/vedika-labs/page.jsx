@@ -21,7 +21,6 @@ import {
 import VedikaParticleBot from '@/components/VedikaParticleBot';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import { LabThematicArt } from './LabCardArt';
-import { HairlineNavIcon } from '@/components/hairline';
 import './vedika-labs.css';
 
 export const VEDIKA_HUB_FEATURES = [
@@ -29,7 +28,6 @@ export const VEDIKA_HUB_FEATURES = [
     id: 'sim',
     label: 'Interactive Canvas',
     icon: Layers,
-    hairline: 'dashboard',
     badge: 'PhET Sim',
     desc: 'Interactive HTML5 STEM simulation and 3D WebGL workbenches'
   },
@@ -37,7 +35,6 @@ export const VEDIKA_HUB_FEATURES = [
     id: 'objectives',
     label: 'Objectives & Steps',
     icon: BookOpen,
-    hairline: 'courses',
     badge: 'Procedure',
     desc: 'Guided step-by-step scientific methods and curriculum goals'
   },
@@ -45,7 +42,6 @@ export const VEDIKA_HUB_FEATURES = [
     id: 'formulas',
     label: 'Formulas & Principles',
     icon: Award,
-    hairline: 'quizzes',
     badge: 'Theory',
     desc: 'Mathematical equations and underlying physical laws'
   },
@@ -53,7 +49,6 @@ export const VEDIKA_HUB_FEATURES = [
     id: 'questions',
     label: 'Viva & Self Test',
     icon: HelpCircle,
-    hairline: 'viva',
     badge: 'Oral Exam',
     desc: 'Interactive oral examination questions and self-tests'
   },
@@ -61,7 +56,6 @@ export const VEDIKA_HUB_FEATURES = [
     id: 'ai',
     label: 'Vedika AI Science Tutor',
     icon: Bot,
-    hairline: 'ask-vedika',
     badge: 'AI Mentor',
     desc: 'Multimodal AI tutor providing live explanations and answers'
   }
@@ -514,12 +508,7 @@ export default function VedikaLabsHub() {
                           color: activeLab.color,
                           flexShrink: 0
                         }}>
-                          <HairlineNavIcon
-                            name={feat.hairline}
-                            size={18}
-                            themeColor={activeLab.color}
-                            fallback={<FeatIcon size={15} />}
-                          />
+                          <FeatIcon size={15} />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: 6 }}>

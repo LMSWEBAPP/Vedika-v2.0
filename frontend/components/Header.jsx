@@ -8,7 +8,6 @@ import {
   FolderOpen, Menu, X, Brain, FlaskConical, Briefcase, BarChart3,
   Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles, ShieldCheck
 } from 'lucide-react';
-import { HairlineNavIcon } from '@/components/hairline';
 
 export default function Header() {
   const router = useRouter();
@@ -121,10 +120,10 @@ export default function Header() {
   };
 
   const courseSublinks = [
-    { label: 'Explore Courses', desc: 'Browse catalog, syllabus & modules', path: '/courses', Icon: BookOpen, hairline: 'courses', color: '#38bdf8' },
-    { label: 'Quizzes', desc: 'Test knowledge with domain quizzes', path: '/quizzes', Icon: Award, hairline: 'quizzes', color: '#a855f7' },
-    { label: 'Assignments', desc: 'Hands-on projects & evaluations', path: '/assignments', Icon: FileText, hairline: 'assignments', color: '#00f298' },
-    { label: 'Resource Hub', desc: 'Library, cheat sheets & DSA sheets', path: '/resources', Icon: FolderOpen, hairline: 'resources', color: '#ff9900' },
+    { label: 'Explore Courses', desc: 'Browse catalog, syllabus & modules', path: '/courses', Icon: BookOpen, color: '#38bdf8' },
+    { label: 'Quizzes', desc: 'Test knowledge with domain quizzes', path: '/quizzes', Icon: Award, color: '#a855f7' },
+    { label: 'Assignments', desc: 'Hands-on projects & evaluations', path: '/assignments', Icon: FileText, color: '#00f298' },
+    { label: 'Resource Hub', desc: 'Library, cheat sheets & DSA sheets', path: '/resources', Icon: FolderOpen, color: '#ff9900' },
   ];
 
   const isCoursesActive = pathname.startsWith('/courses') || pathname.startsWith('/quizzes') || pathname.startsWith('/assignments') || pathname.startsWith('/resources') || pathname.startsWith('/lesson');
@@ -208,12 +207,7 @@ export default function Header() {
                       router.push(item.path);
                     }}
                   >
-                    <HairlineNavIcon
-                      name={item.hairline}
-                      size={18}
-                      themeColor={item.color}
-                      fallback={<item.Icon size={16} color={item.color} />}
-                    />
+                    <item.Icon size={16} color={item.color} />
                     <div className={styles.dropdownItemContent}>
                       <span className={styles.dropdownItemLabel}>{item.label}</span>
                       <span className={styles.dropdownItemDesc}>{item.desc}</span>
@@ -446,12 +440,7 @@ export default function Header() {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <HairlineNavIcon
-                    name={item.hairline}
-                    size={17}
-                    themeColor={item.color}
-                    fallback={<item.Icon size={15} color={item.color} style={{ flexShrink: 0 }} />}
-                  />
+                  <item.Icon size={15} color={item.color} style={{ flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 12.5, fontWeight: 600 }}>{item.label}</span>
                     <span style={{ fontSize: 9.5, color: '#94a3b8' }}>{item.desc}</span>
