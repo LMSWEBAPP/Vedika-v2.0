@@ -513,14 +513,9 @@ export default function Header() {
 
         {/* Floating collapsible header */}
         <header
-          className={styles.headerCollapsible}
+          className={`${styles.headerCollapsible} ${(isTopNavVisible || mobileMenuOpen) ? styles.headerCollapsibleVisible : ''}`}
           onMouseEnter={handleShowTopNav}
           onMouseLeave={handleScheduleHideTopNav}
-          style={{
-            transform: (isTopNavVisible || mobileMenuOpen) ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
-            opacity: (isTopNavVisible || mobileMenuOpen) ? 1 : 0,
-            pointerEvents: (isTopNavVisible || mobileMenuOpen) ? 'auto' : 'none',
-          }}
         >
           {navContent}
         </header>

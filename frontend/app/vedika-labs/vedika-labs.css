@@ -961,6 +961,17 @@
   }
 }
 
+@keyframes fadeInMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
   .vedika-labs-cinema-view {
     height: auto;
@@ -969,8 +980,13 @@
     min-height: 100vh;
   }
 
+  .vedika-labs-main-grid {
+    padding: 10px 12px 6px;
+    gap: 8px;
+  }
+
   .vedika-labs-stage-viewport {
-    height: 350px;
+    height: 360px;
     max-width: 100vw;
   }
 
@@ -992,15 +1008,20 @@
   }
 
   .metrics-banner-inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     padding: 10px 14px;
+  }
+
+  .vedika-labs-explore-cta-btn {
+    padding: 11px 26px;
+    font-size: 0.92rem;
   }
 }
 
 @media (max-width: 420px) {
   .vedika-labs-stage-viewport {
-    height: 320px;
+    height: 330px;
   }
 
   .vedika-hologram-card {
@@ -1013,5 +1034,10 @@
   .pedestal-disk-outer {
     width: 220px;
     height: 48px;
+  }
+
+  .metrics-banner-inner {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }

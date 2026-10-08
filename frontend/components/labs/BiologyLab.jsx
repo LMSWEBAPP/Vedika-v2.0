@@ -578,7 +578,7 @@ export default function BiologyLab() {
 
   if (labMode === 'phet') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100%', padding: '16px 16px 90px', boxSizing: 'border-box', background: '#07080F' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100%', padding: isMobile ? '6px 6px 70px' : '16px 16px 90px', boxSizing: 'border-box', background: '#07080F' }}>
         <PhetSimViewer
           subject="biology"
           activeSimId={activePhetSim}
