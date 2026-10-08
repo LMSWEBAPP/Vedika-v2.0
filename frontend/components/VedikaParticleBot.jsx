@@ -232,7 +232,7 @@ export default function VedikaParticleBot({
         : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v11`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v12`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -298,12 +298,14 @@ export default function VedikaParticleBot({
       const scaleX = targetWidth / sampleW;
       const scaleY = targetHeight / sampleH;
       const targets = [];
-      const sizeFactor = inline ? 1.08 : 1.0;
+      const sizeFactor = inline ? 0.98 : 1.0;
       const currentInt = intensityRef.current || 1.0;
 
       for (let y = 0; y < sampleH; y += step) {
         for (let x = 0; x < sampleW; x += step) {
-          const idx = (y * sampleW + x) * 4;
+          const sampleX = Math.min(sampleW - 1, Math.round(x));
+          const sampleY = Math.min(sampleH - 1, Math.round(y));
+          const idx = (sampleY * sampleW + sampleX) * 4;
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
@@ -409,30 +411,30 @@ export default function VedikaParticleBot({
               baseR = 255;
               baseG = 255;
               baseB = 255;
-              baseAlpha = 1.0;
-              pSize = 2.30 * sizeFactor;
+              baseAlpha = 0.98;
+              pSize = 2.05 * sizeFactor;
             } else if (saturation > 0.16 && maxC > 40) {
               // Saturated vibrant elements (cyan eyes/smile, wand, chest heart, lab accents)
-              const boost = 1.35;
+              const boost = 1.25;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
               baseAlpha = 1.0;
-              pSize = 2.25 * sizeFactor;
+              pSize = 1.95 * sizeFactor;
             } else if (luminance > 60) {
               // Midtones (visor glass, suit lapels, body contour)
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.98, Math.max(0.85, alphaNorm * 0.95));
-              pSize = 1.95 * sizeFactor;
+              baseAlpha = Math.min(0.92, Math.max(0.78, alphaNorm * 0.90));
+              pSize = 1.68 * sizeFactor;
             } else {
               // Deep shadows and dark outlines - keep clear and solid
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.85, alphaNorm * 0.85);
-              pSize = 1.75 * sizeFactor;
+              baseAlpha = Math.min(0.78, alphaNorm * 0.80);
+              pSize = 1.50 * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -784,28 +786,28 @@ export default function VedikaParticleBot({
 
           // Simplex/harmonic oscillation from Bruno Imbrizi shader:
           // rndz = (random(pindex) + snoise(vec2(pindex * 0.1, uTime * 0.1)))
-          const noiseSpeed = isHighIntensity ? 2.2 : 1.5;
-          const noise = Math.sin(time * noiseSpeed + p.pindex * 0.12) * Math.cos(time * (noiseSpeed * 0.6) + p.seed * 0.1);
-          const rndz = p.rnd + noise * (isHighIntensity ? 0.85 : 0.55);
+          const noiseSpeed = isHighIntensity ? 1.3 : 1.1;
+          const noise = Math.sin(time * noiseSpeed + p.pindex * 0.1) * Math.cos(time * (noiseSpeed * 0.5) + p.seed * 0.08);
+          const rndz = p.rnd + noise * (isHighIntensity ? 0.5 : 0.38);
 
           let dispX = 0;
           let dispY = 0;
           let dispZ = 0;
 
           if (t > 0.005) {
-            const floatMultiplier = isHighIntensity ? 1.45 : 1.0;
+            const floatMultiplier = isHighIntensity ? 1.2 : 1.0;
             const floatAmount = t * (p.floatPower * floatMultiplier) * rndz;
             dispX = Math.cos(p.angle) * floatAmount;
             dispY = Math.sin(p.angle) * floatAmount;
-            dispZ = -t * (isHighIntensity ? 48.0 : 36.0) * Math.abs(rndz);
+            dispZ = -t * (isHighIntensity ? 36.0 : 28.0) * Math.abs(rndz);
           }
 
-          // Ambient shimmer when idle - heightened amplitude & vibration for physics & chemistry
-          const shimmerAmp = isHighIntensity ? 0.65 : 0.22;
-          const shimmerFreq = isHighIntensity ? 1.6 : 1.0;
-          const ambientZ = rndz * (isHighIntensity ? 3.2 : 1.8);
-          const ambientX = Math.sin(time * 0.9 * shimmerFreq + p.seed) * shimmerAmp;
-          const ambientY = Math.cos(time * 0.7 * shimmerFreq + p.seed * 1.2) * shimmerAmp;
+          // Ambient shimmer when idle - gentle, elegant floating without aggressive vibration
+          const shimmerAmp = isHighIntensity ? 0.30 : 0.18;
+          const shimmerFreq = isHighIntensity ? 1.05 : 0.90;
+          const ambientZ = rndz * (isHighIntensity ? 1.8 : 1.4);
+          const ambientX = Math.sin(time * 0.75 * shimmerFreq + p.seed) * shimmerAmp;
+          const ambientY = Math.cos(time * 0.6 * shimmerFreq + p.seed * 1.1) * shimmerAmp;
 
           const homeX = targetX + dispX + ambientX;
           const homeY = targetY + dispY + ambientY;
@@ -844,9 +846,9 @@ export default function VedikaParticleBot({
         const scale = Math.min(1.8, Math.max(0.2, rawScale));
         const renderX = centerX + (p.x - centerX) * scale;
         const renderY = centerY + (p.y - centerY) * scale;
-        const baseSize = inline ? 1.3 : 0.8;
-        const maxSize = isHighIntensity ? 3.8 : 3.2;
-        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.25 : 1.1)));
+        const baseSize = inline ? 0.95 : 0.8;
+        const maxSize = isHighIntensity ? 2.8 : 2.5;
+        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 0.96)));
 
         // Soft edge fade near left boundary instead of sharp rectangular clipping
         let edgeFade = 1;
@@ -871,15 +873,15 @@ export default function VedikaParticleBot({
         const finalAlpha = Math.max(0, p.baseAlpha * globalFade * edgeFade * assembleFade);
         if (finalAlpha <= 0.01) continue;
 
-        // Highlight particle when lifted forward in Z or excited in Physics & Chemistry
+        // Subtle, elegant highlight when excited in Physics & Chemistry
         if (isHighIntensity) {
-          const sparkPhase = Math.sin(time * 3.6 + p.seed * 2.4);
-          const sparkBoost = sparkPhase > 0.65 ? 0.42 : 0.08;
-          const accentExtra = p.accentRatio > 0 ? 46 : 18;
+          const sparkPhase = Math.sin(time * 2.4 + p.seed * 1.8);
+          const sparkBoost = sparkPhase > 0.82 ? 0.18 : 0;
+          const accentExtra = p.accentRatio > 0 ? 20 : 6;
           const rGlow = Math.min(255, Math.round(p.baseR * (1 + sparkBoost) + accentExtra));
           const gGlow = Math.min(255, Math.round(p.baseG * (1 + sparkBoost) + accentExtra));
-          const bGlow = Math.min(255, Math.round(p.baseB * (1 + sparkBoost) + accentExtra + (sparkBoost > 0 ? 30 : 0)));
-          ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${Math.min(1, finalAlpha * 1.25).toFixed(2)})`;
+          const bGlow = Math.min(255, Math.round(p.baseB * (1 + sparkBoost) + accentExtra + (sparkBoost > 0 ? 10 : 0)));
+          ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${Math.min(1, finalAlpha * 1.06).toFixed(2)})`;
         } else if (p.z < -4) {
           const liftRatio = Math.min(1, Math.abs(p.z) / 45);
           const rGlow = Math.round(p.baseR + (255 - p.baseR) * liftRatio * 0.7);

@@ -146,46 +146,46 @@
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 205px;
-  height: 36px;
+  width: 200px;
+  height: 34px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.45) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
-  border: 1.5px solid rgba(var(--active-color-rgb), 0.65);
-  box-shadow: 0 0 32px rgba(var(--active-color-rgb), 0.65);
+  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
+  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
+  box-shadow: 0 0 22px rgba(var(--active-color-rgb), 0.45);
   pointer-events: none;
 }
 
 .bot-pedestal-ring-outer {
   position: absolute;
-  inset: -8px;
+  inset: -7px;
   border-radius: 50%;
-  border: 1.5px solid rgba(var(--active-color-rgb), 0.45);
+  border: 1px solid rgba(var(--active-color-rgb), 0.35);
   pointer-events: none;
   animation: pulsePedestalRing 3s ease-in-out infinite alternate;
 }
 
 @keyframes pulsePedestalRing {
-  0% { transform: scale(0.96); opacity: 0.6; }
-  100% { transform: scale(1.04); opacity: 1; }
+  0% { transform: scale(0.97); opacity: 0.6; }
+  100% { transform: scale(1.03); opacity: 0.9; }
 }
 
 .bot-pedestal-ring-inner {
   position: absolute;
   inset: 5px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   pointer-events: none;
 }
 
 .bot-canvas-wrap {
   position: relative;
-  width: 220px;
-  height: 220px;
+  width: 215px;
+  height: 215px;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  filter: drop-shadow(0 0 20px rgba(var(--active-color-rgb), 0.42));
+  filter: drop-shadow(0 0 10px rgba(var(--active-color-rgb), 0.22));
 }
 
 /* 3. Cards Carousel Container & Track (BELOW THE BOT) */
