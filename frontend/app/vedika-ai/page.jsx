@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, ArrowLeft, Brain, Code, Zap, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
+import { HairlineShowcase, HairlineNavIcon } from '@/components/hairline';
 import './vedika-ai.css';
 
 const CARDS = [
@@ -16,6 +17,7 @@ const CARDS = [
     description: 'Your personal AI tutor for concepts, syllabus explanations, doubt solving, and interactive study flashcards.',
     btnText: 'Start Chatting',
     Icon: Brain,
+    hairline: 'query',
     url: '/vedika-ai/ask',
     accent: '#A855F7',
     accentRgb: '168, 85, 247',
@@ -31,6 +33,7 @@ const CARDS = [
     description: 'Your dedicated programming companion to write clean code, debug tricky syntax, explain algorithms, and run unit tests.',
     btnText: 'Start Coding',
     Icon: Code,
+    hairline: 'terminal',
     url: '/vedika-ai/code',
     accent: '#3B82F6',
     accentRgb: '59, 130, 246',
@@ -46,6 +49,7 @@ const CARDS = [
     description: 'Solve gamified algorithmic puzzles and visualize stack frames, heaps, and dynamic arrays in real-time 3D.',
     btnText: 'Play Puzzles',
     Icon: Zap,
+    hairline: 'exploded',
     url: '/vedika-ai/puzzle',
     accent: '#F59E0B',
     accentRgb: '245, 158, 11',
@@ -61,6 +65,7 @@ const CARDS = [
     description: 'Ace engineering vivas and technical interviews with live AI speech interaction, real-time rubric feedback, and scoring.',
     btnText: 'Start Interview',
     Icon: GraduationCap,
+    hairline: 'dish',
     url: '/viva-interview',
     accent: '#10B981',
     accentRgb: '16, 185, 129',
@@ -294,7 +299,13 @@ export default function VedikaAIHub() {
                       <div className="vedika-ai-card-body">
                         <div className="vedika-ai-card-title-group">
                           <div className="vedika-ai-card-icon-avatar">
-                            <Icon size={20} style={{ color: card.accent }} />
+                            <HairlineShowcase
+                              figure={card.hairline}
+                              width={36}
+                              height={32}
+                              accentColor={card.accent}
+                              intensity={0.8}
+                            />
                           </div>
                           <div>
                             <h2 className="vedika-ai-detail-title">{card.title}</h2>
@@ -332,7 +343,12 @@ export default function VedikaAIHub() {
                   ) : (
                     <div className="vedika-ai-card-collapsed-content">
                       <div className="vedika-shrunken-card-icon">
-                        <Icon size={18} style={{ color: card.accent }} />
+                        <HairlineNavIcon
+                          name={card.hairline}
+                          size={20}
+                          themeColor={card.accent}
+                          fallback={<Icon size={18} style={{ color: card.accent }} />}
+                        />
                       </div>
 
                       <div className="vedika-ai-collapsed-title-wrap">

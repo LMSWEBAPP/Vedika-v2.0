@@ -9,14 +9,15 @@ import {
 import { T, getTheme, setTheme } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import MobileNav from './MobileNav';
+import { HairlineNavIcon } from '@/components/hairline';
 
 const NAV = [
-  { id: '/',              Icon: Home,          label: 'Dashboard'     },
-  { id: '/courses',       Icon: BookOpen,      label: 'Courses'       },
-  { id: '/vedika-ai',     Icon: Brain,         label: 'Vedika AI'     },
-  { id: '/vedika-labs',   Icon: FlaskConical,  label: 'Vedika Labs'   },
-  { id: '/jobs',          Icon: Briefcase,     label: 'Jobs'          },
-  { id: '/progress',      Icon: BarChart3,     label: 'Progress'      },
+  { id: '/',              hairline: 'dashboard',  Icon: Home,          label: 'Dashboard'     },
+  { id: '/courses',       hairline: 'courses',    Icon: BookOpen,      label: 'Courses'       },
+  { id: '/vedika-ai',     hairline: 'ask-vedika', Icon: Brain,         label: 'Vedika AI'     },
+  { id: '/vedika-labs',   hairline: 'viva',       Icon: FlaskConical,  label: 'Vedika Labs'   },
+  { id: '/jobs',          hairline: 'branches',   Icon: Briefcase,     label: 'Jobs'          },
+  { id: '/progress',      hairline: 'dashboard',  Icon: BarChart3,     label: 'Progress'      },
 ];
 
 export default function Sidebar({ isCollapsed = false, onToggleCollapse }) {
@@ -604,7 +605,7 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }) {
           </>
         ) : (
           <>
-            {NAV.map(({ id, Icon, label }) => {
+            {NAV.map(({ id, Icon, label, hairline }) => {
               const active = isActive(id);
               return (
                 <button key={id} onClick={() => router.push(id)} style={{
@@ -630,7 +631,12 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }) {
                 }}
                 title={isCollapsed ? label : ""}
                 >
-                  <Icon size={16} />
+                  <HairlineNavIcon
+                    name={hairline}
+                    size={19}
+                    themeColor={active ? T.accent : '#94A3B8'}
+                    fallback={<Icon size={16} />}
+                  />
                   {!isCollapsed && label}
                 </button>
               );
