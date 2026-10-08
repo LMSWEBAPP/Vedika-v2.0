@@ -232,7 +232,7 @@ export default function VedikaParticleBot({
         : ((colorMode === 'golden' || colorMode === 'cosmic-purple') ? (isMobile ? 3 : 2) : (isMobile ? 4 : 3));
 
       const imageSrc = sourceImg?.currentSrc || sourceImg?.src || src;
-      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v10`;
+      const cacheKey = `${imageSrc}_${inline ? 'inline' : 'full'}_${width}_${height}_${colorMode}_s${step}_v11`;
       if (TARGET_CACHE.has(cacheKey)) {
         const cached = TARGET_CACHE.get(cacheKey);
         targetWidth = cached.targetWidth;
@@ -298,7 +298,7 @@ export default function VedikaParticleBot({
       const scaleX = targetWidth / sampleW;
       const scaleY = targetHeight / sampleH;
       const targets = [];
-      const sizeFactor = inline ? 0.96 : 1.0;
+      const sizeFactor = inline ? 1.08 : 1.0;
       const currentInt = intensityRef.current || 1.0;
 
       for (let y = 0; y < sampleH; y += step) {
@@ -410,29 +410,29 @@ export default function VedikaParticleBot({
               baseG = 255;
               baseB = 255;
               baseAlpha = 1.0;
-              pSize = 2.05 * sizeFactor;
+              pSize = 2.30 * sizeFactor;
             } else if (saturation > 0.16 && maxC > 40) {
-              // Saturated vibrant elements (cyan eyes/smile, tie stripes, badge, pocket square)
-              const boost = 1.25;
+              // Saturated vibrant elements (cyan eyes/smile, wand, chest heart, lab accents)
+              const boost = 1.35;
               baseR = Math.min(255, Math.round(r * boost));
               baseG = Math.min(255, Math.round(g * boost));
               baseB = Math.min(255, Math.round(b * boost));
               baseAlpha = 1.0;
-              pSize = 1.95 * sizeFactor;
+              pSize = 2.25 * sizeFactor;
             } else if (luminance > 60) {
-              // Midtones (visor glass, suit lapels, shorts)
+              // Midtones (visor glass, suit lapels, body contour)
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.92, Math.max(0.78, alphaNorm * 0.90));
-              pSize = 1.65 * sizeFactor;
+              baseAlpha = Math.min(0.98, Math.max(0.85, alphaNorm * 0.95));
+              pSize = 1.95 * sizeFactor;
             } else {
-              // Deep shadows and dark outlines - keep dark and subtle so edges stay sharp
+              // Deep shadows and dark outlines - keep clear and solid
               baseR = r;
               baseG = g;
               baseB = b;
-              baseAlpha = Math.min(0.75, alphaNorm * 0.80);
-              pSize = 1.50 * sizeFactor;
+              baseAlpha = Math.min(0.85, alphaNorm * 0.85);
+              pSize = 1.75 * sizeFactor;
             }
           } else {
             if (luminance > 165) {
@@ -844,9 +844,9 @@ export default function VedikaParticleBot({
         const scale = Math.min(1.8, Math.max(0.2, rawScale));
         const renderX = centerX + (p.x - centerX) * scale;
         const renderY = centerY + (p.y - centerY) * scale;
-        const baseSize = 0.8;
-        const maxSize = isHighIntensity ? 3.4 : 3.0;
-        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.05 : 0.95)));
+        const baseSize = inline ? 1.3 : 0.8;
+        const maxSize = isHighIntensity ? 3.8 : 3.2;
+        const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.25 : 1.1)));
 
         // Soft edge fade near left boundary instead of sharp rectangular clipping
         let edgeFade = 1;
@@ -874,12 +874,12 @@ export default function VedikaParticleBot({
         // Highlight particle when lifted forward in Z or excited in Physics & Chemistry
         if (isHighIntensity) {
           const sparkPhase = Math.sin(time * 3.6 + p.seed * 2.4);
-          const sparkBoost = sparkPhase > 0.72 ? 0.35 : 0;
-          const accentExtra = p.accentRatio > 0 ? 36 : 14;
+          const sparkBoost = sparkPhase > 0.65 ? 0.42 : 0.08;
+          const accentExtra = p.accentRatio > 0 ? 46 : 18;
           const rGlow = Math.min(255, Math.round(p.baseR * (1 + sparkBoost) + accentExtra));
           const gGlow = Math.min(255, Math.round(p.baseG * (1 + sparkBoost) + accentExtra));
-          const bGlow = Math.min(255, Math.round(p.baseB * (1 + sparkBoost) + accentExtra + (sparkBoost > 0 ? 25 : 0)));
-          ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${Math.min(1, finalAlpha * 1.18).toFixed(2)})`;
+          const bGlow = Math.min(255, Math.round(p.baseB * (1 + sparkBoost) + accentExtra + (sparkBoost > 0 ? 30 : 0)));
+          ctx.fillStyle = `rgba(${rGlow}, ${gGlow}, ${bGlow}, ${Math.min(1, finalAlpha * 1.25).toFixed(2)})`;
         } else if (p.z < -4) {
           const liftRatio = Math.min(1, Math.abs(p.z) / 45);
           const rGlow = Math.round(p.baseR + (255 - p.baseR) * liftRatio * 0.7);

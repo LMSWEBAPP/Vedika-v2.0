@@ -77,11 +77,11 @@
   width: 100%;
   max-width: 580px;
   margin: 0 auto;
-  padding: 4px 10px 2px;
+  padding: 24px 10px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   flex: 1;
   min-height: 0;
   box-sizing: border-box;
@@ -93,8 +93,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-top: 2px;
-  margin-bottom: 2px;
+  margin-top: 4px;
+  margin-bottom: 6px;
   z-index: 20;
 }
 
@@ -134,32 +134,32 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 320px;
-  height: 180px;
-  margin: 0 auto;
+  max-width: 340px;
+  height: 220px;
+  margin: 4px auto 0;
   z-index: 15;
   pointer-events: none;
 }
 
 .bot-stage-glow-pedestal {
   position: absolute;
-  bottom: 8px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 175px;
-  height: 32px;
+  width: 205px;
+  height: 36px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
-  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
-  box-shadow: 0 0 24px rgba(var(--active-color-rgb), 0.5);
+  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.45) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
+  border: 1.5px solid rgba(var(--active-color-rgb), 0.65);
+  box-shadow: 0 0 32px rgba(var(--active-color-rgb), 0.65);
   pointer-events: none;
 }
 
 .bot-pedestal-ring-outer {
   position: absolute;
-  inset: -6px;
+  inset: -8px;
   border-radius: 50%;
-  border: 1px solid rgba(var(--active-color-rgb), 0.3);
+  border: 1.5px solid rgba(var(--active-color-rgb), 0.45);
   pointer-events: none;
   animation: pulsePedestalRing 3s ease-in-out infinite alternate;
 }
@@ -171,20 +171,21 @@
 
 .bot-pedestal-ring-inner {
   position: absolute;
-  inset: 4px;
+  inset: 5px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   pointer-events: none;
 }
 
 .bot-canvas-wrap {
   position: relative;
-  width: 175px;
-  height: 175px;
+  width: 220px;
+  height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  filter: drop-shadow(0 0 20px rgba(var(--active-color-rgb), 0.42));
 }
 
 /* 3. Cards Carousel Container & Track (BELOW THE BOT) */
@@ -192,7 +193,7 @@
   position: relative;
   width: 100%;
   max-width: 440px;
-  margin: 0 auto;
+  margin: 4px auto 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -203,7 +204,7 @@
 .vedika-labs-carousel-track {
   position: relative;
   width: 100%;
-  height: 270px;
+  height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,10 +218,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 215px;
-  height: 260px;
-  margin-left: -107.5px;
-  margin-top: -130px;
+  width: 224px;
+  height: 270px;
+  margin-left: -112px;
+  margin-top: -135px;
   border-radius: 22px;
   cursor: pointer;
   transform-style: preserve-3d;
@@ -300,8 +301,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 6px;
-  margin-bottom: 4px;
+  margin-top: 14px;
+  margin-bottom: 12px;
   z-index: 20;
 }
 
@@ -844,7 +845,7 @@
   z-index: 20;
   width: 100%;
   max-width: 440px;
-  margin: 4px auto 12px;
+  margin: 6px auto 16px;
   padding: 0 12px;
   box-sizing: border-box;
   flex-shrink: 0;
