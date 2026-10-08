@@ -1277,95 +1277,334 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               : (isExpanded ? 'calc(48% - 7px)' : 'calc(6% - 7px)'),
             flexShrink: 0,
             display: 'flex',
-            flexDirection: isStackedLayout ? 'column-reverse' : 'row',
+            flexDirection: isStackedLayout ? 'column' : 'row',
             alignItems: 'stretch',
             height: isStackedLayout ? 'auto' : '100%',
-            minHeight: isStackedLayout && isExpanded ? 500 : 'auto',
+            minHeight: 'auto',
             minWidth: 0,
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            gap: isStackedLayout ? 10 : 0
+            gap: 0
           }}>
-            {/* Opening Companion Tab Drawer Panel */}
+            {/* MOBILE VIEW (Collapsed): Single neat card showing the 4 tabs */}
+            {isStackedLayout && !isExpanded && (
+              <div style={{
+                width: '100%',
+                borderRadius: '16px',
+                border: `1px solid ${T.border || 'rgba(255,255,255,0.1)'}`,
+                background: T.s1 || '#0A0E1A',
+                overflow: 'hidden',
+                boxSizing: 'border-box',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+              }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 4,
+                  background: T.s2 || '#0E1322',
+                  padding: '6px',
+                  boxSizing: 'border-box',
+                  width: '100%'
+                }}>
+                  {TABS.map((tab) => {
+                    const { Icon } = tab;
+                    const count = tab.id === 'notes' ? notes.length : tab.id === 'qa' ? chatHistory.length : 0;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveCompanionTab(tab.id);
+                          setIsExpanded(true);
+                        }}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 3,
+                          padding: '8px 2px',
+                          borderRadius: 10,
+                          border: '1.5px solid transparent',
+                          background: 'transparent',
+                          color: T.muted || '#94A3B8',
+                          cursor: 'pointer',
+                          transition: 'all 0.18s ease',
+                          position: 'relative',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon size={16} />
+                          {count > 0 && (
+                            <span style={{
+                              position: 'absolute',
+                              top: -5,
+                              right: -9,
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: '0 4px',
+                              borderRadius: 8,
+                              background: tab.color,
+                              color: '#FFFFFF'
+                            }}>
+                              {count}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: T.text || '#E2E8F0', whiteSpace: 'nowrap' }}>
+                          {tab.label}
+                        </span>
+                        <span style={{ fontSize: 8.5, opacity: 0.6, color: 'inherit', whiteSpace: 'nowrap' }}>
+                          {tab.subtitle}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Opening Companion Tab Drawer Panel (Desktop) OR Combined Card (Mobile) */}
             {isExpanded && (() => {
               const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
               const panelColor = currentTab.color;
               const TabIcon = currentTab.Icon;
               return (
                 <div style={{
-                  flex: 1,
+                  flex: isStackedLayout ? 'none' : 1,
+                  width: '100%',
                   minWidth: 0,
-                  height: isStackedLayout ? '520px' : '100%',
+                  height: isStackedLayout ? 'auto' : '100%',
+                  maxHeight: isStackedLayout ? 'min(440px, calc(100vh - 270px))' : '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   borderRadius: '16px',
                   border: `1.5px solid ${panelColor}`,
                   background: T.s1,
-                  padding: isMobile ? '12px' : '14px',
-                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.35), 0 0 20px ${panelColor}15`,
+                  padding: 0,
+                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px ${panelColor}15`,
                   overflow: 'hidden',
                   boxSizing: 'border-box',
                   position: 'relative',
                   zIndex: 1
                 }}>
-                  {/* Panel Header */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingBottom: 10,
-                    marginBottom: 10,
-                    borderBottom: `1px solid ${T.border}`,
-                    flexShrink: 0
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {isStackedLayout ? (
+                    /* MOBILE COMBINED HEADER: 4 Tabs integrated directly into the top of this same box */
+                    <>
                       <div style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 8,
-                        background: `${panelColor}20`,
-                        color: panelColor,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: 4,
+                        background: T.s2 || '#0E1322',
+                        padding: '6px',
+                        borderBottom: `1px solid ${panelColor}30`,
+                        boxSizing: 'border-box',
+                        width: '100%',
+                        flexShrink: 0
                       }}>
-                        <TabIcon size={16} />
+                        {TABS.map((tab) => {
+                          const isActive = activeCompanionTab === tab.id;
+                          const { Icon } = tab;
+                          const count = tab.id === 'notes' ? notes.length : tab.id === 'qa' ? chatHistory.length : 0;
+                          return (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => {
+                                if (activeCompanionTab === tab.id) {
+                                  setIsExpanded(false);
+                                } else {
+                                  setActiveCompanionTab(tab.id);
+                                }
+                              }}
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 3,
+                                padding: '8px 2px',
+                                borderRadius: 10,
+                                border: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                                background: isActive ? `${tab.color}20` : 'transparent',
+                                boxShadow: isActive ? `0 0 12px ${tab.color}20` : 'none',
+                                color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
+                                cursor: 'pointer',
+                                transition: 'all 0.18s ease',
+                                position: 'relative',
+                                boxSizing: 'border-box'
+                              }}
+                            >
+                              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Icon size={16} style={{ color: isActive ? tab.color : 'inherit', transition: 'color 0.2s' }} />
+                                {count > 0 && (
+                                  <span style={{
+                                    position: 'absolute',
+                                    top: -5,
+                                    right: -9,
+                                    fontSize: 9,
+                                    fontWeight: 800,
+                                    padding: '0 4px',
+                                    borderRadius: 8,
+                                    background: tab.color,
+                                    color: '#FFFFFF'
+                                  }}>
+                                    {count}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{
+                                fontSize: 10.5,
+                                fontWeight: isActive ? 700 : 500,
+                                textAlign: 'center',
+                                lineHeight: 1.15,
+                                color: isActive ? '#FFFFFF' : (T.text || '#E2E8F0'),
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {tab.label}
+                              </span>
+                              <span style={{
+                                fontSize: 8.5,
+                                opacity: isActive ? 0.95 : 0.6,
+                                textAlign: 'center',
+                                lineHeight: 1.1,
+                                color: isActive ? tab.color : 'inherit',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {tab.subtitle}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
-                          {currentTab.label}
-                        </div>
-                        <div style={{ fontSize: 10, color: T.muted }}>
-                          {currentTab.subtitle}
-                        </div>
-                      </div>
-                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsExpanded(false)}
-                      title="Close panel"
-                      style={{
-                        background: `${panelColor}12`,
-                        border: `1px solid ${panelColor}30`,
-                        borderRadius: 6,
-                        color: panelColor,
-                        width: 26,
-                        height: 26,
+                      {/* Sleek subheader with active tab and close button [X] */}
+                      <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = panelColor; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = panelColor; e.currentTarget.style.background = `${panelColor}12`; }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderBottom: `1px solid ${T.border}`,
+                        background: 'rgba(255,255,255,0.02)',
+                        flexShrink: 0
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: 5,
+                            background: `${panelColor}20`,
+                            color: panelColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <TabIcon size={12} />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
+                            {currentTab.label}
+                          </span>
+                          <span style={{
+                            fontSize: 9.5,
+                            fontWeight: 600,
+                            color: panelColor,
+                            background: `${panelColor}15`,
+                            padding: '1px 5px',
+                            borderRadius: 4
+                          }}>
+                            {currentTab.subtitle}
+                          </span>
+                        </div>
 
-                  <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <button
+                          type="button"
+                          onClick={() => setIsExpanded(false)}
+                          title="Close tab"
+                          style={{
+                            background: `${panelColor}15`,
+                            border: `1px solid ${panelColor}35`,
+                            borderRadius: 6,
+                            color: panelColor,
+                            width: 22,
+                            height: 22,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    /* DESKTOP PANEL HEADER */
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 14px 10px 14px',
+                      borderBottom: `1px solid ${T.border}`,
+                      flexShrink: 0
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 8,
+                          background: `${panelColor}20`,
+                          color: panelColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <TabIcon size={16} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
+                            {currentTab.label}
+                          </div>
+                          <div style={{ fontSize: 10, color: T.muted }}>
+                            {currentTab.subtitle}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsExpanded(false)}
+                        title="Close panel"
+                        style={{
+                          background: `${panelColor}12`,
+                          border: `1px solid ${panelColor}30`,
+                          borderRadius: 6,
+                          color: panelColor,
+                          width: 26,
+                          height: 26,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = panelColor; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = panelColor; e.currentTarget.style.background = `${panelColor}12`; }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{
+                    flex: 1,
+                    minHeight: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflowY: 'auto',
+                    padding: isStackedLayout ? '12px' : '14px',
+                    boxSizing: 'border-box'
+                  }}>
 
                     {/* TAB 1 CONTENT: ASK VEDIKA */}
                     {activeCompanionTab === 'ask_vedika' && (
@@ -2080,43 +2319,45 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               );
             })()}
 
-          {/* 4 Companion Tabs (Floating beside panel on desktop, horizontal bar above drawer on mobile/tablet) */}
-          <div style={{
-            width: isStackedLayout ? '100%' : (isExpanded ? '92px' : '100%'),
-            flex: isStackedLayout ? 'none' : (isExpanded ? '0 0 92px' : 1),
-            maxWidth: isStackedLayout ? '100%' : (isExpanded ? '92px' : '100%'),
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: isStackedLayout ? 'row' : 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: isStackedLayout ? '4px 0' : '6px 0',
-            overflow: 'visible',
-            minWidth: 0,
-            height: isStackedLayout ? 'auto' : '100%',
-            boxSizing: 'border-box',
-            position: 'relative',
-            zIndex: 2
-          }}>
-            <CompanionTabs
-              vertical={!isStackedLayout}
-              activeTab={isExpanded ? activeCompanionTab : null}
-              isExpanded={isExpanded}
-              onSelectTab={(tabId) => {
-                if (isExpanded && activeCompanionTab === tabId) {
-                  setIsExpanded(false);
-                } else {
-                  setActiveCompanionTab(tabId);
-                  setIsExpanded(true);
-                }
-              }}
-              notesCount={notes.length}
-              qaCount={chatHistory.length}
-            />
-          </div>
+          {/* 4 Companion Tabs (ONLY rendered on desktop, since mobile has them integrated into the unified card above!) */}
+          {!isStackedLayout && (
+            <div style={{
+              width: isExpanded ? '92px' : '100%',
+              flex: isExpanded ? '0 0 92px' : 1,
+              maxWidth: isExpanded ? '92px' : '100%',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+              padding: '6px 0',
+              overflow: 'visible',
+              minWidth: 0,
+              height: '100%',
+              boxSizing: 'border-box',
+              position: 'relative',
+              zIndex: 2
+            }}>
+              <CompanionTabs
+                vertical={true}
+                activeTab={isExpanded ? activeCompanionTab : null}
+                isExpanded={isExpanded}
+                onSelectTab={(tabId) => {
+                  if (isExpanded && activeCompanionTab === tabId) {
+                    setIsExpanded(false);
+                  } else {
+                    setActiveCompanionTab(tabId);
+                    setIsExpanded(true);
+                  }
+                }}
+                notesCount={notes.length}
+                qaCount={chatHistory.length}
+              />
+            </div>
+          )}
         </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ export default function Header() {
   const [coursesDropdownOpen, setCoursesDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
   const [user, setUser] = useState(null);
 
   const coursesDropdownTimer = useRef(null);
@@ -65,6 +66,7 @@ export default function Header() {
   // Close menus on route change or outside click
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMobileCoursesOpen(false);
     setCoursesDropdownOpen(false);
     setProfileDropdownOpen(false);
   }, [pathname]);
@@ -357,136 +359,212 @@ export default function Header() {
   );
 
   const mobileDrawerContent = mobileMenuOpen && (
-    <div className={styles.mobileDrawer}>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/courses') ? styles.mobileNavActive : ''}`}
-        onClick={() => {
-          setMobileMenuOpen(false);
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('selected_course_id');
-            window.dispatchEvent(new CustomEvent('reset_courses_view'));
-          }
-          router.push('/courses');
-        }}
-      >
-        <span>Courses</span>
-        <BookOpen size={18} color="#38bdf8" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/quizzes') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/quizzes'); }}
-      >
-        <span>Quizzes</span>
-        <Award size={18} color="#a855f7" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/assignments') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/assignments'); }}
-      >
-        <span>Assignments</span>
-        <FileText size={18} color="#00f298" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/resources') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/resources'); }}
-      >
-        <span>Resources</span>
-        <FolderOpen size={18} color="#ff9900" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${isAiActive ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
-      >
-        <span>Vedika AI</span>
-        <Brain size={18} color="#c084fc" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${isLabsActive ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
-      >
-        <span>Vedika Labs</span>
-        <FlaskConical size={18} color="#38bdf8" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/jobs') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
-      >
-        <span>Jobs</span>
-        <Briefcase size={18} color="#34d399" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.mobileNavLink} ${pathname.startsWith('/progress') ? styles.mobileNavActive : ''}`}
-        onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
-      >
-        <span>Progress</span>
-        <BarChart3 size={18} color="#f59e0b" />
-      </button>
+    <>
+      {/* Semi-transparent backdrop - tap outside to close */}
+      <div
+        className={styles.mobileBackdrop}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '6px 0' }} />
-
-      {user ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ padding: '4px 12px', fontSize: 13, color: '#94a3b8' }}>
-            Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
-          </div>
+      <div className={styles.mobileDrawer} role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+        {/* 1. Courses with Dropdown Submenu (Same as Laptop View) */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <button
             type="button"
-            className={styles.mobileNavLink}
-            onClick={() => { setMobileMenuOpen(false); router.push('/profile'); }}
+            className={`${styles.mobileNavLink} ${isCoursesActive ? styles.mobileNavActive : ''}`}
+            onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
+            style={{ justifyContent: 'space-between' }}
           >
-            <span>My Profile</span>
-            <UserIcon size={18} color="#818cf8" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <BookOpen size={16} color="#38bdf8" />
+              <span>Courses</span>
+            </div>
+            <ChevronDown
+              size={15}
+              style={{
+                transform: mobileCoursesOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease',
+                color: '#94a3b8'
+              }}
+            />
           </button>
-          {(user?.role === 'Administrator' || user?.role === 'super_admin' || user?.is_super_admin) && (
-            <button
-              type="button"
-              className={styles.mobileNavLink}
-              onClick={() => { setMobileMenuOpen(false); router.push('/admin'); }}
-            >
-              <span>Admin Portal</span>
-              <LayoutDashboard size={18} color="#38bdf8" />
-            </button>
+
+          {/* Collapsible Curriculum & Resources submenu */}
+          {mobileCoursesOpen && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              padding: '6px 0 6px 10px',
+              borderLeft: '2px solid rgba(56, 189, 248, 0.35)',
+              marginLeft: 12,
+              marginTop: 4,
+              marginBottom: 4
+            }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#38bdf8',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                padding: '2px 8px 4px'
+              }}>
+                Curriculum & Resources
+              </div>
+              {courseSublinks.map((item) => (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (item.path === '/courses' && typeof window !== 'undefined') {
+                      localStorage.removeItem('selected_course_id');
+                      window.dispatchEvent(new CustomEvent('reset_courses_view'));
+                    }
+                    router.push(item.path);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: pathname === item.path ? 'rgba(56, 189, 248, 0.14)' : 'rgba(255, 255, 255, 0.03)',
+                    border: pathname === item.path ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid transparent',
+                    color: pathname === item.path ? '#38bdf8' : '#e2e8f0',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <item.Icon size={15} color={item.color} style={{ flexShrink: 0 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600 }}>{item.label}</span>
+                    <span style={{ fontSize: 9.5, color: '#94a3b8' }}>{item.desc}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           )}
-          {(user?.role === 'super_admin' || user?.is_super_admin) && (
-            <button
-              type="button"
-              className={styles.mobileNavLink}
-              onClick={() => { setMobileMenuOpen(false); router.push('/super-admin'); }}
-            >
-              <span>Super Admin Console</span>
-              <ShieldCheck size={18} color="#a855f7" />
-            </button>
-          )}
-          <button
-            type="button"
-            className={styles.mobileNavLink}
-            onClick={handleLogout}
-            style={{ color: '#f87171' }}
-          >
-            <span>Sign Out</span>
-            <LogOut size={18} color="#f87171" />
-          </button>
         </div>
-      ) : (
+
+        {/* 2. Vedika AI */}
         <button
           type="button"
-          className={styles.getStartedBtn}
-          style={{ justifyContent: 'center', width: '100%', padding: '14px', borderRadius: '12px' }}
-          onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
+          className={`${styles.mobileNavLink} ${isAiActive ? styles.mobileNavActive : ''}`}
+          onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
         >
-          <span>Get Started / Log In</span>
-          <ArrowRight size={16} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Brain size={16} color="#c084fc" />
+            <span>Vedika AI</span>
+          </div>
         </button>
-      )}
-    </div>
+
+        {/* 3. Vedika Labs */}
+        <button
+          type="button"
+          className={`${styles.mobileNavLink} ${isLabsActive ? styles.mobileNavActive : ''}`}
+          onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FlaskConical size={16} color="#38bdf8" />
+            <span>Vedika Labs</span>
+          </div>
+        </button>
+
+        {/* 4. Jobs */}
+        <button
+          type="button"
+          className={`${styles.mobileNavLink} ${pathname.startsWith('/jobs') ? styles.mobileNavActive : ''}`}
+          onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Briefcase size={16} color="#34d399" />
+            <span>Jobs</span>
+          </div>
+        </button>
+
+        {/* 5. Progress */}
+        <button
+          type="button"
+          className={`${styles.mobileNavLink} ${pathname.startsWith('/progress') ? styles.mobileNavActive : ''}`}
+          onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <BarChart3 size={16} color="#f59e0b" />
+            <span>Progress</span>
+          </div>
+        </button>
+
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+
+        {user ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ padding: '2px 8px', fontSize: 11.5, color: '#94a3b8' }}>
+              Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
+            </div>
+            <button
+              type="button"
+              className={styles.mobileNavLink}
+              onClick={() => { setMobileMenuOpen(false); router.push('/profile'); }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <UserIcon size={15} color="#818cf8" />
+                <span>My Profile</span>
+              </div>
+            </button>
+            {(user?.role === 'Administrator' || user?.role === 'super_admin' || user?.is_super_admin) && (
+              <button
+                type="button"
+                className={styles.mobileNavLink}
+                onClick={() => { setMobileMenuOpen(false); router.push('/admin'); }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <LayoutDashboard size={15} color="#38bdf8" />
+                  <span>Admin Portal</span>
+                </div>
+              </button>
+            )}
+            {(user?.role === 'super_admin' || user?.is_super_admin) && (
+              <button
+                type="button"
+                className={styles.mobileNavLink}
+                onClick={() => { setMobileMenuOpen(false); router.push('/super-admin'); }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <ShieldCheck size={15} color="#a855f7" />
+                  <span>Super Admin Console</span>
+                </div>
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.mobileNavLink}
+              onClick={handleLogout}
+              style={{ color: '#f87171' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <LogOut size={15} color="#f87171" />
+                <span style={{ color: '#f87171' }}>Sign Out</span>
+              </div>
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={styles.getStartedBtn}
+            style={{ justifyContent: 'center', width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '13px' }}
+            onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
+          >
+            <span>Get Started / Log In</span>
+            <ArrowRight size={14} />
+          </button>
+        )}
+      </div>
+    </>
   );
 
   if (isAskVedika) {
