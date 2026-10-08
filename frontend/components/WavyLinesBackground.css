@@ -1,0 +1,28 @@
+/* WavyLinesBackground Mobile Responsive Layout */
+@media (max-width: 768px) {
+  .wavy-lines-bg .wavy-cluster-top {
+    top: -65px !important;
+    left: -10vw !important;
+    width: 120vw !important;
+    min-width: 0 !important;
+    height: 135px !important;
+    transform: rotate(0deg) scale(0.46) !important;
+    transform-origin: top center !important;
+    opacity: 0.30 !important;
+    mask-image: linear-gradient(to bottom, black 35%, transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent 100%) !important;
+  }
+
+  .wavy-lines-bg .wavy-cluster-bottom {
+    bottom: -65px !important;
+    right: -10vw !important;
+    width: 120vw !important;
+    min-width: 0 !important;
+    height: 135px !important;
+    transform: rotate(0deg) scale(0.46) !important;
+    transform-origin: bottom center !important;
+    opacity: 0.30 !important;
+    mask-image: linear-gradient(to top, black 35%, transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to top, black 35%, transparent 100%) !important;
+  }
+}

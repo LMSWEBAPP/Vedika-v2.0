@@ -141,40 +141,18 @@
   pointer-events: none;
 }
 
-.bot-stage-glow-pedestal {
+.vedika-labs-bot-glow-aura {
   position: absolute;
-  bottom: 10px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 34px;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 200px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
-  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
-  box-shadow: 0 0 22px rgba(var(--active-color-rgb), 0.45);
+  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.28) 0%, rgba(var(--active-color-rgb), 0.08) 50%, transparent 75%);
+  filter: blur(18px);
   pointer-events: none;
-}
-
-.bot-pedestal-ring-outer {
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 1px solid rgba(var(--active-color-rgb), 0.35);
-  pointer-events: none;
-  animation: pulsePedestalRing 3s ease-in-out infinite alternate;
-}
-
-@keyframes pulsePedestalRing {
-  0% { transform: scale(0.97); opacity: 0.6; }
-  100% { transform: scale(1.03); opacity: 0.9; }
-}
-
-.bot-pedestal-ring-inner {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  pointer-events: none;
+  z-index: 1;
 }
 
 .bot-canvas-wrap {
@@ -915,7 +893,7 @@
 /* =========================================================================
    RESPONSIVE DESIGN & ADAPTIVE SCALING
    ========================================================================= */
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .vedika-labs-main-grid {
     max-width: 640px;
     padding: 12px 20px 8px;
@@ -923,17 +901,12 @@
 
   .vedika-labs-bot-stage {
     max-width: 380px;
-    height: 210px;
+    height: 220px;
   }
 
   .bot-canvas-wrap {
-    width: 210px;
-    height: 210px;
-  }
-
-  .bot-stage-glow-pedestal {
-    width: 210px;
-    height: 38px;
+    width: 220px;
+    height: 220px;
   }
 
   .vedika-labs-carousel-container {
@@ -973,54 +946,163 @@
   }
 }
 
-@media (max-width: 380px) {
+/* Mobile Screens: Zero Vertical Scroll, Crisp Particles, Perfectly Balanced Sizing */
+@media (max-width: 768px) {
+  .vedika-labs-cinema-view {
+    height: calc(100dvh - 54px);
+    max-height: calc(100dvh - 54px);
+    min-height: 0;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .vedika-labs-scene-backdrop {
+    opacity: 0.28;
+    filter: brightness(0.35) contrast(1.1);
+  }
+
+  .vedika-labs-main-grid {
+    height: 100%;
+    max-height: 100%;
+    padding: 6px 10px 2px;
+    justify-content: space-between;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .vedika-labs-header-section {
+    margin-top: 0;
+    margin-bottom: 2px;
+  }
+
+  .vedika-labs-explore-badge {
+    font-size: 9.5px;
+    margin-bottom: 1px;
+  }
+
   .vedika-labs-main-title {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
+    line-height: 1.15;
   }
 
   .vedika-labs-main-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    margin: 1px 0 3px;
     max-width: 260px;
+    line-height: 1.25;
   }
 
   .vedika-labs-bot-stage {
     height: 160px;
+    max-width: 260px;
+    margin: 0 auto;
   }
 
   .bot-canvas-wrap {
-    width: 155px;
-    height: 155px;
+    width: 180px;
+    height: 160px;
   }
 
-  .bot-stage-glow-pedestal {
-    width: 155px;
-    height: 28px;
+  .vedika-labs-bot-glow-aura {
+    width: 170px;
+    height: 140px;
+    filter: blur(14px);
+  }
+
+  .vedika-labs-carousel-container {
+    max-width: 400px;
+    margin: 0 auto;
   }
 
   .vedika-labs-carousel-track {
-    height: 250px;
+    height: 215px;
   }
 
   .carousel-card-slide {
     width: 195px;
-    height: 245px;
+    height: 210px;
     margin-left: -97.5px;
-    margin-top: -122.5px;
+    margin-top: -105px;
+    border-radius: 18px;
   }
 
   .carousel-card-slide.card-left-peek {
-    transform: translateX(-136px) translateY(3px) scale(0.84) rotateY(12deg) translateZ(-35px);
+    transform: translateX(-140px) translateY(2px) scale(0.84) rotateY(12deg) translateZ(-35px);
   }
 
   .carousel-card-slide.card-right-peek {
-    transform: translateX(136px) translateY(3px) scale(0.84) rotateY(-12deg) translateZ(-35px);
+    transform: translateX(140px) translateY(2px) scale(0.84) rotateY(-12deg) translateZ(-35px);
+  }
+
+  .card-glass-panel {
+    padding: 8px 8px 6px;
+    border-radius: 16px;
+  }
+
+  .card-lab-headline {
+    font-size: 0.98rem;
+  }
+
+  .card-lab-subtitle {
+    font-size: 0.68rem;
+    margin-top: 1px;
+  }
+
+  .carousel-dots-row {
+    margin-top: 5px;
+    margin-bottom: 2px;
+    gap: 6px;
+  }
+
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .carousel-dot.active-dot {
+    width: 18px;
+  }
+
+  .card-launch-fab {
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .vedika-labs-bottom-banner {
+    max-width: 400px;
+    margin: 0 auto 6px;
+    padding: 0 8px;
+  }
+
+  .metrics-banner-inner {
+    padding: 4px 6px;
+    border-radius: 16px;
+    gap: 2px;
+  }
+
+  .metric-icon-wrap {
+    width: 22px;
+    height: 22px;
+  }
+
+  .metric-icon-wrap svg {
+    width: 14px;
+    height: 14px;
   }
 
   .metric-val {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
+    line-height: 1.1;
   }
 
   .metric-lbl {
-    font-size: 0.58rem;
+    font-size: 0.54rem;
+    line-height: 1.1;
+    margin-top: 0;
   }
 }

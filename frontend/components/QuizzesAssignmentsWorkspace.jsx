@@ -699,7 +699,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
             height: calc(100dvh - 56px) !important;
             max-height: calc(100dvh - 56px) !important;
           }
-          .box1-side, .box2-side { display: none !important; }
+          .box1-side,
+          .box2-side,
+          .box-container.right-open .box2-side,
+          .box-container.right-open .box1-side {
+            display: none !important;
+          }
           .box1-content, .box-container.right-open .box2-content {
             flex: 1 !important;
             max-width: 100% !important;
@@ -1248,142 +1253,146 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         </div>
 
         {/* ============================================================== */}
-        {/* BOX 1 SIDE: SMALLER PANEL - QUIZ BOT PARTICLE ANIMATION        */}
+        {/* BOX 1 SIDE: SMALLER PANEL - QUIZ BOT (DESKTOP ONLY)             */}
         {/* ============================================================== */}
-        <div className="box1-side">
-          {/* Interactive Particle Bot Canvas (Golden & White Particles, No Obscuring Glow) */}
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: 480,
-            height: isMobile ? 280 : 420,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2
-          }}>
-            <VedikaParticleBot
-              src="/vedika-bot-quiz.png?v=12"
-              colorMode="golden"
-              width={isMobile ? 320 : 460}
-              height={isMobile ? 260 : 400}
-              inline={true}
-              particleStep={isMobile ? 3 : 2}
-            />
-          </div>
+        {!isMobile && (
+          <div className="box1-side">
+            {/* Interactive Particle Bot Canvas (Golden & White Particles, No Obscuring Glow) */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 480,
+              height: 420,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2
+            }}>
+              <VedikaParticleBot
+                src="/vedika-bot-quiz.png?v=12"
+                colorMode="golden"
+                width={460}
+                height={400}
+                inline={true}
+                particleStep={2}
+              />
+            </div>
 
-          {/* Mode Switch Pill */}
-          <div style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: 8,
-            zIndex: 3
-          }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('assignments')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 18px',
-                borderRadius: 9999,
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                color: '#FDE68A',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                transition: 'none',
-                boxShadow: 'none',
-                transform: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)';
-                e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.55)';
-                e.currentTarget.style.color = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.35)';
-                e.currentTarget.style.color = '#FDE68A';
-              }}
-            >
-              <span>Assignments Mode</span>
-              <ChevronRight size={14} color="#F59E0B" />
-            </button>
+            {/* Mode Switch Pill */}
+            <div style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: 8,
+              zIndex: 3
+            }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('assignments')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 18px',
+                  borderRadius: 9999,
+                  background: 'rgba(245, 158, 11, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  color: '#FDE68A',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  transition: 'none',
+                  boxShadow: 'none',
+                  transform: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.55)';
+                  e.currentTarget.style.color = '#FFFFFF';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+                  e.currentTarget.style.color = '#FDE68A';
+                }}
+              >
+                <span>Assignments Mode</span>
+                <ChevronRight size={14} color="#F59E0B" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ============================================================== */}
-        {/* BOX 2 SIDE: SMALLER PANEL - ASSIGNMENT BOT PARTICLE ANIMATION  */}
+        {/* BOX 2 SIDE: SMALLER PANEL - ASSIGNMENT BOT (DESKTOP ONLY)       */}
         {/* ============================================================== */}
-        <div className="box2-side">
-          {/* Interactive Particle Bot Canvas (Cosmic Purple & White Ultra-Crisp Micro-Particles) */}
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: 480,
-            height: isMobile ? 280 : 420,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2
-          }}>
-            <VedikaParticleBot
-              src="/vedika-bot-assignment.png?v=12"
-              colorMode="cosmic-purple"
-              width={isMobile ? 320 : 460}
-              height={isMobile ? 260 : 400}
-              inline={true}
-              particleStep={isMobile ? 3 : 2}
-            />
-          </div>
+        {!isMobile && (
+          <div className="box2-side">
+            {/* Interactive Particle Bot Canvas (Cosmic Purple & White Ultra-Crisp Micro-Particles) */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 480,
+              height: 420,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2
+            }}>
+              <VedikaParticleBot
+                src="/vedika-bot-assignment.png?v=12"
+                colorMode="cosmic-purple"
+                width={460}
+                height={400}
+                inline={true}
+                particleStep={2}
+              />
+            </div>
 
-          {/* Mode Switch Pill */}
-          <div style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: 8,
-            zIndex: 3
-          }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('quizzes')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 18px',
-                borderRadius: 9999,
-                background: 'rgba(168, 85, 247, 0.1)',
-                border: '1px solid rgba(168, 85, 247, 0.35)',
-                color: '#E9D5FF',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                transition: 'none',
-                boxShadow: 'none',
-                transform: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
-                e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.6)';
-                e.currentTarget.style.color = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
-                e.currentTarget.style.color = '#E9D5FF';
-              }}
-            >
-              <ArrowLeft size={14} color="#C084FC" />
-              <span>Quizzes Mode</span>
-            </button>
+            {/* Mode Switch Pill */}
+            <div style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: 8,
+              zIndex: 3
+            }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('quizzes')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 18px',
+                  borderRadius: 9999,
+                  background: 'rgba(168, 85, 247, 0.1)',
+                  border: '1px solid rgba(168, 85, 247, 0.35)',
+                  color: '#E9D5FF',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  transition: 'none',
+                  boxShadow: 'none',
+                  transform: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
+                  e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.6)';
+                  e.currentTarget.style.color = '#FFFFFF';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(168, 85, 247, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                  e.currentTarget.style.color = '#E9D5FF';
+                }}
+              >
+                <ArrowLeft size={14} color="#C084FC" />
+                <span>Quizzes Mode</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ============================================================== */}
         {/* BOX 2 CONTENT: LARGER PANEL - ASSIGNMENTS                      */}
