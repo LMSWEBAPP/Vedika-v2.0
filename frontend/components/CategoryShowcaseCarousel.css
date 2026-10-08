@@ -177,3 +177,27 @@
   border-color: rgba(192, 132, 252, 0.6) !important;
   color: #FFFFFF !important;
 }
+
+@media (max-width: 640px) {
+  .showcase-carousel-container {
+    margin: 0 auto 10px auto;
+  }
+  .showcase-stage {
+    height: 250px;
+  }
+  .showcase-card {
+    width: 240px;
+    height: 215px;
+    border-radius: 14px;
+  }
+  .showcase-card-img-wrapper {
+    height: 120px;
+  }
+  .showcase-card-body {
+    padding: 10px 12px;
+  }
+  .showcase-card-title {
+    font-size: 14px;
+  }
+}
+

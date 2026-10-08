@@ -33,7 +33,7 @@ export default function ResourcesHub({ navigateTo }) {
   ];
 
   return (
-    <div style={{
+    <div className="resources-hub-container" style={{
       padding: 'clamp(20px, 5vw, 40px) clamp(14px, 4vw, 24px)',
       maxWidth: 1000,
       margin: '0 auto',
@@ -41,8 +41,8 @@ export default function ResourcesHub({ navigateTo }) {
       fontFamily: 'var(--font-outfit), sans-serif'
     }}>
       {/* Title Header */}
-      <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 6vw, 48px)' }}>
-        <h1 style={{
+      <div className="resources-hub-header" style={{ textAlign: 'center', marginBottom: 'clamp(24px, 6vw, 48px)' }}>
+        <h1 className="resources-hub-title" style={{
           color: T.text,
           fontSize: 'clamp(24px, 6vw, 36px)',
           fontWeight: 800,
@@ -54,13 +54,13 @@ export default function ResourcesHub({ navigateTo }) {
         }}>
           Welcome, Student!
         </h1>
-        <p style={{ color: T.muted, fontSize: 'clamp(14px, 3.5vw, 16px)', margin: 0 }}>
+        <p className="resources-hub-subtitle" style={{ color: T.muted, fontSize: 'clamp(14px, 3.5vw, 16px)', margin: 0 }}>
           Ready to explore our digital library?
         </p>
       </div>
 
       {/* Grid of Cards */}
-      <div style={{
+      <div className="resources-hub-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(270px, 100%), 1fr))',
         gap: 'clamp(16px, 3vw, 24px)',
@@ -73,6 +73,7 @@ export default function ResourcesHub({ navigateTo }) {
             whileHover={{ y: -6, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigateTo(id)}
+            className="resources-hub-card"
             style={{
               background: gradient,
               borderRadius: 16,
@@ -88,8 +89,8 @@ export default function ResourcesHub({ navigateTo }) {
               transition: 'box-shadow 0.2s'
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <div style={{
+            <div className="resources-hub-card-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <div className="resources-hub-icon-wrap" style={{
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
@@ -101,15 +102,17 @@ export default function ResourcesHub({ navigateTo }) {
               }}>
                 <Icon size={28} color="#fff" />
               </div>
-              <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
-                {title}
-              </h2>
-              <p style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 14, margin: '4px 0 0 0', lineHeight: 1.4 }}>
-                {description}
-              </p>
+              <div className="resources-hub-card-text">
+                <h2 className="resources-hub-card-title" style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
+                  {title}
+                </h2>
+                <p className="resources-hub-card-desc" style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 14, margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                  {description}
+                </p>
+              </div>
             </div>
 
-            <div style={{
+            <div className="resources-hub-btn" style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
@@ -122,7 +125,7 @@ export default function ResourcesHub({ navigateTo }) {
               marginTop: 16,
               transition: 'background 0.2s'
             }}>
-              {btnText}
+              <span>{btnText}</span>
               <ArrowRight size={16} />
             </div>
           </motion.div>

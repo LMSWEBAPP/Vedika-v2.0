@@ -60,7 +60,7 @@ function ResourcesContent() {
   };
 
   return (
-    <div style={{
+    <div className="resources-page-wrapper" style={{
       minHeight: '100vh',
       background: 'var(--bg)',
       width: '100%',

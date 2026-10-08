@@ -1125,22 +1125,24 @@ except Exception as e:
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
+      maxHeight: '100%',
       background: '#040508',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
       borderRadius: 0,
       overflow: 'hidden',
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
     }}>
       {/* Playground Header */}
       <div style={{
-        padding: '12px 16px',
+        padding: isMobile ? '8px 12px' : '12px 16px',
         background: '#080A0E',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: 10
+        gap: 8,
+        flexShrink: 0
       }}>
         {/* Execution Actions */}
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1229,7 +1231,7 @@ except Exception as e:
       </div>
 
       {/* Main Split Area */}
-      <div ref={containerRef} style={{ display: 'flex', flex: 1, height: 'calc(100% - 48px)', overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
+      <div ref={containerRef} style={{ display: 'flex', flex: 1, minHeight: 0, height: isMobile ? 'calc(100% - 42px)' : 'calc(100% - 48px)', overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row', WebkitOverflowScrolling: 'touch' }}>
         
         {/* LEFT COLUMN: Code Editor & Console Terminal */}
         <div style={{

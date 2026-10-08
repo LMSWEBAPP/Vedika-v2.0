@@ -695,17 +695,23 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
         }
 
         @media (max-width: 960px) {
+          .box-container {
+            height: calc(100dvh - 56px) !important;
+            max-height: calc(100dvh - 56px) !important;
+          }
           .box1-side, .box2-side { display: none !important; }
           .box1-content, .box-container.right-open .box2-content {
             flex: 1 !important;
             max-width: 100% !important;
-            padding: 18px 14px !important;
+            padding: 14px 12px 24px 12px !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
           }
         }
 
         @media (max-width: 640px) {
           .box1-content, .box-container.right-open .box2-content {
-            padding: 12px 8px 24px 8px !important;
+            padding: 10px 8px 24px 8px !important;
           }
         }
       `}</style>
@@ -869,10 +875,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
               minHeight: '100%',
               textAlign: 'center'
             }}>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: isMobile ? 8 : 16 }}>
                 <h1 style={{
                   color: '#FFFFFF',
-                  fontSize: isMobile ? 24 : 32,
+                  fontSize: isMobile ? 22 : 32,
                   fontWeight: 850,
                   margin: 0,
                   letterSpacing: '-0.03em',
@@ -890,11 +896,35 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                     Quizzes
                   </span>
                 </h1>
-                <p style={{ color: '#94A3B8', fontSize: 13.5, margin: '8px 0 0', fontWeight: 500 }}>
+                <p style={{ color: '#94A3B8', fontSize: isMobile ? 12.5 : 13.5, margin: '6px 0 0', fontWeight: 500 }}>
                   Select a subject domain to enter quizzes and test your knowledge.
                 </p>
               </div>
 
+              {/* Mobile: Particle Animation ON TOP */}
+              {isMobile && (
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: 195,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '4px 0 8px 0',
+                  zIndex: 2
+                }}>
+                  <VedikaParticleBot
+                    src="/vedika-bot-quiz.png?v=12"
+                    colorMode="golden"
+                    width={270}
+                    height={195}
+                    inline={true}
+                    particleStep={2}
+                  />
+                </div>
+              )}
+
+              {/* Cards Carousel BELOW particle bot on mobile */}
               <CategoryShowcaseCarousel
                 items={quizCategoryShowcaseItems}
                 itemTypeLabel="Quizzes"
@@ -904,6 +934,40 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   setQuizPage(1);
                 }}
               />
+
+              {/* Mobile: Mode Switch Button BELOW cards */}
+              {isMobile && (
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginTop: 10,
+                  marginBottom: 16,
+                  zIndex: 3
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('assignments')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '10px 22px',
+                      borderRadius: 9999,
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.45)',
+                      color: '#FDE68A',
+                      fontWeight: 700,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(245, 158, 11, 0.15)'
+                    }}
+                  >
+                    <span>Assignments Mode</span>
+                    <ChevronRight size={15} color="#F59E0B" />
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* STAGE 2: QUIZZES DRILLDOWN */
@@ -1336,10 +1400,10 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
               minHeight: '100%',
               textAlign: 'center'
             }}>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: isMobile ? 8 : 16 }}>
                 <h1 style={{
                   color: '#FFFFFF',
-                  fontSize: isMobile ? 24 : 32,
+                  fontSize: isMobile ? 22 : 32,
                   fontWeight: 850,
                   margin: 0,
                   letterSpacing: '-0.03em',
@@ -1357,11 +1421,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                     Assignments
                   </span>
                 </h1>
-                <p style={{ color: '#94A3B8', fontSize: 13.5, margin: '8px 0 0', fontWeight: 500 }}>
+                <p style={{ color: '#94A3B8', fontSize: isMobile ? 12.5 : 13.5, margin: '6px 0 0', fontWeight: 500 }}>
                   Select a subject domain to view and submit your assignments.
                 </p>
               </div>
 
+              {/* Cards Carousel ON TOP (above bot) on mobile */}
               <CategoryShowcaseCarousel
                 items={assignmentCategoryShowcaseItems}
                 itemTypeLabel="Assignments"
@@ -1371,6 +1436,63 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                   setAssignmentPage(1);
                 }}
               />
+
+              {/* Mobile: Cosmic Purple Particle Animation BELOW cards */}
+              {isMobile && (
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: 195,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '8px 0 4px 0',
+                  zIndex: 2
+                }}>
+                  <VedikaParticleBot
+                    src="/vedika-bot-assignment.png?v=12"
+                    colorMode="cosmic-purple"
+                    width={270}
+                    height={195}
+                    inline={true}
+                    particleStep={2}
+                  />
+                </div>
+              )}
+
+              {/* Mobile: Mode Switch Button BELOW particle bot */}
+              {isMobile && (
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginTop: 8,
+                  marginBottom: 16,
+                  zIndex: 3
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('quizzes')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '10px 22px',
+                      borderRadius: 9999,
+                      background: 'rgba(168, 85, 247, 0.12)',
+                      border: '1px solid rgba(168, 85, 247, 0.45)',
+                      color: '#E9D5FF',
+                      fontWeight: 700,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(168, 85, 247, 0.15)'
+                    }}
+                  >
+                    <ArrowLeft size={15} color="#C084FC" />
+                    <span>Quizzes Mode</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* STAGE 2: ASSIGNMENTS DRILLDOWN */
