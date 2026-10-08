@@ -8,17 +8,17 @@
 .vedika-labs-cinema-view {
   position: relative;
   width: 100%;
-  height: calc(100vh - 64px);
-  max-height: calc(100vh - 64px);
+  min-height: calc(100vh - 54px);
+  height: auto;
   background-color: #030712;
   color: #F8FAFC;
   font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
-  overflow: hidden; /* STRICT: No vertical scroll */
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  contain: layout size;
 }
 
 /* Sharp high-tech sci-fi chamber background (clean without conflicting pre-printed cards/bot) */
@@ -75,215 +75,252 @@
   position: relative;
   z-index: 5;
   width: 100%;
-  max-width: 1400px;
+  max-width: 580px;
   margin: 0 auto;
-  padding: 8px 20px 4px;
+  padding: 4px 10px 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex: 1;
   min-height: 0;
   box-sizing: border-box;
 }
 
-/* Centered CTA Explore Button Wrap */
-.vedika-labs-center-cta-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 6px;
-  z-index: 10;
-}
-
-.vedika-labs-explore-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: fit-content;
-  padding: 10px 28px;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, var(--active-color, #A855F7) 0%, #3B82F6 100%);
-  color: #FFFFFF;
-  font-size: 0.92rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  border: none;
-  cursor: pointer;
-  box-shadow: none;
-  transition: none;
-}
-
-.vedika-labs-explore-cta-btn:hover {
-  transform: none;
-  box-shadow: none;
-  filter: none;
-}
-
-.vedika-labs-explore-cta-btn .cta-arrow {
-  transition: none;
-}
-
-.vedika-labs-explore-cta-btn:hover .cta-arrow {
-  transform: none;
-}
-
-
-
-/* =========================================================================
-   STAGE VIEWPORT: Hologram Carousel Behind Bot + Elevated Pedestal & Cute Bot
-   ========================================================================= */
-.vedika-labs-stage-viewport {
-  position: relative;
-  width: 100%;
-  max-width: 1240px;
-  height: 460px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  perspective: 1600px;
-  overflow: visible;
-}
-
-/* Ceiling Sci-Fi Energy Beam */
-.vedika-labs-ceiling-emitter {
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 300px;
-  height: 260px;
-  pointer-events: none;
-  z-index: 2;
+/* 1. Header Section (matching image: EXPLORE / Vedika Labs / Subtitle) */
+.vedika-labs-header-section {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  z-index: 20;
 }
 
-.emitter-ring {
-  border-radius: 50%;
-  border: 1.5px solid rgba(56, 189, 248, 0.6);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+.vedika-labs-explore-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #818CF8;
+  text-transform: uppercase;
+  margin-bottom: 2px;
 }
 
-.emitter-ring-outer {
-  width: 190px;
-  height: 38px;
+.vedika-labs-main-title {
+  font-size: 1.75rem;
+  font-weight: 850;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-.emitter-ring-inner {
-  width: 145px;
-  height: 30px;
-  margin-top: -30px;
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), 0 0 25px rgba(56, 189, 248, 0.5);
+.vedika-labs-main-subtitle {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #94A3B8;
+  margin: 3px 0 0;
+  max-width: 280px;
+  line-height: 1.35;
+  text-align: center;
 }
 
-.emitter-beam-cone {
-  width: 220px;
-  height: 280px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.16) 0%, transparent 70%);
-  filter: blur(14px);
+/* 2. Particle Bot Stage (ON TOP OF CARDS) */
+.vedika-labs-bot-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  height: 180px;
+  margin: 0 auto;
+  z-index: 15;
+  pointer-events: none;
 }
 
-/* =========================================================================
-   CAROUSEL LAYER: FULL-STAGE EXTENSION (NO ARROWS)
-   ========================================================================= */
-.vedika-labs-carousel-stage {
+.bot-stage-glow-pedestal {
   position: absolute;
-  top: 10px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 100%;
-  max-width: 1160px;
-  height: 380px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10; /* Elevated above pedestal and bot layer */
+  width: 175px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
+  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
+  box-shadow: 0 0 24px rgba(var(--active-color-rgb), 0.5);
   pointer-events: none;
-  box-sizing: border-box;
 }
 
-/* THE CARDS VIEWPORT: Spans full stage width with overflow visible so outer cards are never cut */
-.cards-bounded-viewport {
+.bot-pedestal-ring-outer {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--active-color-rgb), 0.3);
+  pointer-events: none;
+  animation: pulsePedestalRing 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulsePedestalRing {
+  0% { transform: scale(0.96); opacity: 0.6; }
+  100% { transform: scale(1.04); opacity: 1; }
+}
+
+.bot-pedestal-ring-inner {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.bot-canvas-wrap {
   position: relative;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: visible; /* Cards never get clipped when selected or rotated */
+  width: 175px;
+  height: 175px;
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 1600px;
-  transform-style: preserve-3d;
   pointer-events: none;
+}
+
+/* 3. Cards Carousel Container & Track (BELOW THE BOT) */
+.vedika-labs-carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.vedika-labs-carousel-track {
+  position: relative;
+  width: 100%;
+  height: 270px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  touch-action: pan-y;
   user-select: none;
 }
 
-.cards-stage-track {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  perspective: 1600px;
+.carousel-card-slide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 215px;
+  height: 260px;
+  margin-left: -107.5px;
+  margin-top: -130px;
+  border-radius: 22px;
+  cursor: pointer;
   transform-style: preserve-3d;
-  overflow: visible;
-  pointer-events: none;
+  will-change: transform, opacity;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease, border-color 0.32s ease, box-shadow 0.32s ease;
+  flex-shrink: 0;
+  outline: none;
 }
 
-/* Classy Curved Holographic Floor Guide Track with Feathered Ends */
-.cards-curved-guide-track {
+/* Center Active Card */
+.carousel-card-slide.card-center-active {
+  transform: translateX(0) translateY(0) scale(1) translateZ(0);
+  opacity: 1;
+  z-index: 25;
+  pointer-events: auto;
+}
+
+.carousel-card-slide.card-center-active .card-glass-panel {
+  border: 2px solid var(--card-theme);
+  box-shadow: 
+    0 0 28px rgba(var(--card-theme-rgb), 0.55),
+    0 16px 42px rgba(0, 0, 0, 0.75),
+    inset 0 0 20px rgba(var(--card-theme-rgb), 0.25);
+}
+
+/* Left Peeking Card */
+.carousel-card-slide.card-left-peek {
+  transform: translateX(-155px) translateY(3px) scale(0.85) rotateY(12deg) translateZ(-40px);
+  opacity: 0.55;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.carousel-card-slide.card-left-peek:hover {
+  opacity: 0.8;
+}
+
+/* Right Peeking Card */
+.carousel-card-slide.card-right-peek {
+  transform: translateX(155px) translateY(3px) scale(0.85) rotateY(-12deg) translateZ(-40px);
+  opacity: 0.55;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.carousel-card-slide.card-right-peek:hover {
+  opacity: 0.8;
+}
+
+/* Card Launch Floating Action Button (Arrow button in image) */
+.card-launch-fab {
   position: absolute;
   bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(1080px, 92vw);
-  max-width: 95vw;
-  height: 58px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border-bottom: 2px solid rgba(var(--active-color-rgb), 0.5);
-  box-shadow: 0 10px 24px rgba(var(--active-color-rgb), 0.4);
-  pointer-events: none;
-  filter: blur(1px);
-  mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
-  transition: all 0.5s ease;
-}
-
-/* Hologram Card Base: Balanced proportions, clean squircle border-radius */
-.vedika-hologram-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  margin-left: -87.5px;
-  margin-top: -157.5px;
-  width: 175px;
-  height: 315px;
-  border-radius: 20px;
+  border: 1.5px solid var(--card-theme);
+  background: radial-gradient(circle, rgba(var(--card-theme-rgb), 0.4) 0%, rgba(10, 20, 40, 0.9) 100%);
+  box-shadow: 0 0 16px rgba(var(--card-theme-rgb), 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  outline: none;
-  flex-shrink: 0;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
-  user-select: none;
-  pointer-events: auto; /* Direct, unobstructed click reception */
   z-index: 10;
-  contain: layout style;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Selected Card: lifts forward prominently with vibrant neon glow */
-.vedika-hologram-card.selected-glow {
-  opacity: 1 !important;
+.card-launch-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 22px rgba(var(--card-theme-rgb), 0.85);
 }
 
-.vedika-hologram-card.ambient-card:hover {
-  opacity: 0.95 !important;
+/* Pagination Dots Row */
+.carousel-dots-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  z-index: 20;
+}
+
+.carousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.carousel-dot.active-dot {
+  width: 22px;
+  border-radius: 9999px;
+  background: var(--active-color);
+  box-shadow: 0 0 12px var(--active-color);
 }
 
 /* Translucent Soft Glass Panel with Cubic-Bezier Edge Curvature & Specular Highlight */
@@ -359,26 +396,30 @@
 
 .card-lab-headline {
   margin: 0;
-  font-size: 0.96rem;
-  font-weight: 800;
+  font-size: 1.12rem;
+  font-weight: 850;
   color: #FFFFFF;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.card-headline-accent-bar {
-  width: 26px;
-  height: 2px;
-  border-radius: 2px;
-  margin-top: 3px;
-  margin-left: 10px;
-  box-shadow: 0 0 8px var(--card-theme);
+.card-lab-subtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94A3B8;
+  margin: 3px 0 0;
+  max-width: 175px;
+  line-height: 1.35;
+  text-align: left;
 }
 
 /* Detailed Classic Thematic Artwork Container */
 .card-thematic-art {
   position: relative;
   width: 100%;
-  height: 236px;
+  flex: 1;
+  min-height: 140px;
+  max-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -796,248 +837,189 @@
 }
 
 /* =========================================================================
-   FOREGROUND BOT CHARACTER (BROUGHT TO FRONT & ENLARGED)
-   ========================================================================= */
-.vedika-labs-pedestal-stage {
-  position: absolute;
-  bottom: 0px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 360px;
-  height: 350px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 25; /* Brought to front in foreground over cards */
-  pointer-events: none !important;
-}
-
-/* Foreground Cute Bot Floating Naturally */
-.vedika-labs-bot-foreground {
-  position: relative;
-  z-index: 26;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 2px;
-  pointer-events: none !important;
-}
-
-.vedika-labs-bot-foreground * {
-  pointer-events: none !important;
-}
-
-.bot-pedestal-shadow {
-  position: absolute;
-  bottom: 4px;
-  width: 230px;
-  height: 26px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0) 75%);
-  filter: blur(8px);
-  z-index: -1;
-  pointer-events: none !important;
-}
-
-.vedika-bot-character-img {
-  width: 215px;
-  height: auto;
-  max-height: 245px;
-  object-fit: contain;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(var(--active-color-rgb), 0.35));
-  animation: botHoverFloating 4s ease-in-out infinite alternate;
-  pointer-events: none !important;
-}
-
-@keyframes botHoverFloating {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-7px); }
-  100% { transform: translateY(0px); }
-}
-
-/* =========================================================================
-   BOTTOM FLOATING METRICS BANNER
+   BOTTOM FLOATING METRICS BANNER (4-COLUMN PILL MATCHING MOCKUP)
    ========================================================================= */
 .vedika-labs-bottom-banner {
   position: relative;
-  z-index: 10;
+  z-index: 20;
   width: 100%;
-  max-width: 1280px;
-  margin: 0 auto 10px;
-  padding: 0 24px;
+  max-width: 440px;
+  margin: 4px auto 12px;
+  padding: 0 12px;
   box-sizing: border-box;
   flex-shrink: 0;
-  contain: content;
 }
 
 .metrics-banner-inner {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  padding: 10px 22px;
-  border-radius: 18px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border-radius: 22px;
+  background: rgba(13, 20, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 .metric-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-start;
+  text-align: center;
+  gap: 3px;
+  padding: 2px 2px;
 }
 
 .metric-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  backdrop-filter: blur(8px);
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  margin-bottom: 1px;
 }
 
 .metric-text-wrap {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .metric-val {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 850;
   color: #FFFFFF;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .metric-lbl {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 500;
   color: #94A3B8;
+  line-height: 1.2;
+  margin-top: 1px;
+  max-width: 68px;
+  text-align: center;
+  white-space: normal;
+  word-break: normal;
 }
 
 /* =========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN & ADAPTIVE SCALING
    ========================================================================= */
-@media (max-width: 1100px) {
-  .vedika-labs-cinema-view {
-    overflow-y: auto;
-    height: auto;
-    max-height: none;
-    min-height: calc(100vh - 64px);
-  }
-
+@media (min-width: 768px) {
   .vedika-labs-main-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 14px 20px 8px;
+    max-width: 640px;
+    padding: 12px 20px 8px;
   }
 
-  .vedika-labs-left-panel {
-    max-width: 100%;
-    align-items: center;
-    text-align: center;
+  .vedika-labs-bot-stage {
+    max-width: 380px;
+    height: 210px;
   }
 
-  .vedika-labs-features-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+  .bot-canvas-wrap {
+    width: 210px;
+    height: 210px;
   }
 
-  .vedika-labs-quote-card {
-    display: none;
+  .bot-stage-glow-pedestal {
+    width: 210px;
+    height: 38px;
   }
 
-  .vedika-labs-stage-viewport {
-    height: 400px;
+  .vedika-labs-carousel-container {
+    max-width: 580px;
   }
 
-  .metrics-banner-inner {
-    grid-template-columns: repeat(2, 1fr);
+  .vedika-labs-carousel-track {
+    height: 300px;
+  }
+
+  .carousel-card-slide {
+    width: 240px;
+    height: 290px;
+    margin-left: -120px;
+    margin-top: -145px;
+  }
+
+  .carousel-card-slide.card-left-peek {
+    transform: translateX(-195px) translateY(4px) scale(0.85) rotateY(14deg) translateZ(-40px);
+  }
+
+  .carousel-card-slide.card-right-peek {
+    transform: translateX(195px) translateY(4px) scale(0.85) rotateY(-14deg) translateZ(-40px);
+  }
+
+  .vedika-labs-bottom-banner {
+    max-width: 540px;
+    margin-bottom: 16px;
+  }
+
+  .metric-val {
+    font-size: 1.05rem;
+  }
+
+  .metric-lbl {
+    font-size: 0.72rem;
   }
 }
 
-@keyframes fadeInMenu {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 640px) {
-  .vedika-labs-cinema-view {
-    height: auto;
-    max-height: none;
-    overflow-y: auto;
-    min-height: 100vh;
+@media (max-width: 380px) {
+  .vedika-labs-main-title {
+    font-size: 1.55rem;
   }
 
-  .vedika-labs-main-grid {
-    padding: 10px 12px 6px;
-    gap: 8px;
+  .vedika-labs-main-subtitle {
+    font-size: 0.75rem;
+    max-width: 260px;
   }
 
-  .vedika-labs-stage-viewport {
-    height: 360px;
-    max-width: 100vw;
+  .vedika-labs-bot-stage {
+    height: 160px;
   }
 
-  .vedika-hologram-card {
-    width: 140px;
+  .bot-canvas-wrap {
+    width: 155px;
+    height: 155px;
+  }
+
+  .bot-stage-glow-pedestal {
+    width: 155px;
+    height: 28px;
+  }
+
+  .vedika-labs-carousel-track {
     height: 250px;
-    margin-left: -70px;
-    margin-top: -125px;
   }
 
-  .vedika-bot-character-img {
-    width: 160px;
-    max-height: 180px;
+  .carousel-card-slide {
+    width: 195px;
+    height: 245px;
+    margin-left: -97.5px;
+    margin-top: -122.5px;
   }
 
-  .pedestal-disk-outer {
-    width: 260px;
-    height: 55px;
+  .carousel-card-slide.card-left-peek {
+    transform: translateX(-136px) translateY(3px) scale(0.84) rotateY(12deg) translateZ(-35px);
   }
 
-  .metrics-banner-inner {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 10px 14px;
+  .carousel-card-slide.card-right-peek {
+    transform: translateX(136px) translateY(3px) scale(0.84) rotateY(-12deg) translateZ(-35px);
   }
 
-  .vedika-labs-explore-cta-btn {
-    padding: 11px 26px;
-    font-size: 0.92rem;
-  }
-}
-
-@media (max-width: 420px) {
-  .vedika-labs-stage-viewport {
-    height: 330px;
+  .metric-val {
+    font-size: 0.88rem;
   }
 
-  .vedika-hologram-card {
-    width: 125px;
-    height: 220px;
-    margin-left: -62.5px;
-    margin-top: -110px;
-  }
-
-  .pedestal-disk-outer {
-    width: 220px;
-    height: 48px;
-  }
-
-  .metrics-banner-inner {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .metric-lbl {
+    font-size: 0.58rem;
   }
 }
