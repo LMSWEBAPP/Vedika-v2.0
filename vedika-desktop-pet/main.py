@@ -1213,6 +1213,21 @@ class DesktopPetApp(QObject):
                 last_err = payload.get("lastError") or payload.get("error") or ""
                 cursor_line = payload.get("line") or payload.get("cursorLine") or 1
 
+                now = time.time()
+                puzzle_key = f"{puzzle_title}:{last_err}:{student_code[:80]}"
+                last_puzzle_key = getattr(self, "_last_puzzle_key", "")
+                last_puzzle_time = getattr(self, "_last_puzzle_time", 0.0)
+
+                # Debounce duplicate puzzle checks within 5 seconds or while tutor is speaking
+                is_speaking = hasattr(self, "gemini_client") and self.gemini_client and self.gemini_client.is_speaking
+                if (puzzle_key == last_puzzle_key and (now - last_puzzle_time < 5.0)) or (is_speaking and puzzle_key == last_puzzle_key):
+                    print(f"[WS Bridge] Debounced duplicate puzzle diagnosis request for '{puzzle_title}'.")
+                    return
+
+                self._last_puzzle_key = puzzle_key
+                self._last_puzzle_time = now
+                self.last_user_speech_time = now
+
                 if hasattr(self, 'gemini_client') and self.gemini_client:
                     self.gemini_client.active_webapp_context = {
                         "page": "/code-puzzle",
@@ -1236,8 +1251,7 @@ class DesktopPetApp(QObject):
                     code_part = f"\n[STUDENT ACTIVE CODE IN EDITOR]:\n```python\n{student_code}\n```" if student_code else ""
                     diagnostic_prompt = (
                         f"The student is working on the code problem '{puzzle_title}' and asked for your guidance.{err_part} "
-                        f"Please inspect the student's code and screen. Call 'capture_user_screen' if needed to verify line numbers. "
-                        f"Explain clearly which line has the error, why it occurs, and give an encouraging step-by-step fix or hint.{code_part}"
+                        f"Explain clearly which line has the error, why it occurs, and give an encouraging step-by-step fix or hint directly.{code_part}"
                     )
                     self.gemini_client.send_realtime_text_prompt(diagnostic_prompt)
 
