@@ -949,13 +949,13 @@
 /* Mobile Screens: Zero Vertical Scroll, Crisp Particles, Perfectly Balanced Sizing */
 @media (max-width: 768px) {
   .vedika-labs-cinema-view {
-    height: calc(100dvh - 54px);
-    max-height: calc(100dvh - 54px);
-    min-height: 0;
+    height: calc(100dvh - 54px) !important;
+    max-height: calc(100dvh - 54px) !important;
+    min-height: 0 !important;
     overflow: hidden !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
   }
 
   .vedika-labs-scene-backdrop {
@@ -964,125 +964,133 @@
   }
 
   .vedika-labs-main-grid {
-    height: 100%;
-    max-height: 100%;
-    padding: 6px 10px 2px;
-    justify-content: space-between;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 4px 10px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    overflow: hidden !important;
   }
 
   .vedika-labs-header-section {
-    margin-top: 0;
-    margin-bottom: 2px;
+    margin-top: 0 !important;
+    margin-bottom: 2px !important;
+    flex-shrink: 0 !important;
   }
 
   .vedika-labs-explore-badge {
-    font-size: 9.5px;
-    margin-bottom: 1px;
+    font-size: 9.5px !important;
+    margin-bottom: 1px !important;
   }
 
   .vedika-labs-main-title {
-    font-size: 1.45rem;
-    line-height: 1.15;
+    font-size: 1.45rem !important;
+    line-height: 1.15 !important;
   }
 
   .vedika-labs-main-subtitle {
-    font-size: 0.72rem;
-    margin: 1px 0 3px;
-    max-width: 260px;
-    line-height: 1.25;
+    font-size: 0.72rem !important;
+    margin: 1px 0 2px !important;
+    max-width: 260px !important;
+    line-height: 1.25 !important;
   }
 
   .vedika-labs-bot-stage {
-    height: 160px;
-    max-width: 260px;
-    margin: 0 auto;
+    height: 190px !important;
+    max-width: 290px !important;
+    margin: 0 auto !important;
+    flex-shrink: 0 !important;
   }
 
   .bot-canvas-wrap {
-    width: 180px;
-    height: 160px;
+    width: 215px !important;
+    height: 190px !important;
   }
 
   .vedika-labs-bot-glow-aura {
-    width: 170px;
-    height: 140px;
-    filter: blur(14px);
+    width: 200px !important;
+    height: 170px !important;
+    filter: blur(14px) !important;
   }
 
   .vedika-labs-carousel-container {
-    max-width: 400px;
-    margin: 0 auto;
+    max-width: 400px !important;
+    margin: 0 auto !important;
+    flex-shrink: 0 !important;
   }
 
   .vedika-labs-carousel-track {
-    height: 215px;
+    height: 235px !important;
   }
 
   .carousel-card-slide {
-    width: 195px;
-    height: 210px;
-    margin-left: -97.5px;
-    margin-top: -105px;
-    border-radius: 18px;
+    width: 215px !important;
+    height: 230px !important;
+    margin-left: -107.5px !important;
+    margin-top: -115px !important;
+    border-radius: 18px !important;
   }
 
   .carousel-card-slide.card-left-peek {
-    transform: translateX(-140px) translateY(2px) scale(0.84) rotateY(12deg) translateZ(-35px);
+    transform: translateX(-145px) translateY(2px) scale(0.85) rotateY(12deg) translateZ(-35px) !important;
   }
 
   .carousel-card-slide.card-right-peek {
-    transform: translateX(140px) translateY(2px) scale(0.84) rotateY(-12deg) translateZ(-35px);
+    transform: translateX(145px) translateY(2px) scale(0.85) rotateY(-12deg) translateZ(-35px) !important;
   }
 
   .card-glass-panel {
-    padding: 8px 8px 6px;
-    border-radius: 16px;
+    padding: 10px 10px 8px !important;
+    border-radius: 16px !important;
   }
 
   .card-lab-headline {
-    font-size: 0.98rem;
+    font-size: 1.05rem !important;
   }
 
   .card-lab-subtitle {
-    font-size: 0.68rem;
-    margin-top: 1px;
+    font-size: 0.72rem !important;
+    margin-top: 1px !important;
   }
 
   .carousel-dots-row {
-    margin-top: 5px;
-    margin-bottom: 2px;
-    gap: 6px;
+    margin-top: 6px !important;
+    margin-bottom: 2px !important;
+    gap: 6px !important;
   }
 
   .carousel-dot {
-    width: 6px;
-    height: 6px;
+    width: 6px !important;
+    height: 6px !important;
   }
 
   .carousel-dot.active-dot {
-    width: 18px;
+    width: 18px !important;
   }
 
   .card-launch-fab {
-    bottom: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
+    bottom: 8px !important;
+    right: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
   }
 
   .vedika-labs-bottom-banner {
-    max-width: 400px;
-    margin: 0 auto 6px;
-    padding: 0 8px;
+    max-width: 400px !important;
+    margin: 0 auto 4px !important;
+    padding: 0 8px !important;
+    flex-shrink: 0 !important;
   }
 
   .metrics-banner-inner {
-    padding: 4px 6px;
-    border-radius: 16px;
-    gap: 2px;
+    padding: 4px 6px !important;
+    border-radius: 16px !important;
+    gap: 2px !important;
   }
 
   .metric-icon-wrap {

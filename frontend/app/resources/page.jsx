@@ -59,13 +59,22 @@ function ResourcesContent() {
     }
   };
 
+  const isHub = view === 'home';
+
   return (
-    <div className="resources-page-wrapper" style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      width: '100%',
-      overflowY: 'auto'
-    }}>
+    <div
+      className={`resources-page-wrapper ${isHub ? 'resources-hub-mode' : 'resources-subview-mode'}`}
+      style={{
+        height: isHub ? 'calc(100vh - 54px)' : 'auto',
+        maxHeight: isHub ? 'calc(100vh - 54px)' : 'none',
+        minHeight: isHub ? '0' : 'calc(100vh - 54px)',
+        background: 'var(--bg)',
+        width: '100%',
+        overflowY: isHub ? 'hidden' : 'auto',
+        overflowX: 'hidden',
+        boxSizing: 'border-box'
+      }}
+    >
       {renderView()}
     </div>
   );

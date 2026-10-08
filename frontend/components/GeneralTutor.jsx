@@ -1860,16 +1860,16 @@ export default function GeneralTutor() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'flex-end',
-                    gap: 8,
+                    gap: isMobile ? 6 : 8,
                     width: 'fit-content',
-                    maxWidth: isMobile ? '88%' : bubbleMaxW
+                    maxWidth: isMobile ? '94%' : bubbleMaxW
                   }}>
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'flex-end',
                       width: 'fit-content',
-                      maxWidth: '100%'
+                      maxWidth: isMobile ? 'calc(100% - 38px)' : '100%'
                     }}>
                       <div style={{
                         background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
@@ -1903,11 +1903,14 @@ export default function GeneralTutor() {
                       </div>
                       <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, textAlign: 'right' }}>You &middot; {msg.mode} &middot; {msg.length}</div>
                     </div>
-                    {!isMobile && (
-                      <div style={{ flexShrink: 0, marginBottom: 14 }}>
-                        <UserBlobAvatar isTyping={false} isAiLoading={false} size={40} mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]} />
-                      </div>
-                    )}
+                    <div style={{ flexShrink: 0, marginBottom: isMobile ? 10 : 14 }}>
+                      <UserBlobAvatar
+                        isTyping={false}
+                        isAiLoading={false}
+                        size={isMobile ? 32 : 40}
+                        mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
