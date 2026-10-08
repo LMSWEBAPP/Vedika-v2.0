@@ -1,0 +1,358 @@
+/* =========================================================================
+   VEDIKA MATH LAB - MODERN SCI-FI MOBILE & DESKTOP STYLESHEET
+   Accurately matches reference mockup with Calculator badge,
+   Whiteboard/Graph switcher, Smart Handwriting Canvas with dotted grid,
+   toolbar (Pen, Select, Eraser, Trash), and full-width Recognize button.
+   ========================================================================= */
+
+.math-lab-container {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 54px);
+  background-color: #060914;
+  color: #F8FAFC;
+  font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
+  padding: 14px 16px 40px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.math-lab-inner {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. Header Section (matching image: Badge + Vedika Math Lab + Subtitle) */
+.math-lab-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  margin-bottom: 16px;
+}
+
+.math-lab-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.45);
+  flex-shrink: 0;
+}
+
+.math-lab-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.math-lab-title {
+  font-size: 1.25rem;
+  font-weight: 850;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.math-lab-subtitle {
+  font-size: 0.76rem;
+  color: #94A3B8;
+  margin: 3px 0 0;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+/* 2. Primary Tab Switcher (Whiteboard / Graph) */
+.math-lab-tabs-bar {
+  display: flex;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(14px);
+  box-sizing: border-box;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.math-lab-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  border-radius: 14px;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  background: transparent;
+  color: #94A3B8;
+  outline: none;
+}
+
+.math-lab-tab.active {
+  background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.45);
+}
+
+/* 3. Smart Handwriting Whiteboard Card */
+.math-whiteboard-card {
+  background: rgba(10, 15, 28, 0.88);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 22px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.math-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 0;
+}
+
+.math-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.math-card-title {
+  font-size: 0.98rem;
+  font-weight: 750;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.math-card-expand-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.math-card-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+/* 4. Whiteboard Toolbar */
+.math-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.math-tool-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.math-tool-btn.active-pen {
+  background: rgba(168, 85, 247, 0.22);
+  border: 1.5px solid #A855F7;
+  color: #FFFFFF;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.45);
+}
+
+.math-tool-btn.active-select {
+  background: rgba(236, 72, 153, 0.22);
+  border: 1.5px solid #EC4899;
+  color: #FFFFFF;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.45);
+}
+
+.math-tool-btn.active-eraser {
+  background: rgba(245, 158, 11, 0.22);
+  border: 1.5px solid #F59E0B;
+  color: #FFFFFF;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+}
+
+.math-tool-trash-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.math-tool-trash-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #EF4444;
+}
+
+/* 5. Canvas Container with Dotted Grid Matrix */
+.math-whiteboard-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 390px;
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: #070B16;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  touch-action: none;
+  transition: height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.math-whiteboard-canvas-wrap.expanded {
+  height: 540px;
+}
+
+.math-whiteboard-canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  display: block;
+}
+
+/* 6. Full-Width Bottom Recognize Button */
+.math-recognize-full-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+  color: #FFFFFF;
+  font-size: 0.98rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 14px;
+  outline: none;
+}
+
+.math-recognize-full-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.65);
+}
+
+.math-recognize-full-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.math-recognize-full-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 7. Graph View & Controls */
+.math-graph-card {
+  background: rgba(10, 15, 28, 0.88);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 22px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.math-curve-badge {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.math-graph-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #070B16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.math-graph-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  display: block;
+}
+
+/* 8. AI Solution / Derivation Card */
+.math-ai-solution-card {
+  background: rgba(13, 19, 36, 0.92);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 18px;
+  padding: 16px;
+  margin-top: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Tablet & Desktop Scaling */
+@media (min-width: 900px) {
+  .math-lab-inner {
+    max-width: 900px;
+  }
+
+  .math-whiteboard-canvas-wrap {
+    height: 440px;
+  }
+}
