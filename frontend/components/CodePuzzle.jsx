@@ -2264,21 +2264,21 @@ export default function CodePuzzle() {
 
       {/* ── TOP HEADER BAR ── */}
       <div style={{
-        height: isMobile ? 'auto' : 48,
-        minHeight: 48,
+        height: isMobile ? 42 : 48,
+        minHeight: isMobile ? 42 : 48,
         background: '#07090F',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isMobile ? '8px 12px' : '0 16px',
-        flexWrap: isMobile ? 'wrap' : 'nowrap',
-        gap: 8,
+        padding: isMobile ? '0 10px' : '0 16px',
+        flexWrap: 'nowrap',
+        gap: isMobile ? 6 : 8,
         flexShrink: 0,
         zIndex: 20
       }}>
-        {/* Left: Back Button & Breadcrumbs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12, flexWrap: 'wrap' }}>
+        {/* Left: Back Button & Breadcrumbs / Puzzle Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, minWidth: 0, overflow: 'hidden' }}>
           {/* Back Button */}
           <button
             onClick={() => router.push('/courses')}
@@ -2288,284 +2288,218 @@ export default function CodePuzzle() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 30,
-              height: 30,
+              width: isMobile ? 28 : 30,
+              height: isMobile ? 28 : 30,
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               color: '#94A3B8',
               cursor: 'pointer',
+              flexShrink: 0,
               transition: 'all 0.15s ease'
             }}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={isMobile ? 15 : 16} />
           </button>
 
-          {isMobile && (
+          {isMobile ? (
+            /* Mobile Compact Header: Category + Puzzle Dropdown directly */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0, overflow: 'hidden' }}>
+              <CustomDropdown
+                value={category}
+                onChange={handleCategoryChange}
+                color={category === 'html' ? '#38BDF8' : '#A855F7'}
+                minWidth={78}
+                maxWidth={95}
+                options={[
+                  { value: 'programming', label: 'Python' },
+                  { value: 'html', label: 'Web' }
+                ]}
+              />
+
+              {category === 'html' ? (
+                <CustomDropdown
+                  value={webPuzzleIndex}
+                  onChange={idx => {
+                    setWebPuzzleIndex(idx);
+                    const wp = WEB_PUZZLES[idx];
+                    setWebFiles([
+                      { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
+                      { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
+                      { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
+                    ]);
+                    setActiveWebFile('index.html');
+                    setOpenWebTabs(['index.html', 'style.css', 'script.js']);
+                    setCurrentStepIndex(0);
+                    setStepPassed(false);
+                    setValidationError(null);
+                    setCompiledWebTime(Date.now());
+                  }}
+                  color="#38BDF8"
+                  minWidth={115}
+                  maxWidth={150}
+                  options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
+                />
+              ) : (
+                <CustomDropdown
+                  value={facultyPuzzleIndex}
+                  onChange={idx => {
+                    setPuzzleSource('faculty');
+                    setFacultyPuzzleIndex(idx);
+                    const p = FACULTY_PUZZLES[idx];
+                    setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
+                    setCurrentStepIndex(0);
+                    setStepPassed(false);
+                    setValidationError(null);
+                  }}
+                  color="#A855F7"
+                  minWidth={115}
+                  maxWidth={150}
+                  options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
+                />
+              )}
+            </div>
+          ) : (
+            /* Desktop Full Breadcrumb Path */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
+              <button
+                onClick={() => router.push('/courses')}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
+                onMouseEnter={e => e.currentTarget.style.color = '#38BDF8'}
+                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
+                title="Navigate to Courses"
+              >
+                Courses
+              </button>
+              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
+              <button
+                onClick={() => router.push('/vedika-ai')}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
+                onMouseEnter={e => e.currentTarget.style.color = '#A855F7'}
+                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
+                title="Navigate to Vedika AI"
+              >
+                Vedika AI
+              </button>
+              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
+              
+              {/* Category Selector (Python vs HTML / Web) */}
+              <CustomDropdown
+                value={category}
+                onChange={handleCategoryChange}
+                color={category === 'html' ? '#38BDF8' : '#A855F7'}
+                minWidth={125}
+                options={[
+                  { value: 'programming', label: 'Python 3.11' },
+                  { value: 'html', label: 'HTML / Web' }
+                ]}
+              />
+
+              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
+              
+              {/* Puzzle Selector Dropdown */}
+              {category === 'html' ? (
+                <CustomDropdown
+                  value={webPuzzleIndex}
+                  onChange={idx => {
+                    setWebPuzzleIndex(idx);
+                    const wp = WEB_PUZZLES[idx];
+                    setWebFiles([
+                      { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
+                      { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
+                      { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
+                    ]);
+                    setActiveWebFile('index.html');
+                    setOpenWebTabs(['index.html', 'style.css', 'script.js']);
+                    setCurrentStepIndex(0);
+                    setStepPassed(false);
+                    setValidationError(null);
+                    setCompiledWebTime(Date.now());
+                  }}
+                  color="#38BDF8"
+                  minWidth={180}
+                  maxWidth={360}
+                  options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
+                />
+              ) : (
+                <CustomDropdown
+                  value={facultyPuzzleIndex}
+                  onChange={idx => {
+                    setPuzzleSource('faculty');
+                    setFacultyPuzzleIndex(idx);
+                    const p = FACULTY_PUZZLES[idx];
+                    setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
+                    setCurrentStepIndex(0);
+                    setStepPassed(false);
+                    setValidationError(null);
+                  }}
+                  color="#A855F7"
+                  minWidth={180}
+                  maxWidth={360}
+                  options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Actions (Save, Reset, Ask AI, Run Code) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, flexShrink: 0 }}>
+          {/* Courses Quick Navigation Button (Desktop only) */}
+          {!isMobile && (
             <button
-              onClick={() => setIsExplorerOpen(!isExplorerOpen)}
-              title="Toggle File Catalog"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('selected_course_id');
+                  window.dispatchEvent(new CustomEvent('reset_courses_view'));
+                }
+                router.push('/courses');
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: 30,
-                height: 30,
+                gap: 6,
+                padding: '6px 12px',
                 borderRadius: 8,
-                background: isExplorerOpen ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
-                border: isExplorerOpen ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isExplorerOpen ? '#C084FC' : '#94A3B8',
-                cursor: 'pointer'
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#CBD5E1',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
+              title="Browse all courses"
             >
-              <FolderTree size={15} />
+              <BookOpen size={14} color="#38BDF8" />
+              <span>Courses</span>
             </button>
           )}
 
-          {/* Breadcrumb Path with Clickable Destinations */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
+          {/* Save Button (Desktop only) */}
+          {!isMobile && (
             <button
-              onClick={() => router.push('/courses')}
-              style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
-              onMouseEnter={e => e.currentTarget.style.color = '#38BDF8'}
-              onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
-              title="Navigate to Courses"
-            >
-              Courses
-            </button>
-            <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-            {!isMobile && (
-              <>
-                <button
-                  onClick={() => router.push('/vedika-ai')}
-                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#A855F7'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
-                  title="Navigate to Vedika AI"
-                >
-                  Vedika AI
-                </button>
-                <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-              </>
-            )}
-            
-            {/* Category Selector (Python vs HTML / Web) */}
-            <CustomDropdown
-              value={category}
-              onChange={handleCategoryChange}
-              color={category === 'html' ? '#38BDF8' : '#A855F7'}
-              minWidth={isMobile ? 110 : 125}
-              options={[
-                { value: 'programming', label: 'Python 3.11' },
-                { value: 'html', label: 'HTML / Web' }
-              ]}
-            />
-
-            <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-            
-            {/* Puzzle Selector Dropdown */}
-            {category === 'html' ? (
-              <CustomDropdown
-                value={webPuzzleIndex}
-                onChange={idx => {
-                  setWebPuzzleIndex(idx);
-                  const wp = WEB_PUZZLES[idx];
-                  setWebFiles([
-                    { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
-                    { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
-                    { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
-                  ]);
-                  setActiveWebFile('index.html');
-                  setOpenWebTabs(['index.html', 'style.css', 'script.js']);
-                  setCurrentStepIndex(0);
-                  setStepPassed(false);
-                  setValidationError(null);
-                  setCompiledWebTime(Date.now());
-                }}
-                color="#38BDF8"
-                minWidth={isMobile ? 140 : 180}
-                maxWidth={isMobile ? 220 : 360}
-                options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
-              />
-            ) : (
-              <CustomDropdown
-                value={facultyPuzzleIndex}
-                onChange={idx => {
-                  setPuzzleSource('faculty');
-                  setFacultyPuzzleIndex(idx);
-                  const p = FACULTY_PUZZLES[idx];
-                  setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
-                  setCurrentStepIndex(0);
-                  setStepPassed(false);
-                  setValidationError(null);
-                }}
-                color="#A855F7"
-                minWidth={isMobile ? 140 : 180}
-                maxWidth={isMobile ? 220 : 360}
-                options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Mobile View Selector (4 Dedicated Views: Editor, Console, Guide, Visualizer/Preview) */}
-        {isMobile && (
-          <div style={{
-            display: 'flex',
-            width: '100%',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 10,
-            padding: 3,
-            gap: 3,
-            order: 3
-          }}>
-            <button
-              onClick={() => setMobileActiveView('editor')}
+              onClick={handleSaveCode}
               style={{
-                flex: 1,
-                background: mobileActiveView === 'editor' ? 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' : 'transparent',
-                color: mobileActiveView === 'editor' ? '#fff' : '#94A3B8',
-                border: 'none',
-                borderRadius: 7,
-                padding: '7px 4px',
-                fontSize: 11.5,
-                fontWeight: 700,
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              <Code size={13} />
-              <span>Editor</span>
-            </button>
-            <button
-              onClick={() => setMobileActiveView('console')}
-              style={{
-                flex: 1,
-                background: mobileActiveView === 'console' ? 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)' : 'transparent',
-                color: mobileActiveView === 'console' ? '#fff' : '#94A3B8',
-                border: 'none',
-                borderRadius: 7,
-                padding: '7px 4px',
-                fontSize: 11.5,
-                fontWeight: 700,
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: saveToast ? '#34D399' : '#CBD5E1',
+                fontSize: 12,
+                fontWeight: 600,
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
+                transition: 'all 0.15s ease'
               }}
+              title="Save code to local storage"
             >
-              <TerminalIcon size={13} />
-              <span>Console</span>
+              {saveToast ? <Check size={14} color="#34D399" /> : <Save size={14} />}
+              <span>{saveToast ? 'Saved' : 'Save'}</span>
             </button>
-            <button
-              onClick={() => {
-                setMobileActiveView('guide');
-                setActiveRightTab('guide');
-              }}
-              style={{
-                flex: 1,
-                background: mobileActiveView === 'guide' ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' : 'transparent',
-                color: mobileActiveView === 'guide' ? '#fff' : '#94A3B8',
-                border: 'none',
-                borderRadius: 7,
-                padding: '7px 4px',
-                fontSize: 11.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              <BookOpen size={13} />
-              <span>Guide</span>
-            </button>
-            <button
-              onClick={() => {
-                const targetTab = category === 'html' ? 'preview' : 'visualizer';
-                setMobileActiveView(targetTab);
-                setActiveRightTab(targetTab);
-              }}
-              style={{
-                flex: 1,
-                background: (mobileActiveView === 'visualizer' || mobileActiveView === 'preview') ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' : 'transparent',
-                color: (mobileActiveView === 'visualizer' || mobileActiveView === 'preview') ? '#fff' : '#94A3B8',
-                border: 'none',
-                borderRadius: 7,
-                padding: '7px 4px',
-                fontSize: 11.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              {category === 'html' ? <Globe size={13} /> : <Zap size={13} />}
-              <span>{category === 'html' ? 'Preview' : 'Visualizer'}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Right: Actions (Save, Reset, Run Code) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, flexWrap: 'wrap' }}>
-          {/* Courses Quick Navigation Button */}
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                localStorage.removeItem('selected_course_id');
-                window.dispatchEvent(new CustomEvent('reset_courses_view'));
-              }
-              router.push('/courses');
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: isMobile ? '6px 8px' : '6px 12px',
-              borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#CBD5E1',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="Browse all courses"
-          >
-            <BookOpen size={14} color="#38BDF8" />
-            {!isMobile && <span>Courses</span>}
-          </button>
-          {/* Save Button */}
-          <button
-            onClick={handleSaveCode}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: isMobile ? '6px 8px' : '6px 12px',
-              borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: saveToast ? '#34D399' : '#CBD5E1',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="Save code to local storage"
-          >
-            {saveToast ? <Check size={14} color="#34D399" /> : <Save size={14} />}
-            {!isMobile && <span>{saveToast ? 'Saved' : 'Save'}</span>}
-          </button>
+          )}
 
           {/* Reset Button */}
           <button
@@ -2573,8 +2507,11 @@ export default function CodePuzzle() {
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              width: isMobile ? 28 : 'auto',
+              height: isMobile ? 28 : 'auto',
+              padding: isMobile ? 0 : '6px 12px',
               gap: 6,
-              padding: isMobile ? '6px 8px' : '6px 12px',
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2586,7 +2523,7 @@ export default function CodePuzzle() {
             }}
             title="Reset code to starter template"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={isMobile ? 13 : 14} />
             {!isMobile && <span>Reset</span>}
           </button>
 
@@ -2596,8 +2533,11 @@ export default function CodePuzzle() {
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              width: isMobile ? 28 : 'auto',
+              height: isMobile ? 28 : 'auto',
+              padding: isMobile ? 0 : '6px 13px',
               gap: 6,
-              padding: isMobile ? '6px 9px' : '6px 13px',
               borderRadius: 8,
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.22))',
               border: '1px solid rgba(245, 158, 11, 0.45)',
@@ -2611,7 +2551,7 @@ export default function CodePuzzle() {
             title="Ask Vedika AI Tutor to inspect your code, explain errors, and guide your fix"
           >
             <Sparkles size={13} color="#FBBF24" />
-            <span>{isMobile ? 'Ask AI' : 'Ask Vedika'}</span>
+            {!isMobile && <span>Ask Vedika</span>}
           </button>
 
           {/* Run Code Button */}
@@ -2621,13 +2561,13 @@ export default function CodePuzzle() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: isMobile ? '6px 11px' : '6px 16px',
+              gap: 5,
+              padding: isMobile ? '5px 10px' : '6px 16px',
               borderRadius: 8,
               background: (category === 'programming' && isRunning) ? '#6B21A8' : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
               border: 'none',
               color: '#fff',
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: 700,
               cursor: (category === 'programming' && (!isReady || isRunning)) ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(168, 85, 247, 0.35)',
@@ -2635,9 +2575,9 @@ export default function CodePuzzle() {
             }}
           >
             {category === 'programming' && isRunning ? (
-              <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
-              <Play size={13} fill="#fff" />
+              <Play size={11} fill="#fff" />
             )}
             <span>{category === 'html' ? (webCompileSuccess ? (isMobile ? 'Updated' : 'Live Updated!') : (isMobile ? 'Preview' : 'Run Web Preview')) : (isRunning ? '...' : (isMobile ? 'Run' : 'Run Code'))}</span>
           </button>
@@ -3091,6 +3031,90 @@ export default function CodePuzzle() {
                 style={{ height: '100%', fontSize: 13.5 }}
               />
             </div>
+
+            {/* Mobile In-Editor Step HUD Banner (Step count, Title/Description & Check/Next button) */}
+            {isMobile && category === 'programming' && activePuzzle?.steps && (
+              <div style={{
+                background: stepPassed ? 'rgba(34, 197, 160, 0.12)' : validationError ? 'rgba(245, 91, 107, 0.12)' : 'rgba(91, 140, 248, 0.08)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                padding: '6px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: stepPassed ? '#22C5A0' : validationError ? '#F55B6B' : '#5B8CF8',
+                    color: '#000',
+                    flexShrink: 0
+                  }}>
+                    Step {currentStepIndex + 1}/{activePuzzle.steps.length}
+                  </span>
+                  <span style={{
+                    fontSize: 11.5,
+                    color: stepPassed ? '#22C5A0' : validationError ? '#F55B6B' : '#E2E8F0',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {validationError ? `Line ${validationError.line}: ${validationError.message}` : (activePuzzle.steps[currentStepIndex]?.shortTitle || activePuzzle.steps[currentStepIndex]?.description || '')}
+                  </span>
+                </div>
+
+                {stepPassed ? (
+                  <button
+                    onClick={handleNextStep}
+                    style={{
+                      background: '#22C5A0',
+                      color: '#000',
+                      border: 'none',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      flexShrink: 0
+                    }}
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={12} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleManualCheck}
+                    disabled={isValidating || !activePuzzle}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#E2E8F0',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: (isValidating || !activePuzzle) ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      flexShrink: 0
+                    }}
+                  >
+                    {isValidating ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={11} color="#22C5A0" strokeWidth={3} />}
+                    <span>Check</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Editor Action Toolbar (Run Code, Visualize Code, Check Step) */}
             <div style={{
@@ -4187,6 +4211,95 @@ export default function CodePuzzle() {
           </div>
         </div>
       </div>
+
+      {/* ── 6. MOBILE DEDICATED BOTTOM DOCK (Code | Console | Guide | Visualizer) ── */}
+      {isMobile && (
+        <nav
+          aria-label="Mobile Navigation Dock"
+          style={{
+            height: 48,
+            minHeight: 48,
+            background: '#070912',
+            borderTop: '1px solid rgba(255, 255, 255, 0.09)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+            padding: '0 6px',
+            flexShrink: 0,
+            zIndex: 40,
+            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)'
+          }}
+        >
+          {[
+            { id: 'editor', label: 'Code', icon: Code, color: '#A855F7' },
+            { id: 'console', label: 'Terminal', icon: TerminalIcon, color: '#38BDF8', badge: rawOutputLog?.includes('[Error]') || rawOutputLog?.includes('Traceback') },
+            { id: 'guide', label: 'Guide', icon: BookOpen, color: '#5B8CF8', badge: stepPassed },
+            {
+              id: category === 'html' ? 'preview' : 'visualizer',
+              label: category === 'html' ? 'Preview' : 'Visualizer',
+              icon: category === 'html' ? Globe : Zap,
+              color: category === 'html' ? '#38BDF8' : '#F5A95B',
+              badge: isTracing || isRunning
+            }
+          ].map(tab => {
+            const isActive = mobileActiveView === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setMobileActiveView(tab.id);
+                  if (tab.id === 'guide') {
+                    setActiveRightTab('guide');
+                  } else if (tab.id === 'visualizer') {
+                    setActiveRightTab('visualizer');
+                  } else if (tab.id === 'preview') {
+                    setActiveRightTab('preview');
+                  } else if (tab.id === 'console') {
+                    setIsTerminalCollapsed(false);
+                    setTimeout(() => fitAddonRef.current?.fit(), 120);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  height: 38,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                  background: isActive ? `${tab.color}18` : 'transparent',
+                  border: isActive ? `1px solid ${tab.color}44` : '1px solid transparent',
+                  borderRadius: 8,
+                  color: isActive ? tab.color : '#64748B',
+                  fontSize: 10.5,
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Icon size={15} fill={(tab.id === 'visualizer' && isActive) ? tab.color : 'none'} />
+                  {tab.badge && (
+                    <span style={{
+                      position: 'absolute',
+                      top: -3,
+                      right: -5,
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: tab.id === 'guide' ? '#22C5A0' : tab.id === 'console' ? '#EF4444' : '#F5A95B',
+                      boxShadow: `0 0 6px ${tab.id === 'guide' ? '#22C5A0' : tab.id === 'console' ? '#EF4444' : '#F5A95B'}`
+                    }} />
+                  )}
+                </div>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }

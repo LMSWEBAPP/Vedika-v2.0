@@ -400,6 +400,25 @@
 }
 
 /* =========================================================================
+   RESOURCES WRAPPER (Desktop & Laptop: Natural scroll, never cut off)
+   ========================================================================= */
+.resources-page-wrapper {
+  width: 100%;
+  min-height: calc(100vh - 54px);
+  height: auto;
+  background: var(--bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.resources-page-wrapper.resources-hub-mode {
+  min-height: calc(100vh - 54px);
+  height: auto;
+  overflow-y: auto;
+}
+
+/* =========================================================================
    RESOURCES HUB RESPONSIVE MOBILE NO-SCROLL FIT
    Ensure all 3 cards and header fit within mobile screen without scrolling
    ========================================================================= */
@@ -541,4 +560,65 @@
     height: 13px !important;
   }
 }
+
+/* Height-adaptive compact tier for short mobile screens (<= 700px height, e.g. iPhone SE 667px, Galaxy A 640px) */
+@media (max-width: 768px) and (max-height: 700px) {
+  .resources-hub-container {
+    padding: 4px 10px 6px 10px !important;
+  }
+
+  .resources-hub-header {
+    margin-bottom: 2px !important;
+  }
+
+  .resources-hub-title {
+    font-size: 17px !important;
+  }
+
+  .resources-hub-subtitle {
+    font-size: 11px !important;
+  }
+
+  .resources-hub-grid {
+    gap: 5px !important;
+  }
+
+  .resources-hub-card {
+    padding: 6px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .resources-hub-card-content {
+    gap: 3px !important;
+  }
+
+  .resources-hub-icon-wrap {
+    width: 34px !important;
+    height: 34px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .resources-hub-icon-wrap svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .resources-hub-card-title {
+    font-size: 14.5px !important;
+  }
+
+  .resources-hub-card-desc {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+
+  .resources-hub-btn {
+    padding: 4px 12px !important;
+    font-size: 10.5px !important;
+    margin-top: 2px !important;
+  }
+}
+
 

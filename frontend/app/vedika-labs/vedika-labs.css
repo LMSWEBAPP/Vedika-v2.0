@@ -141,6 +141,43 @@
   pointer-events: none;
 }
 
+.bot-stage-glow-pedestal {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 210px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
+  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
+  box-shadow: 0 0 22px rgba(var(--active-color-rgb), 0.45);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bot-pedestal-ring-outer {
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--active-color-rgb), 0.35);
+  pointer-events: none;
+  animation: pulsePedestalRing 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulsePedestalRing {
+  0% { transform: scale(0.97); opacity: 0.6; }
+  100% { transform: scale(1.03); opacity: 0.9; }
+}
+
+.bot-pedestal-ring-inner {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
 .vedika-labs-bot-glow-aura {
   position: absolute;
   top: 50%;
@@ -153,6 +190,15 @@
   filter: blur(18px);
   pointer-events: none;
   z-index: 1;
+}
+
+/* Visibility toggles between desktop and mobile */
+.desktop-pedestal {
+  display: block;
+}
+
+.mobile-aura {
+  display: none;
 }
 
 .bot-canvas-wrap {
@@ -1108,9 +1154,126 @@
     line-height: 1.1;
   }
 
+  .desktop-pedestal {
+    display: none !important;
+  }
+
+  .mobile-aura {
+    display: block !important;
+  }
+}
+
+/* Short / Compact Mobile Screens (<= 700px height, e.g. iPhone SE 667px, Galaxy A10 640px) */
+@media (max-width: 768px) and (max-height: 700px) {
+  .vedika-labs-main-grid {
+    padding: 2px 8px 0 !important;
+    gap: 2px !important;
+  }
+
+  .vedika-labs-explore-badge {
+    font-size: 8.5px !important;
+    padding: 2px 7px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .vedika-labs-main-title {
+    font-size: 1.25rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .vedika-labs-main-subtitle {
+    font-size: 0.65rem !important;
+    margin: 0 !important;
+    line-height: 1.15 !important;
+    max-width: 240px !important;
+  }
+
+  .vedika-labs-bot-stage {
+    height: 145px !important;
+    max-width: 230px !important;
+  }
+
+  .bot-canvas-wrap {
+    width: 165px !important;
+    height: 145px !important;
+  }
+
+  .vedika-labs-bot-glow-aura {
+    width: 155px !important;
+    height: 130px !important;
+  }
+
+  .vedika-labs-carousel-track {
+    height: 195px !important;
+  }
+
+  .carousel-card-slide {
+    width: 180px !important;
+    height: 190px !important;
+    margin-left: -90px !important;
+    margin-top: -95px !important;
+    border-radius: 14px !important;
+  }
+
+  .carousel-card-slide.card-left-peek {
+    transform: translateX(-120px) translateY(2px) scale(0.85) rotateY(12deg) translateZ(-35px) !important;
+  }
+
+  .carousel-card-slide.card-right-peek {
+    transform: translateX(120px) translateY(2px) scale(0.85) rotateY(-12deg) translateZ(-35px) !important;
+  }
+
+  .card-glass-panel {
+    padding: 8px 8px 6px !important;
+    border-radius: 12px !important;
+  }
+
+  .card-lab-headline {
+    font-size: 0.92rem !important;
+  }
+
+  .card-lab-subtitle {
+    font-size: 0.62rem !important;
+  }
+
+  .carousel-dots-row {
+    margin-top: 3px !important;
+    margin-bottom: 1px !important;
+    gap: 4px !important;
+  }
+
+  .card-launch-fab {
+    width: 28px !important;
+    height: 28px !important;
+    bottom: 6px !important;
+    right: 6px !important;
+  }
+
+  .vedika-labs-bottom-banner {
+    margin: 0 auto 2px !important;
+    padding: 0 4px !important;
+  }
+
+  .metrics-banner-inner {
+    padding: 3px 4px !important;
+    border-radius: 12px !important;
+  }
+
+  .metric-icon-wrap {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .metric-icon-wrap svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .metric-val {
+    font-size: 0.72rem !important;
+  }
+
   .metric-lbl {
-    font-size: 0.54rem;
-    line-height: 1.1;
-    margin-top: 0;
+    font-size: 0.48rem !important;
   }
 }

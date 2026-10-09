@@ -114,7 +114,6 @@ export default function LayoutWrapper({ children }) {
     pathname?.startsWith('/viva-interview') ||
     pathname?.startsWith('/quizzes') ||
     pathname?.startsWith('/assignments') ||
-    pathname?.startsWith('/courses') ||
     pathname === '/vedika-labs'
   );
 

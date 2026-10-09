@@ -530,9 +530,13 @@ export default function VedikaLabsHub() {
           </div>
         </div>
 
-        {/* 2. Particle Bot Section (ON TOP OF THE CARDS, with soft ambient shimmer aura) */}
+        {/* 2. Particle Bot Section (Holographic 3D Pedestal on Desktop, Soft Ambient Aura on Mobile) */}
         <div className="vedika-labs-bot-stage">
-          <div className="vedika-labs-bot-glow-aura" />
+          <div className="bot-stage-glow-pedestal desktop-pedestal" style={{ borderColor: `${activeLab.color}66` }}>
+            <div className="bot-pedestal-ring-outer" style={{ borderColor: `${activeLab.color}88`, boxShadow: `0 0 20px ${activeLab.color}55` }} />
+            <div className="bot-pedestal-ring-inner" />
+          </div>
+          <div className="vedika-labs-bot-glow-aura mobile-aura" />
           <div className="bot-canvas-wrap">
             <VedikaParticleBot
               src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
