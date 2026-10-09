@@ -1,27 +1,27 @@
 /* =========================================================================
    VEDIKA LABS - CINEMATIC SCI-FI LAB REDESIGN STYLESHEET
    Accurately matches reference mockup with elevated pedestal,
-   cards arranged as a carousel BEHIND the bot, neon glows, and clear POV.
-   NO VERTICAL SCROLL: Fits within 100vh - 64px viewport perfectly.
+   cards arranged as a curved 3D wing carousel BEHIND the bot, neon glows, and clear POV.
+   STRICT NO VERTICAL SCROLL: Fits within 100vh - 54px viewport perfectly on laptop & desktop.
    ========================================================================= */
 
 .vedika-labs-cinema-view {
   position: relative;
   width: 100%;
-  min-height: calc(100vh - 54px);
-  height: auto;
+  height: calc(100vh - 54px);
+  max-height: calc(100vh - 54px);
   background-color: #030712;
   color: #F8FAFC;
   font-family: var(--font-outfit), 'Inter', -apple-system, sans-serif;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden; /* STRICT: No vertical scroll */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  contain: layout size;
 }
 
-/* Sharp high-tech sci-fi chamber background (clean without conflicting pre-printed cards/bot) */
+/* Sharp high-tech sci-fi chamber background */
 .vedika-labs-scene-backdrop {
   position: absolute;
   inset: 0;
@@ -70,14 +70,16 @@
   100% { opacity: 1; }
 }
 
-/* Main Layout: Centered Showcase Stage */
+/* =========================================================================
+   DESKTOP & LAPTOP SHOWCASE STAGE
+   ========================================================================= */
 .vedika-labs-main-grid {
   position: relative;
   z-index: 5;
   width: 100%;
-  max-width: 580px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 10px 8px;
+  padding: 8px 20px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -87,268 +89,155 @@
   box-sizing: border-box;
 }
 
-/* 1. Header Section (matching image: EXPLORE / Vedika Labs / Subtitle) */
-.vedika-labs-header-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-top: 4px;
-  margin-bottom: 6px;
-  z-index: 20;
-}
-
-.vedika-labs-explore-badge {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #818CF8;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-
-.vedika-labs-main-title {
-  font-size: 1.75rem;
-  font-weight: 850;
-  color: #FFFFFF;
-  margin: 0;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.vedika-labs-main-subtitle {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #94A3B8;
-  margin: 3px 0 0;
-  max-width: 280px;
-  line-height: 1.35;
-  text-align: center;
-}
-
-/* 2. Particle Bot Stage (ON TOP OF CARDS) */
-.vedika-labs-bot-stage {
+/* Stage Viewport: Curved Wing Carousel Behind Foreground Bot */
+.vedika-labs-stage-viewport {
   position: relative;
+  width: 100%;
+  max-width: 1240px;
+  height: 460px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 340px;
-  height: 220px;
-  margin: 4px auto 0;
-  z-index: 15;
-  pointer-events: none;
+  perspective: 1600px;
+  overflow: visible;
 }
 
-.bot-stage-glow-pedestal {
+/* Ceiling Sci-Fi Energy Beam */
+.vedika-labs-ceiling-emitter {
   position: absolute;
-  bottom: 8px;
+  top: -24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 210px;
-  height: 36px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.35) 0%, rgba(3, 7, 18, 0.95) 75%, transparent 100%);
-  border: 1.5px solid rgba(var(--active-color-rgb), 0.5);
-  box-shadow: 0 0 22px rgba(var(--active-color-rgb), 0.45);
+  width: 300px;
+  height: 260px;
   pointer-events: none;
   z-index: 2;
-}
-
-.bot-pedestal-ring-outer {
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 1px solid rgba(var(--active-color-rgb), 0.35);
-  pointer-events: none;
-  animation: pulsePedestalRing 3s ease-in-out infinite alternate;
-}
-
-@keyframes pulsePedestalRing {
-  0% { transform: scale(0.97); opacity: 0.6; }
-  100% { transform: scale(1.03); opacity: 0.9; }
-}
-
-.bot-pedestal-ring-inner {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  pointer-events: none;
-}
-
-.vedika-labs-bot-glow-aura {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px;
-  height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(var(--active-color-rgb), 0.28) 0%, rgba(var(--active-color-rgb), 0.08) 50%, transparent 75%);
-  filter: blur(18px);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Visibility toggles between desktop and mobile */
-.desktop-pedestal {
-  display: block;
-}
-
-.mobile-aura {
-  display: none;
-}
-
-.bot-canvas-wrap {
-  position: relative;
-  width: 215px;
-  height: 215px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  filter: drop-shadow(0 0 10px rgba(var(--active-color-rgb), 0.22));
-}
-
-/* 3. Cards Carousel Container & Track (BELOW THE BOT) */
-.vedika-labs-carousel-container {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-  margin: 4px auto 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 20;
 }
 
-.vedika-labs-carousel-track {
-  position: relative;
-  width: 100%;
+.emitter-ring {
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.emitter-ring-outer {
+  width: 190px;
+  height: 38px;
+}
+
+.emitter-ring-inner {
+  width: 145px;
+  height: 30px;
+  margin-top: -30px;
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), 0 0 25px rgba(56, 189, 248, 0.5);
+}
+
+.emitter-beam-cone {
+  width: 220px;
   height: 280px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.16) 0%, transparent 70%);
+  filter: blur(14px);
+}
+
+/* Curved Wing Stage Track */
+.vedika-labs-carousel-stage {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1160px;
+  height: 380px;
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 1200px;
+  z-index: 10;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.cards-bounded-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1600px;
   transform-style: preserve-3d;
-  touch-action: pan-y;
+  pointer-events: none;
   user-select: none;
 }
 
-.carousel-card-slide {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 224px;
-  height: 270px;
-  margin-left: -112px;
-  margin-top: -135px;
-  border-radius: 22px;
-  cursor: pointer;
+.cards-stage-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1600px;
   transform-style: preserve-3d;
-  will-change: transform, opacity;
-  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease, border-color 0.32s ease, box-shadow 0.32s ease;
-  flex-shrink: 0;
-  outline: none;
+  overflow: visible;
+  pointer-events: none;
 }
 
-/* Center Active Card */
-.carousel-card-slide.card-center-active {
-  transform: translateX(0) translateY(0) scale(1) translateZ(0);
-  opacity: 1;
-  z-index: 25;
-  pointer-events: auto;
-}
-
-.carousel-card-slide.card-center-active .card-glass-panel {
-  border: 2px solid var(--card-theme);
-  box-shadow: 
-    0 0 28px rgba(var(--card-theme-rgb), 0.55),
-    0 16px 42px rgba(0, 0, 0, 0.75),
-    inset 0 0 20px rgba(var(--card-theme-rgb), 0.25);
-}
-
-/* Left Peeking Card */
-.carousel-card-slide.card-left-peek {
-  transform: translateX(-155px) translateY(3px) scale(0.85) rotateY(12deg) translateZ(-40px);
-  opacity: 0.55;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.carousel-card-slide.card-left-peek:hover {
-  opacity: 0.8;
-}
-
-/* Right Peeking Card */
-.carousel-card-slide.card-right-peek {
-  transform: translateX(155px) translateY(3px) scale(0.85) rotateY(-12deg) translateZ(-40px);
-  opacity: 0.55;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.carousel-card-slide.card-right-peek:hover {
-  opacity: 0.8;
-}
-
-/* Card Launch Floating Action Button (Arrow button in image) */
-.card-launch-fab {
+.cards-curved-guide-track {
   position: absolute;
   bottom: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1080px, 92vw);
+  max-width: 95vw;
+  height: 58px;
   border-radius: 50%;
-  border: 1.5px solid var(--card-theme);
-  background: radial-gradient(circle, rgba(var(--card-theme-rgb), 0.4) 0%, rgba(10, 20, 40, 0.9) 100%);
-  box-shadow: 0 0 16px rgba(var(--card-theme-rgb), 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-bottom: 2px solid rgba(var(--active-color-rgb), 0.5);
+  box-shadow: 0 10px 24px rgba(var(--active-color-rgb), 0.4);
+  pointer-events: none;
+  filter: blur(1px);
+  mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+  transition: all 0.5s ease;
+}
+
+/* Desktop Hologram Card */
+.vedika-hologram-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -87.5px;
+  margin-top: -157.5px;
+  width: 175px;
+  height: 315px;
+  border-radius: 20px;
   cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  user-select: none;
+  pointer-events: auto;
   z-index: 10;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  contain: layout style;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
 }
 
-.card-launch-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 22px rgba(var(--card-theme-rgb), 0.85);
+.vedika-hologram-card.selected-glow {
+  opacity: 1 !important;
 }
 
-/* Pagination Dots Row */
-.carousel-dots-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
-  margin-bottom: 12px;
-  z-index: 20;
+.vedika-hologram-card.ambient-card:hover {
+  opacity: 0.95 !important;
 }
 
-.carousel-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.25);
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.carousel-dot.active-dot {
-  width: 22px;
-  border-radius: 9999px;
-  background: var(--active-color);
-  box-shadow: 0 0 12px var(--active-color);
-}
-
-/* Translucent Soft Glass Panel with Cubic-Bezier Edge Curvature & Specular Highlight */
+/* Card Glass Panel */
 .card-glass-panel {
   position: relative;
   width: 100%;
@@ -382,7 +271,6 @@
     inset 0 0 22px rgba(var(--card-theme-rgb), 0.3);
 }
 
-/* Fast GPU-composited Glow Aura for Active Card */
 .card-active-glow-aura {
   position: absolute;
   inset: 0;
@@ -394,7 +282,6 @@
   transition: opacity 0.35s ease;
 }
 
-/* Card Header */
 .card-header-titles {
   display: flex;
   flex-direction: column;
@@ -421,77 +308,178 @@
 
 .card-lab-headline {
   margin: 0;
-  font-size: 1.12rem;
-  font-weight: 850;
+  font-size: 0.96rem;
+  font-weight: 800;
   color: #FFFFFF;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.card-lab-subtitle {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #94A3B8;
-  margin: 3px 0 0;
-  max-width: 175px;
-  line-height: 1.35;
-  text-align: left;
+.card-headline-accent-bar {
+  width: 26px;
+  height: 2px;
+  border-radius: 2px;
+  margin-top: 3px;
+  margin-left: 10px;
+  box-shadow: 0 0 8px var(--card-theme);
 }
 
-/* Detailed Classic Thematic Artwork Container */
 .card-thematic-art {
   position: relative;
   width: 100%;
-  flex: 1;
-  min-height: 140px;
-  max-height: 180px;
+  height: 236px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
 }
 
-.art-math-detailed,
-.art-physics-detailed,
-.art-chem-detailed,
-.art-bio-detailed {
+/* Foreground Bot Character (Desktop) */
+.vedika-labs-pedestal-stage {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 350px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 25;
+  pointer-events: none !important;
+}
+
+.vedika-labs-bot-foreground {
   position: relative;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2px;
+  pointer-events: none !important;
+}
+
+.bot-pedestal-shadow {
+  position: absolute;
+  bottom: 4px;
+  width: 230px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0) 75%);
+  filter: blur(8px);
+  z-index: -1;
+  pointer-events: none !important;
+}
+
+/* Centered CTA Explore Button */
+.vedika-labs-center-cta-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  z-index: 10;
+}
+
+.vedika-labs-explore-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 10px 28px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--active-color, #A855F7) 0%, #3B82F6 100%);
+  color: #FFFFFF;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vedika-labs-explore-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px var(--active-glow);
+}
+
+.vedika-labs-explore-cta-btn .cta-arrow {
+  transition: transform 0.2s ease;
+}
+
+.vedika-labs-explore-cta-btn:hover .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* Desktop Bottom Floating Metrics Banner */
+.vedika-labs-bottom-banner {
+  position: relative;
+  z-index: 10;
   width: 100%;
-  height: 100%;
+  max-width: 1280px;
+  margin: 0 auto 10px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  contain: content;
+}
+
+.metrics-banner-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 10px 22px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.metric-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
 }
 
-.art-svg-scene {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  shape-rendering: geometricPrecision;
+.metric-text-wrap {
+  display: flex;
+  flex-direction: column;
 }
 
-/* Hardware-accelerated smooth compositing */
-.card-thematic-art svg,
-.card-thematic-art canvas {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+.metric-val {
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.metric-lbl {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94A3B8;
 }
 
 /* =========================================================================
-   OPTION 9 HOLOGRAPHIC 3D LIVE ANIMATIONS & CYBERNETIC DEPTH
+   THEMATIC ART ANIMATIONS (SHARED)
    ========================================================================= */
-
-/* Pedestal Emitter Sparks Rising */
-.spark-drift-1 {
-  animation: sparkRise1 2.8s ease-out infinite;
-}
-.spark-drift-2 {
-  animation: sparkRise2 3.4s ease-out infinite 0.7s;
-}
-.spark-drift-3 {
-  animation: sparkRise3 2.5s ease-out infinite 1.3s;
-}
+.spark-drift-1 { animation: sparkRise1 2.8s ease-out infinite; }
+.spark-drift-2 { animation: sparkRise2 3.4s ease-out infinite 0.7s; }
+.spark-drift-3 { animation: sparkRise3 2.5s ease-out infinite 1.3s; }
 
 @keyframes sparkRise1 {
   0% { transform: translateY(0); opacity: 0; }
@@ -499,14 +487,12 @@
   80% { opacity: 0.6; }
   100% { transform: translateY(-38px); opacity: 0; }
 }
-
 @keyframes sparkRise2 {
   0% { transform: translateY(0); opacity: 0; }
   25% { opacity: 0.95; }
   75% { opacity: 0.5; }
   100% { transform: translateY(-46px); opacity: 0; }
 }
-
 @keyframes sparkRise3 {
   0% { transform: translateY(0); opacity: 0; }
   35% { opacity: 0.85; }
@@ -514,766 +500,481 @@
   100% { transform: translateY(-32px); opacity: 0; }
 }
 
-/* 1. MATH LAB: 3D Holographic Crystalline Octahedron & Mathematical Elements */
+/* Math Lab animations */
 .live-holo-crystal {
   transform-origin: 87.5px 98px;
   animation: holoCrystalFloat 5.2s ease-in-out infinite alternate;
 }
-
 @keyframes holoCrystalFloat {
-  0% {
-    transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75));
-  }
-  50% {
-    transform: translateY(-8px) scale(1.02);
-    filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.95));
-  }
-  100% {
-    transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75));
-  }
+  0% { transform: translateY(0px) scale(1); filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75)); }
+  50% { transform: translateY(-8px) scale(1.02); filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.95)); }
+  100% { transform: translateY(0px) scale(1); filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75)); }
 }
-
-.live-math-pi-3d {
-  animation: mathPiLevitate 4.2s ease-in-out infinite alternate;
-}
-
+.live-math-pi-3d { animation: mathPiLevitate 4.2s ease-in-out infinite alternate; }
 @keyframes mathPiLevitate {
   0% { transform: translate(16px, 22px) rotate(0deg); }
   50% { transform: translate(16px, 18px) rotate(3deg); }
   100% { transform: translate(16px, 22px) rotate(0deg); }
 }
-
-.live-math-cube-3d {
-  animation: mathCubeFloat 4.6s ease-in-out infinite alternate;
-}
-
+.live-math-cube-3d { animation: mathCubeFloat 4.6s ease-in-out infinite alternate; }
 @keyframes mathCubeFloat {
   0% { transform: translate(14px, 82px) rotate(0deg); }
   50% { transform: translate(14px, 78px) rotate(-4deg); }
   100% { transform: translate(14px, 82px) rotate(0deg); }
 }
-
-.live-math-tetra-3d {
-  animation: mathTetraFloat 5s ease-in-out infinite alternate;
-}
-
+.live-math-tetra-3d { animation: mathTetraFloat 5s ease-in-out infinite alternate; }
 @keyframes mathTetraFloat {
   0% { transform: translate(18px, 142px) scale(1); }
   50% { transform: translate(19px, 138px) scale(1.04); }
   100% { transform: translate(18px, 142px) scale(1); }
 }
-
-.live-math-integral-3d {
-  animation: mathIntegralFloat 4.8s ease-in-out infinite alternate;
-}
-
+.live-math-integral-3d { animation: mathIntegralFloat 4.8s ease-in-out infinite alternate; }
 @keyframes mathIntegralFloat {
   0% { transform: translate(140px, 22px) rotate(0deg); }
   50% { transform: translate(140px, 18px) rotate(-3deg); }
   100% { transform: translate(140px, 22px) rotate(0deg); }
 }
-
-.live-math-rhombus-3d {
-  animation: mathRhombusFloat 4.4s ease-in-out infinite alternate;
-}
-
+.live-math-rhombus-3d { animation: mathRhombusFloat 4.4s ease-in-out infinite alternate; }
 @keyframes mathRhombusFloat {
   0% { transform: translate(142px, 84px) scale(1); }
   50% { transform: translate(141px, 80px) scale(1.05); }
   100% { transform: translate(142px, 84px) scale(1); }
 }
-
-.live-math-infinity-3d {
-  animation: mathInfinityFloat 4.5s ease-in-out infinite alternate;
-}
-
+.live-math-infinity-3d { animation: mathInfinityFloat 4.5s ease-in-out infinite alternate; }
 @keyframes mathInfinityFloat {
   0% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
   50% { transform: translate(137px, 138px) scale(1.06) rotate(4deg); }
   100% { transform: translate(136px, 142px) scale(1) rotate(0deg); }
 }
-
 .live-math-spiral {
   transform-origin: 87.5px 98px;
   animation: mathSpiralRotate 28s linear infinite;
 }
-
 @keyframes mathSpiralRotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* 2. PHYSICS LAB: Planetary Core, Quantum Gyro & Satellite Orbits */
-.live-phys-core {
-  animation: physCoreGlowPulse 4.5s ease-in-out infinite alternate;
-}
-
+/* Physics Lab animations */
+.live-phys-core { animation: physCoreGlowPulse 4.5s ease-in-out infinite alternate; }
 .live-phys-planet-group {
   transform-origin: 0px 0px;
   animation: planetCelestialFloat 6s ease-in-out infinite alternate;
 }
-
 @keyframes planetCelestialFloat {
-  0% {
-    transform: translate(87.5px, 96px) rotate(-16deg);
-  }
-  50% {
-    transform: translate(87.5px, 91px) rotate(-13deg);
-  }
-  100% {
-    transform: translate(87.5px, 96px) rotate(-16deg);
-  }
+  0% { transform: translate(87.5px, 96px) rotate(-16deg); }
+  50% { transform: translate(87.5px, 91px) rotate(-13deg); }
+  100% { transform: translate(87.5px, 96px) rotate(-16deg); }
 }
-
-.live-phys-planet-bands {
-  animation: planetSurfaceDrift 3.2s linear infinite;
-}
-
+.live-phys-planet-bands { animation: planetSurfaceDrift 3.2s linear infinite; }
 @keyframes planetSurfaceDrift {
-  0% {
-    transform: translateX(-70px);
-  }
-  100% {
-    transform: translateX(0px);
-  }
+  0% { transform: translateX(-70px); }
+  100% { transform: translateX(0px); }
 }
-
 @keyframes physCoreGlowPulse {
-  0% {
-    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
-  }
-  50% {
-    filter: drop-shadow(0 0 18px rgba(0, 212, 255, 0.85));
-  }
-  100% {
-    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65));
-  }
+  0% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65)); }
+  50% { filter: drop-shadow(0 0 18px rgba(0, 212, 255, 0.85)); }
+  100% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.65)); }
 }
-
-.live-phys-gyro-3d {
-  animation: physGyroFloat 4.2s ease-in-out infinite alternate;
-}
-
+.live-phys-gyro-3d { animation: physGyroFloat 4.2s ease-in-out infinite alternate; }
 @keyframes physGyroFloat {
   0% { transform: translate(24px, 46px) rotate(0deg); }
   50% { transform: translate(25px, 41px) rotate(8deg); }
   100% { transform: translate(24px, 46px) rotate(0deg); }
 }
-
-.live-phys-dipole-3d {
-  animation: physDipoleFloat 4.8s ease-in-out infinite alternate;
-}
-
+.live-phys-dipole-3d { animation: physDipoleFloat 4.8s ease-in-out infinite alternate; }
 @keyframes physDipoleFloat {
   0% { transform: translate(144px, 48px) scale(1); }
   50% { transform: translate(143px, 43px) scale(1.05); }
   100% { transform: translate(144px, 48px) scale(1); }
 }
-
-.live-phys-probe-3d {
-  animation: physProbeFloat 5s ease-in-out infinite alternate;
-}
-
+.live-phys-probe-3d { animation: physProbeFloat 5s ease-in-out infinite alternate; }
 @keyframes physProbeFloat {
   0% { transform: translate(22px, 142px) scale(1); }
   50% { transform: translate(23px, 137px) scale(1.06); }
   100% { transform: translate(22px, 142px) scale(1); }
 }
-
-.live-orbit-group {
-  animation: orbitGroupWobble 12s ease-in-out infinite alternate;
-}
-
+.live-orbit-group { animation: orbitGroupWobble 12s ease-in-out infinite alternate; }
 @keyframes orbitGroupWobble {
   0% { transform: translate(87.5px, 96px) rotate(0deg); }
   50% { transform: translate(87.5px, 92px) rotate(3deg); }
   100% { transform: translate(87.5px, 96px) rotate(0deg); }
 }
-
-.live-satellite-front-1 {
-  animation: satRevolve1 3s ease-in-out infinite alternate;
-}
-.live-satellite-front-2 {
-  animation: satRevolve2 3.6s ease-in-out infinite alternate;
-}
-.live-satellite-front-3 {
-  animation: satRevolve3 2.6s ease-in-out infinite alternate;
-}
-.live-satellite-rear {
-  animation: satRevolveRear 3.8s ease-in-out infinite alternate;
-}
-
+.live-satellite-front-1 { animation: satRevolve1 3s ease-in-out infinite alternate; }
+.live-satellite-front-2 { animation: satRevolve2 3.6s ease-in-out infinite alternate; }
+.live-satellite-front-3 { animation: satRevolve3 2.6s ease-in-out infinite alternate; }
+.live-satellite-rear { animation: satRevolveRear 3.8s ease-in-out infinite alternate; }
 @keyframes satRevolve1 {
   0% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(-8px, 6px) scale(1.08); }
   100% { transform: translate(0, 0) scale(1); }
 }
-
 @keyframes satRevolve2 {
   0% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(6px, -8px) scale(0.92); }
   100% { transform: translate(0, 0) scale(1); }
 }
-
 @keyframes satRevolve3 {
   0% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(-4px, -6px) scale(1.05); }
   100% { transform: translate(0, 0) scale(1); }
 }
-
 @keyframes satRevolveRear {
   0% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(8px, 4px) scale(0.9); }
   100% { transform: translate(0, 0) scale(1); }
 }
 
-/* 3. CHEMISTRY LAB: Volumetric Flask, Benzene Lattice & Evaporation */
-.live-holo-flask {
-  animation: holoFlaskFloat 4.8s ease-in-out infinite alternate;
-}
-
+/* Chemistry Lab animations */
+.live-holo-flask { animation: holoFlaskFloat 4.8s ease-in-out infinite alternate; }
 @keyframes holoFlaskFloat {
-  0% {
-    transform: translateY(0px);
-    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
-  }
-  50% {
-    transform: translateY(-6px);
-    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.95));
-  }
-  100% {
-    transform: translateY(0px);
-    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
-  }
+  0% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7)); }
+  50% { transform: translateY(-6px); filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.95)); }
+  100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7)); }
 }
-
-.live-chem-benzene-3d {
-  animation: chemBenzeneFloat 4.4s ease-in-out infinite alternate;
-}
-
+.live-chem-benzene-3d { animation: chemBenzeneFloat 4.4s ease-in-out infinite alternate; }
 @keyframes chemBenzeneFloat {
   0% { transform: translate(20px, 64px) rotate(0deg); }
   50% { transform: translate(20px, 59px) rotate(4deg); }
   100% { transform: translate(20px, 64px) rotate(0deg); }
 }
-
-.live-chem-bulb-3d {
-  animation: chemBulbFloat 4.8s ease-in-out infinite alternate;
-}
-
+.live-chem-bulb-3d { animation: chemBulbFloat 4.8s ease-in-out infinite alternate; }
 @keyframes chemBulbFloat {
   0% { transform: translate(20px, 142px) scale(1); }
   50% { transform: translate(21px, 137px) scale(1.06); }
   100% { transform: translate(20px, 142px) scale(1); }
 }
-
-.live-chem-molecules {
-  animation: chemMoleculeFloat 5s ease-in-out infinite alternate;
-}
-
+.live-chem-molecules { animation: chemMoleculeFloat 5s ease-in-out infinite alternate; }
 @keyframes chemMoleculeFloat {
   0% { transform: translate(144px, 68px) rotate(0deg); }
   50% { transform: translate(142px, 62px) rotate(6deg); }
   100% { transform: translate(144px, 68px) rotate(0deg); }
 }
 
-/* 4. BIOLOGY LAB: Botanical Leaves, Living Cell Vesicle & Chloroplast */
-.live-bio-cell-3d {
-  animation: bioCellVesiclePulse 4s ease-in-out infinite alternate;
-}
-
+/* Biology Lab animations */
+.live-bio-cell-3d { animation: bioCellVesiclePulse 4s ease-in-out infinite alternate; }
 @keyframes bioCellVesiclePulse {
   0% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
   50% { transform: translate(136px, 146px) scale(1.06); filter: drop-shadow(0 0 16px #F59E0B); }
   100% { transform: translate(136px, 150px) scale(1); filter: drop-shadow(0 0 8px #F59E0B); }
 }
-
-.live-bio-chloroplast-3d {
-  animation: bioChloroplastFloat 4.6s ease-in-out infinite alternate;
-}
-
+.live-bio-chloroplast-3d { animation: bioChloroplastFloat 4.6s ease-in-out infinite alternate; }
 @keyframes bioChloroplastFloat {
   0% { transform: translate(28px, 44px) rotate(0deg); }
   50% { transform: translate(27px, 39px) rotate(6deg); }
   100% { transform: translate(28px, 44px) rotate(0deg); }
 }
-
-.live-bio-leaf-left {
-  animation: bioLeafSwayLeft 4.5s ease-in-out infinite alternate;
-}
-.live-bio-leaf-right {
-  animation: bioLeafSwayRight 5s ease-in-out infinite alternate;
-}
-
+.live-bio-leaf-left { animation: bioLeafSwayLeft 4.5s ease-in-out infinite alternate; }
+.live-bio-leaf-right { animation: bioLeafSwayRight 5s ease-in-out infinite alternate; }
 @keyframes bioLeafSwayLeft {
   0% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
   50% { transform: translate(18px, 48px) rotate(-18deg) scale(1.04); }
   100% { transform: translate(18px, 52px) rotate(-24deg) scale(1); }
 }
-
 @keyframes bioLeafSwayRight {
   0% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
   50% { transform: translate(136px, 114px) rotate(26deg) scale(1.04); }
   100% { transform: translate(136px, 118px) rotate(32deg) scale(1); }
 }
 
-/* Carousel Nav Arrows: Pure floating arrows without circle background */
-.carousel-nav-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: auto;
-  height: auto;
-  padding: 8px 4px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 12;
-  box-shadow: none;
-  outline: none;
-  pointer-events: auto;
-  transition: none;
-  filter: none;
-}
-
-.carousel-nav-arrow.left {
-  left: -28px;
-}
-
-.carousel-nav-arrow.right {
-  right: -28px;
-}
-
-.carousel-nav-arrow:hover {
-  background: transparent;
-  color: var(--active-color, #38BDF8);
-  filter: none;
-  transform: translateY(-50%);
-}
-
-.carousel-nav-arrow:active {
-  transform: translateY(-50%);
-}
-
 /* =========================================================================
-   BOTTOM FLOATING METRICS BANNER (4-COLUMN PILL MATCHING MOCKUP)
+   MOBILE DEDICATED LAYOUT (<= 768px)
+   Zero vertical scroll, touch-swipe carousel, compact metrics pill
    ========================================================================= */
-.vedika-labs-bottom-banner {
-  position: relative;
-  z-index: 20;
-  width: 100%;
-  max-width: 440px;
-  margin: 6px auto 16px;
-  padding: 0 12px;
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-
-.metrics-banner-inner {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 10px 6px 8px;
-  border-radius: 22px;
-  background: rgba(13, 20, 36, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.metric-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  text-align: center;
-  gap: 3px;
-  padding: 2px 2px;
-}
-
-.metric-icon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  border: none;
-  margin-bottom: 1px;
-}
-
-.metric-text-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.metric-val {
-  font-size: 0.95rem;
-  font-weight: 850;
-  color: #FFFFFF;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-
-.metric-lbl {
-  font-size: 0.64rem;
-  font-weight: 500;
-  color: #94A3B8;
-  line-height: 1.2;
-  margin-top: 1px;
-  max-width: 68px;
-  text-align: center;
-  white-space: normal;
-  word-break: normal;
-}
-
-/* =========================================================================
-   RESPONSIVE DESIGN & ADAPTIVE SCALING
-   ========================================================================= */
-@media (min-width: 769px) {
-  .vedika-labs-main-grid {
-    max-width: 640px;
-    padding: 12px 20px 8px;
-  }
-
-  .vedika-labs-bot-stage {
-    max-width: 380px;
-    height: 220px;
-  }
-
-  .bot-canvas-wrap {
-    width: 220px;
-    height: 220px;
-  }
-
-  .vedika-labs-carousel-container {
-    max-width: 580px;
-  }
-
-  .vedika-labs-carousel-track {
-    height: 300px;
-  }
-
-  .carousel-card-slide {
-    width: 240px;
-    height: 290px;
-    margin-left: -120px;
-    margin-top: -145px;
-  }
-
-  .carousel-card-slide.card-left-peek {
-    transform: translateX(-195px) translateY(4px) scale(0.85) rotateY(14deg) translateZ(-40px);
-  }
-
-  .carousel-card-slide.card-right-peek {
-    transform: translateX(195px) translateY(4px) scale(0.85) rotateY(-14deg) translateZ(-40px);
-  }
-
-  .vedika-labs-bottom-banner {
-    max-width: 540px;
-    margin-bottom: 16px;
-  }
-
-  .metric-val {
-    font-size: 1.05rem;
-  }
-
-  .metric-lbl {
-    font-size: 0.72rem;
-  }
-}
-
-/* Mobile Screens: Zero Vertical Scroll, Crisp Particles, Perfectly Balanced Sizing */
 @media (max-width: 768px) {
   .vedika-labs-cinema-view {
-    height: calc(100dvh - 54px) !important;
-    max-height: calc(100dvh - 54px) !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
+    height: calc(100dvh - 54px);
+    max-height: calc(100dvh - 54px);
+    overflow: hidden;
   }
 
-  .vedika-labs-scene-backdrop {
-    opacity: 0.28;
-    filter: brightness(0.35) contrast(1.1);
-  }
-
-  .vedika-labs-main-grid {
-    flex: 1 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    padding: 4px 10px 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    overflow: hidden !important;
+  .vedika-labs-mobile-grid {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 8px 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .vedika-labs-header-section {
-    margin-top: 0 !important;
-    margin-bottom: 2px !important;
-    flex-shrink: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    z-index: 20;
+    flex-shrink: 0;
   }
 
   .vedika-labs-explore-badge {
-    font-size: 9.5px !important;
-    margin-bottom: 1px !important;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: #818CF8;
+    text-transform: uppercase;
+    margin-bottom: 2px;
   }
 
   .vedika-labs-main-title {
-    font-size: 1.45rem !important;
-    line-height: 1.15 !important;
+    font-size: 1.6rem;
+    font-weight: 850;
+    color: #FFFFFF;
+    margin: 0;
+    line-height: 1.15;
   }
 
   .vedika-labs-main-subtitle {
-    font-size: 0.72rem !important;
-    margin: 1px 0 2px !important;
-    max-width: 260px !important;
-    line-height: 1.25 !important;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #94A3B8;
+    margin: 2px 0 0;
+    max-width: 260px;
+    text-align: center;
   }
 
   .vedika-labs-bot-stage {
-    height: 190px !important;
-    max-width: 290px !important;
-    margin: 0 auto !important;
-    flex-shrink: 0 !important;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 260px;
+    height: 175px;
+    margin: 0 auto;
+    z-index: 15;
+    pointer-events: none;
+    flex-shrink: 0;
   }
 
   .bot-canvas-wrap {
-    width: 215px !important;
-    height: 190px !important;
+    width: 190px;
+    height: 175px;
   }
 
   .vedika-labs-bot-glow-aura {
-    width: 200px !important;
-    height: 170px !important;
-    filter: blur(14px) !important;
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--active-glow) 0%, transparent 68%);
+    filter: blur(28px);
+    opacity: 0.45;
+    pointer-events: none;
   }
 
   .vedika-labs-carousel-container {
-    max-width: 400px !important;
-    margin: 0 auto !important;
-    flex-shrink: 0 !important;
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .vedika-labs-carousel-track {
-    height: 235px !important;
+    position: relative;
+    width: 100%;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+    transform-style: preserve-3d;
   }
 
   .carousel-card-slide {
-    width: 215px !important;
-    height: 230px !important;
-    margin-left: -107.5px !important;
-    margin-top: -115px !important;
-    border-radius: 18px !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 195px;
+    height: 245px;
+    margin-left: -97.5px;
+    margin-top: -122.5px;
+    border-radius: 18px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+    user-select: none;
+    pointer-events: auto;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  }
+
+  .carousel-card-slide.card-active-slide {
+    transform: translateX(0px) translateY(0px) scale(1) translateZ(30px);
+    z-index: 20;
+    opacity: 1;
   }
 
   .carousel-card-slide.card-left-peek {
-    transform: translateX(-145px) translateY(2px) scale(0.85) rotateY(12deg) translateZ(-35px) !important;
+    transform: translateX(-140px) translateY(4px) scale(0.82) rotateY(14deg) translateZ(-40px);
+    z-index: 10;
+    opacity: 0.65;
   }
 
   .carousel-card-slide.card-right-peek {
-    transform: translateX(145px) translateY(2px) scale(0.85) rotateY(-12deg) translateZ(-35px) !important;
+    transform: translateX(140px) translateY(4px) scale(0.82) rotateY(-14deg) translateZ(-40px);
+    z-index: 10;
+    opacity: 0.65;
   }
 
-  .card-glass-panel {
-    padding: 10px 10px 8px !important;
-    border-radius: 16px !important;
-  }
-
-  .card-lab-headline {
-    font-size: 1.05rem !important;
+  .carousel-card-slide.card-hidden-slide {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateZ(-80px) scale(0.6);
   }
 
   .card-lab-subtitle {
-    font-size: 0.72rem !important;
-    margin-top: 1px !important;
+    font-size: 0.72rem;
+    color: #94A3B8;
+    margin: 2px 0 0 0;
+    line-height: 1.25;
+    max-width: 155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .carousel-dots-row {
-    margin-top: 6px !important;
-    margin-bottom: 2px !important;
-    gap: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 8px;
+    margin-bottom: 6px;
+    z-index: 20;
+    flex-shrink: 0;
   }
 
   .carousel-dot {
-    width: 6px !important;
-    height: 6px !important;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.25s ease;
   }
 
   .carousel-dot.active-dot {
-    width: 18px !important;
+    width: 18px;
+    border-radius: 9999px;
+    background: var(--active-color);
   }
 
   .card-launch-fab {
-    bottom: 8px !important;
-    right: 8px !important;
-    width: 32px !important;
-    height: 32px !important;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--card-theme);
+    background: radial-gradient(circle, rgba(var(--card-theme-rgb), 0.4) 0%, rgba(10, 20, 40, 0.9) 100%);
+    box-shadow: 0 0 14px rgba(var(--card-theme-rgb), 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
   }
 
-  .vedika-labs-bottom-banner {
-    max-width: 400px !important;
-    margin: 0 auto 4px !important;
-    padding: 0 8px !important;
-    flex-shrink: 0 !important;
+  .vedika-labs-mobile-bottom-banner {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    max-width: 380px;
+    margin: 2px auto 6px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
-  .metrics-banner-inner {
-    padding: 4px 6px !important;
-    border-radius: 16px !important;
-    gap: 2px !important;
+  .mobile-metrics-inner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    padding: 6px 4px;
+    border-radius: 16px;
+    background: rgba(13, 20, 36, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
   }
 
-  .metric-icon-wrap {
-    width: 22px;
-    height: 22px;
+  .mobile-metric-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1px;
   }
 
-  .metric-icon-wrap svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .metric-val {
-    font-size: 0.82rem;
+  .mobile-metric-val {
+    font-size: 0.86rem;
+    font-weight: 850;
+    color: #FFFFFF;
     line-height: 1.1;
   }
 
-  .desktop-pedestal {
-    display: none !important;
-  }
-
-  .mobile-aura {
-    display: block !important;
+  .mobile-metric-lbl {
+    font-size: 0.58rem;
+    color: #94A3B8;
+    line-height: 1.1;
   }
 }
 
-/* Short / Compact Mobile Screens (<= 700px height, e.g. iPhone SE 667px, Galaxy A10 640px) */
+/* Compact Tier for Short Phones (<= 700px height, iPhone SE, budget Android) */
 @media (max-width: 768px) and (max-height: 700px) {
-  .vedika-labs-main-grid {
-    padding: 2px 8px 0 !important;
-    gap: 2px !important;
+  .vedika-labs-mobile-grid {
+    padding: 4px 8px 4px;
   }
-
-  .vedika-labs-explore-badge {
-    font-size: 8.5px !important;
-    padding: 2px 7px !important;
-    margin-bottom: 0 !important;
-  }
-
   .vedika-labs-main-title {
-    font-size: 1.25rem !important;
-    line-height: 1.1 !important;
+    font-size: 1.35rem;
   }
-
-  .vedika-labs-main-subtitle {
-    font-size: 0.65rem !important;
-    margin: 0 !important;
-    line-height: 1.15 !important;
-    max-width: 240px !important;
-  }
-
   .vedika-labs-bot-stage {
-    height: 145px !important;
-    max-width: 230px !important;
+    height: 135px;
   }
-
   .bot-canvas-wrap {
-    width: 165px !important;
-    height: 145px !important;
+    width: 150px;
+    height: 135px;
   }
-
-  .vedika-labs-bot-glow-aura {
-    width: 155px !important;
-    height: 130px !important;
-  }
-
   .vedika-labs-carousel-track {
-    height: 195px !important;
+    height: 205px;
   }
-
   .carousel-card-slide {
-    width: 180px !important;
-    height: 190px !important;
-    margin-left: -90px !important;
-    margin-top: -95px !important;
-    border-radius: 14px !important;
+    width: 165px;
+    height: 200px;
+    margin-left: -82.5px;
+    margin-top: -100px;
   }
-
   .carousel-card-slide.card-left-peek {
-    transform: translateX(-120px) translateY(2px) scale(0.85) rotateY(12deg) translateZ(-35px) !important;
+    transform: translateX(-115px) translateY(3px) scale(0.8) rotateY(12deg) translateZ(-35px);
   }
-
   .carousel-card-slide.card-right-peek {
-    transform: translateX(120px) translateY(2px) scale(0.85) rotateY(-12deg) translateZ(-35px) !important;
+    transform: translateX(115px) translateY(3px) scale(0.8) rotateY(-12deg) translateZ(-35px);
   }
-
-  .card-glass-panel {
-    padding: 8px 8px 6px !important;
-    border-radius: 12px !important;
-  }
-
-  .card-lab-headline {
-    font-size: 0.92rem !important;
-  }
-
-  .card-lab-subtitle {
-    font-size: 0.62rem !important;
-  }
-
   .carousel-dots-row {
-    margin-top: 3px !important;
-    margin-bottom: 1px !important;
-    gap: 4px !important;
+    margin-top: 4px;
+    margin-bottom: 2px;
   }
-
-  .card-launch-fab {
-    width: 28px !important;
-    height: 28px !important;
-    bottom: 6px !important;
-    right: 6px !important;
-  }
-
-  .vedika-labs-bottom-banner {
-    margin: 0 auto 2px !important;
-    padding: 0 4px !important;
-  }
-
-  .metrics-banner-inner {
-    padding: 3px 4px !important;
-    border-radius: 12px !important;
-  }
-
-  .metric-icon-wrap {
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  .metric-icon-wrap svg {
-    width: 11px !important;
-    height: 11px !important;
-  }
-
-  .metric-val {
-    font-size: 0.72rem !important;
-  }
-
-  .metric-lbl {
-    font-size: 0.48rem !important;
+  .vedika-labs-mobile-bottom-banner {
+    margin-bottom: 2px;
   }
 }
