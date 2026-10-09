@@ -682,24 +682,27 @@
 
 @media (max-width: 860px) {
   .vedika-ai-hub-container {
-    height: calc(100dvh - 54px);
-    max-height: calc(100dvh - 54px);
+    height: 100%;
     min-height: calc(100dvh - 54px);
-    overflow: hidden;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .vedika-ai-hub-inner {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    max-height: 100%;
-    padding: 8px 14px 10px;
-    gap: 6px;
+    height: auto;
+    min-height: calc(100dvh - 54px);
+    max-height: none;
+    padding: 10px 14px 28px;
+    gap: 8px;
     width: 100%;
     max-width: 440px;
     margin: 0 auto;
     box-sizing: border-box;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   /* Flatten left column so its children (Header, Carousel, Controls) can be flex-ordered with the bot */
@@ -714,8 +717,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 2px;
-    margin-bottom: 0px;
+    gap: 3px;
+    margin-bottom: 2px;
     flex-shrink: 0;
   }
 
@@ -724,13 +727,13 @@
   }
 
   .vedika-ai-main-title {
-    font-size: 1.45rem;
+    font-size: 1.50rem;
     margin: 0;
     line-height: 1.15;
   }
 
   .vedika-ai-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     margin: 0;
   }
 
@@ -739,9 +742,9 @@
     order: 2;
     flex: 0 0 auto;
     width: 100%;
-    height: 180px;
-    min-height: 180px;
-    max-height: 185px;
+    height: 175px;
+    min-height: 175px;
+    max-height: 180px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -751,10 +754,10 @@
   }
 
   .vedika-ai-bot-wrapper {
-    width: 210px;
-    height: 180px;
-    max-width: 210px;
-    max-height: 185px;
+    width: 200px;
+    height: 175px;
+    max-width: 200px;
+    max-height: 180px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -763,8 +766,8 @@
   }
 
   .vedika-ai-shimmer-glow-bg {
-    width: 180px;
-    height: 180px;
+    width: 175px;
+    height: 175px;
   }
 
   .vedika-ai-quote-pill,
@@ -772,31 +775,31 @@
     display: none;
   }
 
-  /* 3. Card Carousel NEXT (Vertical accordion, slightly compacted to balance with prominent bot) */
+  /* 3. Card Carousel NEXT (Vertical accordion, natural active card with no dead space) */
   .vedika-ai-accordion-carousel {
     order: 3;
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
+    height: auto;
     min-height: 0;
-    gap: 4px;
+    gap: 6px;
     width: 100%;
     touch-action: pan-y;
-    overflow: hidden;
+    overflow: visible;
   }
 
   /* Collapsed cards: slightly compacted horizontal bars */
   .vedika-ai-carousel-card.collapsed {
     display: flex !important;
-    flex: 0 0 34px;
+    flex: 0 0 36px;
     width: 100%;
     min-width: 100%;
     max-width: 100%;
-    height: 34px;
-    padding: 3px 10px;
+    height: 36px;
+    padding: 4px 12px;
     flex-direction: row;
     align-items: center;
-    border-radius: 9px;
+    border-radius: 10px;
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-sizing: border-box;
@@ -819,8 +822,8 @@
   }
 
   .vedika-shrunken-card-icon {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -840,7 +843,7 @@
   .vedika-ai-collapsed-title {
     writing-mode: horizontal-tb;
     transform: none;
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 600;
     color: #cbd5e1;
     white-space: nowrap;
@@ -853,35 +856,49 @@
     flex-shrink: 0;
   }
 
-  /* Active card: prominent card fitted cleanly to mobile width */
+  /* Active card: natural height, no artificial void */
   .vedika-ai-carousel-card.active {
     display: flex;
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
     width: 100%;
-    border-radius: 14px;
-    padding: 10px 12px;
+    border-radius: 16px;
+    padding: 12px 14px;
     margin: 0 auto;
     box-sizing: border-box;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 20px var(--card-glow-soft);
     overflow: hidden;
   }
 
+  .vedika-ai-card-expanded-content {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .vedika-ai-card-body {
+    gap: 6px;
+    margin: 2px 0;
+  }
+
   .vedika-ai-detail-desc {
-    font-size: 0.76rem;
-    line-height: 1.35;
-    margin: 3px 0 6px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.78rem;
+    line-height: 1.38;
+    margin: 2px 0 6px;
+    display: block;
+  }
+
+  .vedika-ai-action-row {
+    margin-top: 4px;
   }
 
   .vedika-ai-launch-btn {
-    height: 34px;
-    font-size: 0.8rem;
-    border-radius: 9px;
+    height: 36px;
+    font-size: 0.82rem;
+    border-radius: 10px;
+    width: 100%;
+    justify-content: center;
   }
 
   /* 4. Footer controls: dots and prev/next arrows */
@@ -891,53 +908,49 @@
     justify-content: center;
     align-items: center;
     gap: 14px;
-    margin-top: 2px;
+    margin-top: 8px;
+    margin-bottom: 6px;
     flex-shrink: 0;
   }
 }
 
-/* Compact Tier for Short Mobile Viewports (iPhone SE, budget devices <= 700px height) */
-@media (max-width: 768px) and (max-height: 700px) {
+/* Compact Tier for Short Mobile Viewports (iPhone SE, budget devices <= 680px height) */
+@media (max-width: 768px) and (max-height: 680px) {
   .vedika-ai-hub-inner {
-    padding: 4px 10px 6px;
-    gap: 3px;
+    padding: 4px 10px 16px;
+    gap: 4px;
   }
   .vedika-ai-main-title {
     font-size: 1.3rem;
   }
   .vedika-ai-right-col {
-    height: 135px;
-    min-height: 135px;
-    max-height: 135px;
+    height: 140px;
+    min-height: 140px;
+    max-height: 140px;
   }
   .vedika-ai-bot-wrapper {
     width: 160px;
-    height: 135px;
-    max-height: 135px;
+    height: 140px;
+    max-height: 140px;
   }
   .vedika-ai-carousel-card.collapsed {
-    flex: 0 0 28px;
-    height: 28px;
+    flex: 0 0 32px;
+    height: 32px;
     padding: 2px 8px;
   }
   .vedika-ai-collapsed-title {
     font-size: 11px;
   }
   .vedika-ai-carousel-card.active {
-    padding: 8px 10px;
+    padding: 10px 12px;
   }
   .vedika-ai-detail-desc {
-    font-size: 0.72rem;
-    line-height: 1.25;
+    font-size: 0.74rem;
+    line-height: 1.3;
     margin: 2px 0 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
   .vedika-ai-launch-btn {
-    height: 30px;
-    font-size: 0.76rem;
+    height: 32px;
+    font-size: 0.78rem;
   }
 }

@@ -402,8 +402,8 @@ export default function VedikaAIHub() {
             <VedikaParticleBot
               src={activeCard.botImage}
               colorMode="vibrant"
-              width={isMobile ? 260 : 520}
-              height={isMobile ? 230 : 560}
+              width={isMobile ? 200 : 520}
+              height={isMobile ? 175 : 560}
               inline={true}
               particleStep={isMobile ? 2 : 3}
               intensity={1.15}

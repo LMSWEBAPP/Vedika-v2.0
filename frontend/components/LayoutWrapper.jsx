@@ -107,7 +107,6 @@ export default function LayoutWrapper({ children }) {
   const isLabPage = pathname?.startsWith('/vedika-labs/') || pathname?.startsWith('/labs/');
   const isFixedPage = !isLabPage && (
     pathname?.startsWith('/lesson/') ||
-    pathname?.startsWith('/vedika-ai') ||
     pathname?.startsWith('/general-tutor') ||
     pathname?.startsWith('/coding-tutor') ||
     pathname?.startsWith('/code-puzzle') ||
@@ -255,9 +254,9 @@ export default function LayoutWrapper({ children }) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: (isViewportLocked || isLabPage) ? '100vh' : 'auto',
-        minHeight: '100vh',
-        maxHeight: (isViewportLocked || isLabPage) ? '100vh' : 'none',
+        height: (isViewportLocked || isLabPage) ? '100dvh' : 'auto',
+        minHeight: '100dvh',
+        maxHeight: (isViewportLocked || isLabPage) ? '100dvh' : 'none',
         background: isHomePage ? '#02050c' : 'var(--bg)',
         color: isHomePage ? '#f8fafc' : 'var(--text)',
         width: '100%',
@@ -275,9 +274,9 @@ export default function LayoutWrapper({ children }) {
           boxSizing: 'border-box',
           overflowY: isLabPage ? 'auto' : (isViewportLocked ? 'hidden' : 'auto'),
           overflowX: 'hidden',
-          height: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
-          maxHeight: isAskVedika ? '100vh' : 'calc(100vh - 54px)',
-          minHeight: 'calc(100vh - 54px)',
+          height: isAskVedika ? '100dvh' : 'calc(100dvh - 54px)',
+          maxHeight: isAskVedika ? '100dvh' : 'calc(100dvh - 54px)',
+          minHeight: 'calc(100dvh - 54px)',
           marginTop: isAskVedika ? 0 : '54px',
           paddingTop: 0,
           background: isHomePage ? '#02050c' : 'var(--bg)'

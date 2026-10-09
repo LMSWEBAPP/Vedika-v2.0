@@ -495,128 +495,6 @@ export default function VedikaLabsHub() {
            Curved 4-Wing Hologram Stage, Ceiling Emitter, 345px Bot, CTA
            ══════════════════════════════════════════════════════════════════ */
         <div className="vedika-labs-main-grid">
-          {/* 5-Feature Options Dropdown */}
-          <div ref={featureDropdownRef} style={{ position: 'relative', width: 'auto', maxWidth: 360, marginBottom: 8, zIndex: 35 }}>
-            <button
-              type="button"
-              onClick={() => setIsFeaturesDropdownOpen(prev => !prev)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(16px)',
-                border: `1px solid ${isFeaturesDropdownOpen ? activeLab.color : 'rgba(255, 255, 255, 0.12)'}`,
-                borderRadius: 10,
-                padding: '8px 14px',
-                color: '#fff',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={15} color={activeLab.color} />
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#E2E8F0' }}>
-                  Explore Lab Features (5 Options)
-                </span>
-              </div>
-              <ChevronDown
-                size={15}
-                color={activeLab.color}
-                style={{
-                  transform: isFeaturesDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s'
-                }}
-              />
-            </button>
-
-            {isFeaturesDropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                left: 0,
-                right: 0,
-                minWidth: 290,
-                background: '#0B0F19',
-                border: `1px solid ${activeLab.color}66`,
-                borderRadius: 12,
-                padding: 6,
-                boxShadow: '0 20px 48px rgba(0,0,0,0.85)',
-                zIndex: 50,
-                backdropFilter: 'blur(20px)'
-              }}>
-                <div style={{
-                  padding: '6px 10px 8px',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: '#8892B0',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  justifyContent: 'space-between'
-                }}>
-                  <span>Integrated Lab Features</span>
-                  <span style={{ color: activeLab.color }}>Tap to open</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
-                  {VEDIKA_HUB_FEATURES.map((feat) => {
-                    const FeatIcon = feat.icon;
-                    return (
-                      <button
-                        key={feat.id}
-                        onClick={() => {
-                          setIsFeaturesDropdownOpen(false);
-                          handleLaunchLab(`${activeLab.url}?tab=${feat.id}`);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          width: '100%',
-                          padding: '9px 11px',
-                          borderRadius: 8,
-                          border: '1px solid transparent',
-                          background: 'transparent',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'background 0.15s'
-                        }}
-                      >
-                        <div style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 8,
-                          background: 'rgba(255,255,255,0.06)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: activeLab.color,
-                          flexShrink: 0
-                        }}>
-                          <FeatIcon size={15} />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span>{feat.label}</span>
-                            <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 6, background: `${activeLab.color}22`, color: activeLab.color, fontWeight: 700 }}>
-                              {feat.badge}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 10.5, color: '#7E8B9F', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {feat.desc}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* 3D Stage Viewport */}
           <div className="vedika-labs-stage-viewport">
             {/* Top Ceiling Energy Emitter Beam */}
@@ -742,7 +620,9 @@ export default function VedikaLabsHub() {
                   padding: 6,
                   boxShadow: '0 20px 48px rgba(0,0,0,0.85)',
                   zIndex: 50,
-                  backdropFilter: 'blur(20px)'
+                  backdropFilter: 'blur(20px)',
+                  maxHeight: '55vh',
+                  overflowY: 'auto'
                 }}>
                   <div style={{
                     padding: '6px 10px 8px',
