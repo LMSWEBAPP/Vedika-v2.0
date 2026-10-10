@@ -184,8 +184,8 @@
   align-items: stretch;
   gap: 12px;
   width: 100%;
-  height: clamp(320px, 46vh, 360px);
-  margin: 4px 0 2px;
+  height: clamp(340px, 48vh, 415px);
+  margin: clamp(16px, 2.6vh, 26px) 0 clamp(8px, 1.4vh, 14px);
   box-sizing: border-box;
 }
 
@@ -447,7 +447,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 2px;
+  margin-top: clamp(8px, 1.5vh, 14px);
 }
 
 .vedika-ai-nav-arrow {
@@ -824,16 +824,16 @@
     display: none;
   }
 
-  /* 3. Card Carousel NEXT (shifted downward cleanly, exact same card sizes) */
+  /* 3. Card Carousel NEXT (shifted downward cleanly, filling empty space) */
   .vedika-ai-accordion-carousel {
     order: 3;
     display: flex;
     flex-direction: column;
     height: auto;
     min-height: 0;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
-    margin-top: 4px;
+    margin-top: clamp(20px, 4.2vh, 36px);
     touch-action: pan-y;
     overflow: visible;
   }
@@ -841,15 +841,15 @@
   /* Collapsed cards: slightly compacted horizontal bars */
   .vedika-ai-carousel-card.collapsed {
     display: flex !important;
-    flex: 0 0 36px;
+    flex: 0 0 38px;
     width: 100%;
     min-width: 100%;
     max-width: 100%;
-    height: 36px;
-    padding: 4px 12px;
+    height: 38px;
+    padding: 6px 14px;
     flex-direction: row;
     align-items: center;
-    border-radius: 10px;
+    border-radius: 12px;
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-sizing: border-box;
@@ -911,8 +911,8 @@
     display: flex;
     flex: 0 0 auto;
     width: 100%;
-    border-radius: 16px;
-    padding: 12px 14px;
+    border-radius: 18px;
+    padding: 14px 16px;
     margin: 0 auto;
     box-sizing: border-box;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 20px var(--card-glow-soft);
@@ -958,8 +958,8 @@
     justify-content: center;
     align-items: center;
     gap: 14px;
-    margin-top: 10px;
-    margin-bottom: 8px;
+    margin-top: clamp(14px, 2.6vh, 22px);
+    margin-bottom: clamp(12px, 2.4vh, 20px);
     flex-shrink: 0;
   }
 }
@@ -983,16 +983,22 @@
     height: 165px;
     max-height: 165px;
   }
+  .vedika-ai-accordion-carousel {
+    margin-top: 6px;
+    gap: 5px;
+  }
   .vedika-ai-carousel-card.collapsed {
     flex: 0 0 32px;
     height: 32px;
     padding: 2px 8px;
+    border-radius: 10px;
   }
   .vedika-ai-collapsed-title {
     font-size: 11px;
   }
   .vedika-ai-carousel-card.active {
     padding: 10px 12px;
+    border-radius: 14px;
   }
   .vedika-ai-detail-desc {
     font-size: 0.74rem;
@@ -1002,5 +1008,9 @@
   .vedika-ai-launch-btn {
     height: 32px;
     font-size: 0.78rem;
+  }
+  .vedika-ai-footer-controls {
+    margin-top: 6px;
+    margin-bottom: 4px;
   }
 }
