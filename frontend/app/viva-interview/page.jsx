@@ -2436,7 +2436,11 @@ export default function VivaInterviewPage() {
               border: none !important;
             }
             .step-progress-wrapper {
-              margin: 20px 0 18px 0 !important;
+              margin: 14px 0 32px 0 !important;
+            }
+            .step-circle .step-caption {
+              font-size: 11px !important;
+              bottom: -22px !important;
             }
             .hero-actor-container {
               bottom: 18px !important;
@@ -2451,6 +2455,38 @@ export default function VivaInterviewPage() {
             }
             .hero-sprite-frame.settled {
               background-position: -170px 0px !important;
+            }
+            .mobile-particle-stage {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+              width: 100%;
+              margin: 12px 0 6px 0;
+              flex-shrink: 0;
+            }
+            .mobile-particle-aura {
+              position: absolute;
+              width: 190px;
+              height: 190px;
+              border-radius: 50%;
+              filter: blur(24px);
+              pointer-events: none;
+            }
+            .mobile-mode-switch-btn {
+              width: 100%;
+              margin-top: 10px;
+              padding: 9px 16px;
+              border-radius: 12px;
+              font-size: 0.8rem;
+              font-weight: 700;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 6px;
+              cursor: pointer;
+              transition: all 0.2s ease;
             }
           }
 
@@ -2980,38 +3016,6 @@ export default function VivaInterviewPage() {
               </div>
             )}
 
-            {/* Mobile Particle Bot Showcase: Academic Viva Examiner */}
-            {isMobile && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                width: '100%',
-                margin: '2px 0 6px 0',
-                flexShrink: 0
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  width: 140,
-                  height: 140,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, transparent 70%)',
-                  filter: 'blur(18px)',
-                  pointerEvents: 'none'
-                }} />
-                <VedikaParticleBot
-                  src="/vedika-bot-school.png"
-                  width={140}
-                  height={140}
-                  inline={true}
-                  colorMode="vibrant"
-                  particleStep={2}
-                />
-              </div>
-            )}
-
             {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
             <div className="step-progress-wrapper">
               <div className="step-progress-container">
@@ -3197,13 +3201,13 @@ export default function VivaInterviewPage() {
                   <div
                     style={{
                       marginTop: 8,
-                      padding: isMobile ? '12px 14px' : '16px 20px',
+                      padding: isMobile ? '10px 12px' : '16px 20px',
                       borderRadius: 14,
                       background: 'rgba(124, 58, 237, 0.06)',
                       border: '1px solid rgba(124, 58, 237, 0.2)',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 10,
+                      gap: 8,
                       cursor: isMobile ? 'pointer' : 'default',
                       transition: 'all 0.2s ease'
                     }}
@@ -3221,11 +3225,11 @@ export default function VivaInterviewPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
-                        fontSize: '0.86rem',
+                        fontSize: '0.84rem',
                         fontWeight: 700,
                         color: '#C4B5FD'
                       }}>
-                        <Sparkles size={16} color="#A855F7" />
+                        <Sparkles size={15} color="#A855F7" />
                         <span>Adaptive Oral Defense Engine</span>
                       </div>
                       {isMobile && (
@@ -3233,11 +3237,11 @@ export default function VivaInterviewPage() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 4,
-                          fontSize: '0.74rem',
+                          fontSize: '0.72rem',
                           fontWeight: 600,
                           color: '#C4B5FD',
                           background: 'rgba(124, 58, 237, 0.16)',
-                          padding: '3px 8px',
+                          padding: '2px 8px',
                           borderRadius: 9999
                         }}>
                           <span>{isMobileInfoExpanded ? 'Hide' : 'Details'}</span>
@@ -3249,9 +3253,9 @@ export default function VivaInterviewPage() {
                     {(!isMobile || isMobileInfoExpanded) && (
                       <>
                         <p style={{
-                          fontSize: '0.82rem',
+                          fontSize: '0.80rem',
                           color: '#94A3B8',
-                          lineHeight: 1.5,
+                          lineHeight: 1.45,
                           margin: 0
                         }}>
                           Vedika dynamically formulates oral viva questions targeting textbook theorems, fundamental principles, practical edge cases, and oral proofs based on your topic.
@@ -3259,20 +3263,20 @@ export default function VivaInterviewPage() {
                         <div style={{
                           display: 'flex',
                           flexWrap: 'wrap',
-                          gap: 16,
+                          gap: 12,
                           paddingTop: 4,
                           borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                          fontSize: '0.78rem',
+                          fontSize: '0.76rem',
                           color: '#CBD5E1'
                         }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <CheckCircle2 size={13} color="#A855F7" /> Rigorous Viva Questions
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <CheckCircle2 size={12} color="#A855F7" /> Rigorous Viva Questions
                           </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <CheckCircle2 size={13} color="#A855F7" /> Real-time Speech Evaluation
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <CheckCircle2 size={12} color="#A855F7" /> Real-time Speech Evaluation
                           </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <CheckCircle2 size={13} color="#A855F7" /> Scoring & Conceptual Feedback
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <CheckCircle2 size={12} color="#A855F7" /> Scoring & Conceptual Feedback
                           </span>
                         </div>
                       </>
@@ -3280,8 +3284,23 @@ export default function VivaInterviewPage() {
                   </div>
                 </div>
 
+                {/* Mobile Particle Bot: Academic Viva Examiner */}
+                {isMobile && (
+                  <div className="mobile-particle-stage">
+                    <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
+                    <VedikaParticleBot
+                      src="/vedika-bot-school.png"
+                      width={200}
+                      height={180}
+                      inline={true}
+                      colorMode="vibrant"
+                      particleStep={2}
+                    />
+                  </div>
+                )}
+
                 {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: isMobile ? 10 : 20 }}>
                   <button
                     type="button"
                     className="step-btn prev-btn"
@@ -3304,15 +3323,35 @@ export default function VivaInterviewPage() {
                     <ChevronRight size={16} />
                   </button>
                 </div>
+
+                {isMobile && (
+                  <button
+                    type="button"
+                    className="mobile-mode-switch-btn"
+                    onClick={() => {
+                      setIsRightOpen(true);
+                      setSessionMode('interview');
+                      if (!topic) setTopic('Full Stack Web Development');
+                    }}
+                    style={{
+                      background: 'rgba(14, 165, 233, 0.12)',
+                      border: '1px solid rgba(14, 165, 233, 0.3)',
+                      color: '#38BDF8'
+                    }}
+                  >
+                    <span>Technical Interview Mode</span>
+                    <span>➔</span>
+                  </button>
+                )}
               </div>
             )}
 
             {/* STEP 2: ACADEMIC LEVEL & SYLLABUS DEPTH */}
             {setupStep === 2 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
-                    fontSize: isMobile ? '1.35rem' : '1.5rem',
+                    fontSize: isMobile ? '1.30rem' : '1.5rem',
                     fontWeight: 800,
                     color: '#FFFFFF',
                     margin: '0 0 4px 0',
@@ -3321,24 +3360,24 @@ export default function VivaInterviewPage() {
                     Academic Level & Syllabus Depth
                   </h1>
                   <p style={{
-                    fontSize: '0.84rem',
+                    fontSize: isMobile ? '0.78rem' : '0.84rem',
                     color: '#94A3B8',
-                    margin: '0 0 16px 0'
+                    margin: '0 0 12px 0'
                   }}>
                     Customize your examination tier and syllabus defense focus.
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Setting 1: Academic Level */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
                         Academic Tier
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 6 : 10 }}>
                         {[
-                          { id: 'School', title: 'School Level', desc: 'Grades 9-12 fundamentals & core definitions' },
-                          { id: 'College', title: 'Undergraduate', desc: 'College / B.Tech engineering coursework' },
-                          { id: 'PG', title: 'Postgraduate', desc: "Master's & Ph.D research level depth" }
+                          { id: 'School', title: isMobile ? 'School' : 'School Level', desc: isMobile ? 'Grades 9-12' : 'Grades 9-12 fundamentals & core definitions' },
+                          { id: 'College', title: isMobile ? 'Undergrad' : 'Undergraduate', desc: isMobile ? 'B.Tech / College' : 'College / B.Tech engineering coursework' },
+                          { id: 'PG', title: isMobile ? 'Postgrad' : 'Postgraduate', desc: isMobile ? "Master's & PhD" : "Master's & Ph.D research level depth" }
                         ].map((item) => {
                           const isSelected = level === item.id;
                           return (
@@ -3346,19 +3385,20 @@ export default function VivaInterviewPage() {
                               key={item.id}
                               onClick={() => setLevel(item.id)}
                               style={{
-                                padding: '12px 14px',
+                                padding: isMobile ? '9px 6px' : '12px 14px',
                                 borderRadius: 12,
                                 background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                                 border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
                                 cursor: 'pointer',
+                                textAlign: isMobile ? 'center' : 'left',
                                 transition: 'all 0.15s ease',
                                 boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
                               }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                              <div style={{ fontWeight: 700, fontSize: isMobile ? '0.76rem' : '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
                                 {item.title}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
+                              <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 2, lineHeight: 1.2 }}>
                                 {item.desc}
                               </div>
                             </div>
@@ -3369,14 +3409,14 @@ export default function VivaInterviewPage() {
 
                     {/* Setting 2: Examination Focus / Depth */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
                         Syllabus Defense Focus
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 6 : 10 }}>
                         {[
-                          { id: 'Core Theory & Proofs', title: 'Core Theory & Proofs', desc: 'Textbook theorems, derivations & definitions' },
-                          { id: 'Applied Lab Experiments', title: 'Applied Lab Experiments', desc: 'Apparatus, readings, error sources & observations' },
-                          { id: 'Comprehensive Oral Voce', title: 'Comprehensive Viva Voce', desc: 'Balanced combination of theory and application' }
+                          { id: 'Core Theory & Proofs', title: isMobile ? 'Core Theory' : 'Core Theory & Proofs', desc: isMobile ? 'Theorems & Proofs' : 'Textbook theorems, derivations & definitions' },
+                          { id: 'Applied Lab Experiments', title: isMobile ? 'Lab Applied' : 'Applied Lab Experiments', desc: isMobile ? 'Apparatus & Errors' : 'Apparatus, readings, error sources & observations' },
+                          { id: 'Comprehensive Oral Voce', title: isMobile ? 'Comprehensive' : 'Comprehensive Viva Voce', desc: isMobile ? 'Theory + Practical' : 'Balanced combination of theory and application' }
                         ].map((item) => {
                           const isSelected = vivaFocus === item.id;
                           return (
@@ -3384,19 +3424,20 @@ export default function VivaInterviewPage() {
                               key={item.id}
                               onClick={() => setVivaFocus(item.id)}
                               style={{
-                                padding: '12px 14px',
+                                padding: isMobile ? '9px 6px' : '12px 14px',
                                 borderRadius: 12,
                                 background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                                 border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
                                 cursor: 'pointer',
+                                textAlign: isMobile ? 'center' : 'left',
                                 transition: 'all 0.15s ease',
                                 boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
                               }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                              <div style={{ fontWeight: 700, fontSize: isMobile ? '0.76rem' : '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
                                 {item.title}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
+                              <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 2, lineHeight: 1.2 }}>
                                 {item.desc}
                               </div>
                             </div>
@@ -3407,8 +3448,23 @@ export default function VivaInterviewPage() {
                   </div>
                 </div>
 
+                {/* Mobile Particle Bot: Academic Viva Examiner */}
+                {isMobile && (
+                  <div className="mobile-particle-stage">
+                    <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
+                    <VedikaParticleBot
+                      src="/vedika-bot-school.png"
+                      width={200}
+                      height={180}
+                      inline={true}
+                      colorMode="vibrant"
+                      particleStep={2}
+                    />
+                  </div>
+                )}
+
                 {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
                   <button
                     type="button"
                     className="step-btn prev-btn"
@@ -3425,15 +3481,35 @@ export default function VivaInterviewPage() {
                     <ChevronRight size={16} />
                   </button>
                 </div>
+
+                {isMobile && (
+                  <button
+                    type="button"
+                    className="mobile-mode-switch-btn"
+                    onClick={() => {
+                      setIsRightOpen(true);
+                      setSessionMode('interview');
+                      if (!topic) setTopic('Full Stack Web Development');
+                    }}
+                    style={{
+                      background: 'rgba(14, 165, 233, 0.12)',
+                      border: '1px solid rgba(14, 165, 233, 0.3)',
+                      color: '#38BDF8'
+                    }}
+                  >
+                    <span>Technical Interview Mode</span>
+                    <span>➔</span>
+                  </button>
+                )}
               </div>
             )}
 
             {/* STEP 3: ORAL VIVA ENGINE & DIFFICULTY */}
             {setupStep === 3 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
-                    fontSize: isMobile ? '1.35rem' : '1.5rem',
+                    fontSize: isMobile ? '1.30rem' : '1.5rem',
                     fontWeight: 800,
                     color: '#FFFFFF',
                     margin: '0 0 4px 0',
@@ -3442,24 +3518,24 @@ export default function VivaInterviewPage() {
                     Oral Engine & Rigor
                   </h1>
                   <p style={{
-                    fontSize: '0.84rem',
+                    fontSize: isMobile ? '0.78rem' : '0.84rem',
                     color: '#94A3B8',
-                    margin: '0 0 16px 0'
+                    margin: '0 0 12px 0'
                   }}>
                     Select conversational speech engine and examination difficulty level.
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Setting 1: Oral Engine Mode */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
                         Conversational Voice Engine
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: isMobile ? 8 : 10 }}>
                         <div
                           onClick={() => setExecutionMode('live')}
                           style={{
-                            padding: '12px 14px',
+                            padding: isMobile ? '9px 10px' : '12px 14px',
                             borderRadius: 12,
                             background: executionMode === 'live' ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                             border: executionMode === 'live' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -3468,19 +3544,19 @@ export default function VivaInterviewPage() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
-                            <Zap size={16} color="#A78BFA" />
-                            <span>Realtime Voice (Gemini Live)</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: isMobile ? '0.78rem' : '0.86rem' }}>
+                            <Zap size={15} color="#A78BFA" />
+                            <span>Realtime Voice</span>
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
-                            Natural voice streaming with instant speech interruptions and fluid banter.
+                          <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
+                            Live Gemini audio streaming with instant interruption.
                           </div>
                         </div>
 
                         <div
                           onClick={() => setExecutionMode('turn')}
                           style={{
-                            padding: '12px 14px',
+                            padding: isMobile ? '9px 10px' : '12px 14px',
                             borderRadius: 12,
                             background: executionMode === 'turn' ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                             border: executionMode === 'turn' ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -3489,12 +3565,12 @@ export default function VivaInterviewPage() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
-                            <Clock size={16} color="#A78BFA" />
-                            <span>Turn-by-Turn Guided Viva</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: isMobile ? '0.78rem' : '0.86rem' }}>
+                            <Clock size={15} color="#A78BFA" />
+                            <span>Turn-by-Turn</span>
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
-                            Structured questions with 90s response countdown and instant evaluation.
+                          <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
+                            Structured 90s countdown evaluation rounds.
                           </div>
                         </div>
                       </div>
@@ -3502,14 +3578,14 @@ export default function VivaInterviewPage() {
 
                     {/* Setting 2: Difficulty */}
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 8, display: 'block' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: 6, display: 'block' }}>
                         Examination Rigor Tier
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 6 : 10 }}>
                         {[
-                          { id: 'Easy', title: 'Easy Tier', desc: 'Core definitions & standard principles' },
-                          { id: 'Medium', title: 'Medium Tier', desc: 'Analytical viva probes & derivations' },
-                          { id: 'Hard', title: 'Hard / Bar Raiser', desc: 'Deep architectural edge cases & proofs' }
+                          { id: 'Easy', title: isMobile ? 'Easy' : 'Easy Tier', desc: isMobile ? 'Core Basics' : 'Core definitions & standard principles' },
+                          { id: 'Medium', title: isMobile ? 'Medium' : 'Medium Tier', desc: isMobile ? 'Analytical' : 'Analytical viva probes & derivations' },
+                          { id: 'Hard', title: isMobile ? 'Hard' : 'Hard / Bar Raiser', desc: isMobile ? 'Deep Edge' : 'Deep architectural edge cases & proofs' }
                         ].map((tier) => {
                           const isSelected = difficulty === tier.id;
                           return (
@@ -3517,19 +3593,20 @@ export default function VivaInterviewPage() {
                               key={tier.id}
                               onClick={() => setDifficulty(tier.id)}
                               style={{
-                                padding: '12px 14px',
+                                padding: isMobile ? '9px 6px' : '12px 14px',
                                 borderRadius: 12,
                                 background: isSelected ? 'rgba(124, 58, 237, 0.22)' : 'rgba(255, 255, 255, 0.03)',
                                 border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
                                 cursor: 'pointer',
+                                textAlign: isMobile ? 'center' : 'left',
                                 transition: 'all 0.15s ease',
                                 boxShadow: isSelected ? '0 0 14px rgba(124, 58, 237, 0.3)' : 'none'
                               }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                              <div style={{ fontWeight: 700, fontSize: isMobile ? '0.76rem' : '0.86rem', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
                                 {tier.title}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 3 }}>
+                              <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 2, lineHeight: 1.2 }}>
                                 {tier.desc}
                               </div>
                             </div>
@@ -3540,8 +3617,23 @@ export default function VivaInterviewPage() {
                   </div>
                 </div>
 
+                {/* Mobile Particle Bot: Academic Viva Examiner */}
+                {isMobile && (
+                  <div className="mobile-particle-stage">
+                    <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
+                    <VedikaParticleBot
+                      src="/vedika-bot-school.png"
+                      width={200}
+                      height={180}
+                      inline={true}
+                      colorMode="vibrant"
+                      particleStep={2}
+                    />
+                  </div>
+                )}
+
                 {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
                   <button
                     type="button"
                     className="step-btn prev-btn"
@@ -3558,15 +3650,35 @@ export default function VivaInterviewPage() {
                     <ChevronRight size={16} />
                   </button>
                 </div>
+
+                {isMobile && (
+                  <button
+                    type="button"
+                    className="mobile-mode-switch-btn"
+                    onClick={() => {
+                      setIsRightOpen(true);
+                      setSessionMode('interview');
+                      if (!topic) setTopic('Full Stack Web Development');
+                    }}
+                    style={{
+                      background: 'rgba(14, 165, 233, 0.12)',
+                      border: '1px solid rgba(14, 165, 233, 0.3)',
+                      color: '#38BDF8'
+                    }}
+                  >
+                    <span>Technical Interview Mode</span>
+                    <span>➔</span>
+                  </button>
+                )}
               </div>
             )}
 
             {/* STEP 4: REVIEW & START */}
             {setupStep === 4 && (
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
                 <div>
                   <h1 style={{
-                    fontSize: isMobile ? '1.3rem' : '1.45rem',
+                    fontSize: isMobile ? '1.25rem' : '1.45rem',
                     fontWeight: 800,
                     color: '#FFFFFF',
                     margin: '0 0 2px 0',
@@ -3575,7 +3687,7 @@ export default function VivaInterviewPage() {
                     Ready for Examination
                   </h1>
                   <p style={{
-                    fontSize: '0.82rem',
+                    fontSize: isMobile ? '0.78rem' : '0.82rem',
                     color: '#94A3B8',
                     margin: '0 0 10px 0'
                   }}>
@@ -3584,45 +3696,45 @@ export default function VivaInterviewPage() {
 
                   {/* Summary Card */}
                   <div style={{
-                    padding: '11px 16px',
+                    padding: isMobile ? '9px 12px' : '11px 16px',
                     borderRadius: 12,
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(124, 58, 237, 0.3)',
                     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                    marginBottom: 10
+                    marginBottom: 8
                   }}>
-                    <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A78BFA', fontWeight: 700, marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A78BFA', fontWeight: 700, marginBottom: 6 }}>
                       Session Summary
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '6px 14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(2, 1fr)', gap: '4px 10px' }}>
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Track</span>
-                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Track</span>
+                        <span style={{ fontSize: isMobile ? '0.78rem' : '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
                           Academic Lab Viva
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Topic</span>
-                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#A78BFA' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Topic</span>
+                        <span style={{ fontSize: isMobile ? '0.78rem' : '0.84rem', fontWeight: 700, color: '#A78BFA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
                           {customVivaTopic || 'DBMS'}
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Academic Tier</span>
-                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Academic Tier</span>
+                        <span style={{ fontSize: isMobile ? '0.78rem' : '0.84rem', fontWeight: 700, color: '#FFFFFF' }}>
                           {level} Level
                         </span>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Difficulty</span>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Difficulty</span>
                         <span style={{
-                          fontSize: '0.76rem',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '1px 8px',
+                          padding: '1px 6px',
                           borderRadius: 6,
                           background: difficulty === 'Easy' ? 'rgba(16, 185, 129, 0.2)' : difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                           color: difficulty === 'Easy' ? '#10B981' : difficulty === 'Medium' ? '#F59E0B' : '#EF4444',
@@ -3633,17 +3745,17 @@ export default function VivaInterviewPage() {
                         </span>
                       </div>
 
-                      <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Focus Depth</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Focus Depth</span>
+                        <span style={{ fontSize: isMobile ? '0.76rem' : '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
                           {vivaFocus}
                         </span>
                       </div>
 
-                      <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block' }}>Oral Engine</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
-                          {executionMode === 'live' ? '⚡ Realtime Voice Examiner (Gemini Live)' : '⏱ Turn-by-Turn Guided Viva (90s Rounds)'}
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Oral Engine</span>
+                        <span style={{ fontSize: isMobile ? '0.76rem' : '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>
+                          {executionMode === 'live' ? '⚡ Realtime Voice Examiner' : '⏱ Turn-by-Turn Guided Viva'}
                         </span>
                       </div>
                     </div>
@@ -3651,31 +3763,46 @@ export default function VivaInterviewPage() {
 
                   {/* Readiness Checklist */}
                   <div style={{
-                    padding: '8px 12px',
+                    padding: isMobile ? '6px 10px' : '8px 12px',
                     borderRadius: 10,
                     background: 'rgba(255, 255, 255, 0.02)',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 5
+                    gap: 4
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={13} color="#10B981" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.72rem' : '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={12} color="#10B981" />
                       <span>Microphone will activate when examination starts</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={13} color="#10B981" />
-                      <span>5 core examination questions with adaptive follow-up probes</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.72rem' : '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={12} color="#10B981" />
+                      <span>5 core examination questions with adaptive follow-up</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', color: '#CBD5E1' }}>
-                      <CheckCircle2 size={13} color="#10B981" />
-                      <span>Detailed scorecard with rubric evaluation upon completion</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.72rem' : '0.76rem', color: '#CBD5E1' }}>
+                      <CheckCircle2 size={12} color="#10B981" />
+                      <span>Detailed scorecard with rubric evaluation</span>
                     </div>
                   </div>
                 </div>
 
+                {/* Mobile Particle Bot: Academic Viva Examiner */}
+                {isMobile && (
+                  <div className="mobile-particle-stage">
+                    <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
+                    <VedikaParticleBot
+                      src="/vedika-bot-school.png"
+                      width={200}
+                      height={180}
+                      inline={true}
+                      colorMode="vibrant"
+                      particleStep={2}
+                    />
+                  </div>
+                )}
+
                 {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 14 }}>
                   <button
                     type="button"
                     className="step-btn prev-btn"
@@ -3709,6 +3836,26 @@ export default function VivaInterviewPage() {
                     )}
                   </button>
                 </div>
+
+                {isMobile && (
+                  <button
+                    type="button"
+                    className="mobile-mode-switch-btn"
+                    onClick={() => {
+                      setIsRightOpen(true);
+                      setSessionMode('interview');
+                      if (!topic) setTopic('Full Stack Web Development');
+                    }}
+                    style={{
+                      background: 'rgba(14, 165, 233, 0.12)',
+                      border: '1px solid rgba(14, 165, 233, 0.3)',
+                      color: '#38BDF8'
+                    }}
+                  >
+                    <span>Technical Interview Mode</span>
+                    <span>➔</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -4047,38 +4194,6 @@ export default function VivaInterviewPage() {
           }} />
         )}
 
-        {/* Mobile Particle Bot Showcase: Technical Interviewer */}
-        {isMobile && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            width: '100%',
-            margin: '2px 0 6px 0',
-            flexShrink: 0
-          }}>
-            <div style={{
-              position: 'absolute',
-              width: 140,
-              height: 140,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(14, 165, 233, 0.28) 0%, transparent 70%)',
-              filter: 'blur(18px)',
-              pointerEvents: 'none'
-            }} />
-            <VedikaParticleBot
-              src="/vedika-bot-suit.png"
-              width={140}
-              height={140}
-              inline={true}
-              colorMode="vibrant"
-              particleStep={2}
-            />
-          </div>
-        )}
-
         {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
         <div className="step-progress-wrapper">
           <div className="step-progress-container">
@@ -4160,10 +4275,10 @@ export default function VivaInterviewPage() {
 
         {/* STEP 1: TARGET ROLE */}
         {interviewStep === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
-                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontSize: isMobile ? '1.30rem' : '1.85rem',
                 fontWeight: 800,
                 margin: 0,
                 color: '#F8FAFC',
@@ -4173,22 +4288,22 @@ export default function VivaInterviewPage() {
                 Choose your target role
               </h1>
               <p style={{
-                fontSize: '0.88rem',
+                fontSize: isMobile ? '0.78rem' : '0.88rem',
                 color: '#94A3B8',
                 marginTop: 4,
-                marginBottom: 16
+                marginBottom: 14
               }}>
                 Select an engineering discipline or customize your target tech stack.
               </p>
 
               {/* Search Input Bar */}
-              <div style={{ position: 'relative', width: '100%', marginBottom: 18 }}>
+              <div style={{ position: 'relative', width: '100%', marginBottom: 14 }}>
                 <Search
                   size={18}
                   color="#38BDF8"
                   style={{
                     position: 'absolute',
-                    left: 18,
+                    left: 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
                     pointerEvents: 'none'
@@ -4198,17 +4313,17 @@ export default function VivaInterviewPage() {
                   type="text"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., Full Stack Web Development, Backend Go/Java, React Frontend, Machine Learning..."
+                  placeholder="e.g., Full Stack Web, Backend Go/Java, React..."
                   style={{
                     width: '100%',
-                    height: 48,
+                    height: 46,
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1.5px solid rgba(14, 165, 233, 0.35)',
                     borderRadius: 14,
-                    paddingLeft: 46,
+                    paddingLeft: 44,
                     paddingRight: 16,
                     color: '#F8FAFC',
-                    fontSize: '0.92rem',
+                    fontSize: '0.90rem',
                     fontWeight: 500,
                     outline: 'none',
                     transition: 'all 0.2s ease',
@@ -4228,14 +4343,14 @@ export default function VivaInterviewPage() {
               {/* Technical Screening Intelligence Banner (Collapsible on Mobile) */}
               <div
                 style={{
-                  marginTop: isMobile ? 10 : 18,
-                  padding: isMobile ? '12px 14px' : '16px 20px',
+                  marginTop: 6,
+                  padding: isMobile ? '10px 12px' : '16px 20px',
                   borderRadius: 14,
                   background: 'rgba(14, 165, 233, 0.05)',
                   border: '1px solid rgba(14, 165, 233, 0.2)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 10,
+                  gap: 8,
                   cursor: isMobile ? 'pointer' : 'default',
                   transition: 'all 0.2s ease'
                 }}
@@ -4253,11 +4368,11 @@ export default function VivaInterviewPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    fontSize: '0.86rem',
+                    fontSize: '0.84rem',
                     fontWeight: 700,
                     color: '#38BDF8'
                   }}>
-                    <Code2 size={16} color="#0EA5E9" />
+                    <Code2 size={15} color="#0EA5E9" />
                     <span>Role-Specific Technical Probing</span>
                   </div>
                   {isMobile && (
@@ -4265,11 +4380,11 @@ export default function VivaInterviewPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: '0.74rem',
+                      fontSize: '0.72rem',
                       fontWeight: 600,
                       color: '#38BDF8',
                       background: 'rgba(14, 165, 233, 0.16)',
-                      padding: '3px 8px',
+                      padding: '2px 8px',
                       borderRadius: 9999
                     }}>
                       <span>{isMobileInfoExpanded ? 'Hide' : 'Details'}</span>
@@ -4281,9 +4396,9 @@ export default function VivaInterviewPage() {
                 {(!isMobile || isMobileInfoExpanded) && (
                   <>
                     <p style={{
-                      fontSize: '0.82rem',
+                      fontSize: '0.80rem',
                       color: '#94A3B8',
-                      lineHeight: 1.5,
+                      lineHeight: 1.45,
                       margin: 0
                     }}>
                       Vedika evaluates software architecture, production edge cases, API designs, algorithmic problem-solving, and system trade-offs tailored precisely to your role.
@@ -4291,20 +4406,20 @@ export default function VivaInterviewPage() {
                     <div style={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: 16,
+                      gap: 12,
                       paddingTop: 4,
                       borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                      fontSize: '0.78rem',
+                      fontSize: '0.76rem',
                       color: '#CBD5E1'
                     }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#0EA5E9" /> System Architecture
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <CheckCircle2 size={12} color="#0EA5E9" /> System Architecture
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#0EA5E9" /> Real-time Voice Screen
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <CheckCircle2 size={12} color="#0EA5E9" /> Real-time Voice Screen
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#0EA5E9" /> Engineering Trade-off Probes
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <CheckCircle2 size={12} color="#0EA5E9" /> Engineering Trade-off Probes
                       </span>
                     </div>
                   </>
@@ -4312,8 +4427,23 @@ export default function VivaInterviewPage() {
               </div>
             </div>
 
+            {/* Mobile Particle Bot: Technical Interviewer */}
+            {isMobile && (
+              <div className="mobile-particle-stage">
+                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
+                <VedikaParticleBot
+                  src="/vedika-bot-suit.png"
+                  width={200}
+                  height={180}
+                  inline={true}
+                  colorMode="vibrant"
+                  particleStep={2}
+                />
+              </div>
+            )}
+
             {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: isMobile ? 10 : 20 }}>
               <button
                 type="button"
                 className="step-btn prev-btn"
@@ -4333,15 +4463,34 @@ export default function VivaInterviewPage() {
                 <ChevronRight size={16} />
               </button>
             </div>
+
+            {isMobile && (
+              <button
+                type="button"
+                className="mobile-mode-switch-btn"
+                onClick={() => {
+                  setIsRightOpen(false);
+                  setSessionMode('viva');
+                }}
+                style={{
+                  background: 'rgba(124, 58, 237, 0.12)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)',
+                  color: '#C4B5FD'
+                }}
+              >
+                <span>Switch to Academic Viva Mode</span>
+                <span>➔</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* STEP 2: SENIORITY & TECH STACK */}
         {interviewStep === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
-                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontSize: isMobile ? '1.30rem' : '1.85rem',
                 fontWeight: 800,
                 margin: 0,
                 color: '#F8FAFC',
@@ -4351,25 +4500,25 @@ export default function VivaInterviewPage() {
                 Seniority & Tech Stack
               </h1>
               <p style={{
-                fontSize: '0.88rem',
+                fontSize: isMobile ? '0.78rem' : '0.88rem',
                 color: '#94A3B8',
                 marginTop: 4,
-                marginBottom: 16
+                marginBottom: 12
               }}>
                 Select your target seniority level and primary programming language or framework.
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {/* Seniority Level */}
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 6 }}>
                     Target Seniority Level
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 6 : 10 }}>
                     {[
-                      { id: 'Junior', title: 'Junior / Fresher', desc: '0 - 2 Years experience • Core syntax & basic algorithms' },
-                      { id: 'Mid-Level', title: 'Mid-Level Engineer', desc: '2 - 5 Years hands-on • System design & feature ownership' },
-                      { id: 'Senior', title: 'Senior / Staff', desc: '5+ Years architecture • High scale & team technical leadership' }
+                      { id: 'Junior', title: isMobile ? 'Junior' : 'Junior / Fresher', desc: isMobile ? '0 - 2 Yrs' : '0 - 2 Years experience • Core syntax & basic algorithms' },
+                      { id: 'Mid-Level', title: isMobile ? 'Mid-Level' : 'Mid-Level Engineer', desc: isMobile ? '2 - 5 Yrs' : '2 - 5 Years hands-on • System design & feature ownership' },
+                      { id: 'Senior', title: isMobile ? 'Senior' : 'Senior / Staff', desc: isMobile ? '5+ Yrs' : '5+ Years architecture • High scale & team technical leadership' }
                     ].map((s) => {
                       const isSel = level === s.id;
                       return (
@@ -4377,19 +4526,20 @@ export default function VivaInterviewPage() {
                           key={s.id}
                           onClick={() => setLevel(s.id)}
                           style={{
-                            padding: '12px 14px',
+                            padding: isMobile ? '9px 6px' : '12px 14px',
                             borderRadius: 12,
                             cursor: 'pointer',
+                            textAlign: isMobile ? 'center' : 'left',
                             background: isSel ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
                             border: isSel ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
                             transition: 'all 0.2s ease',
                             boxShadow: isSel ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none'
                           }}
                         >
-                          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
+                          <div style={{ fontSize: isMobile ? '0.76rem' : '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
                             {s.title}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 3 }}>
+                          <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#64748B', marginTop: 2, lineHeight: 1.2 }}>
                             {s.desc}
                           </div>
                         </div>
@@ -4400,10 +4550,10 @@ export default function VivaInterviewPage() {
 
                 {/* Programming Language */}
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 6 }}>
                     Primary Programming Language / Stack
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {['JavaScript', 'TypeScript', 'Python', 'Go', 'Java', 'C++', 'SQL', 'Rust'].map((lang) => {
                       const isSel = programmingLanguage === lang;
                       return (
@@ -4412,9 +4562,9 @@ export default function VivaInterviewPage() {
                           type="button"
                           onClick={() => setProgrammingLanguage(lang)}
                           style={{
-                            padding: '8px 16px',
+                            padding: isMobile ? '5px 12px' : '8px 16px',
                             borderRadius: 9999,
-                            fontSize: '0.84rem',
+                            fontSize: isMobile ? '0.76rem' : '0.84rem',
                             fontWeight: 700,
                             cursor: 'pointer',
                             background: isSel ? 'rgba(14, 165, 233, 0.25)' : 'rgba(255, 255, 255, 0.04)',
@@ -4433,8 +4583,23 @@ export default function VivaInterviewPage() {
               </div>
             </div>
 
+            {/* Mobile Particle Bot: Technical Interviewer */}
+            {isMobile && (
+              <div className="mobile-particle-stage">
+                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
+                <VedikaParticleBot
+                  src="/vedika-bot-suit.png"
+                  width={200}
+                  height={180}
+                  inline={true}
+                  colorMode="vibrant"
+                  particleStep={2}
+                />
+              </div>
+            )}
+
             {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
               <button
                 type="button"
                 className="step-btn prev-btn"
@@ -4451,15 +4616,34 @@ export default function VivaInterviewPage() {
                 <ChevronRight size={16} />
               </button>
             </div>
+
+            {isMobile && (
+              <button
+                type="button"
+                className="mobile-mode-switch-btn"
+                onClick={() => {
+                  setIsRightOpen(false);
+                  setSessionMode('viva');
+                }}
+                style={{
+                  background: 'rgba(124, 58, 237, 0.12)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)',
+                  color: '#C4B5FD'
+                }}
+              >
+                <span>Switch to Academic Viva Mode</span>
+                <span>➔</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* STEP 3: RIGOR & INTERVIEW MODE */}
         {interviewStep === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
-                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontSize: isMobile ? '1.30rem' : '1.85rem',
                 fontWeight: 800,
                 margin: 0,
                 color: '#F8FAFC',
@@ -4469,25 +4653,25 @@ export default function VivaInterviewPage() {
                 Interview Rigor & Format
               </h1>
               <p style={{
-                fontSize: '0.88rem',
+                fontSize: isMobile ? '0.78rem' : '0.88rem',
                 color: '#94A3B8',
                 marginTop: 4,
-                marginBottom: 16
+                marginBottom: 12
               }}>
                 Set candidate evaluation standards and voice interaction mode.
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {/* Interview Rigor */}
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 6 }}>
                     Interview Rigor / Bar
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 6 : 10 }}>
                     {[
-                      { id: 'Easy', title: 'Standard Screening', desc: 'Fundamentals, logic verification & clean code basics' },
-                      { id: 'Medium', title: 'In-Depth Technical', desc: 'Architecture trade-offs, concurrency & edge cases' },
-                      { id: 'Hard', title: 'FAANG Bar Raiser', desc: 'Large scale distributed systems & architectural rigor' }
+                      { id: 'Easy', title: isMobile ? 'Standard' : 'Standard Screening', desc: isMobile ? 'Fundamentals' : 'Fundamentals, logic verification & clean code basics' },
+                      { id: 'Medium', title: isMobile ? 'In-Depth' : 'In-Depth Technical', desc: isMobile ? 'Architecture' : 'Architecture trade-offs, concurrency & edge cases' },
+                      { id: 'Hard', title: isMobile ? 'Bar Raiser' : 'FAANG Bar Raiser', desc: isMobile ? 'Distributed' : 'Large scale distributed systems & architectural rigor' }
                     ].map((d) => {
                       const isSel = difficulty === d.id;
                       return (
@@ -4495,19 +4679,20 @@ export default function VivaInterviewPage() {
                           key={d.id}
                           onClick={() => setDifficulty(d.id)}
                           style={{
-                            padding: '12px 14px',
+                            padding: isMobile ? '9px 6px' : '12px 14px',
                             borderRadius: 12,
                             cursor: 'pointer',
+                            textAlign: isMobile ? 'center' : 'left',
                             background: isSel ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
                             border: isSel ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
                             transition: 'all 0.2s ease',
                             boxShadow: isSel ? '0 0 14px rgba(14, 165, 233, 0.3)' : 'none'
                           }}
                         >
-                          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
+                          <div style={{ fontSize: isMobile ? '0.76rem' : '0.86rem', fontWeight: 700, color: isSel ? '#38BDF8' : '#F8FAFC' }}>
                             {d.title}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 3 }}>
+                          <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#64748B', marginTop: 2, lineHeight: 1.2 }}>
                             {d.desc}
                           </div>
                         </div>
@@ -4518,14 +4703,14 @@ export default function VivaInterviewPage() {
 
                 {/* Voice Interaction Format */}
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: 6 }}>
                     Interview Format
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: isMobile ? 8 : 10 }}>
                     <div
                       onClick={() => setExecutionMode('live')}
                       style={{
-                        padding: '12px 14px',
+                        padding: isMobile ? '9px 10px' : '12px 14px',
                         borderRadius: 12,
                         background: executionMode === 'live' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
                         border: executionMode === 'live' ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -4534,19 +4719,19 @@ export default function VivaInterviewPage() {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
-                        <Zap size={16} color="#38BDF8" />
-                        <span>Realtime Voice (Gemini Live)</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: isMobile ? '0.78rem' : '0.86rem' }}>
+                        <Zap size={15} color="#38BDF8" />
+                        <span>Realtime Voice</span>
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
-                        Natural live voice screening with instant interruption and fluid technical conversation.
+                      <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
+                        Live Gemini voice screen with instant banter.
                       </div>
                     </div>
 
                     <div
                       onClick={() => setExecutionMode('turn')}
                       style={{
-                        padding: '12px 14px',
+                        padding: isMobile ? '9px 10px' : '12px 14px',
                         borderRadius: 12,
                         background: executionMode === 'turn' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(255, 255, 255, 0.03)',
                         border: executionMode === 'turn' ? '1.5px solid #0EA5E9' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -4555,12 +4740,12 @@ export default function VivaInterviewPage() {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: '0.86rem' }}>
-                        <Clock size={16} color="#38BDF8" />
-                        <span>Turn-by-Turn Guided Rounds</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#FFFFFF', fontSize: isMobile ? '0.78rem' : '0.86rem' }}>
+                        <Clock size={15} color="#38BDF8" />
+                        <span>Turn-by-Turn</span>
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4, lineHeight: 1.4 }}>
-                        Structured questions with 90s countdown timer and instant evaluation playback.
+                      <div style={{ fontSize: isMobile ? '0.62rem' : '0.72rem', color: '#94A3B8', marginTop: 3, lineHeight: 1.3 }}>
+                        Structured 90s timed technical rounds.
                       </div>
                     </div>
                   </div>
@@ -4568,8 +4753,23 @@ export default function VivaInterviewPage() {
               </div>
             </div>
 
+            {/* Mobile Particle Bot: Technical Interviewer */}
+            {isMobile && (
+              <div className="mobile-particle-stage">
+                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
+                <VedikaParticleBot
+                  src="/vedika-bot-suit.png"
+                  width={200}
+                  height={180}
+                  inline={true}
+                  colorMode="vibrant"
+                  particleStep={2}
+                />
+              </div>
+            )}
+
             {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
               <button
                 type="button"
                 className="step-btn prev-btn"
@@ -4586,15 +4786,34 @@ export default function VivaInterviewPage() {
                 <ChevronRight size={16} />
               </button>
             </div>
+
+            {isMobile && (
+              <button
+                type="button"
+                className="mobile-mode-switch-btn"
+                onClick={() => {
+                  setIsRightOpen(false);
+                  setSessionMode('viva');
+                }}
+                style={{
+                  background: 'rgba(124, 58, 237, 0.12)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)',
+                  color: '#C4B5FD'
+                }}
+              >
+                <span>Switch to Academic Viva Mode</span>
+                <span>➔</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* STEP 4: REVIEW & START INTERVIEW */}
         {interviewStep === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 18 : 0, minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: isMobile ? 'flex-start' : 'space-between', gap: isMobile ? 12 : 0, minHeight: 0 }}>
             <div>
               <h1 style={{
-                fontSize: isMobile ? '1.5rem' : '1.85rem',
+                fontSize: isMobile ? '1.30rem' : '1.85rem',
                 fontWeight: 800,
                 margin: 0,
                 color: '#F8FAFC',
@@ -4604,47 +4823,47 @@ export default function VivaInterviewPage() {
                 Ready for your interview?
               </h1>
               <p style={{
-                fontSize: '0.88rem',
+                fontSize: isMobile ? '0.78rem' : '0.88rem',
                 color: '#94A3B8',
                 marginTop: 4,
-                marginBottom: 16
+                marginBottom: 12
               }}>
                 Review your setup summary and launch your technical interview round.
               </p>
 
               {/* Summary Box */}
               <div style={{
-                padding: '16px 20px',
+                padding: isMobile ? '10px 14px' : '16px 20px',
                 borderRadius: 14,
                 background: 'rgba(14, 165, 233, 0.05)',
                 border: '1px solid rgba(14, 165, 233, 0.25)',
-                marginBottom: 16
+                marginBottom: 10
               }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px 16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(2, 1fr)', gap: '6px 12px' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Target Track</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38BDF8' }}>
-                      {topic || 'Full Stack Web Development'}
+                    <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Target Track</span>
+                    <span style={{ fontSize: isMobile ? '0.80rem' : '0.9rem', fontWeight: 700, color: '#38BDF8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {topic || 'Full Stack Web'}
                     </span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Seniority</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Seniority</span>
+                    <span style={{ fontSize: isMobile ? '0.80rem' : '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
                       {level} Level
                     </span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Primary Language</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Primary Language</span>
+                    <span style={{ fontSize: isMobile ? '0.80rem' : '0.9rem', fontWeight: 700, color: '#F1F5F9' }}>
                       {programmingLanguage}
                     </span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Interview Rigor</span>
+                    <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Interview Rigor</span>
                     <span style={{
-                      fontSize: '0.78rem',
+                      fontSize: '0.72rem',
                       fontWeight: 700,
-                      padding: '2px 8px',
+                      padding: '1px 6px',
                       borderRadius: 6,
                       background: 'rgba(14, 165, 233, 0.2)',
                       color: '#38BDF8',
@@ -4653,10 +4872,10 @@ export default function VivaInterviewPage() {
                       {difficulty}
                     </span>
                   </div>
-                  <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Interaction Engine</span>
-                    <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#E2E8F0' }}>
-                      {executionMode === 'live' ? '⚡ Realtime Voice Screen (Gemini Live)' : '⏱ Turn-by-Turn Guided Rounds (90s Timed)'}
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748B', display: 'block' }}>Interaction Engine</span>
+                    <span style={{ fontSize: isMobile ? '0.78rem' : '0.84rem', fontWeight: 600, color: '#E2E8F0' }}>
+                      {executionMode === 'live' ? '⚡ Realtime Voice Screen' : '⏱ Turn-by-Turn Guided'}
                     </span>
                   </div>
                 </div>
@@ -4664,31 +4883,46 @@ export default function VivaInterviewPage() {
 
               {/* Readiness Checklist */}
               <div style={{
-                padding: '12px 16px',
+                padding: isMobile ? '8px 12px' : '12px 16px',
                 borderRadius: 12,
                 background: 'rgba(255, 255, 255, 0.02)',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8
+                gap: 5
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
-                  <CheckCircle2 size={15} color="#0EA5E9" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.74rem' : '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={13} color="#0EA5E9" />
                   <span>Live microphone activation for spoken engineering responses</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
-                  <CheckCircle2 size={15} color="#0EA5E9" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.74rem' : '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={13} color="#0EA5E9" />
                   <span>5 architectural questions with adaptive deep probes</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#CBD5E1' }}>
-                  <CheckCircle2 size={15} color="#0EA5E9" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isMobile ? '0.74rem' : '0.8rem', color: '#CBD5E1' }}>
+                  <CheckCircle2 size={13} color="#0EA5E9" />
                   <span>FAANG-calibrated scorecard with trade-off analysis</span>
                 </div>
               </div>
             </div>
 
+            {/* Mobile Particle Bot: Technical Interviewer */}
+            {isMobile && (
+              <div className="mobile-particle-stage">
+                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
+                <VedikaParticleBot
+                  src="/vedika-bot-suit.png"
+                  width={200}
+                  height={180}
+                  inline={true}
+                  colorMode="vibrant"
+                  particleStep={2}
+                />
+              </div>
+            )}
+
             {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
               <button
                 type="button"
                 className="step-btn prev-btn"
@@ -4719,6 +4953,25 @@ export default function VivaInterviewPage() {
                 )}
               </button>
             </div>
+
+            {isMobile && (
+              <button
+                type="button"
+                className="mobile-mode-switch-btn"
+                onClick={() => {
+                  setIsRightOpen(false);
+                  setSessionMode('viva');
+                }}
+                style={{
+                  background: 'rgba(124, 58, 237, 0.12)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)',
+                  color: '#C4B5FD'
+                }}
+              >
+                <span>Switch to Academic Viva Mode</span>
+                <span>➔</span>
+              </button>
+            )}
           </div>
         )}
       </div>

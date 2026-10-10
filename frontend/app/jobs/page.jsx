@@ -41,6 +41,9 @@ export default function StudentJobsPage() {
     loadJobs();
   }, []);
 
+  // Page size: 2 on mobile to fit nicely on screen, 3 on desktop
+  const pageSize = isMobile ? 2 : 3;
+
   // Filter logic
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
@@ -59,11 +62,11 @@ export default function StudentJobsPage() {
     setCurrentPage(1);
   }, [searchTerm, filterMode, filterType]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const paginatedJobs = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredJobs.slice(start, start + PAGE_SIZE);
-  }, [filteredJobs, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredJobs.slice(start, start + pageSize);
+  }, [filteredJobs, currentPage, pageSize]);
 
   return (
     <div style={{
@@ -74,7 +77,7 @@ export default function StudentJobsPage() {
       overflowX: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      padding: isMobile ? '14px 16px' : '24px 32px 16px 32px',
+      padding: isMobile ? '12px 14px' : '24px 32px 16px 32px',
       maxWidth: 1320,
       margin: '0 auto',
       width: '100%',
@@ -82,11 +85,11 @@ export default function StudentJobsPage() {
       fontFamily: 'var(--font-outfit), sans-serif'
     }}>
       {/* Header */}
-      <div style={{ marginBottom: 14, flexShrink: 0 }}>
-        <h1 style={{ color: T.text, fontSize: isMobile ? 20 : 25, fontWeight: 700, margin: 0, letterSpacing: '-0.03em' }}>
+      <div style={{ marginBottom: isMobile ? 10 : 14, flexShrink: 0 }}>
+        <h1 style={{ color: T.text, fontSize: isMobile ? 19 : 25, fontWeight: 700, margin: 0, letterSpacing: '-0.03em' }}>
           Career Opportunities
         </h1>
-        <p style={{ color: T.muted, fontSize: 13, margin: '2px 0 0' }}>
+        <p style={{ color: T.muted, fontSize: isMobile ? 12 : 13, margin: '2px 0 0' }}>
           Explore full-time, part-time, and remote jobs posted by partner organizations.
         </p>
       </div>
@@ -96,16 +99,16 @@ export default function StudentJobsPage() {
         background: T.s1,
         border: `1px solid ${T.border}`,
         borderRadius: 12,
-        padding: '10px 14px',
-        marginBottom: 16,
+        padding: isMobile ? '8px 10px' : '10px 14px',
+        marginBottom: isMobile ? 12 : 16,
         display: 'flex',
-        flexWrap: 'wrap',
-        gap: 12,
-        alignItems: 'center',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 8 : 12,
+        alignItems: 'stretch',
         flexShrink: 0
       }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 0, width: '100%' }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
             <Search size={15} color={T.muted} />
           </span>
@@ -123,55 +126,64 @@ export default function StudentJobsPage() {
               color: T.text,
               fontSize: 13,
               fontFamily: 'inherit',
-              outline: 'none'
+              outline: 'none',
+              boxSizing: 'border-box'
             }}
           />
         </div>
 
-        {/* Work Mode Filter */}
-        <select
-          value={filterMode}
-          onChange={(e) => setFilterMode(e.target.value)}
-          style={{
-            background: T.s2,
-            border: `1px solid ${T.border}`,
-            borderRadius: 8,
-            padding: '8px 12px',
-            color: T.text,
-            fontSize: 13,
-            outline: 'none',
-            fontFamily: 'inherit',
-            minWidth: 130
-          }}
-        >
-          <option value="All">All Work Modes</option>
-          <option value="Remote">Remote</option>
-          <option value="Hybrid">Hybrid</option>
-          <option value="On-site">On-site</option>
-        </select>
+        {/* Filters Row on mobile: side-by-side */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          width: isMobile ? '100%' : 'auto',
+          flexShrink: 0
+        }}>
+          <select
+            value={filterMode}
+            onChange={(e) => setFilterMode(e.target.value)}
+            style={{
+              background: T.s2,
+              border: `1px solid ${T.border}`,
+              borderRadius: 8,
+              padding: '7px 10px',
+              color: T.text,
+              fontSize: 12,
+              outline: 'none',
+              fontFamily: 'inherit',
+              flex: isMobile ? 1 : 'none',
+              minWidth: isMobile ? 0 : 130
+            }}
+          >
+            <option value="All">All Work Modes</option>
+            <option value="Remote">Remote</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="On-site">On-site</option>
+          </select>
 
-        {/* Job Type Filter */}
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          style={{
-            background: T.s2,
-            border: `1px solid ${T.border}`,
-            borderRadius: 8,
-            padding: '8px 12px',
-            color: T.text,
-            fontSize: 13,
-            outline: 'none',
-            fontFamily: 'inherit',
-            minWidth: 130
-          }}
-        >
-          <option value="All">All Job Types</option>
-          <option value="Full Time">Full Time</option>
-          <option value="Part Time">Part Time</option>
-          <option value="Contract">Contract</option>
-          <option value="Freelance">Freelance</option>
-        </select>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            style={{
+              background: T.s2,
+              border: `1px solid ${T.border}`,
+              borderRadius: 8,
+              padding: '7px 10px',
+              color: T.text,
+              fontSize: 12,
+              outline: 'none',
+              fontFamily: 'inherit',
+              flex: isMobile ? 1 : 'none',
+              minWidth: isMobile ? 0 : 130
+            }}
+          >
+            <option value="All">All Job Types</option>
+            <option value="Full Time">Full Time</option>
+            <option value="Part Time">Part Time</option>
+            <option value="Contract">Contract</option>
+            <option value="Freelance">Freelance</option>
+          </select>
+        </div>
       </div>
 
       {/* Main List Area: 3 Jobs per row, no vertical scroll */}
@@ -215,7 +227,7 @@ export default function StudentJobsPage() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : (isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'),
-            gap: 18,
+            gap: isMobile ? 12 : 18,
             alignItems: 'stretch',
             width: '100%'
           }}>
@@ -230,12 +242,12 @@ export default function StudentJobsPage() {
                     background: T.s1,
                     border: `1px solid ${isSelected ? T.accent : T.border}`,
                     borderRadius: 14,
-                    padding: '20px 22px',
+                    padding: isMobile ? '14px 16px' : '20px 22px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    minHeight: 180,
-                    gap: 16,
+                    minHeight: isMobile ? 145 : 180,
+                    gap: isMobile ? 12 : 16,
                     cursor: 'pointer',
                     boxSizing: 'border-box'
                   }}
@@ -326,7 +338,7 @@ export default function StudentJobsPage() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
-          padding: '76px 20px 24px 20px',
+          padding: isMobile ? '20px 12px' : '76px 20px 24px 20px',
           boxSizing: 'border-box'
         }}>
           <div style={{
@@ -336,13 +348,13 @@ export default function StudentJobsPage() {
             width: '100%',
             maxWidth: 580,
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.75)',
-            maxHeight: 'calc(100vh - 100px)',
+            maxHeight: isMobile ? 'calc(100dvh - 32px)' : 'calc(100vh - 100px)',
             display: 'flex',
             flexDirection: 'column'
           }}>
             {/* Header */}
             <div style={{
-              padding: '18px 24px',
+              padding: isMobile ? '14px 16px' : '18px 24px',
               borderBottom: `1px solid ${T.border}`,
               display: 'flex',
               justifyContent: 'space-between',
@@ -350,10 +362,10 @@ export default function StudentJobsPage() {
               gap: 16
             }}>
               <div>
-                <h2 style={{ margin: 0, color: T.text, fontSize: 18, fontWeight: 700, lineHeight: 1.3 }}>
+                <h2 style={{ margin: 0, color: T.text, fontSize: isMobile ? 16 : 18, fontWeight: 700, lineHeight: 1.3 }}>
                   {selectedJob.title}
                 </h2>
-                <div style={{ color: T.accent, fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                <div style={{ color: T.accent, fontSize: isMobile ? 13 : 14, fontWeight: 600, marginTop: 4 }}>
                   {selectedJob.company}
                 </div>
               </div>
@@ -366,7 +378,7 @@ export default function StudentJobsPage() {
             </div>
 
             {/* Scrollable details */}
-            <div style={{ padding: 24, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ padding: isMobile ? '16px 14px' : 24, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Meta details list */}
               <div style={{
                 display: 'grid',

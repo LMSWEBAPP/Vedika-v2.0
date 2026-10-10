@@ -169,18 +169,18 @@ export default function ProgressPage({ completed = {} }) {
   }
 
   return (
-    <div style={{ padding: isMobile ? '20px 16px' : '32px 36px', maxWidth: 860, fontFamily: 'var(--font-outfit), sans-serif', margin: '0 auto' }}>
-      <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.03em' }}>
+    <div style={{ padding: isMobile ? '14px 12px 32px' : '32px 36px', maxWidth: 860, fontFamily: 'var(--font-outfit), sans-serif', margin: '0 auto', boxSizing: 'border-box' }}>
+      <h2 style={{ color: T.text, fontSize: isMobile ? 20 : 22, fontWeight: 700, margin: '0 0 4px', letterSpacing: '-0.03em' }}>
         Progress Dashboard
       </h2>
-      <p style={{ color: T.muted, margin: '0 0 24px', fontSize: 14 }}>
+      <p style={{ color: T.muted, margin: '0 0 18px', fontSize: isMobile ? 13 : 14 }}>
         Your progress in <span style={{ color: T.accent, fontWeight: 600 }}>{selectedCourseSyllabus?.title || "selected course"}</span> at a glance.
       </p>
 
       {/* Course Selector */}
       {enrolledCourses.length > 1 && (
-        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, color: T.muted, fontWeight: 500 }}>Select Course:</span>
+        <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12.5, color: T.muted, fontWeight: 500 }}>Select Course:</span>
           <select 
             value={selectedCourseId} 
             onChange={(e) => {
@@ -193,9 +193,9 @@ export default function ProgressPage({ completed = {} }) {
               background: T.s3,
               border: `1px solid ${T.border}`,
               color: T.text,
-              padding: '8px 14px',
+              padding: isMobile ? '7px 10px' : '8px 14px',
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: 12.5,
               fontFamily: 'inherit',
               fontWeight: 600,
               cursor: 'pointer',
@@ -215,40 +215,41 @@ export default function ProgressPage({ completed = {} }) {
       )}
 
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: statCols, gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: statCols, gap: isMobile ? 8 : 12, marginBottom: 18 }}>
         {stats.map(({ label, val, total: t, color, Icon }) => (
-          <div key={label} style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: T.muted }}>{label}</span>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div key={label} style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: isMobile ? '12px 10px' : '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: isMobile ? 11 : 12, color: T.muted }}>{label}</span>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={12} color={color} />
               </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: T.text, letterSpacing: '-0.04em' }}>{val}</div>
-            {t !== null && <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>of {t}</div>}
+            <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: T.text, letterSpacing: '-0.04em' }}>{val}</div>
+            {t !== null && <div style={{ fontSize: 10.5, color: T.muted, marginTop: 2 }}>of {t}</div>}
           </div>
         ))}
       </div>
 
       {/* Assignment submissions feedback panel */}
       {submissionsList.length > 0 && (
-        <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '20px', marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: isMobile ? '14px 12px' : '20px', marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             <ClipboardList size={16} color={T.amber} /> Assignment Grading Reviews
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {submissionsList.map(sub => (
-              <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: T.s3, padding: '10px 14px', borderRadius: 8 }}>
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{sub.assignment_title}</div>
-                  {sub.comments && <div style={{ fontSize: 11.5, color: T.muted, marginTop: 4 }}>Feedback: "{sub.comments}"</div>}
+              <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: 6, background: T.s3, padding: isMobile ? '10px 10px' : '10px 14px', borderRadius: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{sub.assignment_title}</div>
+                  {sub.comments && <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>Feedback: "{sub.comments}"</div>}
                 </div>
                 <span style={{
                   fontSize: 10,
                   fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: 4,
+                  alignSelf: isMobile ? 'flex-start' : 'auto',
                   background: sub.status === 'Pass' ? `${T.green}18` : sub.status === 'Fail' ? `${T.red}18` : `${T.amber}18`,
                   color: sub.status === 'Pass' ? T.green : sub.status === 'Fail' ? T.red : T.amber
                 }}>
@@ -261,19 +262,19 @@ export default function ProgressPage({ completed = {} }) {
       )}
 
       {/* Module progress */}
-      <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '20px', marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 14 }}>Module Progress</div>
+      <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: isMobile ? '14px 12px' : '20px', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>Module Progress</div>
         {modules.map(mod => {
           const modDone = (mod.lessons || []).filter(l => completed[l.id]).length;
           const modPct  = mod.lessons?.length > 0 ? Math.round((modDone / mod.lessons.length) * 100) : 0;
           return (
-            <div key={mod.id} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: T.text }}>{mod.emoji || "📖"} {mod.title}</span>
-                <span style={{ fontSize: 12, color: T.muted }}>{modDone}/{mod.lessons?.length || 0} · {modPct}%</span>
+            <div key={mod.id} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <span style={{ fontSize: 12.5, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>{mod.emoji || "📖"} {mod.title}</span>
+                <span style={{ fontSize: 11.5, color: T.muted, flexShrink: 0 }}>{modDone}/{mod.lessons?.length || 0} · {modPct}%</span>
               </div>
-              <div style={{ background: T.s3, borderRadius: 99, height: 7 }}>
-                <div style={{ background: mod.accent || T.accent, height: 7, borderRadius: 99, width: `${modPct}%`, transition: 'width 0.5s' }} />
+              <div style={{ background: T.s3, borderRadius: 99, height: 6 }}>
+                <div style={{ background: mod.accent || T.accent, height: 6, borderRadius: 99, width: `${modPct}%`, transition: 'width 0.5s' }} />
               </div>
             </div>
           );
@@ -281,7 +282,7 @@ export default function ProgressPage({ completed = {} }) {
       </div>
 
       {/* Lesson status grid */}
-      <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '20px' }}>
+      <div style={{ background: T.s2, border: `1px solid ${T.border}`, borderRadius: 12, padding: isMobile ? '14px 12px' : '20px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>Lesson Status</div>
         {courseLessons.length === 0 ? (
           <div style={{ fontSize: 12, color: T.muted, textAlign: 'center', padding: '10px 0' }}>No lessons in this course yet.</div>
@@ -292,13 +293,15 @@ export default function ProgressPage({ completed = {} }) {
                 style={{
                   background: completed[l.id] ? `${T.green}18` : T.s3,
                   border: `1px solid ${completed[l.id] ? T.green + '40' : T.border}`,
-                  borderRadius: 7, padding: '8px', textAlign: 'center'
+                  borderRadius: 7, padding: isMobile ? '6px 4px' : '8px', textAlign: 'center',
+                  minWidth: 0,
+                  overflow: 'hidden'
                 }}>
                 {completed[l.id]
                   ? <CheckCircle size={12} color={T.green} style={{ display: 'block', margin: '0 auto 3px' }} />
                   : <Circle size={12} color={T.dim} style={{ display: 'block', margin: '0 auto 3px' }} />}
-                <div style={{ fontSize: 10, color: completed[l.id] ? T.green : T.muted, lineHeight: 1.2 }}>
-                  {l.title.slice(0, 12)}{l.title.length > 12 ? '...' : ''}
+                <div style={{ fontSize: 9.5, color: completed[l.id] ? T.green : T.muted, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {l.title}
                 </div>
               </div>
             ))}
