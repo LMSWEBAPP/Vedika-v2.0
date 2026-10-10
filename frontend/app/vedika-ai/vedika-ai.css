@@ -110,6 +110,20 @@
   box-shadow: none;
 }
 
+.vedika-ai-back-text-desktop {
+  display: inline;
+}
+
+.vedika-ai-back-text-mobile {
+  display: none;
+}
+
+.vedika-ai-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .vedika-ai-brand-pill {
   display: inline-flex;
   align-items: center;
@@ -710,41 +724,76 @@
     display: contents;
   }
 
-  /* 1. Header with Back to Dashboard Button on TOP */
+  .vedika-ai-back-text-desktop {
+    display: none !important;
+  }
+
+  .vedika-ai-back-text-mobile {
+    display: inline !important;
+  }
+
+  /* 1. Header with Back Button on LEFT and Assistant Hub / Learn Build Grow on RIGHT */
   .vedika-ai-header {
     order: 1;
     width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    margin-bottom: 2px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+    margin-bottom: 6px;
+    padding: 0 2px;
     flex-shrink: 0;
   }
 
   .vedika-ai-top-row {
-    margin-bottom: 2px;
+    margin-bottom: 0;
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .vedika-ai-back-btn {
+    padding: 6px 14px;
+    height: 32px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .vedika-ai-header-titles {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
   }
 
   .vedika-ai-main-title {
-    font-size: 1.50rem;
+    font-size: 1.45rem;
     margin: 0;
     line-height: 1.15;
+    text-align: right;
+  }
+
+  .vedika-ai-subtitle-wrap {
+    margin-top: 2px;
+    align-items: flex-end;
   }
 
   .vedika-ai-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     margin: 0;
+    text-align: right;
+    color: #94A3B8;
   }
 
-  /* 2. Particle Bot Section NEXT (under Header, above Carousel) */
+  /* 2. Particle Bot Section NEXT (enlarged for prominent visual presence) */
   .vedika-ai-right-col {
     order: 2;
     flex: 0 0 auto;
     width: 100%;
-    height: 175px;
-    min-height: 175px;
-    max-height: 180px;
+    height: 215px;
+    min-height: 215px;
+    max-height: 220px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -754,10 +803,10 @@
   }
 
   .vedika-ai-bot-wrapper {
-    width: 200px;
-    height: 175px;
-    max-width: 200px;
-    max-height: 180px;
+    width: 235px;
+    height: 215px;
+    max-width: 240px;
+    max-height: 220px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -766,8 +815,8 @@
   }
 
   .vedika-ai-shimmer-glow-bg {
-    width: 175px;
-    height: 175px;
+    width: 205px;
+    height: 205px;
   }
 
   .vedika-ai-quote-pill,
@@ -775,7 +824,7 @@
     display: none;
   }
 
-  /* 3. Card Carousel NEXT (Vertical accordion, natural active card with no dead space) */
+  /* 3. Card Carousel NEXT (shifted downward cleanly, exact same card sizes) */
   .vedika-ai-accordion-carousel {
     order: 3;
     display: flex;
@@ -784,6 +833,7 @@
     min-height: 0;
     gap: 6px;
     width: 100%;
+    margin-top: 4px;
     touch-action: pan-y;
     overflow: visible;
   }
@@ -908,8 +958,8 @@
     justify-content: center;
     align-items: center;
     gap: 14px;
-    margin-top: 8px;
-    margin-bottom: 6px;
+    margin-top: 10px;
+    margin-bottom: 8px;
     flex-shrink: 0;
   }
 }
@@ -917,21 +967,21 @@
 /* Compact Tier for Short Mobile Viewports (iPhone SE, budget devices <= 680px height) */
 @media (max-width: 768px) and (max-height: 680px) {
   .vedika-ai-hub-inner {
-    padding: 4px 10px 16px;
+    padding: 4px 10px 14px;
     gap: 4px;
   }
   .vedika-ai-main-title {
     font-size: 1.3rem;
   }
   .vedika-ai-right-col {
-    height: 140px;
-    min-height: 140px;
-    max-height: 140px;
+    height: 165px;
+    min-height: 165px;
+    max-height: 165px;
   }
   .vedika-ai-bot-wrapper {
-    width: 160px;
-    height: 140px;
-    max-height: 140px;
+    width: 185px;
+    height: 165px;
+    max-height: 165px;
   }
   .vedika-ai-carousel-card.collapsed {
     flex: 0 0 32px;

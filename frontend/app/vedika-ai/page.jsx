@@ -234,18 +234,21 @@ export default function VedikaAIHub() {
                 type="button"
                 className="vedika-ai-back-btn"
                 onClick={() => router.push('/dashboard')}
-                aria-label="Back to Dashboard"
+                aria-label="Back"
               >
                 <ArrowLeft size={15} />
-                <span>Back to Dashboard</span>
+                <span className="vedika-ai-back-text-desktop">Back to Dashboard</span>
+                <span className="vedika-ai-back-text-mobile">Back</span>
               </button>
             </div>
 
-            <h1 className="vedika-ai-main-title">
-              <span className="vedika-ai-title-gradient">Assistant Hub</span>
-            </h1>
-            <div className="vedika-ai-subtitle-wrap">
-              <p className="vedika-ai-subtitle">Learn. Build. Grow.</p>
+            <div className="vedika-ai-header-titles">
+              <h1 className="vedika-ai-main-title">
+                <span className="vedika-ai-title-gradient">Assistant Hub</span>
+              </h1>
+              <div className="vedika-ai-subtitle-wrap">
+                <p className="vedika-ai-subtitle">Learn. Build. Grow.</p>
+              </div>
             </div>
           </header>
 
@@ -402,8 +405,8 @@ export default function VedikaAIHub() {
             <VedikaParticleBot
               src={activeCard.botImage}
               colorMode="vibrant"
-              width={isMobile ? 200 : 520}
-              height={isMobile ? 175 : 560}
+              width={isMobile ? 235 : 520}
+              height={isMobile ? 215 : 560}
               inline={true}
               particleStep={isMobile ? 2 : 3}
               intensity={1.15}
