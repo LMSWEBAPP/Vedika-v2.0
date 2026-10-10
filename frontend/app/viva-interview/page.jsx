@@ -116,6 +116,7 @@ export default function VivaInterviewPage() {
   const [interviewFormat, setInterviewFormat] = useState('Interactive Live Screen');
   const [topic, setTopic] = useState('');
   const [activeSessionTopic, setActiveSessionTopic] = useState('');
+  const [isMobileInfoExpanded, setIsMobileInfoExpanded] = useState(false);
 
   // Support direct mode selection via URL query param (?mode=interview)
   useEffect(() => {
@@ -2371,40 +2372,85 @@ export default function VivaInterviewPage() {
             .box-container {
               border-radius: 0;
               border: none;
+              width: 100% !important;
+              max-width: 100% !important;
               height: 100%;
               max-height: 100%;
             }
-            .box1-side, .box2-side {
+            .box1-side,
+            .box2-side,
+            .box-container .box1-side,
+            .box-container .box2-side,
+            .box-container.right-open .box1-side,
+            .box-container.right-open .box2-side {
               display: none !important;
+              width: 0px !important;
+              max-width: 0px !important;
+              flex: 0 0 0% !important;
+              border: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
             }
-            .box1-content {
-              flex: 1 !important;
+            .box1-content,
+            .box-container .box1-content {
+              display: flex !important;
+              flex: 1 1 100% !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              min-width: 100% !important;
               opacity: 1 !important;
               pointer-events: auto !important;
-              padding: 16px 14px 40px !important;
+              padding: 14px 16px 40px !important;
+              border: none !important;
+            }
+            .box2-content,
+            .box-container .box2-content {
+              display: none !important;
+              width: 0px !important;
+              max-width: 0px !important;
+              flex: 0 0 0% !important;
+              border: none !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+            }
+            .box-container.right-open .box1-content {
+              display: none !important;
+              width: 0px !important;
+              max-width: 0px !important;
+              flex: 0 0 0% !important;
+              border: none !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
             }
             .box-container.right-open .box2-content {
-              flex: 1 !important;
+              display: flex !important;
+              flex: 1 1 100% !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              min-width: 100% !important;
               opacity: 1 !important;
-              padding: 16px 14px 40px !important;
               pointer-events: auto !important;
+              padding: 14px 16px 40px !important;
+              border: none !important;
             }
             .step-progress-wrapper {
-              margin: 36px 0 24px 0 !important;
+              margin: 20px 0 18px 0 !important;
             }
             .hero-actor-container {
-              bottom: 20px !important;
-              width: 36px !important;
-              height: 36px !important;
-              margin-left: -18px !important;
+              bottom: 18px !important;
+              width: 34px !important;
+              height: 34px !important;
+              margin-left: -17px !important;
             }
             .hero-sprite-frame {
-              width: 36px !important;
-              height: 36px !important;
-              background-size: 216px 36px !important;
+              width: 34px !important;
+              height: 34px !important;
+              background-size: 204px 34px !important;
             }
             .hero-sprite-frame.settled {
-              background-position: -180px 0px !important;
+              background-position: -170px 0px !important;
             }
           }
 
@@ -2934,6 +2980,38 @@ export default function VivaInterviewPage() {
               </div>
             )}
 
+            {/* Mobile Particle Bot Showcase: Academic Viva Examiner */}
+            {isMobile && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                width: '100%',
+                margin: '2px 0 6px 0',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  width: 140,
+                  height: 140,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, transparent 70%)',
+                  filter: 'blur(18px)',
+                  pointerEvents: 'none'
+                }} />
+                <VedikaParticleBot
+                  src="/vedika-bot-school.png"
+                  width={140}
+                  height={140}
+                  inline={true}
+                  colorMode="vibrant"
+                  particleStep={2}
+                />
+              </div>
+            )}
+
             {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
             <div className="step-progress-wrapper">
               <div className="step-progress-container">
@@ -3115,55 +3193,90 @@ export default function VivaInterviewPage() {
                     ))}
                   </div>
 
-                  {/* Adaptive Oral Defense Guidance Card */}
-                  <div style={{
-                    marginTop: 4,
-                    padding: '16px 20px',
-                    borderRadius: 14,
-                    background: 'rgba(124, 58, 237, 0.06)',
-                    border: '1px solid rgba(124, 58, 237, 0.2)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10
-                  }}>
+                  {/* Adaptive Oral Defense Guidance Card (Collapsible on Mobile) */}
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: isMobile ? '12px 14px' : '16px 20px',
+                      borderRadius: 14,
+                      background: 'rgba(124, 58, 237, 0.06)',
+                      border: '1px solid rgba(124, 58, 237, 0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      cursor: isMobile ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => {
+                      if (isMobile) setIsMobileInfoExpanded(!isMobileInfoExpanded);
+                    }}
+                  >
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 10,
-                      fontSize: '0.86rem',
-                      fontWeight: 700,
-                      color: '#C4B5FD'
+                      justifyContent: 'space-between',
+                      width: '100%'
                     }}>
-                      <Sparkles size={16} color="#A855F7" />
-                      <span>Adaptive Oral Defense Engine</span>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        color: '#C4B5FD'
+                      }}>
+                        <Sparkles size={16} color="#A855F7" />
+                        <span>Adaptive Oral Defense Engine</span>
+                      </div>
+                      {isMobile && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          color: '#C4B5FD',
+                          background: 'rgba(124, 58, 237, 0.16)',
+                          padding: '3px 8px',
+                          borderRadius: 9999
+                        }}>
+                          <span>{isMobileInfoExpanded ? 'Hide' : 'Details'}</span>
+                          {isMobileInfoExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                        </div>
+                      )}
                     </div>
-                    <p style={{
-                      fontSize: '0.82rem',
-                      color: '#94A3B8',
-                      lineHeight: 1.5,
-                      margin: 0
-                    }}>
-                      Vedika dynamically formulates oral viva questions targeting textbook theorems, fundamental principles, practical edge cases, and oral proofs based on your topic.
-                    </p>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 16,
-                      paddingTop: 4,
-                      borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                      fontSize: '0.78rem',
-                      color: '#CBD5E1'
-                    }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#A855F7" /> Rigorous Viva Questions
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#A855F7" /> Real-time Speech Evaluation
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#A855F7" /> Scoring & Conceptual Feedback
-                      </span>
-                    </div>
+
+                    {(!isMobile || isMobileInfoExpanded) && (
+                      <>
+                        <p style={{
+                          fontSize: '0.82rem',
+                          color: '#94A3B8',
+                          lineHeight: 1.5,
+                          margin: 0
+                        }}>
+                          Vedika dynamically formulates oral viva questions targeting textbook theorems, fundamental principles, practical edge cases, and oral proofs based on your topic.
+                        </p>
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 16,
+                          paddingTop: 4,
+                          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                          fontSize: '0.78rem',
+                          color: '#CBD5E1'
+                        }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircle2 size={13} color="#A855F7" /> Rigorous Viva Questions
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircle2 size={13} color="#A855F7" /> Real-time Speech Evaluation
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircle2 size={13} color="#A855F7" /> Scoring & Conceptual Feedback
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -3934,6 +4047,38 @@ export default function VivaInterviewPage() {
           }} />
         )}
 
+        {/* Mobile Particle Bot Showcase: Technical Interviewer */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            width: '100%',
+            margin: '2px 0 6px 0',
+            flexShrink: 0
+          }}>
+            <div style={{
+              position: 'absolute',
+              width: 140,
+              height: 140,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(14, 165, 233, 0.28) 0%, transparent 70%)',
+              filter: 'blur(18px)',
+              pointerEvents: 'none'
+            }} />
+            <VedikaParticleBot
+              src="/vedika-bot-suit.png"
+              width={140}
+              height={140}
+              inline={true}
+              colorMode="vibrant"
+              particleStep={2}
+            />
+          </div>
+        )}
+
         {/* HORIZONTAL 4-STEP PROGRESS STEPPER (SUPERHERO VEDIKA BOTS) */}
         <div className="step-progress-wrapper">
           <div className="step-progress-container">
@@ -4080,55 +4225,90 @@ export default function VivaInterviewPage() {
                 />
               </div>
 
-              {/* Technical Screening Intelligence Banner */}
-              <div style={{
-                marginTop: 18,
-                padding: '16px 20px',
-                borderRadius: 14,
-                background: 'rgba(14, 165, 233, 0.05)',
-                border: '1px solid rgba(14, 165, 233, 0.2)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10
-              }}>
+              {/* Technical Screening Intelligence Banner (Collapsible on Mobile) */}
+              <div
+                style={{
+                  marginTop: isMobile ? 10 : 18,
+                  padding: isMobile ? '12px 14px' : '16px 20px',
+                  borderRadius: 14,
+                  background: 'rgba(14, 165, 233, 0.05)',
+                  border: '1px solid rgba(14, 165, 233, 0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  cursor: isMobile ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => {
+                  if (isMobile) setIsMobileInfoExpanded(!isMobileInfoExpanded);
+                }}
+              >
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                  fontSize: '0.86rem',
-                  fontWeight: 700,
-                  color: '#38BDF8'
+                  justifyContent: 'space-between',
+                  width: '100%'
                 }}>
-                  <Code2 size={16} color="#0EA5E9" />
-                  <span>Role-Specific Technical Probing</span>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    color: '#38BDF8'
+                  }}>
+                    <Code2 size={16} color="#0EA5E9" />
+                    <span>Role-Specific Technical Probing</span>
+                  </div>
+                  {isMobile && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: '0.74rem',
+                      fontWeight: 600,
+                      color: '#38BDF8',
+                      background: 'rgba(14, 165, 233, 0.16)',
+                      padding: '3px 8px',
+                      borderRadius: 9999
+                    }}>
+                      <span>{isMobileInfoExpanded ? 'Hide' : 'Details'}</span>
+                      {isMobileInfoExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                    </div>
+                  )}
                 </div>
-                <p style={{
-                  fontSize: '0.82rem',
-                  color: '#94A3B8',
-                  lineHeight: 1.5,
-                  margin: 0
-                }}>
-                  Vedika evaluates software architecture, production edge cases, API designs, algorithmic problem-solving, and system trade-offs tailored precisely to your role.
-                </p>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 16,
-                  paddingTop: 4,
-                  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                  fontSize: '0.78rem',
-                  color: '#CBD5E1'
-                }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <CheckCircle2 size={13} color="#0EA5E9" /> System Architecture
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <CheckCircle2 size={13} color="#0EA5E9" /> Real-time Voice Screen
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <CheckCircle2 size={13} color="#0EA5E9" /> Engineering Trade-off Probes
-                  </span>
-                </div>
+
+                {(!isMobile || isMobileInfoExpanded) && (
+                  <>
+                    <p style={{
+                      fontSize: '0.82rem',
+                      color: '#94A3B8',
+                      lineHeight: 1.5,
+                      margin: 0
+                    }}>
+                      Vedika evaluates software architecture, production edge cases, API designs, algorithmic problem-solving, and system trade-offs tailored precisely to your role.
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 16,
+                      paddingTop: 4,
+                      borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                      fontSize: '0.78rem',
+                      color: '#CBD5E1'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#0EA5E9" /> System Architecture
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#0EA5E9" /> Real-time Voice Screen
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircle2 size={13} color="#0EA5E9" /> Engineering Trade-off Probes
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
