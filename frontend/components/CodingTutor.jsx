@@ -2220,82 +2220,99 @@ export default function CodingTutor() {
                         display: 'flex',
                         justifyContent: 'flex-end',
                         width: '100%',
-                        marginBottom: 16
+                        marginBottom: 18
                       }}>
                         <div style={{
                           display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 10,
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
                           width: 'fit-content',
-                          maxWidth: bubbleMaxW
+                          maxWidth: isMobile ? '92%' : bubbleMaxW
                         }}>
+                          {/* Top Header: "You" label + Cyan Blob avatar */}
                           <div style={{
                             display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                            width: 'fit-content'
+                            alignItems: 'center',
+                            gap: 7,
+                            marginBottom: 6
                           }}>
-                            <div style={{
-                              background: 'rgba(30, 41, 59, 0.55)',
-                              backdropFilter: 'blur(16px)',
-                              WebkitBackdropFilter: 'blur(16px)',
-                              border: '1px solid rgba(255, 255, 255, 0.12)',
-                              borderRadius: '16px 16px 4px 16px',
-                              padding: '12px 18px',
-                              color: '#F8FAFC',
-                              fontSize: 14,
-                              lineHeight: 1.65,
-                              width: 'fit-content',
-                              maxWidth: '100%',
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                              textAlign: 'left',
-                              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)'
-                            }}>
-                              {msg.content}
-                              {msg.documents && msg.documents.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
-                                  {msg.documents.map(doc => (
-                                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.muted }}>
-                                      <span>📄</span>
-                                      <span style={{ fontWeight: 500, color: T.text }}>{doc.name}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.02em' }}>You</span>
+                            <UserBlobAvatar
+                              isTyping={false}
+                              isAiLoading={false}
+                              size={22}
+                              themeColor="cyan"
+                              mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]}
+                            />
+                          </div>
+
+                          {/* User Text Bubble starting directly below */}
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.55)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            borderRadius: '16px 16px 4px 16px',
+                            padding: isMobile ? '10px 14px' : '12px 18px',
+                            color: '#F8FAFC',
+                            fontSize: isMobile ? 13.5 : 14,
+                            lineHeight: 1.65,
+                            width: 'fit-content',
+                            maxWidth: '100%',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            textAlign: 'left',
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.32)'
+                          }}>
+                            {msg.content}
+                            {msg.documents && msg.documents.length > 0 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+                                {msg.documents.map(doc => (
+                                  <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.muted }}>
+                                    <span>📄</span>
+                                    <span style={{ fontWeight: 500, color: T.text }}>{doc.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {msg.mode && (
+                            <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>
+                              {msg.mode} &middot; {msg.length}
                             </div>
-                            <div style={{ fontSize: 10, color: T.dim, marginTop: 4, textAlign: 'right' }}>{msg.mode} &middot; {msg.length}</div>
-                          </div>
-                          <div style={{ flexShrink: 0, marginTop: -4 }}>
-                            <UserBlobAvatar isTyping={false} isAiLoading={false} size={44} themeColor="cyan" mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]} />
-                          </div>
+                          )}
                         </div>
                       </div>
                     )}
 
                     {/* AI Bubble */}
                     {msg.role === 'ai' && (
-                      <div style={{ display: 'flex', gap: rGap, maxWidth: msgMaxW }}>
-                        <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Code2 size={isMobile ? 14 : 16} color={T.amber} />
+                      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+                        {/* Top Header: Code2 icon + Title */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                          <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Code2 size={14} color={T.amber} />
+                          </div>
+                          <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
+                            CODE WITH AI TUTOR
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 4 }}>CODE WITH AI TUTOR</div>
-                          
+
+                        <div style={{ width: '100%', minWidth: 0 }}>
                           {/* Visual Analytics Card */}
                           {parseAnalyticsFromMessage(msg) && renderAnalyticsCard(parseAnalyticsFromMessage(msg))}
 
-                          {/* Glassmorphic AI Response Message Box (strictly constrained to input width) */}
+                          {/* Glassmorphic AI Response Message Box below */}
                           <div style={{
                             maxWidth: bubbleMaxW,
                             background: 'rgba(15, 23, 42, 0.55)',
                             backdropFilter: 'blur(16px)',
                             WebkitBackdropFilter: 'blur(16px)',
                             border: '1px solid rgba(245, 158, 11, 0.24)',
-                            borderRadius: '4px 16px 16px 16px',
-                            padding: '14px 18px',
+                            borderRadius: '16px',
+                            padding: isMobile ? '12px 14px' : '14px 18px',
                             color: T.text,
-                            fontSize: 14,
+                            fontSize: isMobile ? 13.5 : 14,
                             lineHeight: 1.7,
                             boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)'
                           }}>
@@ -2531,35 +2548,43 @@ export default function CodingTutor() {
 
               {/* Streaming Area */}
               {streamingText && (
-                <div style={{ display: 'flex', gap: rGap, marginBottom: 20, maxWidth: msgMaxW }}>
-                  <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Code2 size={isMobile ? 14 : 16} color={T.amber} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      maxWidth: bubbleMaxW,
-                      background: 'rgba(15, 23, 42, 0.55)',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(245, 158, 11, 0.24)',
-                      borderRadius: '4px 16px 16px 16px',
-                      padding: '14px 18px',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)'
-                    }}>
-                      <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
-                      <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Code2 size={14} color={T.amber} />
                     </div>
+                    <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
+                      CODE WITH AI TUTOR
+                    </div>
+                  </div>
+                  <div style={{
+                    maxWidth: bubbleMaxW,
+                    background: 'rgba(15, 23, 42, 0.55)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(245, 158, 11, 0.24)',
+                    borderRadius: '16px',
+                    padding: isMobile ? '12px 14px' : '14px 18px',
+                    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)'
+                  }}>
+                    <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
+                    <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
                   </div>
                 </div>
               )}
 
               {/* Generating Loader */}
               {loading && !streamingText && (
-                <div style={{ display: 'flex', gap: rGap, marginBottom: 20, maxWidth: msgMaxW }}>
-                  <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Code2 size={isMobile ? 14 : 16} color={T.amber} />
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.amber}25`, border: `1px solid ${T.amber}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Code2 size={14} color={T.amber} />
+                    </div>
+                    <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
+                      CODE WITH AI TUTOR
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.65)', borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.2)', width: 'fit-content' }}>
                     <Loader2 size={16} color={T.accent} style={{ animation: 'spin 1s linear infinite' }} />
                     <span style={{ fontSize: 13, color: T.muted }}>Thinking...</span>
                   </div>

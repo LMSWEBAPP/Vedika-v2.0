@@ -847,12 +847,30 @@
   }
 
   .carousel-card-slide .card-thematic-art {
-    height: 175px;
+    height: 185px;
+    max-height: 185px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    position: relative;
+  }
+
+  .carousel-card-slide .card-thematic-art .art-svg-scene,
+  .carousel-card-slide .card-thematic-art svg {
+    width: auto !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    max-width: 100% !important;
+    display: block;
+    margin: 0 auto;
   }
 
   .carousel-card-slide .card-glass-panel {
     border-radius: 20px;
-    padding: 12px 14px 10px;
+    padding: 10px 12px 8px;
+    overflow: hidden;
   }
 
   .card-lab-headline {
@@ -901,10 +919,10 @@
 
   .card-launch-fab {
     position: absolute;
-    bottom: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1.5px solid var(--card-theme);
     background: radial-gradient(circle, rgba(var(--card-theme-rgb), 0.4) 0%, rgba(10, 20, 40, 0.9) 100%);
@@ -913,7 +931,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10;
+    z-index: 15;
   }
 
   .vedika-labs-mobile-bottom-banner {

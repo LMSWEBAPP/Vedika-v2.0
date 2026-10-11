@@ -1855,78 +1855,86 @@ export default function GeneralTutor() {
                   display: 'flex',
                   justifyContent: 'flex-end',
                   width: '100%',
-                  marginBottom: 16
+                  marginBottom: 18
                 }}>
                   <div style={{
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'flex-end',
-                    gap: isMobile ? 6 : 8,
                     width: 'fit-content',
-                    maxWidth: isMobile ? '94%' : bubbleMaxW
+                    maxWidth: isMobile ? '92%' : bubbleMaxW
                   }}>
+                    {/* Top Header: "You" label + Violet Blob avatar */}
                     <div style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      width: 'fit-content',
-                      maxWidth: isMobile ? 'calc(100% - 38px)' : '100%'
+                      alignItems: 'center',
+                      gap: 7,
+                      marginBottom: 6
                     }}>
-                      <div style={{
-                        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
-                        border: '1px solid rgba(255, 255, 255, 0.22)',
-                        borderRadius: '16px 16px 4px 16px',
-                        padding: isMobile ? '10px 14px' : '12px 18px',
-                        color: '#FFFFFF',
-                        fontSize: isMobile ? 13.5 : 14,
-                        fontWeight: 500,
-                        lineHeight: 1.55,
-                        width: 'fit-content',
-                        maxWidth: '100%',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        textAlign: 'left',
-                        boxShadow: '0 4px 18px rgba(124, 58, 237, 0.35)'
-                      }}>
-                        {msg.content}
-                        {msg.documents && msg.documents.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: '1px solid rgba(255, 255, 255, 0.25)', paddingTop: 8 }}>
-                            {msg.documents.map(doc => (
-                              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#E0E7FF' }}>
-                                <span>📄</span>
-                                <span style={{ fontWeight: 600 }}>{doc.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, textAlign: 'right' }}>You &middot; {msg.mode} &middot; {msg.length}</div>
-                    </div>
-                    <div style={{ flexShrink: 0, marginBottom: isMobile ? 10 : 14 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.02em' }}>You</span>
                       <UserBlobAvatar
                         isTyping={false}
                         isAiLoading={false}
-                        size={isMobile ? 32 : 40}
+                        size={22}
                         mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]}
                       />
                     </div>
+
+                    {/* User Text Bubble starting directly below */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(255, 255, 255, 0.22)',
+                      borderRadius: '16px 16px 4px 16px',
+                      padding: isMobile ? '10px 14px' : '12px 18px',
+                      color: '#FFFFFF',
+                      fontSize: isMobile ? 13.5 : 14,
+                      fontWeight: 500,
+                      lineHeight: 1.55,
+                      width: 'fit-content',
+                      maxWidth: '100%',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      textAlign: 'left',
+                      boxShadow: '0 4px 18px rgba(124, 58, 237, 0.35)'
+                    }}>
+                      {msg.content}
+                      {msg.documents && msg.documents.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, borderTop: '1px solid rgba(255, 255, 255, 0.25)', paddingTop: 8 }}>
+                          {msg.documents.map(doc => (
+                            <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#E0E7FF' }}>
+                              <span>📄</span>
+                              <span style={{ fontWeight: 600 }}>{doc.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {msg.mode && (
+                      <div style={{ fontSize: 10, color: '#64748B', marginTop: 4, textAlign: 'right' }}>
+                        {msg.mode} &middot; {msg.length}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* ── AI message ── */}
               {msg.role === 'ai' && (
-                <div style={{ display: 'flex', gap: rGap, maxWidth: msgMaxW }}>
-                  <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <Brain size={isMobile ? 14 : 16} color={T.purple} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 10.5, color: T.purple, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+                  {/* Top Header: Brain icon + AI TUTOR */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Brain size={14} color={T.purple} />
+                    </div>
+                    <div style={{ fontSize: 11, color: T.purple, fontWeight: 700, letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span>AI TUTOR</span>
                       <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#A855F7', boxShadow: '0 0 6px #A855F7', display: 'inline-block' }} />
                     </div>
-                    
+                  </div>
+
+                  <div style={{ width: '100%', minWidth: 0 }}>
                     {/* Glassmorphic AI Response Message Box */}
                     <div style={{
                       maxWidth: bubbleMaxW,
@@ -1934,7 +1942,7 @@ export default function GeneralTutor() {
                       backdropFilter: 'blur(20px)',
                       WebkitBackdropFilter: 'blur(20px)',
                       border: '1px solid rgba(168, 85, 247, 0.25)',
-                      borderRadius: '4px 16px 16px 16px',
+                      borderRadius: '16px',
                       padding: isMobile ? '12px 14px' : '16px 20px',
                       color: '#F1F5F9',
                       fontSize: isMobile ? 13.5 : 14,
@@ -2178,36 +2186,45 @@ export default function GeneralTutor() {
 
           {/* ── STREAMING ── */}
           {streamingText && (
-            <div style={{ display: 'flex', gap: rGap, marginBottom: 20, maxWidth: msgMaxW }}>
-              <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Brain size={isMobile ? 14 : 16} color={T.purple} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: T.purple, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 4 }}>AI TUTOR</div>
-                <div style={{
-                  maxWidth: bubbleMaxW,
-                  background: 'rgba(13, 20, 36, 0.88)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(168, 85, 247, 0.25)',
-                  borderRadius: '4px 16px 16px 16px',
-                  padding: isMobile ? '12px 14px' : '16px 20px',
-                  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.45)'
-                }}>
-                  <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
-                  <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Brain size={14} color={T.purple} />
                 </div>
+                <div style={{ fontSize: 11, color: T.purple, fontWeight: 700, letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>AI TUTOR</span>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#A855F7', boxShadow: '0 0 6px #A855F7', display: 'inline-block' }} />
+                </div>
+              </div>
+              <div style={{
+                maxWidth: bubbleMaxW,
+                background: 'rgba(13, 20, 36, 0.88)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                borderRadius: '16px',
+                padding: isMobile ? '12px 14px' : '16px 20px',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.45)'
+              }}>
+                <div ref={streamElRef} style={{ color: T.text, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
+                <Loader2 size={12} color={T.accent} style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
               </div>
             </div>
           )}
 
           {/* ── LOADING ── */}
           {loading && !streamingText && (
-            <div style={{ display: 'flex', gap: rGap, marginBottom: 20, maxWidth: msgMaxW }}>
-              <div style={{ width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Brain size={isMobile ? 14 : 16} color={T.purple} />
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: msgMaxW, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${T.purple}25`, border: `1px solid ${T.purple}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Brain size={14} color={T.purple} />
+                </div>
+                <div style={{ fontSize: 11, color: T.purple, fontWeight: 700, letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>AI TUTOR</span>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#A855F7', boxShadow: '0 0 6px #A855F7', display: 'inline-block' }} />
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(13, 20, 36, 0.65)', borderRadius: 12, border: '1px solid rgba(168, 85, 247, 0.2)', width: 'fit-content' }}>
                 <Loader2 size={16} color={T.accent} style={{ animation: 'spin 1s linear infinite' }} />
                 <span style={{ fontSize: 13, color: T.muted }}>Generating...</span>
               </div>
