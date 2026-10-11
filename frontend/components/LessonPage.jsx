@@ -1179,7 +1179,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
             boxSizing: 'border-box'
           }}>
             <div style={{
-              padding: '8px 14px',
+              padding: isStackedLayout ? '6px 10px' : '8px 14px',
               minHeight: 40,
               maxHeight: 40,
               borderBottom: `1px solid ${T.border}`,
@@ -1187,45 +1187,62 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               alignItems: 'center',
               justifyContent: 'space-between',
               background: T.s2,
-              gap: 10,
+              gap: isStackedLayout ? 6 : 10,
               flexShrink: 0,
               boxSizing: 'border-box'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: isStackedLayout ? 6 : 8,
+                minWidth: 0,
+                overflow: 'hidden',
+                flex: 1
+              }}>
                 <span style={{
-                  fontSize: 11,
+                  fontSize: isStackedLayout ? 10.5 : 11,
                   color: mod?.accent || T.accent,
                   background: `${mod?.accent || T.accent}18`,
-                  padding: '2px 8px',
+                  padding: isStackedLayout ? '2px 6px' : '2px 8px',
                   borderRadius: 12,
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}>
-                  {mod?.emoji} {mod?.title}
-                </span>
-                <span style={{
-                  color: T.text,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
+                  flexShrink: isStackedLayout ? 1 : 0,
+                  maxWidth: isStackedLayout ? 95 : 'none',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}>
+                  {mod?.emoji} {mod?.title}
+                </span>
+                <span
+                  title={lesson.title}
+                  style={{
+                    color: T.text,
+                    fontSize: isStackedLayout ? 12 : 13,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    minWidth: 0,
+                    flex: isStackedLayout ? '1 1 auto' : 'initial'
+                  }}
+                >
                   {lesson.title}
                 </span>
-                <span style={{
-                  color: T.muted,
-                  fontSize: 11,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}>
-                  <Clock size={11} />
-                  <span>{lesson.dur}</span>
-                </span>
+                {!isStackedLayout && (
+                  <span style={{
+                    color: T.muted,
+                    fontSize: 11,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}>
+                    <Clock size={11} />
+                    <span>{lesson.dur}</span>
+                  </span>
+                )}
               </div>
 
               <div style={{
@@ -1379,222 +1396,206 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                   maxHeight: isStackedLayout ? 'min(440px, calc(100vh - 270px))' : '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: '16px',
-                  border: `1.5px solid ${panelColor}`,
-                  background: T.s1,
-                  padding: 0,
-                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px ${panelColor}15`,
-                  overflow: 'hidden',
-                  boxSizing: 'border-box',
                   position: 'relative',
                   zIndex: 1
                 }}>
-                  {isStackedLayout ? (
-                    /* MOBILE COMBINED HEADER: 4 Tabs integrated directly into the top of this same box */
-                    <>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
-                        gap: 4,
-                        background: T.s2 || '#0E1322',
-                        padding: '6px',
-                        borderBottom: `1px solid ${panelColor}30`,
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        flexShrink: 0
-                      }}>
-                        {TABS.map((tab) => {
-                          const isActive = activeCompanionTab === tab.id;
-                          const { Icon } = tab;
-                          const count = tab.id === 'notes' ? notes.length : tab.id === 'qa' ? chatHistory.length : 0;
-                          return (
-                            <button
-                              key={tab.id}
-                              type="button"
-                              onClick={() => {
-                                if (activeCompanionTab === tab.id) {
-                                  setIsExpanded(false);
-                                } else {
-                                  setActiveCompanionTab(tab.id);
-                                }
-                              }}
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 3,
-                                padding: '8px 2px',
-                                borderRadius: 10,
-                                border: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
-                                background: isActive ? `${tab.color}20` : 'transparent',
-                                boxShadow: isActive ? `0 0 12px ${tab.color}20` : 'none',
-                                color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
-                                cursor: 'pointer',
-                                transition: 'all 0.18s ease',
-                                position: 'relative',
-                                boxSizing: 'border-box'
-                              }}
-                            >
-                              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon size={16} style={{ color: isActive ? tab.color : 'inherit', transition: 'color 0.2s' }} />
-                                {count > 0 && (
-                                  <span style={{
-                                    position: 'absolute',
-                                    top: -5,
-                                    right: -9,
-                                    fontSize: 9,
-                                    fontWeight: 800,
-                                    padding: '0 4px',
-                                    borderRadius: 8,
-                                    background: tab.color,
-                                    color: '#FFFFFF'
-                                  }}>
-                                    {count}
-                                  </span>
-                                )}
-                              </div>
-                              <span style={{
-                                fontSize: 10.5,
-                                fontWeight: isActive ? 700 : 500,
-                                textAlign: 'center',
-                                lineHeight: 1.15,
-                                color: isActive ? '#FFFFFF' : (T.text || '#E2E8F0'),
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {tab.label}
-                              </span>
-                              <span style={{
-                                fontSize: 8.5,
-                                opacity: isActive ? 0.95 : 0.6,
-                                textAlign: 'center',
-                                lineHeight: 1.1,
-                                color: isActive ? tab.color : 'inherit',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {tab.subtitle}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Sleek subheader with active tab and close button [X] */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        borderBottom: `1px solid ${T.border}`,
-                        background: 'rgba(255,255,255,0.02)',
-                        flexShrink: 0
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 5,
-                            background: `${panelColor}20`,
-                            color: panelColor,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <TabIcon size={12} />
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
-                            {currentTab.label}
-                          </span>
-                          <span style={{
-                            fontSize: 9.5,
-                            fontWeight: 600,
-                            color: panelColor,
-                            background: `${panelColor}15`,
-                            padding: '1px 5px',
-                            borderRadius: 4
-                          }}>
-                            {currentTab.subtitle}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsExpanded(false)}
-                          title="Close tab"
-                          style={{
-                            background: `${panelColor}15`,
-                            border: `1px solid ${panelColor}35`,
-                            borderRadius: 6,
-                            color: panelColor,
-                            width: 22,
-                            height: 22,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    /* DESKTOP PANEL HEADER */
+                  {isStackedLayout && (
+                    /* MOBILE 4-TAB BAR: Sits on top of panel body, active tab vertically blended into panel */
                     <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 14px 10px 14px',
-                      borderBottom: `1px solid ${T.border}`,
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: 4,
+                      padding: '0 6px',
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      position: 'relative',
+                      zIndex: 5,
+                      marginBottom: -1.5,
                       flexShrink: 0
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 8,
-                          background: `${panelColor}20`,
-                          color: panelColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <TabIcon size={16} />
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
-                            {currentTab.label}
-                          </div>
-                          <div style={{ fontSize: 10, color: T.muted }}>
-                            {currentTab.subtitle}
-                          </div>
-                        </div>
-                      </div>
+                      {TABS.map((tab) => {
+                        const isActive = activeCompanionTab === tab.id;
+                        const { Icon } = tab;
+                        const count = tab.id === 'notes' ? notes.length : tab.id === 'qa' ? chatHistory.length : 0;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => {
+                              if (activeCompanionTab === tab.id) {
+                                setIsExpanded(false);
+                              } else {
+                                setActiveCompanionTab(tab.id);
+                              }
+                            }}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 2,
+                              padding: '8px 2px 7px 2px',
+                              borderRadius: isActive ? '12px 12px 0 0' : '10px 10px 0 0',
+                              borderTop: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                              borderLeft: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                              borderRight: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
+                              borderBottom: isActive ? `2.5px solid ${T.s1}` : '1.5px solid transparent',
+                              background: isActive ? T.s1 : 'rgba(255, 255, 255, 0.04)',
+                              boxShadow: isActive ? `0 -4px 16px ${tab.color}20` : 'none',
+                              color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
+                              cursor: 'pointer',
+                              transition: 'all 0.18s ease',
+                              position: 'relative',
+                              boxSizing: 'border-box',
+                              zIndex: isActive ? 6 : 2
+                            }}
+                          >
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Icon size={16} style={{ color: isActive ? tab.color : 'inherit', transition: 'color 0.2s' }} />
+                              {count > 0 && (
+                                <span style={{
+                                  position: 'absolute',
+                                  top: -5,
+                                  right: -9,
+                                  fontSize: 9,
+                                  fontWeight: 800,
+                                  padding: '0 4px',
+                                  borderRadius: 8,
+                                  background: tab.color,
+                                  color: '#FFFFFF'
+                                }}>
+                                  {count}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{
+                              fontSize: 10.5,
+                              fontWeight: isActive ? 700 : 500,
+                              textAlign: 'center',
+                              lineHeight: 1.15,
+                              color: isActive ? '#FFFFFF' : (T.text || '#E2E8F0'),
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {tab.label}
+                            </span>
+                            <span style={{
+                              fontSize: 8.5,
+                              opacity: isActive ? 0.95 : 0.6,
+                              textAlign: 'center',
+                              lineHeight: 1.1,
+                              color: isActive ? tab.color : 'inherit',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {tab.subtitle}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
+                  {/* MAIN PANEL BODY */}
+                  <div style={{
+                    flex: 1,
+                    width: '100%',
+                    minWidth: 0,
+                    height: isStackedLayout ? 'auto' : '100%',
+                    maxHeight: isStackedLayout ? 'min(440px, calc(100vh - 270px))' : '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '16px',
+                    border: `1.5px solid ${panelColor}`,
+                    background: T.s1,
+                    padding: 0,
+                    boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px ${panelColor}15`,
+                    overflow: 'hidden',
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    zIndex: 3
+                  }}>
+                    {isStackedLayout ? (
+                      /* Mobile Quick Close Button [X] */
                       <button
                         type="button"
                         onClick={() => setIsExpanded(false)}
                         title="Close panel"
                         style={{
-                          background: `${panelColor}12`,
-                          border: `1px solid ${panelColor}30`,
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          zIndex: 10,
+                          background: `${panelColor}15`,
+                          border: `1px solid ${panelColor}35`,
                           borderRadius: 6,
                           color: panelColor,
-                          width: 26,
-                          height: 26,
+                          width: 24,
+                          height: 24,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease'
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = panelColor; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = panelColor; e.currentTarget.style.background = `${panelColor}12`; }}
                       >
-                        <X size={14} />
+                        <X size={13} />
                       </button>
-                    </div>
-                  )}
+                    ) : (
+                      /* DESKTOP PANEL HEADER (100% Unchanged) */
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '14px 14px 10px 14px',
+                        borderBottom: `1px solid ${T.border}`,
+                        flexShrink: 0
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 8,
+                            background: `${panelColor}20`,
+                            color: panelColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <TabIcon size={16} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
+                              {currentTab.label}
+                            </div>
+                            <div style={{ fontSize: 10, color: T.muted }}>
+                              {currentTab.subtitle}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsExpanded(false)}
+                          title="Close panel"
+                          style={{
+                            background: `${panelColor}12`,
+                            border: `1px solid ${panelColor}30`,
+                            borderRadius: 6,
+                            color: panelColor,
+                            width: 26,
+                            height: 26,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = panelColor; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = panelColor; e.currentTarget.style.background = `${panelColor}12`; }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
 
                   <div style={{
                     flex: 1,
@@ -2316,8 +2317,9 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                     )}
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+            );
+          })()}
 
           {/* 4 Companion Tabs (ONLY rendered on desktop, since mobile has them integrated into the unified card above!) */}
           {!isStackedLayout && (

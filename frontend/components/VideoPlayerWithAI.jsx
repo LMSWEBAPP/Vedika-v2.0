@@ -576,69 +576,73 @@ export default function VideoPlayerWithAI({
             )}
           </button>
 
-          {/* Quick Skip -5s */}
-          <button
-            type="button"
-            onClick={() => handleSeekDelta(-5)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              padding: isMobile ? '4px 6px' : '6px 9px',
-              borderRadius: 8,
-              background: 'transparent',
-              color: '#94A3B8',
-              fontSize: isMobile ? 11 : 11.5,
-              fontWeight: 500,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#FFFFFF';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#94A3B8';
-              e.currentTarget.style.background = 'transparent';
-            }}
-            title="Rewind 5 seconds"
-          >
-            <RotateCcw size={isMobile ? 12 : 14} />
-            <span style={{ fontFamily: 'monospace' }}>-5s</span>
-          </button>
+          {/* Quick Skip -5s (Desktop only) */}
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => handleSeekDelta(-5)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                padding: isMobile ? '4px 6px' : '6px 9px',
+                borderRadius: 8,
+                background: 'transparent',
+                color: '#94A3B8',
+                fontSize: isMobile ? 11 : 11.5,
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#94A3B8';
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title="Rewind 5 seconds"
+            >
+              <RotateCcw size={isMobile ? 12 : 14} />
+              <span style={{ fontFamily: 'monospace' }}>-5s</span>
+            </button>
+          )}
 
-          {/* Quick Skip +5s */}
-          <button
-            type="button"
-            onClick={() => handleSeekDelta(5)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              padding: isMobile ? '4px 6px' : '6px 9px',
-              borderRadius: 8,
-              background: 'transparent',
-              color: '#94A3B8',
-              fontSize: isMobile ? 11 : 11.5,
-              fontWeight: 500,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#FFFFFF';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#94A3B8';
-              e.currentTarget.style.background = 'transparent';
-            }}
-            title="Forward 5 seconds"
-          >
-            <RotateCw size={isMobile ? 12 : 14} />
-            <span style={{ fontFamily: 'monospace' }}>+5s</span>
-          </button>
+          {/* Quick Skip +5s (Desktop only) */}
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => handleSeekDelta(5)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                padding: isMobile ? '4px 6px' : '6px 9px',
+                borderRadius: 8,
+                background: 'transparent',
+                color: '#94A3B8',
+                fontSize: isMobile ? 11 : 11.5,
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#94A3B8';
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title="Forward 5 seconds"
+            >
+              <RotateCw size={isMobile ? 12 : 14} />
+              <span style={{ fontFamily: 'monospace' }}>+5s</span>
+            </button>
+          )}
 
           {/* Digital Clock Time Counter */}
           <div style={{
