@@ -317,14 +317,14 @@ export default function UserBlobAvatar({
     <div
       className={`user-blob-avatar-wrapper ${className}`}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        display: 'inline-flex',
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',
+        gap: 7,
         position: 'relative',
         userSelect: 'none',
         flexShrink: 0,
-        width: Math.max(54, size),
         ...style
       }}
     >
@@ -352,6 +352,24 @@ export default function UserBlobAvatar({
           {reactionTip}
         </div>
       )}
+
+      {/* 'YOU' Text Label cleanly placed beside the blob */}
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          color: isHovered
+            ? (themeColor === 'cyan' ? '#7DD3FC' : '#D8B4FE')
+            : (themeColor === 'cyan' ? '#38BDF8' : '#A855F7'),
+          textTransform: 'uppercase',
+          lineHeight: 1,
+          transition: 'color 0.2s ease',
+          userSelect: 'none'
+        }}
+      >
+        YOU
+      </span>
 
       {/* Interactive Jelly Blob Mascot Container */}
       <div
@@ -399,25 +417,6 @@ export default function UserBlobAvatar({
           onOverpoke={handleOverpoke}
           onWake={handleWake}
         />
-      </div>
-
-      {/* 'YOU' Text Label cleanly placed below the blob (compact 10px size) */}
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '0.06em',
-          color: isHovered
-            ? (themeColor === 'cyan' ? '#7DD3FC' : '#D8B4FE')
-            : (themeColor === 'cyan' ? '#38BDF8' : '#A855F7'),
-          textTransform: 'uppercase',
-          marginTop: 2,
-          textAlign: 'center',
-          lineHeight: 1,
-          transition: 'color 0.2s ease'
-        }}
-      >
-        YOU
       </div>
 
       <style>{`

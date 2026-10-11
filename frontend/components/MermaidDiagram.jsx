@@ -107,56 +107,78 @@ function sanitizeMermaid(raw) {
  */
 const NODE_PALETTES = [
   {
-    name: 'purple',
+    name: 'violet',
     stroke: '#A855F7',
-    topHighlight: 'rgba(192, 132, 252, 0.55)',
-    fillGrad: ['#24153E', '#130C22'],
-    arrow: '#C084FC',
+    fill: '#161324',
+    arrow: '#A855F7',
     text: '#F8FAFC'
   },
   {
-    name: 'emerald',
-    stroke: '#10B981',
-    topHighlight: 'rgba(52, 211, 153, 0.55)',
-    fillGrad: ['#0E2E22', '#081A14'],
-    arrow: '#34D399',
+    name: 'sky',
+    stroke: '#38BDF8',
+    fill: '#0D1929',
+    arrow: '#38BDF8',
     text: '#F8FAFC'
   },
   {
     name: 'amber',
     stroke: '#F59E0B',
-    topHighlight: 'rgba(251, 191, 36, 0.55)',
-    fillGrad: ['#321E0B', '#1C1106'],
-    arrow: '#FBBF24',
+    fill: '#23180C',
+    arrow: '#F59E0B',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'emerald',
+    stroke: '#10B981',
+    fill: '#0D2018',
+    arrow: '#10B981',
+    text: '#F8FAFC'
+  },
+  {
+    name: 'indigo',
+    stroke: '#818CF8',
+    fill: '#13162B',
+    arrow: '#818CF8',
     text: '#F8FAFC'
   },
   {
     name: 'rose',
     stroke: '#F43F5E',
-    topHighlight: 'rgba(251, 113, 133, 0.55)',
-    fillGrad: ['#32111A', '#1C090F'],
-    arrow: '#FB7185',
+    fill: '#241018',
+    arrow: '#F43F5E',
     text: '#F8FAFC'
   },
   {
     name: 'cyan',
     stroke: '#06B6D4',
-    topHighlight: 'rgba(56, 189, 248, 0.55)',
-    fillGrad: ['#0C2732', '#07161C'],
-    arrow: '#38BDF8',
-    text: '#F8FAFC'
-  },
-  {
-    name: 'indigo',
-    stroke: '#6366F1',
-    topHighlight: 'rgba(129, 140, 248, 0.55)',
-    fillGrad: ['#181A40', '#0E0F25'],
-    arrow: '#818CF8',
+    fill: '#0C242E',
+    arrow: '#06B6D4',
     text: '#F8FAFC'
   }
 ];
 
-
+/**
+ * Injects Blender Geometry & Supabase Schema distinct architectural palettes to SVG nodes
+ */
+function applyBlenderPalettes(root) {
+  if (!root) return;
+  const wrappers = root.querySelectorAll
+    ? (root.classList?.contains('mermaid-svg-wrapper') ? [root] : Array.from(root.querySelectorAll('.mermaid-svg-wrapper')))
+    : [];
+  wrappers.forEach((wrapper) => {
+    const allNodes = Array.from(wrapper.querySelectorAll('.node, g.node'));
+    allNodes.forEach((n, idx) => {
+      const palette = NODE_PALETTES[idx % NODE_PALETTES.length];
+      n.classList.add(`node-palette-${idx % NODE_PALETTES.length}`);
+      const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+      if (shape && shape.style) {
+        shape.style.stroke = palette.stroke;
+        shape.style.fill = palette.fill;
+        shape.style.strokeWidth = '1.5px';
+      }
+    });
+  });
+}
 
 export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
   const containerRef = useRef(null);
@@ -235,10 +257,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     setCursorState((prev) => ({ ...prev, visible: false, isClicking: false, isTracing: false }));
     const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
     targets.forEach((root) => {
-      const wrapper = root.querySelector('.mermaid-svg-wrapper');
+      const wrapper = root.querySelector('.mermaid-svg-wrapper') || (root.classList?.contains('mermaid-svg-wrapper') ? root : null);
       if (wrapper) {
         wrapper.classList.remove('building');
         wrapper.style.opacity = '1';
+        applyBlenderPalettes(wrapper);
         const allNodes = wrapper.querySelectorAll('.node, g.node');
         allNodes.forEach((n) => {
           n.style.opacity = '1';
@@ -252,7 +275,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
         allEdges.forEach((e) => {
           e.style.opacity = '1';
-          if (e.style) e.style.strokeDashoffset = '0';
+          if (e.style) {
+            e.style.strokeDashoffset = '0';
+            e.style.stroke = '#64748B';
+          }
         });
         const allMarkers = wrapper.querySelectorAll('marker, .arrowheadPath, .arrowMarkerPath, [id*="pointEnd"] path, [id*="arrow"] path, .edgeLabel, .edgeLabels');
         allMarkers.forEach((m) => {
@@ -435,10 +461,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     });
 
     // 1. Initial State: Prepare node shapes with stroke dashoffset and hide text & edges
-    nodes.forEach((n) => {
+    nodes.forEach((n, idx) => {
+      const palette = NODE_PALETTES[idx % NODE_PALETTES.length];
+      n.el.classList.add(`node-palette-${idx % NODE_PALETTES.length}`);
       n.el.style.opacity = '1';
       n.el.style.filter = '';
       if (n.shapeEl && n.shapeEl.style) {
+        n.shapeEl.style.stroke = palette.stroke;
+        n.shapeEl.style.fill = palette.fill;
+        n.shapeEl.style.strokeWidth = '1.5px';
         n.shapeEl.style.strokeDasharray = `${n.shapeLen}`;
         n.shapeEl.style.strokeDashoffset = `${n.shapeLen}`;
         n.shapeEl.style.transition = 'none';
@@ -492,83 +523,37 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     // 2. Execute point-to-point drawing sequence
     (async () => {
-      await new Promise((r) => setTimeout(r, 180));
-      if (animCancelledRef.current) return;
+      try {
+        await new Promise((r) => setTimeout(r, 160));
+        if (animCancelledRef.current) return;
 
-      for (let idx = 0; idx < nodes.length; idx++) {
-        if (animCancelledRef.current) break;
-        const node = nodes[idx];
-        const colorIdx = idx % NODE_PALETTES.length;
-        const palette = NODE_PALETTES[colorIdx];
-        const shapeEl = node.shapeEl;
-        const shapeLen = node.shapeLen;
+        for (let idx = 0; idx < nodes.length; idx++) {
+          if (animCancelledRef.current) break;
+          const node = nodes[idx];
+          const colorIdx = idx % NODE_PALETTES.length;
+          const palette = NODE_PALETTES[colorIdx];
+          const shapeEl = node.shapeEl;
+          const shapeLen = node.shapeLen;
 
-        // Pen arrives at node and begins tracing perimeter
-        setCursorState((prev) => ({
-          ...prev,
-          status: `Drawing Node (${idx + 1}/${nodes.length})`,
-          label: node.text.slice(0, 24),
-          accentColor: palette.stroke,
-          isTracing: true,
-          isClicking: true
-        }));
-
-        // Trace shape perimeter smoothly frame-by-frame
-        await animateFrame(280, (t) => {
-          if (shapeEl && shapeEl.style) {
-            shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
-          }
-          if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
-            try {
-              const pt = shapeEl.getPointAtLength(shapeLen * t);
-              const stagePt = getStagePoint(shapeEl, pt);
-              setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
-            } catch {}
-          }
-        });
-
-        if (animCancelledRef.current) break;
-
-        // Settle node shape, reveal content and trigger illumination bloom
-        if (shapeEl && shapeEl.style) shapeEl.style.strokeDashoffset = '0';
-        node.textEls.forEach((t) => { t.style.opacity = '1'; });
-        node.el.style.filter = `drop-shadow(0 0 12px ${palette.stroke})`;
-
-        setCursorState((prev) => ({
-          ...prev,
-          isClicking: false,
-          isTracing: false,
-          status: `Node ${idx + 1} Ready ✨`
-        }));
-
-        setTimeout(() => {
-          if (!animCancelledRef.current) node.el.style.filter = '';
-        }, 220);
-
-        // Trace connecting arrow to the next node if present
-        if (idx < nodes.length - 1 && rawEdgeEls[idx]) {
-          const edgeEl = rawEdgeEls[idx];
-          const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
-
-          edgeEl.style.opacity = '1';
-          edgeEl.style.strokeDasharray = `${edgeLen}`;
-          edgeEl.style.strokeDashoffset = `${edgeLen}`;
-
+          // Pen arrives at node and begins tracing perimeter
           setCursorState((prev) => ({
             ...prev,
-            status: 'Linking Flow ➔',
-            label: '➔',
-            accentColor: palette.arrow,
-            isTracing: true
+            status: `Drawing Node (${idx + 1}/${nodes.length})`,
+            label: node.text.slice(0, 24),
+            accentColor: palette.stroke,
+            isTracing: true,
+            isClicking: true
           }));
 
-          // Physically trace connector line from start to destination
-          await animateFrame(240, (t) => {
-            edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
-            if (typeof edgeEl.getPointAtLength === 'function') {
+          // Trace shape perimeter smoothly frame-by-frame (deliberate 500ms pace)
+          await animateFrame(500, (t) => {
+            if (shapeEl && shapeEl.style) {
+              shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
+            }
+            if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
               try {
-                const pt = edgeEl.getPointAtLength(edgeLen * t);
-                const stagePt = getStagePoint(edgeEl, pt);
+                const pt = shapeEl.getPointAtLength(shapeLen * t);
+                const stagePt = getStagePoint(shapeEl, pt);
                 setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
               } catch {}
             }
@@ -576,45 +561,112 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
           if (animCancelledRef.current) break;
 
-          // Arrow has reached destination: illuminate arrowhead markers and edge labels
-          edgeEl.style.strokeDashoffset = '0';
-          rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
-          rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+          // Settle node shape and reveal content cleanly (NO border glow!)
+          if (shapeEl && shapeEl.style) shapeEl.style.strokeDashoffset = '0';
+          node.textEls.forEach((t) => { t.style.opacity = '1'; });
+          node.el.style.filter = '';
+
+          setCursorState((prev) => ({
+            ...prev,
+            isClicking: false,
+            isTracing: false,
+            status: `Node ${idx + 1} Ready ✨`
+          }));
+
+          await new Promise((r) => setTimeout(r, 80));
+
+          // Trace connecting arrow to the next node if present
+          if (idx < nodes.length - 1 && rawEdgeEls[idx]) {
+            const edgeEl = rawEdgeEls[idx];
+            const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
+
+            edgeEl.style.opacity = '1';
+            edgeEl.style.stroke = palette.stroke;
+            edgeEl.style.strokeWidth = '1.75px';
+            edgeEl.style.strokeDasharray = `${edgeLen}`;
+            edgeEl.style.strokeDashoffset = `${edgeLen}`;
+
+            setCursorState((prev) => ({
+              ...prev,
+              status: 'Linking Flow ➔',
+              label: '➔',
+              accentColor: palette.stroke,
+              isTracing: true
+            }));
+
+            // Physically trace connector line from start to destination (420ms glide)
+            await animateFrame(420, (t) => {
+              edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
+              if (typeof edgeEl.getPointAtLength === 'function') {
+                try {
+                  const pt = edgeEl.getPointAtLength(edgeLen * t);
+                  const stagePt = getStagePoint(edgeEl, pt);
+                  setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+                } catch {}
+              }
+            });
+
+            if (animCancelledRef.current) break;
+
+            // Arrow has reached destination: reveal marker and label
+            edgeEl.style.strokeDashoffset = '0';
+            rawMarkerEls.forEach((m) => {
+              m.style.opacity = '1';
+              m.style.fill = palette.stroke;
+            });
+            rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+          }
+
+          await new Promise((r) => setTimeout(r, 60));
         }
 
-        await new Promise((r) => setTimeout(r, 60));
-      }
-
-      // 3. Finalize and settle
-      if (!animCancelledRef.current) {
-        setCursorState((prev) => ({
-          ...prev,
-          status: 'Infographic Complete ✨',
-          label: 'Ready',
-          isClicking: false,
-          isTracing: false
-        }));
-
-        nodes.forEach((n) => {
-          n.el.style.opacity = '1';
-          n.el.style.filter = '';
-          if (n.shapeEl && n.shapeEl.style) n.shapeEl.style.strokeDashoffset = '0';
-          n.textEls.forEach((t) => { t.style.opacity = '1'; });
-        });
-        rawEdgeEls.forEach((e) => {
-          e.style.opacity = '1';
-          e.style.strokeDashoffset = '0';
-        });
-        rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
-        rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+        if (!animCancelledRef.current) {
+          setCursorState((prev) => ({
+            ...prev,
+            status: 'Infographic Complete ✨',
+            label: 'Ready',
+            isClicking: false,
+            isTracing: false
+          }));
+        }
+      } finally {
+        // ALWAYS ensure every element is 100% visible and offsets zeroed out
+        if (wrapper) {
+          wrapper.classList.remove('building');
+          const allNodes = wrapper.querySelectorAll('.node, g.node');
+          allNodes.forEach((n, i) => {
+            n.style.opacity = '1';
+            n.style.filter = '';
+            const pal = NODE_PALETTES[i % NODE_PALETTES.length];
+            n.classList.add(`node-palette-${i % NODE_PALETTES.length}`);
+            const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+            if (shape && shape.style) {
+              shape.style.strokeDashoffset = '0';
+              shape.style.stroke = pal.stroke;
+              shape.style.fill = pal.fill;
+              shape.style.strokeWidth = '1.5px';
+            }
+            const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+            texts.forEach((t) => { t.style.opacity = '1'; });
+          });
+          const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
+          allEdges.forEach((e) => {
+            e.style.opacity = '1';
+            if (e.style) {
+              e.style.strokeDashoffset = '0';
+              e.style.stroke = '#64748B';
+            }
+          });
+          const allMarkers = wrapper.querySelectorAll('marker, .arrowheadPath, .arrowMarkerPath, [id*="pointEnd"] path, [id*="arrow"] path, .edgeLabel, .edgeLabels');
+          allMarkers.forEach((m) => {
+            m.style.opacity = '1';
+          });
+        }
 
         setTimeout(() => {
-          if (!animCancelledRef.current) {
-            setCursorState((prev) => ({ ...prev, visible: false }));
-            wrapper.classList.remove('building');
-            setIsBuilding(false);
-          }
-        }, 350);
+          setCursorState((prev) => ({ ...prev, visible: false }));
+          setIsBuilding(false);
+        }, 300);
       }
     })();
   }, [isModalOpen, zoom]);
@@ -624,8 +676,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   };
 
   const handleReplayBuild = () => {
-    const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
-    runLiveDrawAnimation(activeTarget);
+    stopAndCleanAnimation();
+    setTimeout(() => {
+      const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
+      runLiveDrawAnimation(activeTarget);
+    }, 60);
   };
 
   const handleToggleLiveDraw = () => {
@@ -654,11 +709,33 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           modalViewportRef.current.scrollTop = 0;
           modalViewportRef.current.scrollLeft = 0;
           autoFitModalChart();
+          // Ensure Blender palettes and 100% visibility on modal open so diagram is never gone
+          applyBlenderPalettes(modalViewportRef.current);
+          const wrapper = modalViewportRef.current.querySelector('.mermaid-svg-wrapper');
+          if (wrapper) {
+            wrapper.style.opacity = '1';
+            const allNodes = wrapper.querySelectorAll('.node, g.node');
+            allNodes.forEach((n) => {
+              n.style.opacity = '1';
+              const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+              if (shape && shape.style) shape.style.strokeDashoffset = '0';
+              const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+              texts.forEach((t) => { t.style.opacity = '1'; });
+            });
+            const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
+            allEdges.forEach((e) => {
+              e.style.opacity = '1';
+              if (e.style) e.style.strokeDashoffset = '0';
+            });
+          }
         }
       }, 70);
       return () => clearTimeout(timer);
+    } else {
+      // Modal closed: safely clean up any ongoing animation
+      stopAndCleanAnimation();
     }
-  }, [isModalOpen, autoFitModalChart]);
+  }, [isModalOpen, autoFitModalChart, stopAndCleanAnimation]);
 
   // Generate unique render ID per component mount to prevent SVG collisions
   const uniqueIdRef = useRef(`mermaid_${Math.random().toString(36).substr(2, 9)}`);
@@ -685,15 +762,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           themeVariables: {
             darkMode: true,
             background: 'transparent',
-            primaryColor: '#151D32',
-            primaryTextColor: '#FFFFFF',
+            primaryColor: '#0F1420',
+            primaryTextColor: '#F8FAFC',
             primaryBorderColor: '#38BDF8',
-            lineColor: '#60A5FA',
-            secondaryColor: '#1E1B4B',
-            tertiaryColor: '#0F172A',
-            edgeLabelBackground: '#151D32',
+            lineColor: '#64748B',
+            secondaryColor: '#161324',
+            tertiaryColor: '#0D1929',
+            edgeLabelBackground: '#0F1420',
             fontFamily: 'var(--font-outfit), sans-serif',
-            fontSize: '13px',
+            fontSize: '12.5px',
             nodeBorder: 'solid'
           },
           securityLevel: 'loose',
@@ -712,9 +789,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         // Render SVG dynamically
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
-        // Fix any transparent arrowheads or invalid borders generated by Mermaid defaults
-        cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
-        cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
+        // Clean transparent arrowheads or default strokes
+        cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
+        cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 1.5px');
         cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
           return `<svg ${attrs} style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;"`;
         });
@@ -726,8 +803,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           setSvgHtml(cleanSvg);
           setLoading(false);
           setTimeout(() => {
-            if (modalViewportRef.current) autoFitModalChart();
-            if (containerRef.current) autoFitInlineChart();
+            if (modalViewportRef.current) {
+              autoFitModalChart();
+              applyBlenderPalettes(modalViewportRef.current);
+            }
+            if (containerRef.current) {
+              autoFitInlineChart();
+              applyBlenderPalettes(containerRef.current);
+            }
           }, 60);
         }
       } catch (err) {
@@ -739,8 +822,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             const simpleChart = `flowchart TD\n  Root["🎯 Concept Summary"]\n${points.slice(0, 5).map((p, idx) => `  P${idx + 1}["${p.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().slice(0, 36)}"]\n  Root --> P${idx + 1}`).join('\n')}`;
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
-            cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #60A5FA');
-            cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 2px');
+            cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
+            cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 1.5px');
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
               return `<svg ${attrs} style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;"`;
             });
@@ -751,8 +834,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               setSvgHtml(cleanSvg);
               setLoading(false);
               setTimeout(() => {
-                if (modalViewportRef.current) autoFitModalChart();
-                if (containerRef.current) autoFitInlineChart();
+                if (modalViewportRef.current) {
+                  autoFitModalChart();
+                  applyBlenderPalettes(modalViewportRef.current);
+                }
+                if (containerRef.current) {
+                  autoFitInlineChart();
+                  applyBlenderPalettes(containerRef.current);
+                }
               }, 60);
               return;
             }
@@ -1499,7 +1588,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                     className="stitch-replay-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      runLiveDrawAnimation(modalViewportRef.current);
+                      handleReplayBuild();
                     }}
                     title="Replay Google Stitch-inspired AI live drawing in full screen"
                   >

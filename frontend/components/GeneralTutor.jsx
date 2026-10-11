@@ -1864,18 +1864,16 @@ export default function GeneralTutor() {
                     width: 'fit-content',
                     maxWidth: isMobile ? '92%' : bubbleMaxW
                   }}>
-                    {/* Top Header: "You" label + Violet Blob avatar */}
+                    {/* Top Header: Violet YOU label beside Blob mascot */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 7,
                       marginBottom: 6
                     }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.02em' }}>You</span>
                       <UserBlobAvatar
                         isTyping={false}
                         isAiLoading={false}
-                        size={22}
+                        size={isMobile ? 36 : 42}
                         mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]}
                       />
                     </div>
