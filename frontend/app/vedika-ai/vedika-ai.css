@@ -672,6 +672,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 /* =========================================================================
@@ -812,6 +813,7 @@
     align-items: center;
     justify-content: center;
     touch-action: pan-y;
+    overflow: visible;
   }
 
   .vedika-ai-shimmer-glow-bg {
@@ -982,6 +984,7 @@
     width: 185px;
     height: 165px;
     max-height: 165px;
+    overflow: visible;
   }
   .vedika-ai-accordion-carousel {
     margin-top: 6px;

@@ -12,7 +12,7 @@ import {
   Eye, FileText, Code, Settings, Sparkles, Loader2, Target,
   FileCode, FolderTree, RefreshCw, ExternalLink, Monitor, Tablet,
   Smartphone, Award, AlertCircle, HelpCircle, Lightbulb, Zap, Globe,
-  BookOpen, Trash2
+  BookOpen, Trash2, Brain, Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StateField, StateEffect } from "@codemirror/state";
@@ -915,8 +915,39 @@ function validatePythonStepLocally(code, puzzleId, stepIndex) {
   return { passed: true, line: 0, message: '' };
 }
 
+// ── Vedika AI Tabs Definition ────────────────────────────────────────────────
+const VEDIKA_AI_TABS = [
+  { id: 'hub', label: 'Vedika AI Hub', desc: 'Overview & 4 Assistants', url: '/vedika-ai', icon: Sparkles, color: '#38BDF8' },
+  { id: 'ask', label: 'Ask Vedika', desc: 'General AI Tutor & Doubts', url: '/vedika-ai/ask', icon: Brain, color: '#A855F7' },
+  { id: 'code', label: 'Code with Vedika', desc: 'Coding Companion & Pair Programming', url: '/vedika-ai/code', icon: Code, color: '#3B82F6' },
+  { id: 'puzzle', label: 'Code Puzzles', desc: 'Algorithmic 3D Challenges', url: '/vedika-ai/puzzle', icon: Zap, color: '#F59E0B', isCurrent: true },
+  { id: 'viva', label: 'Viva & Interview', desc: 'Voice AI Viva & Exams', url: '/viva-interview', icon: Award, color: '#10B981' }
+];
+
 export default function CodePuzzle() {
   const router = useRouter();
+
+  // ── AI Tabs Switcher State ──────────────────────────────────────────────────
+  const [isAiTabsOpen, setIsAiTabsOpen] = useState(false);
+  const aiTabsRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutsideAiTabs = (e) => {
+      if (aiTabsRef.current && !aiTabsRef.current.contains(e.target)) {
+        setIsAiTabsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideAiTabs);
+    return () => document.removeEventListener('mousedown', handleClickOutsideAiTabs);
+  }, []);
+
+  const handleBackToVedikaAI = useCallback(() => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/vedika-ai');
+    }
+  }, [router]);
 
   // ── Mode & Selector States ─────────────────────────────────────────────────
   const [category, setCategory] = useState('programming'); // 'programming' (Python) | 'html' (Web)
@@ -2277,13 +2308,13 @@ export default function CodePuzzle() {
         flexShrink: 0,
         zIndex: 20
       }}>
-        {/* Left: Back Button & Breadcrumbs / Puzzle Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, minWidth: 0, overflow: 'hidden' }}>
-          {/* Back Button */}
+        {/* Left: Back Button & Tabs Switcher / Breadcrumbs / Puzzle Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, minWidth: 0, overflow: 'visible' }}>
+          {/* Back Button -> Navigates Back to Vedika AI Hub */}
           <button
-            onClick={() => router.push('/courses')}
-            title="Return to Courses"
-            aria-label="Return to Courses"
+            onClick={handleBackToVedikaAI}
+            title="Back to Vedika AI"
+            aria-label="Back to Vedika AI"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -2298,9 +2329,172 @@ export default function CodePuzzle() {
               flexShrink: 0,
               transition: 'all 0.15s ease'
             }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
           >
             <ChevronLeft size={isMobile ? 15 : 16} />
           </button>
+
+          {/* AI Tabs Quick Switcher Dropdown (Mobile & Desktop) */}
+          <div ref={aiTabsRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              type="button"
+              onClick={() => setIsAiTabsOpen(!isAiTabsOpen)}
+              title="Navigate between Vedika AI tabs & assistants"
+              aria-label="Navigate between Vedika AI tabs & assistants"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                height: isMobile ? 28 : 30,
+                padding: isMobile ? '0 7px' : '0 10px',
+                borderRadius: 8,
+                background: isAiTabsOpen ? 'rgba(56, 189, 248, 0.16)' : 'rgba(255, 255, 255, 0.04)',
+                border: `1px solid ${isAiTabsOpen ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.08)'}`,
+                color: isAiTabsOpen ? '#38BDF8' : '#CBD5E1',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Sparkles size={13} color="#F59E0B" />
+              <span>{isMobile ? 'Tabs' : 'Vedika AI'}</span>
+              <ChevronDown size={11} color="#94A3B8" style={{ transform: isAiTabsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+            </button>
+
+            {isAiTabsOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  width: isMobile ? 255 : 280,
+                  background: 'rgba(11, 15, 28, 0.98)',
+                  backdropFilter: 'blur(24px)',
+                  WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: 12,
+                  padding: '6px',
+                  boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.12)',
+                  zIndex: 2000,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 3
+                }}
+              >
+                <div style={{
+                  padding: '4px 8px 6px',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#94A3B8',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>Vedika AI Tabs</span>
+                  <span style={{ fontSize: 9.5, color: '#38BDF8', fontWeight: 600 }}>Switch Mode</span>
+                </div>
+
+                {VEDIKA_AI_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isCurrent = tab.isCurrent;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setIsAiTabsOpen(false);
+                        if (!isCurrent) {
+                          router.push(tab.url);
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: isCurrent ? `${tab.color}18` : 'transparent',
+                        border: isCurrent ? `1px solid ${tab.color}44` : '1px solid transparent',
+                        color: isCurrent ? tab.color : '#E2E8F0',
+                        cursor: isCurrent ? 'default' : 'pointer',
+                        textAlign: 'left',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                      onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <div style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 6,
+                        background: `${tab.color}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Icon size={14} color={tab.color} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: isCurrent ? 700 : 600 }}>{tab.label}</span>
+                          {isCurrent && (
+                            <span style={{ fontSize: 9.5, fontWeight: 700, color: tab.color, padding: '1px 5px', borderRadius: 4, background: `${tab.color}20` }}>
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {tab.desc}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.06)', margin: '3px 0' }} />
+
+                {/* Return to Courses Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAiTabsOpen(false);
+                    router.push('/courses');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '7px 10px',
+                    borderRadius: 8,
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#FFFFFF'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; }}
+                >
+                  <BookOpen size={14} color="#38BDF8" />
+                  <span>Browse Courses</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {isMobile ? (
             /* Mobile Compact Header: Category + Puzzle Dropdown directly */
@@ -2309,8 +2503,8 @@ export default function CodePuzzle() {
                 value={category}
                 onChange={handleCategoryChange}
                 color={category === 'html' ? '#38BDF8' : '#A855F7'}
-                minWidth={78}
-                maxWidth={95}
+                minWidth={74}
+                maxWidth={90}
                 options={[
                   { value: 'programming', label: 'Python' },
                   { value: 'html', label: 'Web' }
@@ -2336,8 +2530,8 @@ export default function CodePuzzle() {
                     setCompiledWebTime(Date.now());
                   }}
                   color="#38BDF8"
-                  minWidth={115}
-                  maxWidth={150}
+                  minWidth={110}
+                  maxWidth={140}
                   options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
                 />
               ) : (
@@ -2353,8 +2547,8 @@ export default function CodePuzzle() {
                     setValidationError(null);
                   }}
                   color="#A855F7"
-                  minWidth={115}
-                  maxWidth={150}
+                  minWidth={110}
+                  maxWidth={140}
                   options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
                 />
               )}
@@ -2377,9 +2571,9 @@ export default function CodePuzzle() {
                 style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
                 onMouseEnter={e => e.currentTarget.style.color = '#A855F7'}
                 onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
-                title="Navigate to Vedika AI"
+                title="Navigate to Vedika AI Hub"
               >
-                Vedika AI
+                Vedika AI Hub
               </button>
               <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
               

@@ -112,6 +112,7 @@ export default function LayoutWrapper({ children }) {
     pathname?.startsWith('/general-tutor') ||
     pathname?.startsWith('/coding-tutor') ||
     pathname?.startsWith('/code-puzzle') ||
+    pathname?.startsWith('/vedika-ai/puzzle') ||
     pathname?.startsWith('/viva-interview') ||
     pathname?.startsWith('/quizzes') ||
     pathname?.startsWith('/assignments') ||
@@ -183,7 +184,7 @@ export default function LayoutWrapper({ children }) {
     if (pathname?.startsWith('/vedika-labs/math') || pathname?.startsWith('/labs/math')) activity = 'math_tutor';
     else if (pathname?.startsWith('/vedika-labs/chemistry') || pathname?.startsWith('/labs/chemistry')) activity = 'chemistry_lab';
     else if (pathname?.startsWith('/vedika-labs/physics') || pathname?.startsWith('/labs/physics')) activity = 'physics_lab';
-    else if (pathname?.startsWith('/code-puzzle')) activity = 'dsa_puzzle';
+    else if (pathname?.startsWith('/code-puzzle') || pathname?.startsWith('/vedika-ai/puzzle')) activity = 'dsa_puzzle';
     else if (pathname?.startsWith('/lesson/')) activity = 'video_lesson';
     else if (pathname?.startsWith('/courses')) activity = 'courses';
 

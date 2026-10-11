@@ -667,9 +667,9 @@ export default function VedikaParticleBot({
 
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      // Track warp transition smoothly
+      // Track warp transition smoothly with organic accelerated dissolution
       if (isEnteringRef.current) {
-        warpProgress = Math.min(1, warpProgress + 0.05);
+        warpProgress = Math.min(1, warpProgress + 0.08);
       } else {
         warpProgress = 0;
       }
@@ -680,7 +680,8 @@ export default function VedikaParticleBot({
         return;
       }
 
-      const globalFade = Math.max(0, 1 - warpProgress);
+      // Non-linear power curve for gentle, ethereal stardust fadeout
+      const globalFade = Math.pow(Math.max(0, 1 - warpProgress), 1.7);
 
       // Current anchor position of robot on screen (local if inline, screen if fixed)
       const robotX = inline ? (canvasWidth - targetWidth) / 2 : (rect.left + (rect.width - targetWidth) / 2);
@@ -822,11 +823,16 @@ export default function VedikaParticleBot({
           p.vy *= p.friction;
           p.vz *= p.friction;
 
-          // Gentle forward dispersal if user is entering the page
+          // Gentle, organic celestial stardust dissolution if user is entering the page
           if (isEnteringRef.current) {
-            p.vz -= (8.0 + Math.random() * 8.0);
-            p.vx += Math.cos(p.angle) * 4.0;
-            p.vy += Math.sin(p.angle) * 4.0;
+            const swirlAngle = p.angle + time * 1.6 + p.seed * 0.5;
+            const floatVel = 2.0 + p.rnd * 2.2;
+            p.vx += Math.cos(swirlAngle) * floatVel * 0.35;
+            p.vy += Math.sin(swirlAngle) * floatVel * 0.35;
+            p.vz -= (3.2 + p.rnd * 4.0);
+            p.vx *= 0.95;
+            p.vy *= 0.95;
+            p.vz *= 0.95;
           }
 
           p.x += p.vx;
@@ -850,15 +856,29 @@ export default function VedikaParticleBot({
         const maxSize = isHighIntensity ? 2.8 : 2.5;
         const renderSize = Math.max(baseSize, Math.min(maxSize, p.size * scale * (isHighIntensity ? 1.08 : 0.96)));
 
-        // Soft edge fade near left boundary instead of sharp rectangular clipping
-        let edgeFade = 1;
-        const leftLimit = inline ? -30 : (rect.left > 100 ? (rect.left - 20) : 0);
-        if (renderX < leftLimit) {
-          edgeFade = Math.max(0, 1 - (leftLimit - renderX) / 50);
+        // Smooth radial elliptical vignette falloff: ensures particles dissolve into an organic
+        // spherical/elliptical cloud and NEVER hit the rectangular canvas edges as a flat box
+        const maxRadiusX = canvasWidth * 0.46;
+        const maxRadiusY = canvasHeight * 0.46;
+        const normDx = (renderX - centerX) / (maxRadiusX || 1);
+        const normDy = (renderY - centerY) / (maxRadiusY || 1);
+        const radialDist = Math.sqrt(normDx * normDx + normDy * normDy);
+
+        let radialFade = 1;
+        if (radialDist > 0.68) {
+          radialFade = Math.max(0, 1 - (radialDist - 0.68) / 0.32);
         }
-        if (edgeFade <= 0 || renderX > canvasWidth + 30 || renderY < -30 || renderY > canvasHeight + 30) {
-          continue;
-        }
+        if (radialFade <= 0) continue;
+
+        // 4-sided soft boundary safety fade
+        const marginX = inline ? 18 : 32;
+        const marginY = inline ? 16 : 28;
+        let boundsFade = 1;
+        if (renderX < marginX) boundsFade = Math.min(boundsFade, Math.max(0, renderX / marginX));
+        if (renderX > canvasWidth - marginX) boundsFade = Math.min(boundsFade, Math.max(0, (canvasWidth - renderX) / marginX));
+        if (renderY < marginY) boundsFade = Math.min(boundsFade, Math.max(0, renderY / marginY));
+        if (renderY > canvasHeight - marginY) boundsFade = Math.min(boundsFade, Math.max(0, (canvasHeight - renderY) / marginY));
+        if (boundsFade <= 0) continue;
 
         // Smooth assembly fade-in as particles travel from spawn toward target
         let assembleFade = 1;
@@ -869,8 +889,8 @@ export default function VedikaParticleBot({
           assembleFade = Math.min(1, Math.max(0, 1 - dist2D / 260));
         }
 
-        // Apply globalFade so particles dissolve to 0 alpha as they disperse!
-        const finalAlpha = Math.max(0, p.baseAlpha * globalFade * edgeFade * assembleFade);
+        // Apply globalFade, radialFade, boundsFade so particles dissolve to 0 alpha as they disperse!
+        const finalAlpha = Math.max(0, p.baseAlpha * globalFade * radialFade * boundsFade * assembleFade);
         if (finalAlpha <= 0.01) continue;
 
         // Subtle, elegant highlight when excited in Physics & Chemistry
@@ -1067,7 +1087,8 @@ export default function VedikaParticleBot({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        userSelect: 'none'
+        userSelect: 'none',
+        overflow: 'visible'
       }}
     >
       <canvas
