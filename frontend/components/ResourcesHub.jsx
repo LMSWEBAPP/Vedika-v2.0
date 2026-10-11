@@ -33,100 +33,45 @@ export default function ResourcesHub({ navigateTo }) {
   ];
 
   return (
-    <div className="resources-hub-container" style={{
-      padding: 'clamp(20px, 5vw, 40px) clamp(14px, 4vw, 24px)',
-      maxWidth: 1000,
-      margin: '0 auto',
-      boxSizing: 'border-box',
-      fontFamily: 'var(--font-outfit), sans-serif'
-    }}>
+    <div className="resources-hub-container">
       {/* Title Header */}
-      <div className="resources-hub-header" style={{ textAlign: 'center', marginBottom: 'clamp(24px, 6vw, 48px)' }}>
-        <h1 className="resources-hub-title" style={{
-          color: T.text,
-          fontSize: 'clamp(24px, 6vw, 36px)',
-          fontWeight: 800,
-          margin: '0 0 12px 0',
-          letterSpacing: '-0.03em',
-          background: `linear-gradient(to right, ${T.text} 0%, #9B6EF8 100%)`,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
+      <div className="resources-hub-header">
+        <h1 className="resources-hub-title">
           Welcome, Student!
         </h1>
-        <p className="resources-hub-subtitle" style={{ color: T.muted, fontSize: 'clamp(14px, 3.5vw, 16px)', margin: 0 }}>
+        <p className="resources-hub-subtitle">
           Ready to explore our digital library?
         </p>
       </div>
 
       {/* Grid of Cards */}
-      <div className="resources-hub-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(270px, 100%), 1fr))',
-        gap: 'clamp(16px, 3vw, 24px)',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
+      <div className="resources-hub-grid">
         {cards.map(({ id, title, description, gradient, btnText, Icon }) => (
           <motion.div
             key={id}
-            whileHover={{ y: -6, scale: 1.02 }}
+            whileHover={{ y: -5, scale: 1.015 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigateTo(id)}
             className="resources-hub-card"
-            style={{
-              background: gradient,
-              borderRadius: 16,
-              padding: '36px 24px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 12px 24px rgba(0, 0, 0, 0.25)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              minHeight: 280,
-              transition: 'box-shadow 0.2s'
-            }}
+            style={{ background: gradient }}
           >
-            <div className="resources-hub-card-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <div className="resources-hub-icon-wrap" style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 8
-              }}>
-                <Icon size={28} color="#fff" />
+            <div className="resources-hub-card-content">
+              <div className="resources-hub-icon-wrap">
+                <Icon size={26} color="#fff" />
               </div>
               <div className="resources-hub-card-text">
-                <h2 className="resources-hub-card-title" style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
+                <h2 className="resources-hub-card-title">
                   {title}
                 </h2>
-                <p className="resources-hub-card-desc" style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 14, margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                <p className="resources-hub-card-desc">
                   {description}
                 </p>
               </div>
             </div>
 
-            <div className="resources-hub-btn" style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              background: 'rgba(255, 255, 255, 0.15)',
-              padding: '8px 16px',
-              borderRadius: 8,
-              marginTop: 16,
-              transition: 'background 0.2s'
-            }}>
+            <div className="resources-hub-btn">
               <span>{btnText}</span>
-              <ArrowRight size={16} />
+              <ArrowRight size={15} />
             </div>
           </motion.div>
         ))}

@@ -400,7 +400,7 @@
 }
 
 /* =========================================================================
-   RESOURCES WRAPPER (Desktop & Laptop: Natural scroll, never cut off)
+   RESOURCES WRAPPER & HUB BASE (Desktop / Tablet)
    ========================================================================= */
 .resources-page-wrapper {
   width: 100%;
@@ -418,96 +418,231 @@
   overflow-y: auto;
 }
 
+/* Resources Hub Desktop / Tablet Layout */
+.resources-hub-container {
+  padding: clamp(24px, 4vw, 40px) clamp(16px, 3.5vw, 24px);
+  max-width: 1000px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.resources-hub-header {
+  text-align: center;
+  margin-bottom: clamp(28px, 5vw, 44px);
+}
+
+.resources-hub-title {
+  color: var(--text);
+  font-size: clamp(24px, 4.5vw, 36px);
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.03em;
+  background: linear-gradient(to right, var(--text) 0%, #9B6EF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.resources-hub-subtitle {
+  color: var(--muted);
+  font-size: clamp(14px, 2vw, 16px);
+  margin: 0;
+}
+
+.resources-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
+  gap: clamp(16px, 3vw, 24px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.resources-hub-card {
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 270px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.resources-hub-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.resources-hub-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.resources-hub-card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.resources-hub-card-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.resources-hub-card-desc {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.resources-hub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 8px 18px;
+  border-radius: 8px;
+  margin-top: 14px;
+  transition: background 0.2s;
+}
+
 /* =========================================================================
-   RESOURCES HUB RESPONSIVE MOBILE NO-SCROLL FIT
-   Ensure all 3 cards and header fit within mobile screen without scrolling
+   RESOURCES HUB RESPONSIVE MOBILE NO-SCROLL ADAPTIVE FIT (<= 768px)
+   Boxes reduced to fit mobile screen exactly with zero vertical scroll.
+   Clear content typography, comfortable spacing, and breathing gap under header.
    ========================================================================= */
 @media (max-width: 768px) {
   .resources-page-wrapper.resources-hub-mode {
     height: calc(100dvh - 54px) !important;
     max-height: calc(100dvh - 54px) !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
   }
 
   .resources-hub-container {
     height: 100% !important;
     max-height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow: hidden !important;
-    padding: 8px 12px 10px 12px !important;
+    padding: clamp(6px, 1.4vh, 12px) clamp(12px, 3.5vw, 18px) !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     box-sizing: border-box !important;
   }
 
+  /* Clear breathing room / gap between welcome student and boxes */
   .resources-hub-header {
-    text-align: center;
-    margin-bottom: 4px !important;
+    text-align: center !important;
+    margin-bottom: clamp(10px, 2vh, 16px) !important;
     flex-shrink: 0 !important;
+    padding-top: clamp(2px, 0.4vh, 4px) !important;
   }
 
   .resources-hub-title {
-    font-size: 20px !important;
-    margin: 0 0 2px 0 !important;
+    font-size: clamp(19px, 5vw, 22px) !important;
+    font-weight: 800 !important;
+    margin: 0 0 3px 0 !important;
+    line-height: 1.2 !important;
   }
 
   .resources-hub-subtitle {
-    font-size: 12px !important;
+    font-size: clamp(12px, 3.2vw, 13.5px) !important;
     margin: 0 !important;
+    color: var(--muted) !important;
+    opacity: 0.9 !important;
   }
 
+  /* Compact 3-card grid that fits within screen */
   .resources-hub-grid {
     flex: 1 !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
-    justify-content: space-between !important;
+    gap: clamp(8px, 1.4vh, 12px) !important;
+    justify-content: flex-start !important;
     width: 100% !important;
     margin: 0 !important;
+    padding-bottom: 2px !important;
+    box-sizing: border-box !important;
   }
 
+  /* Card boxes: reduced neatly to fit screen without vertical scrolling */
   .resources-hub-card {
-    flex: 1 !important;
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     min-height: 0 !important;
-    padding: 10px 14px !important;
+    max-height: clamp(145px, 20vh, 172px) !important;
+    padding: clamp(8px, 1.4vh, 12px) clamp(12px, 3.4vw, 16px) !important;
     border-radius: 14px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-evenly !important;
+    justify-content: space-between !important;
     text-align: center !important;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22) !important;
+    box-sizing: border-box !important;
   }
 
+  /* Card content: clear, well-spaced typography */
   .resources-hub-card-content {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    text-align: center !important;
-    gap: 5px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
     justify-content: center !important;
+    gap: 3px !important;
     width: 100% !important;
+    align-self: stretch !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 !important;
   }
 
   .resources-hub-icon-wrap {
-    width: 44px !important;
-    height: 44px !important;
+    width: clamp(34px, 4.4vh, 40px) !important;
+    height: clamp(34px, 4.4vh, 40px) !important;
     border-radius: 50% !important;
-    margin-bottom: 2px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    background: rgba(255, 255, 255, 0.18) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    margin-bottom: 1px !important;
   }
 
   .resources-hub-icon-wrap svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: clamp(17px, 2.2vh, 20px) !important;
+    height: clamp(17px, 2.2vh, 20px) !important;
   }
 
   .resources-hub-card-text {
@@ -515,60 +650,71 @@
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    min-width: 0 !important;
     width: 100% !important;
+    align-self: stretch !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     gap: 2px !important;
   }
 
   .resources-hub-card-title {
-    font-size: 16.5px !important;
+    color: #fff !important;
+    font-size: clamp(15.5px, 4.2vw, 17.5px) !important;
     font-weight: 750 !important;
     margin: 0 !important;
     line-height: 1.2 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    letter-spacing: -0.01em !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   .resources-hub-card-desc {
-    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    font-size: clamp(11.5px, 3.1vw, 12.5px) !important;
     margin: 0 !important;
     line-height: 1.35 !important;
-    opacity: 0.9 !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
     text-align: center !important;
-    max-width: 92% !important;
+    width: 100% !important;
+    align-self: stretch !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    display: block !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
   }
 
   .resources-hub-btn {
-    padding: 6px 16px !important;
-    font-size: 11.5px !important;
+    padding: clamp(4px, 0.8vh, 6px) clamp(12px, 3vw, 16px) !important;
+    font-size: clamp(11px, 2.8vw, 12px) !important;
     font-weight: 600 !important;
-    border-radius: 8px !important;
-    margin-top: 4px !important;
+    border-radius: 7px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    margin-top: 1px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
     flex-shrink: 0 !important;
     white-space: nowrap !important;
-    gap: 6px !important;
   }
 
   .resources-hub-btn svg {
-    width: 13px !important;
-    height: 13px !important;
+    width: 12px !important;
+    height: 12px !important;
   }
 }
 
-/* Height-adaptive compact tier for short mobile screens (<= 700px height, e.g. iPhone SE 667px, Galaxy A 640px) */
-@media (max-width: 768px) and (max-height: 700px) {
+/* Extra-compact tier for short mobile screens (height <= 680px, e.g. iPhone SE 667px, Galaxy S8 640px) */
+@media (max-width: 768px) and (max-height: 680px) {
   .resources-hub-container {
-    padding: 4px 10px 6px 10px !important;
+    padding: 6px 10px 8px 10px !important;
   }
 
   .resources-hub-header {
-    margin-bottom: 2px !important;
+    margin-bottom: 8px !important;
+    padding-top: 0 !important;
   }
 
   .resources-hub-title {
@@ -580,27 +726,29 @@
   }
 
   .resources-hub-grid {
-    gap: 5px !important;
+    gap: 6px !important;
   }
 
   .resources-hub-card {
+    max-height: 135px !important;
     padding: 6px 10px !important;
     border-radius: 12px !important;
   }
 
   .resources-hub-card-content {
-    gap: 3px !important;
+    gap: 2px !important;
+    align-self: stretch !important;
   }
 
   .resources-hub-icon-wrap {
-    width: 34px !important;
-    height: 34px !important;
+    width: 30px !important;
+    height: 30px !important;
     margin-bottom: 0 !important;
   }
 
   .resources-hub-icon-wrap svg {
-    width: 17px !important;
-    height: 17px !important;
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .resources-hub-card-title {
@@ -610,15 +758,15 @@
   .resources-hub-card-desc {
     font-size: 11px !important;
     line-height: 1.25 !important;
-    -webkit-line-clamp: 1 !important;
-    line-clamp: 1 !important;
+    width: 100% !important;
+    align-self: stretch !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .resources-hub-btn {
-    padding: 4px 12px !important;
-    font-size: 10.5px !important;
-    margin-top: 2px !important;
+    padding: 3px 10px !important;
+    font-size: 10px !important;
+    margin-top: 1px !important;
   }
 }
-
-
