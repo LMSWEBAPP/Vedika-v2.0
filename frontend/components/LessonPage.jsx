@@ -1387,6 +1387,16 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
               const currentTab = TABS.find(t => t.id === activeCompanionTab) || TABS[0];
               const panelColor = currentTab.color;
               const TabIcon = currentTab.Icon;
+
+              // On mobile, eliminate protruding corners for end tabs (Ask Vedika & Practice Quiz)
+              const panelBorderRadius = isStackedLayout
+                ? (activeCompanionTab === 'ask_vedika'
+                    ? '0 16px 16px 16px'
+                    : activeCompanionTab === 'quiz'
+                      ? '16px 0 16px 16px'
+                      : '16px')
+                : '16px';
+
               return (
                 <div style={{
                   flex: isStackedLayout ? 'none' : 1,
@@ -1405,7 +1415,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                       display: 'grid',
                       gridTemplateColumns: 'repeat(4, 1fr)',
                       gap: 4,
-                      padding: '0 6px',
+                      padding: 0,
                       boxSizing: 'border-box',
                       width: '100%',
                       position: 'relative',
@@ -1417,6 +1427,16 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                         const isActive = activeCompanionTab === tab.id;
                         const { Icon } = tab;
                         const count = tab.id === 'notes' ? notes.length : tab.id === 'qa' ? chatHistory.length : 0;
+                        const tabBorderRadius = (() => {
+                          if (tab.id === 'ask_vedika') {
+                            return isActive ? '16px 10px 0 0' : '10px 6px 0 0';
+                          }
+                          if (tab.id === 'quiz') {
+                            return isActive ? '10px 16px 0 0' : '6px 10px 0 0';
+                          }
+                          return isActive ? '10px 10px 0 0' : '6px 6px 0 0';
+                        })();
+
                         return (
                           <button
                             key={tab.id}
@@ -1435,7 +1455,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                               justifyContent: 'center',
                               gap: 2,
                               padding: '8px 2px 7px 2px',
-                              borderRadius: isActive ? '12px 12px 0 0' : '10px 10px 0 0',
+                              borderRadius: tabBorderRadius,
                               borderTop: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
                               borderLeft: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
                               borderRight: isActive ? `1.5px solid ${tab.color}` : '1.5px solid transparent',
@@ -1503,7 +1523,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                     maxHeight: isStackedLayout ? 'min(440px, calc(100vh - 270px))' : '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderRadius: '16px',
+                    borderRadius: panelBorderRadius,
                     border: `1.5px solid ${panelColor}`,
                     background: T.s1,
                     padding: 0,
