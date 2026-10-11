@@ -2446,7 +2446,7 @@ export default function VivaInterviewPage() {
               box-sizing: border-box !important;
             }
             .step-progress-wrapper {
-              margin: 16px 0 24px 0 !important;
+              margin: 46px 0 24px 0 !important;
             }
             .step-circle .step-caption {
               font-size: 10.5px !important;
@@ -2474,12 +2474,12 @@ export default function VivaInterviewPage() {
               100% { background-position: -150px 0px; }
             }
 
-            /* Mobile Flight Trajectories: Gentle descent without flying near the Back button */
+            /* Mobile Flight Trajectories: Gentle horizontal glide without flying up near the Back button */
             .hero-actor-container.ironman.entering {
               animation: ironmanRealisticFlightMobile 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
             }
             @keyframes ironmanRealisticFlightMobile {
-              0% { transform: translate3d(-18px, -12px, 0) scale(0.88); opacity: 0; }
+              0% { transform: translate3d(-14px, 0px, 0) scale(0.9); opacity: 0; }
               100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
             }
 
@@ -2487,7 +2487,7 @@ export default function VivaInterviewPage() {
               animation: batmanRealisticGlideMobile 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
             }
             @keyframes batmanRealisticGlideMobile {
-              0% { transform: translate3d(0, -16px, 0) scale(0.88); opacity: 0; }
+              0% { transform: translate3d(0, 0px, 0) scale(0.9); opacity: 0; }
               100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
             }
 
@@ -2495,7 +2495,7 @@ export default function VivaInterviewPage() {
               animation: doctorStrangeRealisticEmergenceMobile 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
             }
             @keyframes doctorStrangeRealisticEmergenceMobile {
-              0% { transform: translate3d(0, -10px, 0) scale(0.88); opacity: 0; }
+              0% { transform: translate3d(0, 0px, 0) scale(0.9); opacity: 0; }
               100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
             }
 
@@ -2503,7 +2503,7 @@ export default function VivaInterviewPage() {
               animation: supermanRealisticSonicLandingMobile 1.0s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
             }
             @keyframes supermanRealisticSonicLandingMobile {
-              0% { transform: translate3d(18px, -12px, 0) scale(0.88); opacity: 0; }
+              0% { transform: translate3d(14px, 0px, 0) scale(0.9); opacity: 0; }
               100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
             }
 
@@ -2514,21 +2514,21 @@ export default function VivaInterviewPage() {
               justify-content: center;
               position: relative;
               width: 100%;
-              height: 145px;
+              height: 185px;
               margin: 4px 0 2px 0 !important;
               flex-shrink: 0;
             }
             .mobile-particle-stage.fixed-stage {
-              height: 145px;
+              height: 185px;
               margin: 4px 0 2px 0 !important;
               flex-shrink: 0;
             }
             .mobile-particle-aura {
               position: absolute;
-              width: 155px !important;
-              height: 155px !important;
+              width: 195px !important;
+              height: 195px !important;
               border-radius: 50%;
-              filter: blur(24px);
+              filter: blur(28px);
               pointer-events: none;
             }
             .mobile-mode-switch-btn {
@@ -2950,8 +2950,8 @@ export default function VivaInterviewPage() {
               display: 'flex',
               justifyContent: 'flex-start',
               alignItems: 'center',
-              marginBottom: isMobile ? 8 : 6,
-              paddingTop: isMobile ? 2 : 0,
+              marginBottom: isMobile ? 12 : 6,
+              paddingTop: isMobile ? 4 : 0,
               flexShrink: 0,
               position: 'relative',
               zIndex: 10
@@ -3622,11 +3622,11 @@ export default function VivaInterviewPage() {
             {/* Mobile Fixed Particle Bot: Academic Viva Examiner */}
             {isMobile && (
               <div className="mobile-particle-stage fixed-stage">
-                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
+                <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 70%)' }} />
                 <VedikaParticleBot
                   src="/vedika-bot-school.png"
-                  width={190}
-                  height={145}
+                  width={240}
+                  height={185}
                   inline={true}
                   colorMode="vibrant"
                   particleStep={2}
@@ -3714,7 +3714,7 @@ export default function VivaInterviewPage() {
                     if (!topic) setTopic('Full Stack Web Development');
                   }}
                 >
-                  <span>Switch to Technical Interview</span>
+                  <span>Technical Interview</span>
                   <ChevronRight size={16} />
                 </button>
               )}
@@ -4564,11 +4564,11 @@ export default function VivaInterviewPage() {
         {/* Mobile Fixed Particle Bot: Technical Interviewer */}
         {isMobile && (
           <div className="mobile-particle-stage fixed-stage">
-            <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
+            <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.35) 0%, transparent 70%)' }} />
             <VedikaParticleBot
               src="/vedika-bot-suit.png"
-              width={190}
-              height={145}
+              width={240}
+              height={185}
               inline={true}
               colorMode="vibrant"
               particleStep={2}
@@ -4638,7 +4638,7 @@ export default function VivaInterviewPage() {
                 setSessionMode('viva');
               }}
             >
-              <span>Switch to Academic Viva</span>
+              <span>Academic Viva</span>
               <ChevronRight size={16} />
             </button>
           )}
