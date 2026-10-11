@@ -66,24 +66,41 @@ function sanitizeMermaid(raw) {
     code = `flowchart TD\n${code}`;
   }
 
-  // Sanitize node labels in square brackets: A[Text] or A["Text"]
-  // Strips rogue markdown (**bold**, `code`, *italic*) and escapes unquoted parentheses or inner quotes
-  code = code.replace(/(\[[^\]\n]+\])/g, (match) => {
-    let inner = match.slice(1, -1).trim();
+  // Helper to clean label text: remove rogue markdown and normalize inner quotes
+  const cleanLabelText = (text) => {
+    let clean = (text || '').trim();
     // Strip markdown formatting characters that break Mermaid parser
-    inner = inner.replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '');
-    
-    // Check if already enclosed in quotes
-    if (inner.startsWith('"') && inner.endsWith('"')) {
-      const content = inner.slice(1, -1).replace(/"/g, "'");
-      return `["${content}"]`;
+    clean = clean.replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '');
+    // If enclosed in outer quotes, unwrap first
+    if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+      clean = clean.slice(1, -1).trim();
     }
-    // Clean inner double quotes and wrap in quotes safely
-    return `["${inner.replace(/"/g, "'")}"]`;
-  });
+    // Escape inner double quotes to single quotes to prevent breaking Mermaid syntax
+    clean = clean.replace(/"/g, "'");
+    return clean;
+  };
+
+  // 1. Stadium shape: A(["..."])
+  code = code.replace(/\(\[\s*([^\]\n]+?)\s*\]\)/g, (_, text) => `(["${cleanLabelText(text)}"])`);
+
+  // 2. Cylinder shape: A[("...")]
+  code = code.replace(/\[\(\s*([^\)\n]+?)\s*\)\]/g, (_, text) => `[("${cleanLabelText(text)}")]`);
+
+  // 3. Subroutine shape: A[["..."]]
+  code = code.replace(/\[\[\s*([^\]\n]+?)\s*\]\]/g, (_, text) => `[["${cleanLabelText(text)}"]]`);
+
+  // 4. Hexagon shape: A{{"..."}}
+  code = code.replace(/\{\{\s*([^\}\n]+?)\s*\}\}/g, (_, text) => `{{ "${cleanLabelText(text)}" }}`);
+
+  // 5. Circle shape: A(("..."))
+  code = code.replace(/\(\(\s*([^\)\n]+?)\s*\)\)/g, (_, text) => `(("${cleanLabelText(text)}"))`);
+
+  // 6. Standard rectangle shape: A["..."] (excluding previously handled shapes)
+  code = code.replace(/(?<![\(\[])\[\s*([^\(\[\{\]\)\n]+?)\s*\](?![\)\]])/g, (_, text) => `["${cleanLabelText(text)}"]`);
 
   return code;
 }
+
 
 /**
  * Harmonious, vivid theme colors for flowchart blocks and connector arrows
@@ -156,8 +173,30 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
-  const [isModalOpen, setIsModalOpen] = useState(false); // Clean inline display in chat response by default; expandable to fullscreen modal on demand!
+  const [isModalOpen, setIsModalOpen] = useState(true); // Open directly in fullscreen focused modal when requested!
   const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
+
+  // Body scroll lock when fullscreen modal is active
+  useEffect(() => {
+    if (isModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isModalOpen]);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
 
   // Mouse drag panning state for modal viewport
   const [isPanning, setIsPanning] = useState(false);
@@ -172,20 +211,28 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     visible: false,
     status: 'Drafting...',
     label: '',
-    isClicking: false
+    isClicking: false,
+    isTracing: false
   });
 
   const animTimeoutsRef = useRef([]);
+  const animFrameRef = useRef(null);
+  const animCancelledRef = useRef(false);
 
   const clearAnimTimeouts = () => {
     animTimeoutsRef.current.forEach((t) => clearTimeout(t));
     animTimeoutsRef.current = [];
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
   };
 
   const stopAndCleanAnimation = useCallback(() => {
+    animCancelledRef.current = true;
     clearAnimTimeouts();
     setIsBuilding(false);
-    setCursorState((prev) => ({ ...prev, visible: false, isClicking: false }));
+    setCursorState((prev) => ({ ...prev, visible: false, isClicking: false, isTracing: false }));
     const targets = [modalViewportRef.current, containerRef.current].filter(Boolean);
     targets.forEach((root) => {
       const wrapper = root.querySelector('.mermaid-svg-wrapper');
@@ -197,23 +244,32 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           n.style.opacity = '1';
           n.style.transform = 'none';
           n.style.filter = '';
+          const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+          if (shape && shape.style) shape.style.strokeDashoffset = '0';
+          const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+          texts.forEach((t) => { t.style.opacity = '1'; });
         });
-        const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path, marker, .arrowheadPath, .arrowMarkerPath, .edgeLabel, .edgeLabels');
+        const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
         allEdges.forEach((e) => {
           e.style.opacity = '1';
+          if (e.style) e.style.strokeDashoffset = '0';
+        });
+        const allMarkers = wrapper.querySelectorAll('marker, .arrowheadPath, .arrowMarkerPath, [id*="pointEnd"] path, [id*="arrow"] path, .edgeLabel, .edgeLabels');
+        allMarkers.forEach((m) => {
+          m.style.opacity = '1';
         });
       }
     });
   }, []);
 
-  // Compute stable intrinsic fit zoom so diagram fills viewport comfortably with zero sudden jumps
+  // Compute stable intrinsic fit zoom so diagram fills viewport comfortably with zero sudden jumps or box-by-box scroll trap
   const computeFitZoom = useCallback((viewportEl, isModal) => {
     if (!viewportEl) return isModal ? 0.9 : 0.85;
     const svgEl = viewportEl.querySelector('svg');
     if (!svgEl) return isModal ? 0.9 : 0.85;
 
-    let intrinsicW = 500;
-    let intrinsicH = 350;
+    let intrinsicW = 550;
+    let intrinsicH = 380;
 
     if (svgEl.viewBox?.baseVal?.width > 0 && svgEl.viewBox?.baseVal?.height > 0) {
       intrinsicW = svgEl.viewBox.baseVal.width;
@@ -229,8 +285,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const vpH = viewportEl.clientHeight || (isModal ? 650 : 380);
     const vpW = viewportEl.clientWidth || (isModal ? 900 : 650);
 
-    const paddingX = isModal ? 60 : 30;
-    const paddingY = isModal ? 70 : 30;
+    const paddingX = isModal ? 70 : 32;
+    const paddingY = isModal ? 80 : 32;
 
     const availW = Math.max(200, vpW - paddingX);
     const availH = Math.max(200, vpH - paddingY);
@@ -241,14 +297,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const aspect = intrinsicH / Math.max(40, intrinsicW);
     const renderedH = targetW * aspect;
 
-    let ideal = 1.0;
-    if (renderedH > availH) {
-      ideal = availH / renderedH;
-    }
+    // Scale factor required to fit both width and height completely inside viewport
+    const scaleW = availW / targetW;
+    const scaleH = availH / Math.max(40, renderedH);
+    let ideal = Math.min(scaleW, scaleH);
 
-    // Never collapse below minimum legible zoom!
-    const minZ = isModal ? 0.55 : 0.65;
-    const maxZ = isModal ? 1.4 : 1.15;
+    // Allow down to 0.32 so tall/wide diagrams fit 100% on screen without box-by-box scrolling
+    const minZ = isModal ? 0.32 : 0.45;
+    const maxZ = isModal ? 1.25 : 1.15;
 
     return Number(Math.max(minZ, Math.min(maxZ, ideal)).toFixed(2));
   }, []);
@@ -270,12 +326,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     containerRef.current.scrollLeft = 0;
   }, [computeFitZoom]);
 
+  // Point-to-point live vector drawing animation engine
   const runLiveDrawAnimation = useCallback((containerEl) => {
     const isModal = isModalOpen && modalViewportRef.current;
     const container = containerEl || (isModal ? modalViewportRef.current : containerRef.current);
     if (!container) return;
 
     clearAnimTimeouts();
+    animCancelledRef.current = false;
 
     container.scrollTop = 0;
     container.scrollLeft = 0;
@@ -298,6 +356,48 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     const zoomFactor = currentZoom > 0 ? currentZoom : 1;
 
+    // Helper to calculate exact stage coordinates from an SVG element & local point
+    const getStagePoint = (elem, localPt) => {
+      try {
+        const ctm = elem.getScreenCTM ? elem.getScreenCTM() : null;
+        const ownerSvg = elem.ownerSVGElement || svgEl;
+        if (ctm && ownerSvg && ownerSvg.createSVGPoint && localPt) {
+          const p = ownerSvg.createSVGPoint();
+          p.x = localPt.x;
+          p.y = localPt.y;
+          const screenP = p.matrixTransform(ctm);
+          return {
+            x: (screenP.x - stageRect.left) / zoomFactor,
+            y: (screenP.y - stageRect.top) / zoomFactor
+          };
+        }
+      } catch {}
+      const er = elem.getBoundingClientRect();
+      return {
+        x: (er.left - stageRect.left) / zoomFactor + (er.width / zoomFactor) / 2,
+        y: (er.top - stageRect.top) / zoomFactor + (er.height / zoomFactor) / 2
+      };
+    };
+
+    // Frame-by-frame animation runner returning a promise
+    const animateFrame = (durationMs, onFrame) => {
+      return new Promise((resolve) => {
+        const start = performance.now();
+        const step = (now) => {
+          if (animCancelledRef.current) return resolve();
+          const elapsed = now - start;
+          const t = Math.min(1, elapsed / Math.max(1, durationMs));
+          onFrame(t);
+          if (t < 1) {
+            animFrameRef.current = requestAnimationFrame(step);
+          } else {
+            resolve();
+          }
+        };
+        animFrameRef.current = requestAnimationFrame(step);
+      });
+    };
+
     const nodes = rawNodeEls.map((el, idx) => {
       const r = el.getBoundingClientRect();
       const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
@@ -317,143 +417,204 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         }
       }
 
-      return { id: el.id || `node_${idx}`, text, x, y, w, h, el };
+      // Find shape element (rect, polygon, path, cylinder, circle, stadium)
+      const shapeEl = el.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || el;
+      let shapeLen = 0;
+      if (typeof shapeEl.getTotalLength === 'function') {
+        try { shapeLen = shapeEl.getTotalLength(); } catch {}
+      }
+      if (!shapeLen || isNaN(shapeLen)) {
+        shapeLen = 2 * (w + h);
+      }
+
+      const textEls = Array.from(el.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel'));
+
+      return { id: el.id || `node_${idx}`, text, x, y, w, h, el, shapeEl, shapeLen, textEls };
     });
 
-    // 1. Initial State: Hide all nodes and edges with smooth transitions
+    // 1. Initial State: Prepare node shapes with stroke dashoffset and hide text & edges
     nodes.forEach((n) => {
-      n.el.style.opacity = '0';
-      n.el.style.transform = 'scale(0.85)';
-      n.el.style.transformOrigin = 'center center';
-      n.el.style.transition = 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease';
+      n.el.style.opacity = '1';
+      n.el.style.filter = '';
+      if (n.shapeEl && n.shapeEl.style) {
+        n.shapeEl.style.strokeDasharray = `${n.shapeLen}`;
+        n.shapeEl.style.strokeDashoffset = `${n.shapeLen}`;
+        n.shapeEl.style.transition = 'none';
+      }
+      n.textEls.forEach((t) => {
+        t.style.opacity = '0';
+        t.style.transition = 'opacity 0.22s ease';
+      });
     });
+
     rawEdgeEls.forEach((e) => {
+      let eLen = 0;
+      if (typeof e.getTotalLength === 'function') {
+        try { eLen = e.getTotalLength(); } catch {}
+      }
+      if (!eLen || isNaN(eLen)) eLen = 140;
+      e.dataset.pathLength = String(eLen);
+      e.style.strokeDasharray = `${eLen}`;
+      e.style.strokeDashoffset = `${eLen}`;
       e.style.opacity = '0';
-      e.style.transition = 'opacity 0.25s ease';
+      e.style.transition = 'none';
     });
+
     rawMarkerEls.forEach((m) => {
       m.style.opacity = '0';
-      m.style.transition = 'opacity 0.25s ease';
+      m.style.transition = 'opacity 0.2s ease';
     });
+
     rawLabelEls.forEach((l) => {
       l.style.opacity = '0';
-      l.style.transition = 'opacity 0.25s ease';
+      l.style.transition = 'opacity 0.2s ease';
     });
 
     wrapper.classList.add('building');
     setIsBuilding(true);
 
-    // Initial position of white stylus pen (above first node)
+    // Initial position: White hairline vector stylus hovers above first node
     const firstNode = nodes[0];
     const startX = firstNode.x + firstNode.w / 2;
-    const startY = Math.max(20, firstNode.y - 35);
+    const startY = Math.max(15, firstNode.y - 30);
 
     setCursorState({
       x: startX,
       y: startY,
       visible: true,
-      status: '🧠 Synthesizing Diagram...',
+      status: '🧠 Drafting Diagram...',
       label: 'Vedika AI',
-      isClicking: false
+      isClicking: false,
+      isTracing: false
     });
 
-    let timeline = 250;
+    // 2. Execute point-to-point drawing sequence
+    (async () => {
+      await new Promise((r) => setTimeout(r, 180));
+      if (animCancelledRef.current) return;
 
-    // Phase 2: Glide pen to each node, draw & permanently reveal it
-    nodes.forEach((node, idx) => {
-      const colorIdx = idx % NODE_PALETTES.length;
-      const palette = NODE_PALETTES[colorIdx];
+      for (let idx = 0; idx < nodes.length; idx++) {
+        if (animCancelledRef.current) break;
+        const node = nodes[idx];
+        const colorIdx = idx % NODE_PALETTES.length;
+        const palette = NODE_PALETTES[colorIdx];
+        const shapeEl = node.shapeEl;
+        const shapeLen = node.shapeLen;
 
-      // 2A: Pen glides to the node
-      const tArrival = setTimeout(() => {
-        setCursorState({
-          x: node.x + node.w / 2,
-          y: node.y + node.h / 2,
-          visible: true,
+        // Pen arrives at node and begins tracing perimeter
+        setCursorState((prev) => ({
+          ...prev,
           status: `Drawing Node (${idx + 1}/${nodes.length})`,
-          label: node.text.slice(0, 22),
-          isClicking: true,
-          accentColor: palette.stroke
-        });
-      }, timeline);
-      animTimeoutsRef.current.push(tArrival);
+          label: node.text.slice(0, 24),
+          accentColor: palette.stroke,
+          isTracing: true,
+          isClicking: true
+        }));
 
-      // 2B: Node illuminates and permanently reveals into view
-      const tReveal = setTimeout(() => {
-        node.el.style.opacity = '1';
-        node.el.style.transform = 'scale(1)';
-        node.el.style.filter = `drop-shadow(0 0 14px ${palette.stroke})`;
+        // Trace shape perimeter smoothly frame-by-frame
+        await animateFrame(280, (t) => {
+          if (shapeEl && shapeEl.style) {
+            shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
+          }
+          if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
+            try {
+              const pt = shapeEl.getPointAtLength(shapeLen * t);
+              const stagePt = getStagePoint(shapeEl, pt);
+              setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+            } catch {}
+          }
+        });
+
+        if (animCancelledRef.current) break;
+
+        // Settle node shape, reveal content and trigger illumination bloom
+        if (shapeEl && shapeEl.style) shapeEl.style.strokeDashoffset = '0';
+        node.textEls.forEach((t) => { t.style.opacity = '1'; });
+        node.el.style.filter = `drop-shadow(0 0 12px ${palette.stroke})`;
+
         setCursorState((prev) => ({
           ...prev,
           isClicking: false,
+          isTracing: false,
           status: `Node ${idx + 1} Ready ✨`
         }));
-      }, timeline + 120);
-      animTimeoutsRef.current.push(tReveal);
 
-      // 2C: Settle glow filter to default neon border
-      const tSettle = setTimeout(() => {
-        node.el.style.filter = '';
-      }, timeline + 360);
-      animTimeoutsRef.current.push(tSettle);
+        setTimeout(() => {
+          if (!animCancelledRef.current) node.el.style.filter = '';
+        }, 220);
 
-      // 2D: Draw connector arrow to next node if applicable
-      if (idx < nodes.length - 1) {
-        const nextNode = nodes[idx + 1];
-        const edgeEl = rawEdgeEls[idx];
+        // Trace connecting arrow to the next node if present
+        if (idx < nodes.length - 1 && rawEdgeEls[idx]) {
+          const edgeEl = rawEdgeEls[idx];
+          const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
 
-        const tEdge = setTimeout(() => {
-          // Pen moves along connector path
-          setCursorState({
-            x: (node.x + nextNode.x) / 2 + node.w / 2,
-            y: (node.y + nextNode.y) / 2 + node.h / 2,
-            visible: true,
+          edgeEl.style.opacity = '1';
+          edgeEl.style.strokeDasharray = `${edgeLen}`;
+          edgeEl.style.strokeDashoffset = `${edgeLen}`;
+
+          setCursorState((prev) => ({
+            ...prev,
             status: 'Linking Flow ➔',
             label: '➔',
-            isClicking: false,
-            accentColor: palette.arrow
+            accentColor: palette.arrow,
+            isTracing: true
+          }));
+
+          // Physically trace connector line from start to destination
+          await animateFrame(240, (t) => {
+            edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
+            if (typeof edgeEl.getPointAtLength === 'function') {
+              try {
+                const pt = edgeEl.getPointAtLength(edgeLen * t);
+                const stagePt = getStagePoint(edgeEl, pt);
+                setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+              } catch {}
+            }
           });
 
-          // Reveal edge and arrowheads permanently
-          if (edgeEl) edgeEl.style.opacity = '1';
+          if (animCancelledRef.current) break;
+
+          // Arrow has reached destination: illuminate arrowhead markers and edge labels
+          edgeEl.style.strokeDashoffset = '0';
           rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
           rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
-        }, timeline + 400);
-        animTimeoutsRef.current.push(tEdge);
+        }
 
-        timeline += 620; // 400ms node + 220ms edge
-      } else {
-        timeline += 440;
+        await new Promise((r) => setTimeout(r, 60));
       }
-    });
 
-    // Phase 3: Complete & Settle
-    const tComplete = setTimeout(() => {
-      setCursorState((prev) => ({
-        ...prev,
-        status: 'Infographic Complete ✨',
-        label: 'Ready',
-        isClicking: false
-      }));
+      // 3. Finalize and settle
+      if (!animCancelledRef.current) {
+        setCursorState((prev) => ({
+          ...prev,
+          status: 'Infographic Complete ✨',
+          label: 'Ready',
+          isClicking: false,
+          isTracing: false
+        }));
 
-      // Ensure every element has full opacity and clean transforms
-      nodes.forEach((n) => {
-        n.el.style.opacity = '1';
-        n.el.style.transform = 'none';
-        n.el.style.filter = '';
-      });
-      rawEdgeEls.forEach((e) => { e.style.opacity = '1'; });
-      rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
-      rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
+        nodes.forEach((n) => {
+          n.el.style.opacity = '1';
+          n.el.style.filter = '';
+          if (n.shapeEl && n.shapeEl.style) n.shapeEl.style.strokeDashoffset = '0';
+          n.textEls.forEach((t) => { t.style.opacity = '1'; });
+        });
+        rawEdgeEls.forEach((e) => {
+          e.style.opacity = '1';
+          e.style.strokeDashoffset = '0';
+        });
+        rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
+        rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
 
-      const tFadeCursor = setTimeout(() => {
-        setCursorState((prev) => ({ ...prev, visible: false }));
-        wrapper.classList.remove('building');
-        setIsBuilding(false);
-      }, 400);
-      animTimeoutsRef.current.push(tFadeCursor);
-    }, timeline + 50);
-    animTimeoutsRef.current.push(tComplete);
+        setTimeout(() => {
+          if (!animCancelledRef.current) {
+            setCursorState((prev) => ({ ...prev, visible: false }));
+            wrapper.classList.remove('building');
+            setIsBuilding(false);
+          }
+        }, 350);
+      }
+    })();
   }, [isModalOpen, zoom]);
 
   const handleSkipBuild = (targetEl) => {
@@ -501,8 +662,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const uniqueIdRef = useRef(`mermaid_${Math.random().toString(36).substr(2, 9)}`);
 
   const activeChartCode = chart || (points.length > 0
-    ? `flowchart TD\n  Root["🎯 Visual Overview"]\n${points.slice(0, 6).map((p, i) => `  Node_${i + 1}["${p.replace(/["\(\)\[\]\{\}]/g, ' ').slice(0, 40)}"]\n  Root --> Node_${i + 1}`).join('\n')}`
-    : `flowchart TD\n  Start["No diagram data"]`);
+    ? (points.length <= 5
+        ? `flowchart LR\n  Root(["🎯 Visual Overview"])\n${points.slice(0, 5).map((p, i) => `  Node_${i + 1}["⚡ ${p.replace(/["\(\)\[\]\{\}]/g, ' ').trim().slice(0, 36)}"]\n  ${i === 0 ? 'Root' : `Node_${i}`} --> Node_${i + 1}`).join('\n')}`
+        : `flowchart TD\n  Root(["🎯 Visual Overview"])\n${points.slice(0, 6).map((p, i) => `  Node_${i + 1}["💡 ${p.replace(/["\(\)\[\]\{\}]/g, ' ').trim().slice(0, 36)}"]\n  Root --> Node_${i + 1}`).join('\n')}`
+      )
+    : `flowchart LR\n  Start(["🎯 Visual Overview"])`);
 
   useEffect(() => {
     let isMounted = true;
@@ -662,11 +826,19 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const inlineVp = containerRef.current;
 
     const handleModalWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        e.stopPropagation();
+        // Trackpad pinch-to-zoom or Ctrl+wheel zoom
         const factor = e.deltaY < 0 ? 1.08 : 0.92;
-        setModalZoom(prev => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+        setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+      } else {
+        // Two-finger trackpad panning or mouse wheel scrolling within modal viewport
+        if (modalViewportRef.current) {
+          modalViewportRef.current.scrollLeft += e.deltaX;
+          modalViewportRef.current.scrollTop += e.deltaY;
+        }
       }
     };
 
@@ -1051,6 +1223,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 label={cursorState.label}
                 isClicking={cursorState.isClicking}
                 accentColor={cursorState.accentColor || '#38BDF8'}
+                isTracing={cursorState.isTracing}
               />
 
               <div
@@ -1504,6 +1677,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       label={cursorState.label}
                       isClicking={cursorState.isClicking}
                       accentColor={cursorState.accentColor || '#38BDF8'}
+                      isTracing={cursorState.isTracing}
                     />
 
                     <div

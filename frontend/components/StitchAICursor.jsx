@@ -19,7 +19,8 @@ export default function StitchAICursor({
   status = 'Writing...',
   label = '',
   isClicking = false,
-  accentColor = '#A855F7'
+  accentColor = '#A855F7',
+  isTracing = false
 }) {
   const [particles, setParticles] = useState([]);
 
@@ -49,7 +50,7 @@ export default function StitchAICursor({
 
   if (!visible) return null;
 
-  const isWriting = status.includes('Writing') || status.includes('Drafting') || status.includes('Connecting');
+  const isWriting = status.includes('Writing') || status.includes('Drafting') || status.includes('Connecting') || status.includes('Drawing') || status.includes('Linking') || isTracing;
 
   return (
     <div
@@ -61,7 +62,7 @@ export default function StitchAICursor({
         pointerEvents: 'none',
         zIndex: 9999,
         transform: `translate3d(${x}px, ${y}px, 0)`,
-        transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+        transition: isTracing ? 'none' : 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
         willChange: 'transform'
       }}
     >
@@ -83,148 +84,119 @@ export default function StitchAICursor({
         />
       ))}
 
-      {/* Modern Pure White Digital Stylus / Pen (Tip points exactly at (x, y)) */}
+      {/* Modern Minimalist White Hairline Vector Stylus (Tip points exactly at (x, y)) */}
       <div
         className={`stitch-pen-wrapper ${isWriting ? 'writing-active' : ''}`}
         style={{
           position: 'absolute',
-          left: -3,
+          left: -2,
           top: -38,
-          width: 42,
-          height: 42,
-          transformOrigin: '3px 38px',
-          animation: isWriting ? 'penWritingMicro 0.28s ease-in-out infinite alternate' : 'none'
+          width: 40,
+          height: 40,
+          transformOrigin: '2px 38px',
+          animation: isWriting ? 'penWritingMicro 0.24s ease-in-out infinite alternate' : 'none'
         }}
       >
         <svg
-          width="42"
-          height="42"
-          viewBox="0 0 42 42"
+          width="40"
+          height="40"
+          viewBox="0 0 40 40"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           style={{
-            filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35))',
+            filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.4))',
             display: 'block'
           }}
         >
-          <defs>
-            {/* Pure Brilliant White Pen Body Gradient */}
-            <linearGradient id="whitePenBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="60%" stopColor="#FFFFFF" />
-              <stop offset="85%" stopColor="#F1F5F9" />
-              <stop offset="100%" stopColor="#E2E8F0" />
-            </linearGradient>
-
-            {/* Polished Chrome / Platinum Metal Accent */}
-            <linearGradient id="chromeAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="50%" stopColor="#CBD5E1" />
-              <stop offset="100%" stopColor="#94A3B8" />
-            </linearGradient>
-
-            {/* Precision White Ceramic Nib Cone */}
-            <linearGradient id="whitePenNibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="50%" stopColor="#F8FAFC" />
-              <stop offset="100%" stopColor="#CBD5E1" />
-            </linearGradient>
-          </defs>
-
-          {/* White Pen Barrel Body (Long sleek stylus) */}
+          {/* Slender Stylus Body Barrel - Hairline White Stroke */}
           <polygon
-            points="8,29 26,11 32,17 14,35"
-            fill="url(#whitePenBodyGrad)"
+            points="6,28 24,10 29,15 11,33"
+            fill="rgba(255, 255, 255, 0.08)"
             stroke="#FFFFFF"
-            strokeWidth="1.2"
-          />
-
-          {/* Specular White Gloss Line along pen body */}
-          <line
-            x1="11"
-            y1="26"
-            x2="28"
-            y2="14"
-            stroke="#FFFFFF"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-
-          {/* Stylus Top End Cap (Pure White Dome with Chrome Trim) */}
-          <path
-            d="M 26 11 L 30 7 C 32 5 35 5 37 7 C 39 9 39 12 37 14 L 32 17 Z"
-            fill="#FFFFFF"
-            stroke="url(#chromeAccentGrad)"
             strokeWidth="1"
+            strokeLinejoin="round"
           />
 
-          {/* Sleek Chrome Clip Accent */}
+          {/* Central Specular Hairline Shading */}
           <line
-            x1="28"
-            y1="9"
-            x2="19"
-            y2="20"
-            stroke="url(#chromeAccentGrad)"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-
-          {/* Silver Metal Ring between body and cone */}
-          <polygon
-            points="6,31 8,29 14,35 12,37"
-            fill="url(#chromeAccentGrad)"
-            stroke="#94A3B8"
-            strokeWidth="0.6"
-          />
-
-          {/* Ceramic Nib Cone tapering to drawing point */}
-          <polygon
-            points="3,38 6,31 12,37"
-            fill="url(#whitePenNibGrad)"
-            stroke="#CBD5E1"
-            strokeWidth="0.8"
-          />
-
-          {/* Precision Fine Drawing Tip */}
-          <line
-            x1="3"
-            y1="38"
-            x2="8"
-            y2="33"
-            stroke="#64748B"
+            x1="8"
+            y1="30"
+            x2="26"
+            y2="12"
+            stroke="rgba(255, 255, 255, 0.75)"
             strokeWidth="0.75"
             strokeLinecap="round"
           />
 
-          {/* Brilliant Radiant Ink Contact Point at Tip */}
-          <circle
-            cx="3"
-            cy="38"
-            r="2.2"
-            fill={accentColor || '#38BDF8'}
+          {/* Stylus Top End Cap - Hairline Contour */}
+          <path
+            d="M 24 10 L 27 7 C 28.5 5.5 31 5.5 32.5 7 C 34 8.5 34 11 32.5 12.5 L 29 15 Z"
+            fill="rgba(255, 255, 255, 0.16)"
+            stroke="#FFFFFF"
+            strokeWidth="1"
+            strokeLinejoin="round"
+          />
+
+          {/* Sleek Hairline Stylus Clip */}
+          <line
+            x1="26"
+            y1="8"
+            x2="18"
+            y2="16"
             stroke="#FFFFFF"
             strokeWidth="0.9"
+            strokeLinecap="round"
+          />
+
+          {/* Tapered Fine Ceramic Nib Cone */}
+          <polygon
+            points="2,38 6,28 11,33"
+            fill="rgba(255, 255, 255, 0.22)"
+            stroke="#FFFFFF"
+            strokeWidth="1"
+            strokeLinejoin="round"
+          />
+
+          {/* Precision Needle Point Tip */}
+          <line
+            x1="2"
+            y1="38"
+            x2="5"
+            y2="33"
+            stroke="rgba(255, 255, 255, 0.9)"
+            strokeWidth="0.8"
+            strokeLinecap="round"
+          />
+
+          {/* Radiant Ink Contact Point at Nib Tip */}
+          <circle
+            cx="2"
+            cy="38"
+            r="1.6"
+            fill="#FFFFFF"
+            stroke={accentColor || '#38BDF8'}
+            strokeWidth="0.8"
           />
         </svg>
       </div>
 
-      {/* Floating AI Label & Status Pill */}
+      {/* Floating Hairline AI Label & Micro-Status Pill */}
       <div
         className="stitch-cursor-badge"
         style={{
           position: 'absolute',
-          left: 14,
-          top: 6,
+          left: 12,
+          top: 4,
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          background: 'rgba(15, 23, 42, 0.88)',
-          border: `1px solid ${accentColor}55`,
+          background: 'rgba(8, 12, 24, 0.92)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
           borderRadius: 20,
-          padding: '4px 10px',
-          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.7)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
+          padding: '3px 9px',
+          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           whiteSpace: 'nowrap',
           userSelect: 'none'
         }}
@@ -234,22 +206,21 @@ export default function StitchAICursor({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 14,
-            height: 14,
+            width: 12,
+            height: 12,
             borderRadius: '50%',
-            background: `linear-gradient(135deg, ${accentColor}, #3B82F6)`
+            background: 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.3)'
           }}
         >
-          <Sparkles size={9} color="#FFFFFF" />
+          <Sparkles size={8} color="#FFFFFF" />
         </span>
 
         <span
           style={{
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 700,
-            background: `linear-gradient(90deg, ${accentColor}, #93C5FD)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: '#FFFFFF',
             letterSpacing: '0.02em'
           }}
         >
@@ -259,9 +230,9 @@ export default function StitchAICursor({
         {status && (
           <span
             style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: '#CBD5E1',
+              fontSize: 9.5,
+              fontWeight: 500,
+              color: '#94A3B8',
               paddingLeft: 4,
               borderLeft: '1px solid rgba(255, 255, 255, 0.15)'
             }}
@@ -274,9 +245,9 @@ export default function StitchAICursor({
           <span
             style={{
               fontSize: 9.5,
-              fontWeight: 500,
-              color: accentColor,
-              maxWidth: 120,
+              fontWeight: 600,
+              color: accentColor || '#38BDF8',
+              maxWidth: 130,
               overflow: 'hidden',
               textOverflow: 'ellipsis'
             }}

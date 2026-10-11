@@ -256,19 +256,26 @@ export const CODING_TUTOR_SYSTEM = "You are Vyomanta's expert coding and program
 export const QUIZ_SYSTEM = "You are a quiz generator. Generate only the quiz questions in the specified format. Do not add explanations, introductions, or greetings.";
 export const FLASHCARD_SYSTEM = "You are a flashcard generator. Generate only the flashcards in the specified format. Do not add explanations, introductions, or greetings.";
 export const INFOGRAPHIC_SYSTEM = `You are an elite visual knowledge architect and diagram drawing specialist.
-Your mission is to distill concepts into clean, perfectly structured, aesthetic Mermaid.js flowcharts accompanied by high-impact key takeaways.
+Your mission is to distill concepts into clean, high-impact, aesthetic Mermaid.js infographics accompanied by crisp takeaway bullet points.
 
 OUTPUT FORMAT REQUIREMENTS:
 1. Wrap the Mermaid code in a \`\`\`mermaid ... \`\`\` block.
 2. Directly beneath, write "Key Takeaways:" followed by 3 to 5 clear bullet points starting with "- **Topic**: Detail".
 
-STRICT MERMAID DIAGRAM RULES:
-- ALWAYS use 'flowchart TD' for clean, readable top-down visual hierarchy.
-- Include 4 to 6 logically sequential or branched nodes that tell a clear story.
-- ALWAYS enclose node label text in double quotes: A["1. Core Principle"] --> B["2. Working Mechanism"].
-- Keep node labels concise and punchy (3-6 words per node). Prefix each box with a step number or category.
+ARCHITECTURAL RULES (CHOOSE THE BEST FIT):
+- PROCESS / PIPELINE: For sequential steps, lifecycle, or data pipelines, use horizontal flow: 'flowchart LR'.
+- HIERARCHY / ARCHITECTURE: For layered stacks, components, or systems, use top-down flow: 'flowchart TD' (optionally with subgraphs for distinct layers).
+- DECISION / EVALUATION: Use decision diamonds/hexagons {{ "❓ Condition?" }} for branches.
+- STORAGE / DATA: Use cylinders [("🗄️ Database/Cache")] for data stores.
+- TRIGGER / ENDPOINTS: Use stadium pills (["⚡ Trigger / Event"]) for entry or exit points.
+
+STRICT STYLING & SYNTAX RULES:
+- Include 4 to 6 logically connected nodes that tell a clear, concise visual story.
+- ALWAYS prefix each node label with a relevant, contextual emoji icon (e.g. 🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍, 🔒).
+- ALWAYS enclose node label text in double quotes: A(["⚡ Start Pipeline"]) --> B["⚙️ Process Data"] --> C[("🗄️ Store Result")].
+- Keep node labels concise (3-6 words per node).
 - NEVER include raw markdown syntax (**bold**, \`code\`, *italic*) inside node labels.
-- NEVER put unescaped parentheses, brackets, colons, or quotes inside node labels.
+- NEVER put unescaped parentheses, brackets, colons, or double quotes inside node labels.
 - Do NOT output any introductory or conversational text outside the mermaid block and bullet points.`;
 export const SIMPLER_SYSTEM = "You are a simplification expert. Rewrite the given concept using very basic language, short sentences, and everyday analogies. Assume the reader is a complete beginner.";
 export const EXAMPLES_SYSTEM = "You are an examples expert. Generate 3-5 real-world examples or practical applications of the given concept. Make them relatable and concrete.";
@@ -326,21 +333,22 @@ Output only the flashcards.`;
 }
 
 export function buildInfographicPrompt(topic, count = 5) {
-  return `Generate an interactive Mermaid.js flowchart diagram and ${count} key takeaway points about "${topic}".
+  return `Generate an interactive Mermaid.js visual infographic and ${count} key takeaway points about "${topic}".
+Select the most fitting visual structure (e.g. 'flowchart LR' for sequential process/pipeline or 'flowchart TD' for architecture/concept hierarchy).
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
-flowchart TD
-  A["${topic}"] --> B["Core Principle"]
-  A --> C["Key Mechanism"]
-  B --> D["Detailed Insight / Impact"]
-  C --> E["Outcome / Practical Application"]
+flowchart LR
+  A(["🎯 ${topic}"]) --> B["⚙️ Core Mechanism"]
+  B --> C["⚡ Processing & Logic"]
+  C --> D[("🗄️ Storage / State")]
+  D --> E(["🚀 Practical Outcome"])
 \`\`\`
 
 Key Takeaways:
-- First key insight or concept
-- Second key insight or concept
-- Third key insight or concept`;
+- **Core Concept**: Clear summary point
+- **Mechanism**: How it operates under the hood
+- **Practical Impact**: Real-world application and benefit`;
 }
 
 // ── Feature prompt builder (on-demand features in chat) ──
@@ -367,14 +375,16 @@ BACK: [definition or explanation]
 
 Explanation:
 ${context}`,
-    infographic: `Based on the following explanation, generate a neat, structured Mermaid.js flowchart and 4-5 high-impact takeaway bullet points.
+    infographic: `Based on the following explanation, generate a neat, structured Mermaid.js infographic diagram and 4-5 high-impact takeaway bullet points.
+Choose the best visual orientation: 'flowchart LR' (horizontal pipeline/process) or 'flowchart TD' (layered architecture/system hierarchy).
+Prefix every node label with a descriptive emoji (🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍) and enclose label text in double quotes.
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
-flowchart TD
-  A["1. Core Concept"] --> B["2. Key Mechanism"]
-  B --> C["3. Processing & Analysis"]
-  C --> D["4. Practical Result"]
+flowchart LR
+  A(["🎯 1. Core Principle"]) --> B["⚙️ 2. Execution Logic"]
+  B --> C["🔍 3. Analysis & State"]
+  C --> D(["🚀 4. Impact & Outcome"])
 \`\`\`
 
 Key Takeaways:
@@ -438,14 +448,25 @@ export function parseFlashcardsOutput(text) {
 export function generateMermaidFromPoints(points, title = "Visual Summary") {
   if (!points || !points.length) return "";
   const cleanTitle = (title || "Summary").replace(/["\(\)\[\]\{\}]/g, '').slice(0, 32);
-  let chart = "flowchart TD\n";
-  chart += `  Root["🎯 ${cleanTitle}"]\n`;
+  const isPipeline = points.length <= 5;
+  let chart = isPipeline ? "flowchart LR\n" : "flowchart TD\n";
+  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠'];
+  chart += `  Root(["🎯 ${cleanTitle}"])\n`;
   points.slice(0, 6).forEach((pt, idx) => {
     let cleanPt = pt.replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (cleanPt.length > 45) cleanPt = cleanPt.substring(0, 42) + '...';
+    if (cleanPt.length > 38) cleanPt = cleanPt.substring(0, 35) + '...';
+    const icon = ICONS[idx % ICONS.length];
     const id = `Node_${idx + 1}`;
-    chart += `  ${id}["${cleanPt}"]\n`;
-    chart += `  Root --> ${id}\n`;
+    if (idx === points.length - 1) {
+      chart += `  ${id}(["${icon} ${cleanPt}"])\n`;
+    } else {
+      chart += `  ${id}["${icon} ${cleanPt}"]\n`;
+    }
+    if (isPipeline && idx > 0) {
+      chart += `  Node_${idx} --> ${id}\n`;
+    } else {
+      chart += `  Root --> ${id}\n`;
+    }
   });
   return chart;
 }

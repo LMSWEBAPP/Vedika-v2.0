@@ -178,6 +178,54 @@ button.mermaid-expand-btn:hover,
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 10px rgba(56, 189, 248, 0.35)) !important;
 }
 
+/* Subgraph / Architecture Clusters */
+.mermaid-svg-wrapper .cluster rect {
+  fill: rgba(21, 29, 50, 0.45) !important;
+  stroke: rgba(96, 165, 250, 0.4) !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 4 4 !important;
+  rx: 14px !important;
+  ry: 14px !important;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4)) !important;
+}
+
+.mermaid-svg-wrapper .cluster text,
+.mermaid-svg-wrapper .cluster span,
+.mermaid-svg-wrapper .cluster .nodeLabel {
+  fill: #93C5FD !important;
+  color: #93C5FD !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+/* Stadium / Pill Shapes */
+.mermaid-svg-wrapper .node.stadium rect,
+.mermaid-svg-wrapper .node.stadium path,
+.mermaid-svg-wrapper .node[class*="stadium"] rect,
+.mermaid-svg-wrapper .node[class*="stadium"] path {
+  rx: 22px !important;
+  ry: 22px !important;
+  stroke: #A855F7 !important;
+  filter: drop-shadow(0 4px 14px rgba(168, 85, 247, 0.35)) !important;
+}
+
+/* Cylinder / Database Shapes */
+.mermaid-svg-wrapper .node.cylinder path,
+.mermaid-svg-wrapper .node[class*="cylinder"] path {
+  stroke: #10B981 !important;
+  filter: drop-shadow(0 4px 14px rgba(16, 185, 129, 0.35)) !important;
+}
+
+/* Hexagon & Diamond Decision Shapes */
+.mermaid-svg-wrapper .node.hexagon polygon,
+.mermaid-svg-wrapper .node.diamond polygon,
+.mermaid-svg-wrapper .node[class*="hexagon"] polygon {
+  stroke: #F59E0B !important;
+  filter: drop-shadow(0 4px 14px rgba(245, 158, 11, 0.35)) !important;
+}
+
 /* Hide any empty dummy rect inside .label that could obstruct text */
 .mermaid-svg-wrapper .node .label > rect,
 .mermaid-svg-wrapper .node .label rect:empty {
