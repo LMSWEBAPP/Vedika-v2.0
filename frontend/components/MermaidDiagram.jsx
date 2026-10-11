@@ -358,6 +358,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     // Helper to calculate exact stage coordinates from an SVG element & local point
     const getStagePoint = (elem, localPt) => {
+      const curStageRect = stageEl.getBoundingClientRect();
+      const curZoom = (isModal ? (modalZoomRef.current || 0.85) : zoom) || 1;
       try {
         const ctm = elem.getScreenCTM ? elem.getScreenCTM() : null;
         const ownerSvg = elem.ownerSVGElement || svgEl;
@@ -367,15 +369,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           p.y = localPt.y;
           const screenP = p.matrixTransform(ctm);
           return {
-            x: (screenP.x - stageRect.left) / zoomFactor,
-            y: (screenP.y - stageRect.top) / zoomFactor
+            x: (screenP.x - curStageRect.left) / curZoom,
+            y: (screenP.y - curStageRect.top) / curZoom
           };
         }
       } catch {}
       const er = elem.getBoundingClientRect();
       return {
-        x: (er.left - stageRect.left) / zoomFactor + (er.width / zoomFactor) / 2,
-        y: (er.top - stageRect.top) / zoomFactor + (er.height / zoomFactor) / 2
+        x: (er.left - curStageRect.left) / curZoom + (er.width / curZoom) / 2,
+        y: (er.top - curStageRect.top) / curZoom + (er.height / curZoom) / 2
       };
     };
 
