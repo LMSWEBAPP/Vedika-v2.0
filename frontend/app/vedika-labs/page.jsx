@@ -701,8 +701,8 @@ export default function VedikaLabsHub() {
             <div className="bot-canvas-wrap">
               <VedikaParticleBot
                 src={activeLab.botImage || '/vedika-bot-physics.png?v=3'}
-                width={170}
-                height={135}
+                width={260}
+                height={195}
                 inline={true}
                 colorMode="vibrant"
                 themeRgb={activeLab.colorRgb}

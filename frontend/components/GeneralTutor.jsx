@@ -2130,16 +2130,12 @@ export default function GeneralTutor() {
                       </div>
                     )}
 
-                    {/* ── Suggestion chips ── */}
+                    {/* ── Suggestion chips (All 5 options visible on mobile and desktop) ── */}
                     {!msg.local && (
                       <div style={{
                         display: 'flex',
                         gap: 6,
-                        flexWrap: isMobile ? 'nowrap' : 'wrap',
-                        overflowX: isMobile ? 'auto' : 'visible',
-                        paddingBottom: isMobile ? 6 : 0,
-                        WebkitOverflowScrolling: 'touch',
-                        scrollbarWidth: 'none',
+                        flexWrap: 'wrap',
                         marginTop: 10
                       }}>
                         {SUGGESTIONS.map(s => {
@@ -2155,8 +2151,8 @@ export default function GeneralTutor() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 5,
-                                padding: '6px 12px',
-                                borderRadius: 16,
+                                padding: '5px 11px',
+                                borderRadius: 14,
                                 background: isActive ? s.color : (loading ? '#0f172a' : '#050814'),
                                 border: isActive ? `1px solid ${s.color}` : `1px solid ${s.color}65`,
                                 color: isActive ? '#fff' : (s.color === '#64748B' ? '#e2e8f0' : s.color),
@@ -2532,7 +2528,7 @@ export default function GeneralTutor() {
                         }}
                         title="Toggle Vedika Menu (Ctrl+B)"
                       >
-                        <Sparkles size={16} color={showLeftNav ? '#C084FC' : '#A855F7'} />
+                        <PanelLeft size={16} />
                       </button>
 
                       <button
@@ -2739,7 +2735,7 @@ export default function GeneralTutor() {
                       }}
                       title="Toggle Vedika Menu (Ctrl+B)"
                     >
-                      <Sparkles size={16} color={showLeftNav ? '#C084FC' : '#A855F7'} />
+                      <PanelLeft size={16} />
                     </button>
 
                     <button

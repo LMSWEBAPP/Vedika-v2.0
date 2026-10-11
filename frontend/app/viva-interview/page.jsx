@@ -2396,14 +2396,19 @@ export default function VivaInterviewPage() {
             .box1-content,
             .box-container .box1-content {
               display: flex !important;
+              flex-direction: column !important;
               flex: 1 1 100% !important;
               width: 100% !important;
               max-width: 100% !important;
               min-width: 100% !important;
               opacity: 1 !important;
               pointer-events: auto !important;
-              padding: 14px 16px 40px !important;
+              padding: 10px 14px 12px !important;
               border: none !important;
+              height: 100% !important;
+              max-height: 100% !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
             }
             .box2-content,
             .box-container .box2-content {
@@ -2426,35 +2431,40 @@ export default function VivaInterviewPage() {
             }
             .box-container.right-open .box2-content {
               display: flex !important;
+              flex-direction: column !important;
               flex: 1 1 100% !important;
               width: 100% !important;
               max-width: 100% !important;
               min-width: 100% !important;
               opacity: 1 !important;
               pointer-events: auto !important;
-              padding: 14px 16px 40px !important;
+              padding: 10px 14px 12px !important;
               border: none !important;
+              height: 100% !important;
+              max-height: 100% !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
             }
             .step-progress-wrapper {
-              margin: 14px 0 32px 0 !important;
+              margin: 10px 0 24px 0 !important;
             }
             .step-circle .step-caption {
-              font-size: 11px !important;
-              bottom: -22px !important;
+              font-size: 10.5px !important;
+              bottom: -20px !important;
             }
             .hero-actor-container {
-              bottom: 18px !important;
-              width: 34px !important;
-              height: 34px !important;
-              margin-left: -17px !important;
+              bottom: 15px !important;
+              width: 32px !important;
+              height: 32px !important;
+              margin-left: -16px !important;
             }
             .hero-sprite-frame {
-              width: 34px !important;
-              height: 34px !important;
-              background-size: 204px 34px !important;
+              width: 32px !important;
+              height: 32px !important;
+              background-size: 192px 32px !important;
             }
             .hero-sprite-frame.settled {
-              background-position: -170px 0px !important;
+              background-position: -160px 0px !important;
             }
             .mobile-particle-stage {
               display: flex;
@@ -2463,30 +2473,39 @@ export default function VivaInterviewPage() {
               justify-content: center;
               position: relative;
               width: 100%;
-              margin: 12px 0 6px 0;
+              margin: 4px 0 2px 0 !important;
               flex-shrink: 0;
             }
             .mobile-particle-aura {
               position: absolute;
-              width: 190px;
-              height: 190px;
+              width: 130px !important;
+              height: 130px !important;
               border-radius: 50%;
-              filter: blur(24px);
+              filter: blur(20px);
               pointer-events: none;
             }
             .mobile-mode-switch-btn {
               width: 100%;
-              margin-top: 10px;
-              padding: 9px 16px;
-              border-radius: 12px;
-              font-size: 0.8rem;
+              margin-top: 6px;
+              padding: 7px 18px;
+              border-radius: 9999px;
+              font-size: 0.78rem;
               font-weight: 700;
               display: flex;
               align-items: center;
               justify-content: center;
               gap: 6px;
               cursor: pointer;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.12);
+              color: #CBD5E1;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
               transition: all 0.2s ease;
+            }
+            .mobile-mode-switch-btn:hover {
+              background: rgba(255, 255, 255, 0.1);
+              color: #FFFFFF;
+              border-color: rgba(255, 255, 255, 0.25);
             }
           }
 
@@ -2793,16 +2812,16 @@ export default function VivaInterviewPage() {
 
           .step-btn {
             border: 0;
-            border-radius: 20px;
+            border-radius: 9999px;
             cursor: pointer;
             font-family: inherit;
-            font-size: 0.92rem;
+            font-size: 0.82rem;
             font-weight: 700;
-            padding: 10px 32px;
+            padding: 7px 22px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s ease;
           }
 
@@ -2859,7 +2878,8 @@ export default function VivaInterviewPage() {
           <div className="box1-content" style={{
             display: 'flex',
             flexDirection: 'column',
-            overflowY: 'auto',
+            height: '100%',
+            overflow: 'hidden',
             minWidth: 0,
             boxSizing: 'border-box',
             position: 'relative'
@@ -2867,10 +2887,10 @@ export default function VivaInterviewPage() {
             {/* Top Bar: Back Button */}
             <div style={{
               display: 'flex',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-start',
               alignItems: 'center',
-              marginBottom: isMobile ? 12 : 6,
-              paddingTop: isMobile ? 4 : 0,
+              marginBottom: isMobile ? 8 : 6,
+              paddingTop: isMobile ? 2 : 0,
               flexShrink: 0,
               position: 'relative',
               zIndex: 10
@@ -2904,56 +2924,6 @@ export default function VivaInterviewPage() {
                 <ArrowLeft size={15} />
                 <span>Back</span>
               </button>
-
-              {isMobile && (
-                <div style={{
-                  display: 'flex',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 20,
-                  padding: 2,
-                  gap: 2
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRightOpen(false);
-                      setSessionMode('viva');
-                    }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 16,
-                      border: 'none',
-                      background: !isRightOpen && sessionMode === 'viva' ? 'rgba(124, 58, 237, 0.4)' : 'transparent',
-                      color: !isRightOpen && sessionMode === 'viva' ? '#FFFFFF' : '#94A3B8',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Viva
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRightOpen(true);
-                      setSessionMode('interview');
-                    }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 16,
-                      border: 'none',
-                      background: isRightOpen || sessionMode === 'interview' ? 'rgba(14, 165, 233, 0.4)' : 'transparent',
-                      color: isRightOpen || sessionMode === 'interview' ? '#FFFFFF' : '#94A3B8',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Interview
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Saved Session Restore Alert (if exists) */}
@@ -3163,40 +3133,6 @@ export default function VivaInterviewPage() {
                     />
                   </div>
 
-                  {/* Quick Topic Chips */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                    {[
-                      'Database Management Systems (DBMS)',
-                      'Operating Systems',
-                      'Computer Networks (TCP/IP)',
-                      'Data Structures & Algorithms',
-                      'Object Oriented Programming',
-                      'Digital Logic Design'
-                    ].map((top) => (
-                      <button
-                        key={top}
-                        type="button"
-                        onClick={() => {
-                          setCustomVivaTopic(top);
-                          setVivaSource('custom');
-                        }}
-                        style={{
-                          padding: '5px 12px',
-                          borderRadius: 8,
-                          background: customVivaTopic === top ? 'rgba(124, 58, 237, 0.3)' : 'rgba(255, 255, 255, 0.04)',
-                          border: customVivaTopic === top ? '1px solid #7C3AED' : '1px solid rgba(255, 255, 255, 0.08)',
-                          color: customVivaTopic === top ? '#C4B5FD' : '#94A3B8',
-                          fontSize: '0.76rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        {top}
-                      </button>
-                    ))}
-                  </div>
-
                   {/* Adaptive Oral Defense Guidance Card (Collapsible on Mobile) */}
                   <div
                     style={{
@@ -3290,58 +3226,13 @@ export default function VivaInterviewPage() {
                     <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
                     <VedikaParticleBot
                       src="/vedika-bot-school.png"
-                      width={200}
-                      height={180}
+                      width={150}
+                      height={120}
                       inline={true}
                       colorMode="vibrant"
                       particleStep={2}
                     />
                   </div>
-                )}
-
-                {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-                  <button
-                    type="button"
-                    className="step-btn prev-btn"
-                    disabled={true}
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    className="step-btn viva-btn"
-                    onClick={() => {
-                      if (!customVivaTopic.trim()) {
-                        setCustomVivaTopic('Database Management Systems (DBMS)');
-                        setVivaSource('custom');
-                      }
-                      advanceVivaStep(2);
-                    }}
-                  >
-                    <span>Next</span>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-
-                {isMobile && (
-                  <button
-                    type="button"
-                    className="mobile-mode-switch-btn"
-                    onClick={() => {
-                      setIsRightOpen(true);
-                      setSessionMode('interview');
-                      if (!topic) setTopic('Full Stack Web Development');
-                    }}
-                    style={{
-                      background: 'rgba(14, 165, 233, 0.12)',
-                      border: '1px solid rgba(14, 165, 233, 0.3)',
-                      color: '#38BDF8'
-                    }}
-                  >
-                    <span>Technical Interview Mode</span>
-                    <span>➔</span>
-                  </button>
                 )}
               </div>
             )}
@@ -3454,52 +3345,13 @@ export default function VivaInterviewPage() {
                     <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
                     <VedikaParticleBot
                       src="/vedika-bot-school.png"
-                      width={200}
-                      height={180}
+                      width={150}
+                      height={120}
                       inline={true}
                       colorMode="vibrant"
                       particleStep={2}
                     />
                   </div>
-                )}
-
-                {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-                  <button
-                    type="button"
-                    className="step-btn prev-btn"
-                    onClick={() => setSetupStep(1)}
-                  >
-                    ← Prev
-                  </button>
-                  <button
-                    type="button"
-                    className="step-btn viva-btn"
-                    onClick={() => advanceVivaStep(3)}
-                  >
-                    <span>Next</span>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-
-                {isMobile && (
-                  <button
-                    type="button"
-                    className="mobile-mode-switch-btn"
-                    onClick={() => {
-                      setIsRightOpen(true);
-                      setSessionMode('interview');
-                      if (!topic) setTopic('Full Stack Web Development');
-                    }}
-                    style={{
-                      background: 'rgba(14, 165, 233, 0.12)',
-                      border: '1px solid rgba(14, 165, 233, 0.3)',
-                      color: '#38BDF8'
-                    }}
-                  >
-                    <span>Technical Interview Mode</span>
-                    <span>➔</span>
-                  </button>
                 )}
               </div>
             )}
@@ -3623,52 +3475,13 @@ export default function VivaInterviewPage() {
                     <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
                     <VedikaParticleBot
                       src="/vedika-bot-school.png"
-                      width={200}
-                      height={180}
+                      width={150}
+                      height={120}
                       inline={true}
                       colorMode="vibrant"
                       particleStep={2}
                     />
                   </div>
-                )}
-
-                {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-                  <button
-                    type="button"
-                    className="step-btn prev-btn"
-                    onClick={() => setSetupStep(2)}
-                  >
-                    ← Prev
-                  </button>
-                  <button
-                    type="button"
-                    className="step-btn viva-btn"
-                    onClick={() => advanceVivaStep(4)}
-                  >
-                    <span>Next</span>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-
-                {isMobile && (
-                  <button
-                    type="button"
-                    className="mobile-mode-switch-btn"
-                    onClick={() => {
-                      setIsRightOpen(true);
-                      setSessionMode('interview');
-                      if (!topic) setTopic('Full Stack Web Development');
-                    }}
-                    style={{
-                      background: 'rgba(14, 165, 233, 0.12)',
-                      border: '1px solid rgba(14, 165, 233, 0.3)',
-                      color: '#38BDF8'
-                    }}
-                  >
-                    <span>Technical Interview Mode</span>
-                    <span>➔</span>
-                  </button>
                 )}
               </div>
             )}
@@ -3792,24 +3605,59 @@ export default function VivaInterviewPage() {
                     <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.32) 0%, transparent 70%)' }} />
                     <VedikaParticleBot
                       src="/vedika-bot-school.png"
-                      width={200}
-                      height={180}
+                      width={150}
+                      height={120}
                       inline={true}
                       colorMode="vibrant"
                       particleStep={2}
                     />
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* Bottom Nav Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 14 }}>
+            {/* Fixed Bottom Action Bar */}
+            <div className="setup-bottom-bar" style={{
+              marginTop: 'auto',
+              flexShrink: 0,
+              paddingTop: 8,
+              paddingBottom: isMobile ? 6 : 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              zIndex: 10
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: setupStep === 1 ? 'flex-end' : 'space-between',
+                alignItems: 'center',
+                gap: 10
+              }}>
+                {setupStep > 1 && (
                   <button
                     type="button"
                     className="step-btn prev-btn"
-                    onClick={() => setSetupStep(3)}
+                    onClick={() => setSetupStep(prev => Math.max(1, prev - 1))}
                   >
                     ← Prev
                   </button>
+                )}
+                {setupStep < 4 ? (
+                  <button
+                    type="button"
+                    className="step-btn viva-btn"
+                    onClick={() => {
+                      if (setupStep === 1 && !customVivaTopic.trim()) {
+                        setCustomVivaTopic('Database Management Systems (DBMS)');
+                        setVivaSource('custom');
+                      }
+                      advanceVivaStep(setupStep + 1);
+                    }}
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={14} />
+                  </button>
+                ) : (
                   <button
                     type="button"
                     disabled={loading}
@@ -3821,43 +3669,38 @@ export default function VivaInterviewPage() {
                       startVoiceSession();
                     }}
                     className="step-btn viva-btn"
-                    style={{ flex: 1, maxWidth: 340 }}
+                    style={{ flex: 1, maxWidth: 320 }}
                   >
                     {loading ? (
                       <>
-                        <Loader2 size={18} className="animate-spin" />
+                        <Loader2 size={16} className="animate-spin" />
                         <span>Initializing Examiner...</span>
                       </>
                     ) : (
                       <>
-                        <Mic size={18} />
+                        <Mic size={16} />
                         <span>Start Voice Viva Examination</span>
                       </>
                     )}
                   </button>
-                </div>
-
-                {isMobile && (
-                  <button
-                    type="button"
-                    className="mobile-mode-switch-btn"
-                    onClick={() => {
-                      setIsRightOpen(true);
-                      setSessionMode('interview');
-                      if (!topic) setTopic('Full Stack Web Development');
-                    }}
-                    style={{
-                      background: 'rgba(14, 165, 233, 0.12)',
-                      border: '1px solid rgba(14, 165, 233, 0.3)',
-                      color: '#38BDF8'
-                    }}
-                  >
-                    <span>Technical Interview Mode</span>
-                    <span>➔</span>
-                  </button>
                 )}
               </div>
-            )}
+
+              {isMobile && (
+                <button
+                  type="button"
+                  className="mobile-mode-switch-btn"
+                  onClick={() => {
+                    setIsRightOpen(true);
+                    setSessionMode('interview');
+                    if (!topic) setTopic('Full Stack Web Development');
+                  }}
+                >
+                  <span>Technical Interview Mode</span>
+                  <ChevronRight size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
       {/* ============================================================== */}
@@ -4133,54 +3976,6 @@ export default function VivaInterviewPage() {
               <ArrowLeft size={15} />
               <span>Back</span>
             </button>
-
-            <div style={{
-              display: 'flex',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 20,
-              padding: 2,
-              gap: 2
-            }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRightOpen(false);
-                  setSessionMode('viva');
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 16,
-                  border: 'none',
-                  background: !isRightOpen && sessionMode === 'viva' ? 'rgba(124, 58, 237, 0.4)' : 'transparent',
-                  color: !isRightOpen && sessionMode === 'viva' ? '#FFFFFF' : '#94A3B8',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Viva
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRightOpen(true);
-                  setSessionMode('interview');
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 16,
-                  border: 'none',
-                  background: isRightOpen || sessionMode === 'interview' ? 'rgba(14, 165, 233, 0.4)' : 'transparent',
-                  color: isRightOpen || sessionMode === 'interview' ? '#FFFFFF' : '#94A3B8',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Interview
-              </button>
-            </div>
           </div>
         ) : (
           /* Top Spacer matching Box 1 Back Button height to keep steppers aligned on desktop */
@@ -4433,54 +4228,13 @@ export default function VivaInterviewPage() {
                 <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
                 <VedikaParticleBot
                   src="/vedika-bot-suit.png"
-                  width={200}
-                  height={180}
+                  width={150}
+                  height={120}
                   inline={true}
                   colorMode="vibrant"
                   particleStep={2}
                 />
               </div>
-            )}
-
-            {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-              <button
-                type="button"
-                className="step-btn prev-btn"
-                disabled={true}
-              >
-                Prev
-              </button>
-              <button
-                type="button"
-                className="step-btn interview-btn"
-                onClick={() => {
-                  if (!topic.trim()) setTopic('Full Stack Web Development');
-                  advanceInterviewStep(2);
-                }}
-              >
-                <span>Next</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {isMobile && (
-              <button
-                type="button"
-                className="mobile-mode-switch-btn"
-                onClick={() => {
-                  setIsRightOpen(false);
-                  setSessionMode('viva');
-                }}
-                style={{
-                  background: 'rgba(124, 58, 237, 0.12)',
-                  border: '1px solid rgba(124, 58, 237, 0.3)',
-                  color: '#C4B5FD'
-                }}
-              >
-                <span>Switch to Academic Viva Mode</span>
-                <span>➔</span>
-              </button>
             )}
           </div>
         )}
@@ -4589,51 +4343,13 @@ export default function VivaInterviewPage() {
                 <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
                 <VedikaParticleBot
                   src="/vedika-bot-suit.png"
-                  width={200}
-                  height={180}
+                  width={150}
+                  height={120}
                   inline={true}
                   colorMode="vibrant"
                   particleStep={2}
                 />
               </div>
-            )}
-
-            {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-              <button
-                type="button"
-                className="step-btn prev-btn"
-                onClick={() => setInterviewStep(1)}
-              >
-                ← Prev
-              </button>
-              <button
-                type="button"
-                className="step-btn interview-btn"
-                onClick={() => advanceInterviewStep(3)}
-              >
-                <span>Next</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {isMobile && (
-              <button
-                type="button"
-                className="mobile-mode-switch-btn"
-                onClick={() => {
-                  setIsRightOpen(false);
-                  setSessionMode('viva');
-                }}
-                style={{
-                  background: 'rgba(124, 58, 237, 0.12)',
-                  border: '1px solid rgba(124, 58, 237, 0.3)',
-                  color: '#C4B5FD'
-                }}
-              >
-                <span>Switch to Academic Viva Mode</span>
-                <span>➔</span>
-              </button>
             )}
           </div>
         )}
@@ -4759,51 +4475,13 @@ export default function VivaInterviewPage() {
                 <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
                 <VedikaParticleBot
                   src="/vedika-bot-suit.png"
-                  width={200}
-                  height={180}
+                  width={150}
+                  height={120}
                   inline={true}
                   colorMode="vibrant"
                   particleStep={2}
                 />
               </div>
-            )}
-
-            {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
-              <button
-                type="button"
-                className="step-btn prev-btn"
-                onClick={() => setInterviewStep(2)}
-              >
-                ← Prev
-              </button>
-              <button
-                type="button"
-                className="step-btn interview-btn"
-                onClick={() => advanceInterviewStep(4)}
-              >
-                <span>Next</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {isMobile && (
-              <button
-                type="button"
-                className="mobile-mode-switch-btn"
-                onClick={() => {
-                  setIsRightOpen(false);
-                  setSessionMode('viva');
-                }}
-                style={{
-                  background: 'rgba(124, 58, 237, 0.12)',
-                  border: '1px solid rgba(124, 58, 237, 0.3)',
-                  color: '#C4B5FD'
-                }}
-              >
-                <span>Switch to Academic Viva Mode</span>
-                <span>➔</span>
-              </button>
             )}
           </div>
         )}
@@ -4912,24 +4590,45 @@ export default function VivaInterviewPage() {
                 <div className="mobile-particle-aura" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.32) 0%, transparent 70%)' }} />
                 <VedikaParticleBot
                   src="/vedika-bot-suit.png"
-                  width={200}
-                  height={180}
+                  width={150}
+                  height={120}
                   inline={true}
                   colorMode="vibrant"
                   particleStep={2}
                 />
               </div>
             )}
+          </div>
+        )}
 
-            {/* Bottom Nav Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 10 : 20 }}>
+        {/* PERMANENT FIXED BOTTOM NAVIGATION BAR FOR INTERVIEW */}
+        <div className="setup-bottom-bar" style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            {interviewStep > 1 ? (
               <button
                 type="button"
                 className="step-btn prev-btn"
-                onClick={() => setInterviewStep(3)}
+                onClick={() => setInterviewStep((s) => Math.max(1, s - 1))}
               >
                 ← Prev
               </button>
+            ) : (
+              <div style={{ width: 80 }} />
+            )}
+
+            {interviewStep < 4 ? (
+              <button
+                type="button"
+                className="step-btn interview-btn"
+                onClick={() => {
+                  if (interviewStep === 1 && !topic.trim()) setTopic('Full Stack Web Development');
+                  advanceInterviewStep(interviewStep + 1);
+                }}
+              >
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
+            ) : (
               <button
                 type="button"
                 disabled={loading}
@@ -4942,38 +4641,33 @@ export default function VivaInterviewPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin" />
                     <span>Launching Technical Interviewer...</span>
                   </>
                 ) : (
                   <>
-                    <Mic size={18} />
+                    <Mic size={16} />
                     <span>Start Voice Technical Interview</span>
                   </>
                 )}
               </button>
-            </div>
-
-            {isMobile && (
-              <button
-                type="button"
-                className="mobile-mode-switch-btn"
-                onClick={() => {
-                  setIsRightOpen(false);
-                  setSessionMode('viva');
-                }}
-                style={{
-                  background: 'rgba(124, 58, 237, 0.12)',
-                  border: '1px solid rgba(124, 58, 237, 0.3)',
-                  color: '#C4B5FD'
-                }}
-              >
-                <span>Switch to Academic Viva Mode</span>
-                <span>➔</span>
-              </button>
             )}
           </div>
-        )}
+
+          {isMobile && (
+            <button
+              type="button"
+              className="mobile-mode-switch-btn"
+              onClick={() => {
+                setIsRightOpen(false);
+                setSessionMode('viva');
+              }}
+            >
+              <span>Switch to Academic Viva</span>
+              <span>➔</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   </div>

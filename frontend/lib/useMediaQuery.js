@@ -2,8 +2,15 @@
 import { useState, useEffect } from 'react';
 
 export function useMediaQuery(query) {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia(query).matches;
+    }
+    return false;
+  });
+
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const mql = window.matchMedia(query);
     setMatches(mql.matches);
     const handler = (e) => setMatches(e.matches);

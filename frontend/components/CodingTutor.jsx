@@ -3354,20 +3354,23 @@ export default function CodingTutor() {
 
           {/* Floating Sandbox Modal Overlay */}
           {isPlaygroundOpen && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(4, 5, 8, 0.7)',
-              backdropFilter: 'blur(8px)',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: isMobile ? '10px' : '40px'
-            }}>
+            <div
+              onClick={(e) => { if (e.target === e.currentTarget) setIsPlaygroundOpen(false); }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(4, 5, 8, 0.75)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: isMobile ? '8px' : '40px'
+              }}
+            >
               {/* Floating Window Container */}
               <div style={{
                 width: '100%',
@@ -3386,36 +3389,40 @@ export default function CodingTutor() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '12px 18px',
+                  padding: isMobile ? '10px 14px' : '12px 18px',
                   background: '#080A0E',
                   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                   flexShrink: 0
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.amber }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                      Interactive Code Tutor Sandbox
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 10px #38BDF8' }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+                      Python Coding Sandbox
                     </span>
                   </div>
                   <button
                     onClick={() => setIsPlaygroundOpen(false)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      color: '#8892B0',
-                      borderRadius: '50%',
-                      width: 26,
-                      height: 26,
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      color: '#F87171',
+                      borderRadius: 10,
+                      padding: '5px 12px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       transition: 'all 0.15s'
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#F55B6B'; e.currentTarget.style.background = 'rgba(245, 91, 107, 0.1)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = '#8892B0'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#F87171'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                    title="Close Python Sandbox"
+                    aria-label="Close Python Sandbox"
                   >
-                    <X size={13} />
+                    <X size={15} />
+                    <span>Close Sandbox</span>
                   </button>
                 </div>
                 
