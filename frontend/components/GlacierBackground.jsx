@@ -19,6 +19,24 @@ const GlacierBackground = React.memo(function GlacierBackground({
   style = {},
   className = ''
 }) {
+  if (variant === 'black' || variant === 'pure-black') {
+    return (
+      <div
+        className={`pure-black-background ${className}`}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: '#000000',
+          zIndex: 0,
+          pointerEvents: 'none',
+          userSelect: 'none',
+          ...style
+        }}
+        aria-hidden="true"
+      />
+    );
+  }
+
   if (variant === 'waves') {
     return <WavyLinesBackground opacity={opacity} className={className} />;
   }

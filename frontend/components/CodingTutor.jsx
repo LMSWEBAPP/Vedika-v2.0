@@ -273,6 +273,17 @@ export default function CodingTutor() {
       color: '#14B1AB',
       border: 'rgba(20, 177, 171, 0.45)',
       bg: 'rgba(20, 177, 171, 0.12)'
+    },
+    {
+      id: 'black',
+      name: 'Complete Black',
+      shortLabel: 'Black',
+      emoji: '⬛',
+      desc: 'Complete Black · Minimalist & Distraction-Free',
+      gradient: 'linear-gradient(135deg, #000000 0%, #080808 50%, #000000 100%)',
+      color: '#CBD5E1',
+      border: 'rgba(255, 255, 255, 0.25)',
+      bg: 'rgba(255, 255, 255, 0.08)'
     }
   ], []);
 
@@ -281,8 +292,8 @@ export default function CodingTutor() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vedika_tutor_bg_theme');
-      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel' || saved === 'waves') {
-        setBgTheme(saved);
+      if (saved === 'aurora' || saved === 'glacier' || saved === 'pastel' || saved === 'waves' || saved === 'black' || saved === 'pure-black') {
+        setBgTheme(saved === 'pure-black' ? 'black' : saved);
       }
     }
   }, []);
@@ -1549,7 +1560,7 @@ export default function CodingTutor() {
   return (
     <>
       <MobileNav title="Code with AI Tutor" accent={T.amber} items={[]} dropdownItems={NAV} extras={tutorExtras} />
-      <div style={{ display: 'flex', height: '100%', maxHeight: '100%', width: '100%', background: T.bg, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', height: '100%', maxHeight: '100%', width: '100%', background: bgTheme === 'black' ? '#000000' : T.bg, overflow: 'hidden' }}>
         <div id="tutor-workspace-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
           
           {/* Floating Glassmorphic Left Page Navbar */}
@@ -1764,36 +1775,55 @@ export default function CodingTutor() {
                         <span>Voice Mode</span>
                       </button>
 
-                      {/* Theme Selector (Aurora / Glacier / Pastel) */}
-                      <button
-                        onClick={() => {
-                          const ids = BG_THEMES.map(t => t.id);
-                          const nextIdx = (ids.indexOf(bgTheme) + 1) % ids.length;
-                          selectBgTheme(ids[nextIdx]);
-                        }}
-                        title={`Switch fluid background theme (Current: ${activeThemeConfig.name})`}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '9px 14px',
-                          borderRadius: 14,
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          border: `1px solid ${activeThemeConfig.border}`,
-                          color: '#E2E8F0',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.15s'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.color = '#FFFFFF'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; e.currentTarget.style.color = '#E2E8F0'; }}
-                      >
-                        <span style={{ fontSize: 14 }}>{activeThemeConfig.emoji}</span>
-                        <span style={{ flex: 1 }}>{activeThemeConfig.shortLabel}</span>
-                        <span style={{ fontSize: 9.5, color: '#94A3B8', background: 'rgba(255, 255, 255, 0.08)', padding: '1px 5px', borderRadius: 4 }}>Cycle</span>
-                      </button>
+                      {/* Theme Selector Section */}
+                      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, paddingLeft: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Background Theme
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                          {BG_THEMES.map(th => {
+                            const isCur = bgTheme === th.id;
+                            return (
+                              <button
+                                key={th.id}
+                                onClick={() => selectBgTheme(th.id)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '7px 10px',
+                                  borderRadius: 10,
+                                  background: isCur ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                                  border: isCur ? `1.5px solid ${th.border || '#38BDF8'}` : '1px solid rgba(255, 255, 255, 0.07)',
+                                  color: isCur ? '#FFFFFF' : '#94A3B8',
+                                  fontSize: 11.5,
+                                  fontWeight: isCur ? 700 : 500,
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  transition: 'all 0.15s',
+                                  gridColumn: th.id === 'black' ? 'span 2' : 'span 1'
+                                }}
+                                onMouseEnter={e => {
+                                  if (!isCur) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                                    e.currentTarget.style.color = '#FFFFFF';
+                                  }
+                                }}
+                                onMouseLeave={e => {
+                                  if (!isCur) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                                    e.currentTarget.style.color = '#94A3B8';
+                                  }
+                                }}
+                              >
+                                <span style={{ fontSize: 13 }}>{th.emoji}</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{th.shortLabel}</span>
+                                {isCur && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: th.color || '#38BDF8' }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -2073,7 +2103,7 @@ export default function CodingTutor() {
           ) : (
             <>
               {/* ── CHAT & WATERMARK CONTAINER ── */}
-              <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', background: bgTheme === 'black' ? '#000000' : 'transparent' }}>
                 
                 {/* FeralUI Flow Gradient Canvas Background */}
                 <GlacierBackground variant={bgTheme} opacity={1.0} />
