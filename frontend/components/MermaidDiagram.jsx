@@ -254,9 +254,9 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
     }
     chart += '  end\n\n';
 
-    // Stage 2: Vertical transformation core & reactions
+    // Stage 2: Horizontal transformation core & mechanisms
     chart += '  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Transformation Engine"]\n';
-    chart += '    direction TB\n';
+    chart += '    direction LR\n';
     s2.forEach((pt, idx) => {
       const icon = ICONS[(idx + 2) % ICONS.length];
       const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
@@ -265,10 +265,10 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
       } else {
         chart += `    Proc_${idx + 1}[("${label}")]\n`;
       }
-      if (idx > 0) {
-        chart += `    Proc_${idx} -->|"Transfers state"| Proc_${idx + 1}\n`;
-      }
     });
+    if (s2.length > 1) {
+      chart += `    ${s2.map((_, i) => `Proc_${i + 1}`).join(' ~~~ ')}\n`;
+    }
     chart += '  end\n\n';
 
     // Stage 3: Horizontal deliverables & impact side-by-side
@@ -307,10 +307,10 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
 }
 
 // ── Smart Dynamic Zoom Bounds for Infographics ──
-// Prevents over-zoomed pixelation and maintains holistic spatial diagram context
-const MIN_MODAL_ZOOM = 0.45;  // 45% minimum zoom
-const MAX_MODAL_ZOOM = 1.65;  // 165% maximum zoom (prevents text pixelation & maintains spatial context)
-const MIN_INLINE_ZOOM = 0.45;
+// Prevents over-zoomed pixelation and prevents microscopic shrinking below readable scale
+const MIN_MODAL_ZOOM = 0.60;  // 60% minimum zoom clamp
+const MAX_MODAL_ZOOM = 1.65;  // 165% maximum zoom
+const MIN_INLINE_ZOOM = 0.60;
 const MAX_INLINE_ZOOM = 1.50;
 const ZOOM_STEP = 0.15;
 
@@ -335,6 +335,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
   const [isModalOpen, setIsModalOpen] = useState(true); // Open directly in fullscreen focused modal when requested!
   const takeawaysRef = useRef(null);
+  const hasAnimatedRef = useRef(false); // Tracks whether live draw has completed once, to prevent wiping on reopen
 
   // Derived intelligent topic title for the poster header banner
   const derivedTopicTitle = React.useMemo(() => {
@@ -471,15 +472,20 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const availH = Math.max(200, vpH - paddingY);
 
     if (isModal && stageEl) {
-      // In 16:9 widescreen modal mode, measure the total composition dimensions
+      // In widescreen modal mode, measure the stage composition dimensions
       const stageW = Math.max(800, stageEl.scrollWidth || stageEl.offsetWidth || 1200);
-      const stageH = Math.max(480, stageEl.scrollHeight || stageEl.offsetHeight || 650);
+      const stageH = Math.max(420, stageEl.scrollHeight || stageEl.offsetHeight || 600);
 
       const scaleW = availW / stageW;
       const scaleH = availH / stageH;
-      const ideal = Math.min(scaleW, scaleH);
+      let ideal = Math.min(scaleW, scaleH);
 
-      return Number(Math.max(0.40, Math.min(1.20, ideal)).toFixed(2));
+      // If diagram is exceptionally tall, prioritize comfortable horizontal width so cards and typography remain readable
+      if (stageH > stageW * 1.25) {
+        ideal = Math.min(scaleW, 1.0);
+      }
+
+      return Number(Math.max(MIN_MODAL_ZOOM, Math.min(1.25, ideal)).toFixed(2));
     }
 
     let intrinsicW = 550;
@@ -805,6 +811,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         }
 
         if (!animCancelledRef.current) {
+          hasAnimatedRef.current = true;
           setCursorState((prev) => ({
             ...prev,
             status: 'Infographic Complete ✨',
@@ -814,6 +821,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           }));
         }
       } finally {
+        hasAnimatedRef.current = true;
         // ALWAYS ensure every element is 100% visible and offsets zeroed out
         if (wrapper) {
           wrapper.classList.remove('building');
@@ -856,10 +864,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   }, [isModalOpen, zoom]);
 
   const handleSkipBuild = (targetEl) => {
+    hasAnimatedRef.current = true;
     stopAndCleanAnimation(targetEl || (isModalOpen ? modalViewportRef.current : containerRef.current));
   };
 
   const handleReplayBuild = () => {
+    hasAnimatedRef.current = false;
     stopAndCleanAnimation();
     setTimeout(() => {
       const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
@@ -970,7 +980,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         });
 
         const sanitized = sanitizeMermaid(activeChartCode);
-        const renderId = uniqueIdRef.current;
+        const renderId = 'mmd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 
         // Ensure web fonts are completely loaded so Mermaid measures SVG text dimensions accurately
         if (typeof document !== 'undefined' && document.fonts) {
@@ -1014,7 +1024,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               await document.fonts.ready;
             }
             const simpleChart = synthesizeCreativeInfographic(points, "Visual Concept Flow");
-            const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
+            const fallbackId = 'mmd_fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const { svg } = await mermaid.render(fallbackId, simpleChart);
             let cleanSvg = svg;
             cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
             cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 1.5px');
@@ -1059,8 +1070,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
   // Trigger Stitch AI live draw once the active viewport & its SVG nodes are mounted
   useEffect(() => {
-    if (!svgHtml || !isLiveDrawEnabled) return;
+    if (!svgHtml) return;
     if (isModalOpen && !mounted) return;
+
+    // If live draw is disabled or the diagram was already animated, immediately ensure 100% full visibility!
+    if (!isLiveDrawEnabled || hasAnimatedRef.current) {
+      stopAndCleanAnimation();
+      return;
+    }
 
     let cancelled = false;
     let attempts = 0;
@@ -2025,7 +2042,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   minHeight: 0,
                   overflowY: 'auto',
                   overflowX: 'auto',
-                  padding: '16px 20px',
+                  padding: '24px 20px 80px',
                   background: 'radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%)',
                   position: 'relative',
                   cursor: isPanning ? 'grabbing' : 'grab',
@@ -2034,15 +2051,38 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'flex-start'
                 }}
               >
-                {svgHtml && (
+                {loading && (
+                  <div className="mermaid-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#94A3B8', fontSize: 13, padding: '120px 0', minHeight: 340 }}>
+                    <Sparkles size={28} className="animate-spin" color="#38BDF8" />
+                    <span style={{ fontWeight: 600, letterSpacing: '0.02em', color: '#E2E8F0' }}>Rendering Knowledge Blueprint...</span>
+                    <span style={{ fontSize: 11.5, color: '#64748B' }}>Synthesizing multi-tier architectural layout</span>
+                  </div>
+                )}
+
+                {!loading && renderError && (
+                  <div className="mermaid-error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#F87171', fontSize: 13, padding: '80px 24px', textAlign: 'center', maxWidth: 600, margin: '40px auto', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 12 }}>
+                    <AlertCircle size={26} color="#F87171" />
+                    <span style={{ fontWeight: 600 }}>Could not render diagram visually: {renderError}</span>
+                    <button
+                      type="button"
+                      className="mermaid-btn"
+                      style={{ ...btnBaseStyle, marginTop: 8 }}
+                      onClick={() => setShowCode(true)}
+                    >
+                      Inspect Diagram Code
+                    </button>
+                  </div>
+                )}
+
+                {!loading && !renderError && svgHtml && (
                   <div
                     className="mermaid-canvas-stage modal-stage"
                     style={{
                       transform: `scale(${modalZoom})`,
-                      transformOrigin: 'center center',
+                      transformOrigin: 'top center',
                       transition: (isPanning || isWheelZooming) ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
                       position: 'relative',
                       display: 'flex',
@@ -2051,8 +2091,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       justifyContent: 'flex-start',
                       margin: '0 auto',
                       width: '100%',
-                      maxWidth: '1480px',
-                      paddingBottom: 20
+                      maxWidth: '1440px',
+                      paddingBottom: 40,
+                      minHeight: 'fit-content'
                     }}
                   >
                     {/* White Digital Stylus Pen Cursor for Fullscreen Modal */}

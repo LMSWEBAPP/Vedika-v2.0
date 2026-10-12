@@ -687,7 +687,7 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   min-height: 0;
   overflow-y: auto !important;
   overflow-x: auto !important;
-  padding: 40px 30px 100px 30px;
+  padding: 24px 20px 80px 20px;
   background-color: #070913;
   background-image: 
     radial-gradient(rgba(56, 189, 248, 0.16) 1.25px, transparent 1.25px),
@@ -698,9 +698,13 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   -webkit-user-select: none;
   position: relative;
   cursor: grab;
-  scroll-behavior: auto !important;
-  touch-action: none !important;
+  scroll-behavior: smooth !important;
+  touch-action: pan-y !important;
   overscroll-behavior: contain;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important; /* STRICTLY flex-start to permanently prevent negative scroll trap! */
 }
 
 .mermaid-modal-viewport.panning {
@@ -1130,17 +1134,18 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 }
 
 .infographic-diagram-pane {
-  flex: 1 1 64%;
+  flex: 1 1 65%;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.012);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
-  padding: 16px 12px;
+  padding: 18px 14px;
   position: relative;
+  min-height: 380px;
 }
 
 /* Integrated Poster Key Takeaways Card */
