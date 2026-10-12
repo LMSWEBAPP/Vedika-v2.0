@@ -245,6 +245,11 @@ button.mermaid-expand-btn:hover,
   stroke: #06B6D4 !important;
 }
 
+/* Global foreignObject overflow resilience: prevents SVG box clipping on all text/subtitles */
+.mermaid-svg-wrapper foreignObject {
+  overflow: visible !important;
+}
+
 /* Subgraph / Architecture Clusters */
 .mermaid-svg-wrapper .cluster rect {
   fill: rgba(12, 17, 32, 0.72) !important;
@@ -256,15 +261,19 @@ button.mermaid-expand-btn:hover,
   filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6)) !important;
 }
 
+.mermaid-svg-wrapper .cluster foreignObject {
+  overflow: visible !important;
+}
+
 .mermaid-svg-wrapper .cluster text,
 .mermaid-svg-wrapper .cluster span,
 .mermaid-svg-wrapper .cluster .nodeLabel {
   fill: #93C5FD !important;
   color: #93C5FD !important;
   font-weight: 700 !important;
-  font-size: 12px !important;
-  letter-spacing: 0.06em !important;
-  text-transform: uppercase !important;
+  font-size: 12.5px !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
 }
 
@@ -302,7 +311,7 @@ button.mermaid-expand-btn:hover,
   stroke: none !important;
 }
 
-/* 2. Flowchart Node Labels & Text: Ultra-clear, bright white typography */
+/* 2. Flowchart Node Labels & Text: Ultra-clear typography with clean hierarchy */
 .mermaid-svg-wrapper .node .label,
 .mermaid-svg-wrapper .node foreignObject,
 .mermaid-svg-wrapper .node foreignObject div,
@@ -326,6 +335,36 @@ button.mermaid-expand-btn:hover,
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: geometricPrecision !important;
+}
+
+/* Subtitles inside nodes (<i> and <sub> tags) */
+.mermaid-svg-wrapper .node .nodeLabel i,
+.mermaid-svg-wrapper .node foreignObject i,
+.mermaid-svg-wrapper .node text i {
+  color: #94A3B8 !important;
+  font-size: 11px !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+  display: inline-block !important;
+  margin-top: 3px !important;
+  line-height: 1.3 !important;
+}
+
+.mermaid-svg-wrapper .node .nodeLabel sub,
+.mermaid-svg-wrapper .node foreignObject sub {
+  display: inline-block !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+  vertical-align: baseline !important;
+  margin-top: 2px !important;
+}
+
+.mermaid-svg-wrapper .node .nodeLabel b,
+.mermaid-svg-wrapper .node foreignObject b,
+.mermaid-svg-wrapper .node text b {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
 }
 
 /* 3. Flowchart Connector Arrows / Edges: Clean Blender-style noodle paths */
@@ -361,21 +400,26 @@ button.mermaid-expand-btn:hover,
 /* Frosted glass pill containers for connector labels */
 .mermaid-svg-wrapper .edgeLabel {
   background-color: transparent !important;
+  overflow: visible !important;
+}
+.mermaid-svg-wrapper .edgeLabel foreignObject {
+  overflow: visible !important;
 }
 .mermaid-svg-wrapper .edgeLabel span,
 .mermaid-svg-wrapper .edgeLabel p,
 .mermaid-svg-wrapper .edgeLabel .label {
-  background: rgba(15, 23, 42, 0.92) !important;
+  background: rgba(15, 23, 42, 0.94) !important;
   border: 1px solid rgba(148, 163, 184, 0.3) !important;
   border-radius: 9999px !important;
-  padding: 2.5px 10px !important;
+  padding: 2px 8px !important;
   font-size: 11px !important;
   color: #94A3B8 !important;
   font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
+  letter-spacing: normal !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(8px) !important;
   display: inline-block !important;
+  white-space: nowrap !important;
 }
 
 
@@ -1009,4 +1053,157 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   color: #38BDF8;
   border-color: rgba(56, 189, 248, 0.45);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Unified Infographic Poster Architecture (Reference Parity)
+   ───────────────────────────────────────────────────────────── */
+.infographic-poster-wrapper {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 0 auto;
+}
+
+/* Poster Header Banner */
+.infographic-poster-header {
+  width: 100%;
+  padding: 16px 22px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.72) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  backdrop-filter: blur(12px);
+}
+
+.infographic-poster-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.infographic-poster-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #F8FAFC;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 60%, #93C5FD 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.infographic-poster-subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94A3B8;
+  font-weight: 500;
+  max-width: 640px;
+  line-height: 1.45;
+}
+
+/* Integrated Poster Key Takeaways Card */
+.infographic-poster-takeaways {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 30, 0.95) 100%);
+  border: 1px solid rgba(245, 169, 91, 0.26);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.infographic-takeaways-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.infographic-takeaways-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #F5A95B;
+}
+
+.infographic-takeaways-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.infographic-takeaway-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 13px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.infographic-takeaway-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(245, 169, 91, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.infographic-takeaway-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(245, 169, 91, 0.25) 0%, rgba(234, 88, 12, 0.15) 100%);
+  border: 1px solid rgba(245, 169, 91, 0.45);
+  color: #F5A95B;
+  font-size: 10.5px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 1px;
+  box-shadow: 0 2px 6px rgba(245, 169, 91, 0.2);
+}
+
+.infographic-takeaway-body {
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #E2E8F0;
+}
+
+.infographic-takeaway-body strong {
+  color: #F8FAFC;
+  font-weight: 700;
+}
+
 

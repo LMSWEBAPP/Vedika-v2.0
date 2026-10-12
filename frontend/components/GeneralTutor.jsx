@@ -1964,19 +1964,19 @@ export default function GeneralTutor() {
                   </div>
 
                   <div style={{ width: '100%', minWidth: 0 }}>
-                    {/* Glassmorphic AI Response Message Box (Vibrant Ocean-Emerald Theme Gradient) */}
+                    {/* Glassmorphic AI Response Message Box (Subtle Ocean-Emerald Jewel Gradient) */}
                     <div style={{
                       maxWidth: bubbleMaxW,
-                      background: 'linear-gradient(135deg, #047857 0%, #0D9488 28%, #0284C7 58%, #2563EB 82%, #1E1B4B 100%)',
+                      background: 'linear-gradient(135deg, rgba(10, 77, 74, 0.95) 0%, rgba(12, 80, 95, 0.95) 32%, rgba(16, 68, 107, 0.95) 68%, rgba(24, 40, 72, 0.95) 100%)',
                       backdropFilter: 'blur(20px)',
                       WebkitBackdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
                       borderRadius: '18px',
                       padding: isMobile ? '12px 14px' : '16px 20px',
-                      color: '#FFFFFF',
+                      color: '#F8FAFC',
                       fontSize: isMobile ? 13.5 : 14,
                       lineHeight: 1.68,
-                      boxShadow: '0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 0 25px rgba(13, 148, 136, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)'
+                      boxShadow: '0 10px 32px -4px rgba(0, 0, 0, 0.65), 0 0 20px rgba(12, 80, 95, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
                     }}>
                       <div className="md-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanMarkdown(msg.content)}</ReactMarkdown>
@@ -2227,15 +2227,15 @@ export default function GeneralTutor() {
               </div>
               <div style={{
                 maxWidth: bubbleMaxW,
-                background: 'linear-gradient(135deg, #047857 0%, #0D9488 28%, #0284C7 58%, #2563EB 82%, #1E1B4B 100%)',
+                background: 'linear-gradient(135deg, rgba(10, 77, 74, 0.95) 0%, rgba(12, 80, 95, 0.95) 32%, rgba(16, 68, 107, 0.95) 68%, rgba(24, 40, 72, 0.95) 100%)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
                 borderRadius: '18px',
                 padding: isMobile ? '12px 14px' : '16px 20px',
-                boxShadow: '0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 0 25px rgba(13, 148, 136, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)'
+                boxShadow: '0 10px 32px -4px rgba(0, 0, 0, 0.65), 0 0 20px rgba(12, 80, 95, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
               }}>
-                <div ref={streamElRef} style={{ color: '#FFFFFF', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
+                <div ref={streamElRef} style={{ color: '#F8FAFC', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
                 <Loader2 size={12} color="#38BDF8" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
               </div>
             </div>
@@ -2253,9 +2253,9 @@ export default function GeneralTutor() {
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2DD4BF', boxShadow: '0 0 8px #2DD4BF', display: 'inline-block' }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, #047857 0%, #0D9488 35%, #0284C7 70%, #2563EB 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.4)', width: 'fit-content', boxShadow: '0 6px 20px rgba(0,0,0,0.5), 0 0 18px rgba(13, 148, 136, 0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(10, 77, 74, 0.92) 0%, rgba(12, 80, 95, 0.92) 40%, rgba(16, 68, 107, 0.92) 75%, rgba(24, 40, 72, 0.92) 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.25)', width: 'fit-content', boxShadow: '0 6px 20px rgba(0,0,0,0.5), 0 0 16px rgba(12, 80, 95, 0.16)' }}>
                 <Loader2 size={16} color="#38BDF8" style={{ animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>Generating...</span>
+                <span style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 500 }}>Generating...</span>
               </div>
             </div>
           )}

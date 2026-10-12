@@ -66,11 +66,13 @@ function sanitizeMermaid(raw) {
     code = `flowchart TD\n${code}`;
   }
 
-  // Helper to clean label text: remove rogue markdown and normalize inner quotes
+  // Helper to clean label text: convert markdown bold/italic, escape quotes
   const cleanLabelText = (text) => {
     let clean = (text || '').trim();
-    // Strip markdown formatting characters that break Mermaid parser
-    clean = clean.replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '');
+    // Convert markdown bold to <b> and italic to <i> so rich typography renders cleanly in HTML labels
+    clean = clean.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    clean = clean.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+    clean = clean.replace(/`([^`]+)`/g, '$1');
     // If enclosed in outer quotes, unwrap first
     if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
       clean = clean.slice(1, -1).trim();
@@ -89,14 +91,17 @@ function sanitizeMermaid(raw) {
   // 3. Subroutine shape: A[["..."]]
   code = code.replace(/\[\[\s*([^\]\n]+?)\s*\]\]/g, (_, text) => `[["${cleanLabelText(text)}"]]`);
 
-  // 4. Hexagon shape: A{{"..."}}
-  code = code.replace(/\{\{\s*([^\}\n]+?)\s*\}\}/g, (_, text) => `{{ "${cleanLabelText(text)}" }}`);
+  // 4. Hexagon shape: A{{"..."}} (CRITICAL: Strictly NO space after {{ to comply with Mermaid 11.x lexer)
+  code = code.replace(/\{\{\s*([^\}\n]+?)\s*\}\}/g, (_, text) => `{{"${cleanLabelText(text)}"}}`);
 
   // 5. Circle shape: A(("..."))
   code = code.replace(/\(\(\s*([^\)\n]+?)\s*\)\)/g, (_, text) => `(("${cleanLabelText(text)}"))`);
 
   // 6. Standard rectangle shape: A["..."] (excluding previously handled shapes)
   code = code.replace(/(?<![\(\[])\[\s*([^\(\[\{\]\)\n]+?)\s*\](?![\)\]])/g, (_, text) => `["${cleanLabelText(text)}"]`);
+
+  // 7. Connector edge labels: -->|"label"| or -->|label|
+  code = code.replace(/\|([^\|\n]+?)\|/g, (_, label) => `|"${cleanLabelText(label)}"|`);
 
   return code;
 }
@@ -199,25 +204,35 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
   end`;
   }
 
-  const clean = (str, len = 48) => {
-    let s = (str || '').replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
-    return s.length > len ? s.slice(0, len - 3) + '...' : s;
-  };
-
-  const pts = points.map(p => clean(p));
-  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
-
-  // Helper to split a point with delimiter (colon, dash, arrow) into title + subtitle badge
+  // Parse points: strip bullets, extract bold titles, subtitles, and clean strings
   const parsePoint = (raw) => {
-    const parts = raw.split(/[:—–\-]/);
-    if (parts.length >= 2 && parts[0].trim().length >= 2 && parts[1].trim().length >= 2) {
-      return {
-        title: parts[0].trim(),
-        sub: parts.slice(1).join(' ').trim().slice(0, 34)
-      };
+    let clean = (raw || '')
+      .replace(/^[-*\d.)\s]+/, '')
+      .replace(/\*\*/g, '')
+      .replace(/`/g, '')
+      .replace(/["\(\)\[\]\{\}]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Priority 1: colon separator (e.g. "Dual-Membrane: Outer membrane...")
+    let match = clean.match(/^([^:]+?):\s*(.+)$/);
+    if (!match) {
+      match = clean.match(/^([^—–]+?)\s*[—–]\s*(.+)$/);
     }
-    return { title: raw, sub: '' };
+    if (!match) {
+      match = clean.match(/^([^\-]+?)\s+-\s+(.+)$/);
+    }
+
+    if (match && match[1].trim().length >= 2 && match[2].trim().length >= 2) {
+      const title = match[1].trim().slice(0, 36);
+      const sub = match[2].trim().slice(0, 65);
+      return { title, sub };
+    }
+    return { title: clean.slice(0, 40), sub: '' };
   };
+
+  const pts = points.map(p => parsePoint(p));
+  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
 
   if (pts.length >= 3) {
     const s1 = pts.slice(0, Math.ceil(pts.length / 3));
@@ -226,27 +241,25 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
 
     let chart = 'flowchart TD\n';
 
-    // Stage 1: Ingestion & Foundation
+    // Stage 1: Horizontal inputs & catalysts side-by-side
     chart += '  subgraph Phase1 ["🌱 Stage 1: Foundation & Inputs"]\n';
-    chart += '    direction TB\n';
-    s1.forEach((p, idx) => {
-      const { title, sub } = parsePoint(p);
+    chart += '    direction LR\n';
+    s1.forEach((pt, idx) => {
       const icon = ICONS[idx % ICONS.length];
-      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
       chart += `    In_${idx + 1}(["${label}"])\n`;
-      if (idx > 0) {
-        chart += `    In_${idx} --> In_${idx + 1}\n`;
-      }
     });
+    if (s1.length > 1) {
+      chart += `    ${s1.map((_, i) => `In_${i + 1}`).join(' ~~~ ')}\n`;
+    }
     chart += '  end\n\n';
 
-    // Stage 2: Core Mechanism & Engine
+    // Stage 2: Vertical transformation core & reactions
     chart += '  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Transformation Engine"]\n';
     chart += '    direction TB\n';
-    s2.forEach((p, idx) => {
-      const { title, sub } = parsePoint(p);
+    s2.forEach((pt, idx) => {
       const icon = ICONS[(idx + 2) % ICONS.length];
-      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
       if (idx % 2 === 1) {
         chart += `    Proc_${idx + 1}{{"${label}"}}\n`;
       } else {
@@ -258,18 +271,17 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
     });
     chart += '  end\n\n';
 
-    // Stage 3: High-Impact Output & Practical Yield
+    // Stage 3: Horizontal deliverables & impact side-by-side
     chart += '  subgraph Phase3 ["⚡ Stage 3: High-Impact Output & Yield"]\n';
-    chart += '    direction TB\n';
-    s3.forEach((p, idx) => {
-      const { title, sub } = parsePoint(p);
+    chart += '    direction LR\n';
+    s3.forEach((pt, idx) => {
       const icon = ICONS[(idx + 4) % ICONS.length];
-      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
       chart += `    Out_${idx + 1}(["${label}"])\n`;
-      if (idx > 0) {
-        chart += `    Out_${idx} --> Out_${idx + 1}\n`;
-      }
     });
+    if (s3.length > 1) {
+      chart += `    ${s3.map((_, i) => `Out_${i + 1}`).join(' ~~~ ')}\n`;
+    }
     chart += '  end\n\n';
 
     // Inter-phase conduit pipelines with descriptive labels
@@ -279,14 +291,17 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
   }
 
   // 1-2 points fallback
-  const p1 = parsePoint(pts[0] || 'Core Foundation');
-  const p2 = parsePoint(pts[1] || 'Practical Deliverable');
+  const p1 = pts[0] || { title: 'Core Foundation', sub: '' };
+  const p2 = pts[1] || { title: 'Practical Deliverable', sub: '' };
+  const lbl1 = p1.sub ? `<b>⚡ ${p1.title}</b><br/><i>${p1.sub}</i>` : `⚡ ${p1.title}`;
+  const lbl2 = p2.sub ? `<b>🎯 ${p2.title}</b><br/><i>${p2.sub}</i>` : `🎯 ${p2.title}`;
+
   return `flowchart TD
   subgraph Phase1 ["🌱 Stage 1: Foundation"]
-    Node_1(["⚡ ${p1.title}${p1.sub ? `<br/><sub style='color:#94a3b8'>${p1.sub}</sub>` : ''}"])
+    Node_1(["${lbl1}"])
   end
   subgraph Phase2 ["🚀 Stage 2: Practical Impact"]
-    Node_2(["🎯 ${p2.title}${p2.sub ? `<br/><sub style='color:#94a3b8'>${p2.sub}</sub>` : ''}"])
+    Node_2(["${lbl2}"])
   end
   Phase1 ==>|"Drives"| Phase2\n`;
 }
@@ -319,7 +334,35 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
   const [isModalOpen, setIsModalOpen] = useState(true); // Open directly in fullscreen focused modal when requested!
-  const [isModalKeypointsOpen, setIsModalKeypointsOpen] = useState(false); // Collapsed by default (modal)
+  const takeawaysRef = useRef(null);
+
+  // Derived intelligent topic title for the poster header banner
+  const derivedTopicTitle = React.useMemo(() => {
+    if (chatHistory && chatHistory.length > 0) {
+      const userMsg = [...chatHistory].reverse().find(m => m.sender === 'user' || m.role === 'user');
+      if (userMsg && userMsg.text) {
+        let t = userMsg.text.replace(/^(explain|teach me|what is|tell me about|how does|why is|draw|generate an infographic about|infographic on)\s+/i, '').trim();
+        t = t.replace(/[?!.]+$/, '').trim();
+        if (t.length > 0 && t.length <= 60) {
+          return t.charAt(0).toUpperCase() + t.slice(1);
+        }
+      }
+    }
+    if (points && points.length > 0) {
+      const first = points[0].replace(/^[-*\d.)\s]+/, '').replace(/\*\*/g, '');
+      const parts = first.split(/[:—–\-]/);
+      if (parts[0].trim().length >= 3) {
+        return parts[0].trim();
+      }
+    }
+    return "Knowledge Architecture & Concept Flow";
+  }, [chatHistory, points]);
+
+  const handleScrollToTakeaways = () => {
+    if (takeawaysRef.current) {
+      takeawaysRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Body scroll lock when fullscreen modal is active
   useEffect(() => {
@@ -835,7 +878,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   // Reset modal scroll and state whenever modal is opened
   useEffect(() => {
     if (isModalOpen) {
-      setIsModalKeypointsOpen(false); // Collapsed by default
       const timer = setTimeout(() => {
         if (modalViewportRef.current) {
           modalViewportRef.current.scrollTop = 0;
@@ -921,6 +963,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         const sanitized = sanitizeMermaid(activeChartCode);
         const renderId = uniqueIdRef.current;
 
+        // Ensure web fonts are completely loaded so Mermaid measures SVG text dimensions accurately
+        if (typeof document !== 'undefined' && document.fonts) {
+          await document.fonts.ready;
+        }
+
         // Render SVG dynamically
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
@@ -954,6 +1001,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         if (points && points.length > 0) {
           try {
             const mermaid = (await import('mermaid')).default;
+            if (typeof document !== 'undefined' && document.fonts) {
+              await document.fonts.ready;
+            }
             const simpleChart = synthesizeCreativeInfographic(points, "Visual Concept Flow");
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
@@ -1530,6 +1580,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 isTracing={cursorState.isTracing}
               />
 
+              {/* Poster Header Banner for Inline View */}
+              <div className="infographic-poster-header" style={{ marginBottom: 12, padding: '12px 16px' }}>
+                <div className="infographic-poster-badge">
+                  <Sparkles size={10} color="#38BDF8" />
+                  <span>Visual Knowledge Blueprint</span>
+                </div>
+                <h3 className="infographic-poster-title" style={{ fontSize: 16 }}>{derivedTopicTitle}</h3>
+              </div>
+
               <div
                 className={`mermaid-svg-wrapper ${isBuilding ? 'building' : ''}`}
                 style={{
@@ -1810,23 +1869,23 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   </button>
                 )}
 
-                {/* Toggle Key Takeaways Drawer */}
+                {/* Scroll to Key Takeaways on Poster */}
                 {points && points.length > 0 && (
                   <button
                     type="button"
-                    className={`mermaid-btn mermaid-modal-keypoints-btn ${isModalKeypointsOpen ? 'active' : ''}`}
+                    className="mermaid-btn mermaid-modal-keypoints-btn"
                     style={{
                       ...btnBaseStyle,
-                      color: isModalKeypointsOpen ? '#F5A95B' : '#94A3B8',
-                      borderColor: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.4)' : btnBaseStyle.borderColor,
-                      background: isModalKeypointsOpen ? 'rgba(245, 169, 91, 0.15)' : btnBaseStyle.background,
+                      color: '#F5A95B',
+                      borderColor: 'rgba(245, 169, 91, 0.4)',
+                      background: 'rgba(245, 169, 91, 0.14)',
                       padding: '6px 12px'
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsModalKeypointsOpen(!isModalKeypointsOpen);
+                      handleScrollToTakeaways();
                     }}
-                    title={isModalKeypointsOpen ? "Hide Key Takeaways Drawer" : "Show Key Takeaways on Right Side"}
+                    title="Scroll to Key Takeaways on Poster Canvas"
                   >
                     <Sparkles size={13} color="#F5A95B" />
                     <span>Key Takeaways ({points.length})</span>
@@ -1921,7 +1980,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               </div>
             </div>
 
-            {/* Modal Main Body: Centered Flowchart Canvas with Optional Key Takeaways Drawer */}
+            {/* Modal Main Body: Unified Full-Width Infographic Poster Canvas */}
             <div
               className="mermaid-modal-body"
               style={{
@@ -1989,6 +2048,18 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       isTracing={cursorState.isTracing}
                     />
 
+                    {/* Poster Header Banner */}
+                    <div className="infographic-poster-header">
+                      <div className="infographic-poster-badge">
+                        <Sparkles size={11} color="#38BDF8" />
+                        <span>Interactive Knowledge Blueprint</span>
+                      </div>
+                      <h2 className="infographic-poster-title">{derivedTopicTitle}</h2>
+                      <p className="infographic-poster-subtitle">
+                        Comprehensive multi-tier architectural flow & system mechanism
+                      </p>
+                    </div>
+
                     <div
                       className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
                       style={{
@@ -2002,66 +2073,34 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       }}
                       dangerouslySetInnerHTML={{ __html: svgHtml }}
                     />
+
+                    {/* Integrated Key Takeaways Section directly beneath diagram on poster canvas */}
+                    {points && points.length > 0 && (
+                      <div className="infographic-poster-takeaways" ref={takeawaysRef}>
+                        <div className="infographic-takeaways-head">
+                          <div className="infographic-takeaways-headline">
+                            <Sparkles size={14} color="#F5A95B" />
+                            <span>Key Takeaways & System Insights</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
+                            {points.length} Essential Concepts
+                          </span>
+                        </div>
+                        <div className="infographic-takeaways-grid">
+                          {points.map((pt, idx) => (
+                            <div key={idx} className="infographic-takeaway-item">
+                              <span className="infographic-takeaway-badge">{idx + 1}</span>
+                              <div className="infographic-takeaway-body">
+                                {renderFormattedText(pt.replace(/^[-*•]\s+/, ''))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* Right-Side Key Takeaways Drawer */}
-              {points && points.length > 0 && isModalKeypointsOpen && (
-                <aside
-                  className="mermaid-modal-sidebar"
-                  style={{
-                    width: 360,
-                    maxWidth: 380,
-                    flexShrink: 0,
-                    height: '100%',
-                    background: '#0B0F19',
-                    borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    boxShadow: '-10px 0 30px rgba(0, 0, 0, 0.5)',
-                    zIndex: 15
-                  }}
-                >
-                  <div
-                    className="mermaid-modal-sidebar-header"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(16, 22, 36, 0.8)',
-                      flexShrink: 0
-                    }}
-                  >
-                    <div className="mermaid-modal-sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#F8FAFC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      <Sparkles size={14} color="#F5A95B" />
-                      <span>Key Takeaways</span>
-                      <span className="mermaid-takeaways-count">({points.length})</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="mermaid-modal-sidebar-close"
-                      style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4 }}
-                      onClick={() => setIsModalKeypointsOpen(false)}
-                      title="Collapse Key Takeaways"
-                      aria-label="Collapse Key Takeaways"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  <div className="mermaid-modal-sidebar-content" style={{ flex: 1, overflowY: 'auto', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {points.map((pt, idx) => (
-                      <div key={idx} className="mermaid-takeaway-item sidebar-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: 8 }}>
-                        <span className="mermaid-takeaway-bullet" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: 5, background: 'rgba(245, 169, 91, 0.15)', color: '#F5A95B', fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{idx + 1}</span>
-                        <div className="mermaid-takeaway-text" style={{ color: '#E2E8F0', fontSize: 12.5, lineHeight: 1.5, flex: 1 }}>{renderFormattedText(pt)}</div>
-                      </div>
-                    ))}
-                  </div>
-                </aside>
-              )}
             </div>
 
             {/* Modal Bottom Status Bar with Presets & Bounds */}

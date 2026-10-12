@@ -256,32 +256,34 @@ export const CODING_TUTOR_SYSTEM = "You are Vyomanta's expert coding and program
 export const QUIZ_SYSTEM = "You are a quiz generator. Generate only the quiz questions in the specified format. Do not add explanations, introductions, or greetings.";
 export const FLASHCARD_SYSTEM = "You are a flashcard generator. Generate only the flashcards in the specified format. Do not add explanations, introductions, or greetings.";
 export const INFOGRAPHIC_SYSTEM = `You are a world-class visual knowledge architect, information designer, and creative diagram specialist.
-Your mission is to transform educational concepts into rich, visually engaging, multi-dimensional Mermaid.js infographics accompanied by structured key takeaway bullet points.
+Your mission is to transform educational concepts into rich, visually engaging, multi-dimensional 2D Mermaid.js infographics accompanied by structured key takeaway bullet points.
 
-CREATIVE DESIGN PRINCIPLES:
-1. SPATIAL BALANCE & MULTI-TIER LAYOUT:
-   - NEVER generate a flat, boring single-line sequence of plain boxes (e.g. A --> B --> C --> D --> E). A horizontal line wastes 80% of canvas height.
-   - ALWAYS use structured 2D hierarchy: use 'flowchart TD' (or 'flowchart TB') with 2 to 3 logical grouping stages using \`subgraph\` containers.
-   - Group concepts into clear visual phases (e.g. "Stage 1: Inputs & Catalysts", "Stage 2: Core Transformation Engine", "Stage 3: Outputs & Impacts").
+CREATIVE DESIGN PRINCIPLES (BALANCED 2D CANVAS):
+1. SPATIAL BALANCE & MULTI-TIER 2D LAYOUT:
+   - NEVER generate a flat, boring single-column or single-line sequence of boxes.
+   - ALWAYS use structured 2D hierarchy with 'flowchart TD' and 3 logical stages using \`subgraph\` containers:
+     * Stage 1 (Inputs & Pre-Conditions): MUST include 'direction LR' with 2 to 3 inputs/catalysts arranged horizontally side-by-side.
+     * Stage 2 (Core Mechanism & Transformation): MUST include 'direction TB' with the core component, chemical reaction, and energy release arranged vertically.
+     * Stage 3 (Deliverables & Everyday Work): MUST include 'direction LR' with storage reserves and 2 to 3 practical outcomes arranged horizontally side-by-side.
    - Connect stages with thick conduits (\`==>\` or \`-->\`) with descriptive edge labels.
 
-2. DIVERSE ARCHITECTURAL SHAPES:
+2. DIVERSE SEMANTIC ARCHITECTURAL SHAPES:
    - Use varied shape semantics:
-     * Stadium pills \`(["⚡ Catalyst / Input / Result"])\` for starting triggers and deliverables.
-     * Cards \`["⚙️ Core Process / Component"]\` for primary operations.
-     * Hexagons \`{{ "❓ Condition / Checkpoint" }}\` for decisions, criteria, or branches.
-     * Cylinders \`[("🗄️ Storage / State / Reserves")]\` for databases, memory, or energy banks.
+     * Stadium pills \`(["⚡ Catalyst / Input / Result"])\` for starting triggers and final practical outcomes.
+     * Cards \`["⚙️ Core Component / Organelle"]\` for primary physical structures or engines.
+     * Hexagons \`{{"🔥 Chemical Reaction / Checkpoint"}}\` (strictly NO internal spaces after {{) for reactions, conditions, or branches.
+     * Cylinders \`[("🔋 Energy Storage / Reserve / ATP")]\` for energy banks, databases, state, or rechargeable batteries.
      * Circles \`(("🎯 Milestone"))\` for key junctions.
 
 3. DESCRIPTIVE CONNECTOR LABELS:
    - Make flow arrows tell a story with labels:
-     e.g. NodeA -->|"Transforms via"| NodeB
-     e.g. NodeB ==>|"High-Energy Release"| NodeC
+     e.g. NodeA -->|"Digestion breaks down"| NodeB
+     e.g. NodeB ==>|"Absorbed into"| NodeC
 
 4. VISUAL HIERARCHY & METRIC BADGES:
-   - Prefix every node label with a relevant emoji icon (🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍, 🧬, 🌿, 🔬).
+   - Prefix every node label with a relevant emoji icon (🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍, 🧬, 🌿, 🔬, 🔋, 🫁, 🍇, ❤️, 💪).
    - Use multi-line text with subtitle details inside nodes using \`<br/><i>...</i>\` to add depth.
-     e.g. Node1["⚡ <b>Glycolysis</b><br/><i>Cytosol • 2 Net ATP</i>"]
+     e.g. Node1["🍇 <b>Glucose</b><br/><i>simple sugar • main fuel</i>"]
 
 OUTPUT FORMAT REQUIREMENTS:
 1. Wrap the Mermaid code in a \`\`\`mermaid ... \`\`\` block.
@@ -291,6 +293,7 @@ STRICT SYNTAX RULES:
 - ALWAYS enclose node label text in double quotes: NodeId["Label text"].
 - Inside double-quoted labels, do NOT use unescaped double quotes.
 - Do NOT use raw markdown formatting (**bold**, \`code\`) inside node labels; use <b> and <i> tags instead.
+- For hexagon shapes, strictly use \`Id{{"Label"}}\` with NO space between {{ and the opening quote.
 - Output ONLY the mermaid code block and key takeaways. No conversational preamble.`;
 export const SIMPLER_SYSTEM = "You are a simplification expert. Rewrite the given concept using very basic language, short sentences, and everyday analogies. Assume the reader is a complete beginner.";
 export const EXAMPLES_SYSTEM = "You are an examples expert. Generate 3-5 real-world examples or practical applications of the given concept. Make them relatable and concrete.";
@@ -349,29 +352,41 @@ Output only the flashcards.`;
 
 export function buildInfographicPrompt(topic, count = 5) {
   return `Generate an interactive, creative Mermaid.js visual infographic and ${count} key takeaway points about "${topic}".
-Structure the diagram with 2 to 3 organized phases using \`subgraph\` containers in 'flowchart TD' so the infographic fills the visual space with 2D depth.
-Include varied node shapes (stadiums, cards, cylinders, hexagons), descriptive connector labels on arrows, and rich subtitle details.
+Structure the diagram with a balanced 2D spatial layout using 'flowchart TD' and 3 distinct \`subgraph\` containers:
+- Stage 1 (Inputs & Foundation): arrange horizontally side-by-side using 'direction LR'.
+- Stage 2 (Core Mechanism & Engine): arrange vertically using 'direction TB' with diverse shapes (cards, hexagons for reactions, cylinders for energy/state).
+- Stage 3 (Deliverables & Impact): arrange horizontally side-by-side using 'direction LR'.
+Connect stages with descriptive conduit arrows (e.g. ==>|"Processes into"|).
+
+STRICT SYNTAX RULES:
+1. Wrap the Mermaid code in a \`\`\`mermaid ... \`\`\` block.
+2. For hexagon shapes, strictly use \`Id{{"Label"}}\` with NO spaces after {{.
+3. Every node label text MUST be enclosed in double quotes: Id["Label text"].
+4. Use <b> and <i> tags with <br/> for subheadings inside node labels (e.g. Node["🍇 <b>Glucose</b><br/><i>simple sugar fuel</i>"]). Never use markdown asterisks inside node text.
+5. Directly beneath the code block, write "Key Takeaways:" followed by ${count} bullet points formatted as "- **Concept**: Detailed practical insight".
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
 flowchart TD
   subgraph Phase1 ["🌱 Stage 1: Inputs & Pre-Conditions"]
-    In1(["⚡ Primary Input"])
-    In2(["💧 Catalyst"])
+    direction LR
+    In1(["⚡ Primary Inflow<br/><i>essential fuel</i>"])
+    In2(["💧 Catalyst / Reagent<br/><i>enabling factor</i>"])
   end
 
   subgraph Phase2 ["⚙️ Stage 2: Core Transformation Engine"]
     direction TB
-    Proc1["🔧 <b>Step A: Execution</b><br/><i>Core mechanism</i>"]
-    Dec1{{"❓ Checkpoint / Branch"}}
-    Store1[("🗄️ Storage / State Reserve")]
-    Proc1 --> Dec1
-    Dec1 --> Store1
+    Proc1["🔧 <b>Processing Engine</b><br/><i>primary structural unit</i>"]
+    Dec1{{"🔥 Chemical Reaction<br/><i>high-efficiency cycle</i>"}}
+    Store1[("🔋 Energy Storage / ATP<br/><i>cellular currency reserve</i>")]
+    Proc1 -->|"Triggers reaction"| Dec1
+    Dec1 -->|"Charges state"| Store1
   end
 
   subgraph Phase3 ["🚀 Stage 3: Outputs & Real-World Impact"]
-    Out1(["🏆 High-Impact Deliverable"])
-    Out2["📊 System Metrics & Yield"]
+    direction LR
+    Out1(["🏆 High-Impact Yield<br/><i>usable biological energy</i>"])
+    Out2["📊 System Metrics & Yield<br/><i>vital lifecycle output</i>"]
   end
 
   Phase1 ==>|"Intake Transfer"| Phase2
@@ -410,39 +425,47 @@ BACK: [definition or explanation]
 Explanation:
 ${context}`,
     infographic: `Based on the following explanation, generate a rich, multi-tiered Mermaid.js infographic diagram and 4-5 high-impact takeaway bullet points.
-Create a structured 2D hierarchy using 'flowchart TD' with 2 to 3 logical grouping stages (\`subgraph\` containers) like Stage 1 (Inputs), Stage 2 (Core Mechanism), and Stage 3 (Impact & Outputs) so the diagram fills the visual space with depth.
-Include descriptive connector labels (e.g. -->|"triggers"|), varied node shapes (stadiums, cylinders, hexagons), and concise subheadings inside nodes.
-Prefix node labels with contextual emoji icons and enclose all labels in double quotes.
+Create a structured, balanced 2D layout using 'flowchart TD' with 3 logical grouping stages (\`subgraph\` containers):
+- Stage 1 (Inputs & Foundation): use 'direction LR' for horizontal side-by-side elements.
+- Stage 2 (Core Mechanism & Engine): use 'direction TB' for vertical transformation flow with varied semantic shapes (cards, hexagons for checkpoints/reactions, cylinders for storage/reserves).
+- Stage 3 (Deliverables & Impact): use 'direction LR' for horizontal side-by-side deliverables.
+Connect the stages with thick descriptive conduit arrows (e.g. ==>|"Conduit"|).
+
+STRICT SYNTAX:
+- For hexagon shapes, strictly use \`Id{{"Label"}}\` with NO space between {{ and the opening quote.
+- Every node text label MUST be enclosed in double quotes like Node["Label"].
+- Use <b> and <i> tags with <br/> for subheadings. Do NOT use markdown asterisks (**) inside node labels.
+- Prefix node labels with contextual emoji icons (⚡, ⚙️, 🔋, 🏆, etc.).
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
 flowchart TD
   subgraph Phase1 ["🌱 1. Intake & Foundation"]
-    A(["🎯 Core Ingest"])
-    B["⚙️ Auxiliary Input"]
+    direction LR
+    A(["🎯 Core Ingest<br/><i>primary input</i>"])
+    B["⚙️ Auxiliary Catalyst<br/><i>supporting factor</i>"]
   end
   subgraph Phase2 ["⚙️ 2. Transformation Engine"]
     direction TB
-    C["⚡ Core Processing Engine"]
-    D{{"❓ Decision Checkpoint"}}
-    E[("🗄️ State Bank / Memory")]
-    C --> D
-    D --> E
+    C["⚡ Core Processing Engine<br/><i>structural mechanism</i>"]
+    D{{"❓ Decision Checkpoint<br/><i>transformation stage</i>"}}
+    E[("🗄️ State Bank / Memory<br/><i>stored capacity</i>")]
+    C -->|"Executes"| D
+    D -->|"Stores"| E
   end
   subgraph Phase3 ["🚀 3. Deliverables & Impacts"]
-    F(["🏆 Final Deliverable"])
-    G["📊 Performance Metric"]
+    direction LR
+    F(["🏆 Final Deliverable<br/><i>practical outcome</i>"])
+    G["📊 Performance Metric<br/><i>measured yield</i>"]
   end
-  Phase1 ==>|"Conduit"| Phase2
-  Phase2 ==>|"Yield"| Phase3
+  Phase1 ==>|"Intake Flow"| Phase2
+  Phase2 ==>|"Yield Transfer"| Phase3
 \`\`\`
 
 Key Takeaways:
 - **Core Concept**: Clear summary point
 - **Mechanism**: How it operates
 - **Application**: Practical takeaway
-
-CRITICAL: Every node text label MUST be inside double quotes like A["1. Title"]. Do NOT use markdown asterisks or code ticks inside node text.
 
 Explanation:
 ${context}`,
@@ -498,11 +521,34 @@ export function parseFlashcardsOutput(text) {
 export function generateMermaidFromPoints(points, title = "Visual Summary") {
   if (!points || !points.length) return "";
   const cleanTitle = (title || "Summary").replace(/["\(\)\[\]\{\}]/g, '').slice(0, 32);
-  const clean = (str, len = 38) => {
-    let s = (str || '').replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
-    return s.length > len ? s.slice(0, len - 3) + '...' : s;
+
+  const parsePoint = (raw) => {
+    let clean = (raw || '')
+      .replace(/^[-*\d.)\s]+/, '')
+      .replace(/\*\*/g, '')
+      .replace(/`/g, '')
+      .replace(/["\(\)\[\]\{\}]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Priority 1: colon separator (e.g. "Dual-Membrane: Outer membrane...")
+    let match = clean.match(/^([^:]+?):\s*(.+)$/);
+    if (!match) {
+      match = clean.match(/^([^—–]+?)\s*[—–]\s*(.+)$/);
+    }
+    if (!match) {
+      match = clean.match(/^([^\-]+?)\s+-\s+(.+)$/);
+    }
+
+    if (match && match[1].trim().length >= 2 && match[2].trim().length >= 2) {
+      const t = match[1].trim().slice(0, 36);
+      const s = match[2].trim().slice(0, 65);
+      return { title: t, sub: s };
+    }
+    return { title: clean.slice(0, 40), sub: '' };
   };
-  const pts = points.map(p => clean(p));
+
+  const pts = points.map(p => parsePoint(p));
   const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
 
   if (pts.length >= 3) {
@@ -511,21 +557,30 @@ export function generateMermaidFromPoints(points, title = "Visual Summary") {
     const s3 = pts.slice(Math.ceil((pts.length * 2) / 3));
 
     let chart = 'flowchart TD\n';
+
+    // Stage 1: Horizontal inputs side-by-side
     chart += '  subgraph Phase1 ["🌱 Stage 1: Foundation & Inputs"]\n';
-    chart += '    direction TB\n';
-    s1.forEach((p, idx) => {
-      chart += `    In_${idx + 1}(["${ICONS[idx % ICONS.length]} ${p}"])\n`;
+    chart += '    direction LR\n';
+    s1.forEach((pt, idx) => {
+      const icon = ICONS[idx % ICONS.length];
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
+      chart += `    In_${idx + 1}(["${label}"])\n`;
     });
+    if (s1.length > 1) {
+      chart += `    ${s1.map((_, i) => `In_${i + 1}`).join(' ~~~ ')}\n`;
+    }
     chart += '  end\n\n';
 
+    // Stage 2: Vertical transformation core
     chart += '  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Logic"]\n';
     chart += '    direction TB\n';
-    s2.forEach((p, idx) => {
+    s2.forEach((pt, idx) => {
       const icon = ICONS[(idx + 2) % ICONS.length];
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
       if (idx % 2 === 1) {
-        chart += `    Proc_${idx + 1}{{"${icon} ${p}"}}\n`;
+        chart += `    Proc_${idx + 1}{{"${label}"}}\n`;
       } else {
-        chart += `    Proc_${idx + 1}[("${icon} ${p}")]\n`;
+        chart += `    Proc_${idx + 1}[("${label}")]\n`;
       }
       if (idx > 0) {
         chart += `    Proc_${idx} -->|"Transfers state"| Proc_${idx + 1}\n`;
@@ -533,20 +588,31 @@ export function generateMermaidFromPoints(points, title = "Visual Summary") {
     });
     chart += '  end\n\n';
 
+    // Stage 3: Horizontal deliverables side-by-side
     chart += '  subgraph Phase3 ["⚡ Stage 3: Key Deliverables & Outcomes"]\n';
-    chart += '    direction TB\n';
-    s3.forEach((p, idx) => {
+    chart += '    direction LR\n';
+    s3.forEach((pt, idx) => {
       const icon = ICONS[(idx + 4) % ICONS.length];
-      chart += `    Out_${idx + 1}(["${icon} ${p}"])\n`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
+      chart += `    Out_${idx + 1}(["${label}"])\n`;
     });
+    if (s3.length > 1) {
+      chart += `    ${s3.map((_, i) => `Out_${i + 1}`).join(' ~~~ ')}\n`;
+    }
     chart += '  end\n\n';
 
     chart += '  Phase1 ==>|"Processes into"| Phase2\n';
-    chart += '  Phase2 ==>|"Yields output"| Phase3\n';
+    chart += '  Phase2 ==>|"Yields deliverables"| Phase3\n';
     return chart;
   }
 
-  return `flowchart TD\n  Root(["🎯 ${cleanTitle}"])\n  Node_1["⚡ ${pts[0]}"]\n  Node_2(["🚀 ${pts[1] || 'Outcome'}"])\n  Root ==> Node_1\n  Node_1 ==> Node_2\n`;
+  // 1-2 points fallback
+  const p1 = pts[0] || { title: 'Core Foundation', sub: '' };
+  const p2 = pts[1] || { title: 'Practical Deliverable', sub: '' };
+  const lbl1 = p1.sub ? `<b>⚡ ${p1.title}</b><br/><i>${p1.sub}</i>` : `⚡ ${p1.title}`;
+  const lbl2 = p2.sub ? `<b>🎯 ${p2.title}</b><br/><i>${p2.sub}</i>` : `🎯 ${p2.title}`;
+
+  return `flowchart TD\n  subgraph Phase1 ["🌱 Stage 1: Foundation"]\n    Node_1(["${lbl1}"])\n  end\n  subgraph Phase2 ["🚀 Stage 2: Deliverables"]\n    Node_2(["${lbl2}"])\n  end\n  Phase1 ==>|"Drives"| Phase2\n`;
 }
 
 export function parseInfographicOutput(text) {
