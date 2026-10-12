@@ -1878,12 +1878,12 @@ export default function GeneralTutor() {
                       />
                     </div>
 
-                    {/* User Text Bubble starting directly below (Instagram Sunset Berry theme gradient) */}
+                    {/* User Text Bubble starting directly below (Subtle Instagram theme gradient) */}
                     <div style={{
-                      background: 'linear-gradient(135deg, #7F00FF 0%, #B800FF 30%, #FF007A 70%, #FF5A36 100%)',
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 25%, #7C3AED 55%, #9333EA 80%, #C026D3 100%)',
                       backdropFilter: 'blur(16px)',
                       WebkitBackdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(255, 255, 255, 0.28)',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
                       borderRadius: '18px 18px 4px 18px',
                       padding: isMobile ? '10px 14px' : '12px 18px',
                       color: '#FFFFFF',
@@ -1895,7 +1895,7 @@ export default function GeneralTutor() {
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
                       textAlign: 'left',
-                      boxShadow: '0 8px 24px -4px rgba(255, 0, 122, 0.38), 0 2px 10px rgba(0, 0, 0, 0.28)'
+                      boxShadow: '0 6px 20px -4px rgba(124, 58, 237, 0.3), 0 2px 6px rgba(0, 0, 0, 0.22)'
                     }}>
                       {msg.content}
                       {msg.documents && msg.documents.length > 0 && (
@@ -1933,19 +1933,19 @@ export default function GeneralTutor() {
                   </div>
 
                   <div style={{ width: '100%', minWidth: 0 }}>
-                    {/* Glassmorphic AI Response Message Box (Instagram Oceanic Twilight theme gradient) */}
+                    {/* Glassmorphic AI Response Message Box (Subtle Contrast Oceanic-Twilight Gradient) */}
                     <div style={{
                       maxWidth: bubbleMaxW,
-                      background: 'linear-gradient(135deg, rgba(16, 24, 52, 0.95) 0%, rgba(26, 36, 80, 0.92) 42%, rgba(14, 46, 72, 0.92) 80%, rgba(10, 26, 48, 0.95) 100%)',
+                      background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.94) 0%, rgba(22, 36, 72, 0.90) 45%, rgba(14, 52, 82, 0.94) 100%)',
                       backdropFilter: 'blur(20px)',
                       WebkitBackdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(56, 189, 248, 0.32)',
+                      border: '1px solid rgba(56, 189, 248, 0.28)',
                       borderRadius: '18px',
                       padding: isMobile ? '12px 14px' : '16px 20px',
                       color: '#F8FAFC',
                       fontSize: isMobile ? 13.5 : 14,
                       lineHeight: 1.68,
-                      boxShadow: '0 10px 35px 0 rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+                      boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.09)'
                     }}>
                       <div className="md-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanMarkdown(msg.content)}</ReactMarkdown>
@@ -2196,13 +2196,13 @@ export default function GeneralTutor() {
               </div>
               <div style={{
                 maxWidth: bubbleMaxW,
-                background: 'linear-gradient(135deg, rgba(16, 24, 52, 0.95) 0%, rgba(26, 36, 80, 0.92) 42%, rgba(14, 46, 72, 0.92) 80%, rgba(10, 26, 48, 0.95) 100%)',
+                background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.94) 0%, rgba(22, 36, 72, 0.90) 45%, rgba(14, 52, 82, 0.94) 100%)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(56, 189, 248, 0.32)',
+                border: '1px solid rgba(56, 189, 248, 0.28)',
                 borderRadius: '18px',
                 padding: isMobile ? '12px 14px' : '16px 20px',
-                boxShadow: '0 10px 35px 0 rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+                boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.09)'
               }}>
                 <div ref={streamElRef} style={{ color: '#F8FAFC', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
                 <Loader2 size={12} color="#38BDF8" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
@@ -2222,7 +2222,7 @@ export default function GeneralTutor() {
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 8px #38BDF8', display: 'inline-block' }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(16, 24, 52, 0.85) 0%, rgba(26, 36, 80, 0.85) 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.3)', width: 'fit-content' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.88) 0%, rgba(14, 52, 82, 0.88) 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.28)', width: 'fit-content' }}>
                 <Loader2 size={16} color="#38BDF8" style={{ animation: 'spin 1s linear infinite' }} />
                 <span style={{ fontSize: 13, color: '#94A3B8' }}>Generating...</span>
               </div>
@@ -2394,16 +2394,16 @@ export default function GeneralTutor() {
                 flex: 1,
                 minWidth: 0,
                 background: isInputFocused 
-                  ? 'linear-gradient(135deg, rgba(22, 18, 44, 0.96) 0%, rgba(14, 20, 38, 0.96) 50%, rgba(12, 28, 46, 0.96) 100%)'
-                  : 'linear-gradient(135deg, rgba(16, 14, 32, 0.94) 0%, rgba(12, 16, 28, 0.94) 50%, rgba(10, 22, 36, 0.94) 100%)',
+                  ? 'linear-gradient(135deg, rgba(26, 22, 52, 0.96) 0%, rgba(18, 24, 46, 0.96) 50%, rgba(14, 34, 54, 0.96) 100%)'
+                  : 'linear-gradient(135deg, rgba(18, 16, 36, 0.94) 0%, rgba(14, 18, 32, 0.94) 50%, rgba(12, 24, 40, 0.94) 100%)',
                 backdropFilter: 'blur(28px)',
                 WebkitBackdropFilter: 'blur(28px)',
-                border: isInputFocused ? '1px solid rgba(255, 0, 122, 0.55)' : '1px solid rgba(168, 85, 247, 0.35)',
+                border: isInputFocused ? '1px solid rgba(139, 92, 246, 0.55)' : '1px solid rgba(139, 92, 246, 0.25)',
                 borderRadius: 18,
                 padding: isMobile ? '10px 12px' : '12px 16px',
                 boxShadow: isInputFocused
-                  ? '0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 0, 122, 0.25), 0 0 20px rgba(56, 189, 248, 0.18)'
-                  : '0 24px 60px -12px rgba(0, 0, 0, 0.75), 0 0 30px rgba(168, 85, 247, 0.15)',
+                  ? '0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(139, 92, 246, 0.22), 0 0 18px rgba(56, 189, 248, 0.15)'
+                  : '0 24px 60px -12px rgba(0, 0, 0, 0.75), 0 0 25px rgba(139, 92, 246, 0.12)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 8,
@@ -2716,14 +2716,14 @@ export default function GeneralTutor() {
                           width: 36,
                           height: 36,
                           borderRadius: 12,
-                          background: loading ? T.dim : 'linear-gradient(135deg, #7F00FF 0%, #B800FF 35%, #FF007A 75%, #FF5A36 100%)',
+                          background: loading ? T.dim : 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 40%, #9333EA 75%, #C026D3 100%)',
                           border: 'none',
                           cursor: loading ? 'not-allowed' : 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
-                          boxShadow: '0 2px 14px rgba(255, 0, 122, 0.45)',
+                          boxShadow: '0 2px 12px rgba(124, 58, 237, 0.35)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -2964,7 +2964,7 @@ export default function GeneralTutor() {
                       <Pin size={14} style={{ transform: isInputPinned ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
                     </button>
 
-                    {/* Glowing Send Button (Instagram Gradient) */}
+                    {/* Glowing Send Button (Subtle Instagram Gradient) */}
                     <button
                       type="button"
                       onClick={handleSend}
@@ -2973,14 +2973,14 @@ export default function GeneralTutor() {
                         width: 38,
                         height: 38,
                         borderRadius: 12,
-                        background: loading ? T.dim : 'linear-gradient(135deg, #7F00FF 0%, #B800FF 35%, #FF007A 75%, #FF5A36 100%)',
+                        background: loading ? T.dim : 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 40%, #9333EA 75%, #C026D3 100%)',
                         border: 'none',
                         cursor: loading ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
-                        boxShadow: '0 2px 14px rgba(255, 0, 122, 0.45)',
+                        boxShadow: '0 2px 12px rgba(124, 58, 237, 0.35)',
                         transition: 'all 0.15s ease'
                       }}
                     >
