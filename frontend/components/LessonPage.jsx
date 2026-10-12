@@ -2138,12 +2138,12 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                   borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px',
                                   background: m.role === 'user' 
                                     ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 25%, #7C3AED 55%, #9333EA 80%, #C026D3 100%)' 
-                                    : 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
-                                  color: m.role === 'user' ? '#FFFFFF' : '#F8FAFC',
+                                    : 'linear-gradient(135deg, #047857 0%, #0D9488 28%, #0284C7 58%, #2563EB 82%, #1E1B4B 100%)',
+                                  color: '#FFFFFF',
                                   fontSize: 12,
                                   lineHeight: 1.55,
-                                  border: m.role === 'user' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(45, 212, 191, 0.32)',
-                                  boxShadow: m.role === 'user' ? '0 6px 20px -4px rgba(124, 58, 237, 0.3), 0 2px 6px rgba(0, 0, 0, 0.22)' : '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
+                                  border: m.role === 'user' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(56, 189, 248, 0.4)',
+                                  boxShadow: m.role === 'user' ? '0 6px 20px -4px rgba(124, 58, 237, 0.3), 0 2px 6px rgba(0, 0, 0, 0.22)' : '0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 0 25px rgba(13, 148, 136, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)'
                                 }}
                               >
                                 {m.role === 'user' ? m.text : renderFormattedChatMessage(m.text, (sec) => setVideoSeekTime(sec))}

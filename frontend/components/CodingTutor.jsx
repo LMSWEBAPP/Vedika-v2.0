@@ -2331,19 +2331,19 @@ export default function CodingTutor() {
                           {/* Visual Analytics Card */}
                           {parseAnalyticsFromMessage(msg) && renderAnalyticsCard(parseAnalyticsFromMessage(msg))}
 
-                          {/* Glassmorphic AI Response Message Box below (Contrasting Ocean-Emerald Jewel Gradient) */}
+                          {/* Glassmorphic AI Response Message Box below (Vibrant Ocean-Emerald Theme Gradient) */}
                           <div style={{
                             maxWidth: bubbleMaxW,
-                            background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
+                            background: 'linear-gradient(135deg, #047857 0%, #0D9488 28%, #0284C7 58%, #2563EB 82%, #1E1B4B 100%)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(45, 212, 191, 0.32)',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
                             borderRadius: '18px',
                             padding: isMobile ? '12px 14px' : '16px 20px',
-                            color: '#F8FAFC',
+                            color: '#FFFFFF',
                             fontSize: isMobile ? 13.5 : 14,
                             lineHeight: 1.7,
-                            boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
+                            boxShadow: '0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 0 25px rgba(13, 148, 136, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)'
                           }}>
                             <div className="md-content">
                               {renderMarkdown(chatContent, explanation)}
@@ -2588,16 +2588,16 @@ export default function CodingTutor() {
                   </div>
                   <div style={{
                     maxWidth: bubbleMaxW,
-                    background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
+                    background: 'linear-gradient(135deg, #047857 0%, #0D9488 28%, #0284C7 58%, #2563EB 82%, #1E1B4B 100%)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(45, 212, 191, 0.32)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
                     borderRadius: '18px',
                     padding: isMobile ? '12px 14px' : '16px 20px',
-                    boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
+                    boxShadow: '0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 0 25px rgba(13, 148, 136, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)'
                   }}>
-                    <div ref={streamElRef} style={{ color: '#F8FAFC', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
-                    <Loader2 size={12} color="#2DD4BF" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
+                    <div ref={streamElRef} style={{ color: '#FFFFFF', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
+                    <Loader2 size={12} color="#38BDF8" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
                   </div>
                 </div>
               )}
@@ -2613,9 +2613,9 @@ export default function CodingTutor() {
                       VEDIKA
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.88) 0%, rgba(6, 82, 72, 0.88) 100%)', borderRadius: 12, border: '1px solid rgba(45, 212, 191, 0.32)', width: 'fit-content' }}>
-                    <Loader2 size={16} color="#2DD4BF" style={{ animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: 13, color: '#94A3B8' }}>Thinking...</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, #047857 0%, #0D9488 35%, #0284C7 70%, #2563EB 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.4)', width: 'fit-content', boxShadow: '0 6px 20px rgba(0,0,0,0.5), 0 0 18px rgba(13, 148, 136, 0.25)' }}>
+                    <Loader2 size={16} color="#38BDF8" style={{ animation: 'spin 1s linear infinite' }} />
+                    <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>Thinking...</span>
                   </div>
                 </div>
               )}
