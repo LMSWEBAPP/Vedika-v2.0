@@ -268,10 +268,10 @@ export default function YouTubeTutorPanel({ videoId, title = 'Video Lesson', get
                         alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                         background: msg.role === 'user' 
                           ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 25%, #7C3AED 55%, #9333EA 80%, #C026D3 100%)' 
-                          : 'linear-gradient(135deg, rgba(32, 44, 84, 0.94) 0%, rgba(22, 36, 72, 0.90) 45%, rgba(14, 52, 82, 0.94) 100%)',
+                          : 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
                         color: msg.role === 'user' ? '#FFFFFF' : '#F8FAFC',
-                        border: msg.role === 'user' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(56, 189, 248, 0.28)',
-                        boxShadow: msg.role === 'user' ? '0 6px 20px -4px rgba(124, 58, 237, 0.3), 0 2px 6px rgba(0, 0, 0, 0.22)' : '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.09)',
+                        border: msg.role === 'user' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(45, 212, 191, 0.32)',
+                        boxShadow: msg.role === 'user' ? '0 6px 20px -4px rgba(124, 58, 237, 0.3), 0 2px 6px rgba(0, 0, 0, 0.22)' : '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
                         padding: '8px 14px',
                         borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px',
                         maxWidth: '85%',

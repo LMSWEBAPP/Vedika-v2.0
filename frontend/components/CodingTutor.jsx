@@ -2239,7 +2239,7 @@ export default function CodingTutor() {
                               isTyping={false}
                               isAiLoading={false}
                               size={isMobile ? 36 : 42}
-                              themeColor="cyan"
+                              themeColor="amber"
                               mood={msg.blobMood || ['happy', 'curious', 'surprised', 'love', 'sideEye', 'hmm', 'shy', 'wave'][mi % 8]}
                             />
                           </div>
@@ -2293,7 +2293,7 @@ export default function CodingTutor() {
                             <Code2 size={14} color={T.amber} />
                           </div>
                           <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
-                            CODE WITH AI TUTOR
+                            VEDIKA
                           </div>
                         </div>
 
@@ -2301,19 +2301,19 @@ export default function CodingTutor() {
                           {/* Visual Analytics Card */}
                           {parseAnalyticsFromMessage(msg) && renderAnalyticsCard(parseAnalyticsFromMessage(msg))}
 
-                          {/* Glassmorphic AI Response Message Box below (Subtle Contrast Oceanic-Twilight Gradient) */}
+                          {/* Glassmorphic AI Response Message Box below (Contrasting Ocean-Emerald Jewel Gradient) */}
                           <div style={{
                             maxWidth: bubbleMaxW,
-                            background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.94) 0%, rgba(22, 36, 72, 0.90) 45%, rgba(14, 52, 82, 0.94) 100%)',
+                            background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(56, 189, 248, 0.28)',
+                            border: '1px solid rgba(45, 212, 191, 0.32)',
                             borderRadius: '18px',
                             padding: isMobile ? '12px 14px' : '16px 20px',
                             color: '#F8FAFC',
                             fontSize: isMobile ? 13.5 : 14,
                             lineHeight: 1.7,
-                            boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.09)'
+                            boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
                           }}>
                             <div className="md-content">
                               {renderMarkdown(chatContent, explanation)}
@@ -2553,21 +2553,21 @@ export default function CodingTutor() {
                       <Code2 size={14} color={T.amber} />
                     </div>
                     <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
-                      CODE WITH AI TUTOR
+                      VEDIKA
                     </div>
                   </div>
                   <div style={{
                     maxWidth: bubbleMaxW,
-                    background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.94) 0%, rgba(22, 36, 72, 0.90) 45%, rgba(14, 52, 82, 0.94) 100%)',
+                    background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.94) 0%, rgba(13, 102, 100, 0.92) 35%, rgba(15, 118, 110, 0.92) 70%, rgba(6, 82, 72, 0.94) 100%)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(56, 189, 248, 0.28)',
+                    border: '1px solid rgba(45, 212, 191, 0.32)',
                     borderRadius: '18px',
                     padding: isMobile ? '12px 14px' : '16px 20px',
-                    boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.09)'
+                    boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 24px rgba(20, 184, 166, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
                   }}>
                     <div ref={streamElRef} style={{ color: '#F8FAFC', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />
-                    <Loader2 size={12} color="#38BDF8" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
+                    <Loader2 size={12} color="#2DD4BF" style={{ animation: 'spin 1s linear infinite', marginTop: 8 }} />
                   </div>
                 </div>
               )}
@@ -2580,11 +2580,11 @@ export default function CodingTutor() {
                       <Code2 size={14} color={T.amber} />
                     </div>
                     <div style={{ fontSize: 11, color: T.amber, fontWeight: 700, letterSpacing: '0.05em' }}>
-                      CODE WITH AI TUTOR
+                      VEDIKA
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(32, 44, 84, 0.88) 0%, rgba(14, 52, 82, 0.88) 100%)', borderRadius: 12, border: '1px solid rgba(56, 189, 248, 0.28)', width: 'fit-content' }}>
-                    <Loader2 size={16} color="#38BDF8" style={{ animation: 'spin 1s linear infinite' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'linear-gradient(135deg, rgba(8, 78, 98, 0.88) 0%, rgba(6, 82, 72, 0.88) 100%)', borderRadius: 12, border: '1px solid rgba(45, 212, 191, 0.32)', width: 'fit-content' }}>
+                    <Loader2 size={16} color="#2DD4BF" style={{ animation: 'spin 1s linear infinite' }} />
                     <span style={{ fontSize: 13, color: '#94A3B8' }}>Thinking...</span>
                   </div>
                 </div>

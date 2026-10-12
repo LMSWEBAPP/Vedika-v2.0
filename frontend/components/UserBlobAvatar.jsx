@@ -57,7 +57,7 @@ export default function UserBlobAvatar({
   isAiLoading = false,
   isJustSent = false,
   size = 72,
-  themeColor = 'violet',
+  themeColor = 'amber',
   initialMood = 'neutral',
   mood,
   className = '',
@@ -301,7 +301,20 @@ export default function UserBlobAvatar({
         '--jelly-arm-deep': '#0284C7',
         '--jelly-eye-sparkle': '#7DD3FC'
       }
-    : {
+    : themeColor === 'emerald' || themeColor === 'mint'
+    ? {
+        '--jelly-body-top': '#D1FAE5',
+        '--jelly-body-mid': '#34D399',
+        '--jelly-body-deep': '#059669',
+        '--jelly-body-rim': '#A7F3D0',
+        '--jelly-outline': '#047857',
+        '--jelly-outline-light': '#10B981',
+        '--jelly-arm-mid': '#10B981',
+        '--jelly-arm-deep': '#059669',
+        '--jelly-eye-sparkle': '#6EE7B7'
+      }
+    : themeColor === 'violet'
+    ? {
         '--jelly-body-top': '#F3D5FF',
         '--jelly-body-mid': '#C084FC',
         '--jelly-body-deep': '#9333EA',
@@ -311,7 +324,35 @@ export default function UserBlobAvatar({
         '--jelly-arm-mid': '#A855F7',
         '--jelly-arm-deep': '#7E22CE',
         '--jelly-eye-sparkle': '#D8B4FE'
+      }
+    : {
+        // Default: Warm Honey-Gold Amber (distinct from purple user box & teal AI box)
+        '--jelly-body-top': '#FEF3C7',
+        '--jelly-body-mid': '#FBBF24',
+        '--jelly-body-deep': '#D97706',
+        '--jelly-body-rim': '#FDE68A',
+        '--jelly-outline': '#B45309',
+        '--jelly-outline-light': '#F59E0B',
+        '--jelly-arm-mid': '#F59E0B',
+        '--jelly-arm-deep': '#D97706',
+        '--jelly-eye-sparkle': '#FEF08A'
       };
+
+  const labelColor = isHovered
+    ? (themeColor === 'cyan' ? '#7DD3FC' : themeColor === 'violet' ? '#D8B4FE' : '#FDE68A')
+    : (themeColor === 'cyan' ? '#38BDF8' : themeColor === 'violet' ? '#A855F7' : '#F59E0B');
+
+  const tipBorder = themeColor === 'cyan'
+    ? '1px solid rgba(14, 165, 233, 0.5)'
+    : themeColor === 'violet'
+    ? '1px solid rgba(168, 85, 247, 0.5)'
+    : '1px solid rgba(245, 158, 11, 0.55)';
+
+  const tipColor = themeColor === 'cyan'
+    ? '#E0F2FE'
+    : themeColor === 'violet'
+    ? '#F3E8FF'
+    : '#FEF3C7';
 
   return (
     <div
@@ -336,12 +377,12 @@ export default function UserBlobAvatar({
             bottom: '100%',
             marginBottom: 6,
             background: 'rgba(15, 23, 42, 0.94)',
-            border: themeColor === 'cyan' ? '1px solid rgba(14, 165, 233, 0.5)' : '1px solid rgba(168, 85, 247, 0.5)',
+            border: tipBorder,
             borderRadius: 10,
             padding: '2px 8px',
             fontSize: 10,
             fontWeight: 700,
-            color: themeColor === 'cyan' ? '#E0F2FE' : '#F3E8FF',
+            color: tipColor,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
             zIndex: 30,
@@ -359,9 +400,7 @@ export default function UserBlobAvatar({
           fontSize: 11,
           fontWeight: 700,
           letterSpacing: '0.06em',
-          color: isHovered
-            ? (themeColor === 'cyan' ? '#7DD3FC' : '#D8B4FE')
-            : (themeColor === 'cyan' ? '#38BDF8' : '#A855F7'),
+          color: labelColor,
           textTransform: 'uppercase',
           lineHeight: 1,
           transition: 'color 0.2s ease',
