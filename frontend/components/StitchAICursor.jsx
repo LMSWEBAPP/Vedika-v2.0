@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 
 /**
@@ -24,9 +24,15 @@ export default function StitchAICursor({
 }) {
   const [particles, setParticles] = useState([]);
 
-  // Spawn sparkles as pen writes and glides across canvas
+  const lastSpawnRef = useRef(0);
+
+  // Spawn sparkles as pen writes and glides across canvas (throttled to eliminate timer & GC thrashing)
   useEffect(() => {
     if (!visible) return;
+
+    const now = performance.now();
+    if (now - lastSpawnRef.current < 90) return;
+    lastSpawnRef.current = now;
 
     const id = Math.random().toString(36).substring(2, 7);
     const angle = Math.random() * Math.PI * 2;
@@ -39,11 +45,11 @@ export default function StitchAICursor({
       color: [accentColor, '#A855F7', '#38BDF8', '#FBBF24', '#34D399', '#FB7185'][Math.floor(Math.random() * 6)]
     };
 
-    setParticles((prev) => [...prev.slice(-10), newParticle]);
+    setParticles((prev) => [...prev.slice(-6), newParticle]);
 
     const timer = setTimeout(() => {
       setParticles((prev) => prev.filter((p) => p.id !== id));
-    }, 600);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [x, y, visible, accentColor]);

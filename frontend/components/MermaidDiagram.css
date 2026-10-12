@@ -114,6 +114,10 @@ button.mermaid-expand-btn:hover,
   padding: 24px 20px;
   background: radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.85) 0%, rgba(8, 10, 18, 0.98) 100%);
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: none !important;
+  overscroll-behavior: contain;
+  scroll-behavior: auto !important;
 }
 
 .mermaid-canvas-stage {
@@ -127,6 +131,8 @@ button.mermaid-expand-btn:hover,
   max-width: 820px;
   transform-origin: top center;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  touch-action: none !important;
 }
 
 .mermaid-canvas-stage.modal-stage {
@@ -143,6 +149,7 @@ button.mermaid-expand-btn:hover,
   width: 100%;
   text-align: center;
   position: relative;
+  touch-action: none !important;
 }
 
 .mermaid-svg-wrapper svg,
@@ -154,6 +161,8 @@ button.mermaid-expand-btn:hover,
   margin: 0 auto !important;
   overflow: visible !important;
   filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
 }
 
 /* Custom Node & Edge Styling injected into SVG: Vibrant, illuminated, high-contrast */
@@ -610,10 +619,11 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   padding: 40px 30px 100px 30px;
   background: radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%);
   user-select: none;
+  -webkit-user-select: none;
   position: relative;
   cursor: grab;
-  scroll-behavior: smooth;
-  touch-action: pan-x pan-y;
+  scroll-behavior: auto !important;
+  touch-action: none !important;
   overscroll-behavior: contain;
 }
 
@@ -888,6 +898,23 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 .mermaid-svg-wrapper.building {
   opacity: 1;
   transition: opacity 0.3s ease;
+}
+
+/* While live drawing, bypass expensive Gaussian drop-shadow raster filters and hardware accelerate animating strokes */
+.mermaid-svg-wrapper.building svg,
+.mermaid-svg-wrapper.building .node,
+.mermaid-svg-wrapper.building .node rect,
+.mermaid-svg-wrapper.building .node polygon,
+.mermaid-svg-wrapper.building .node circle,
+.mermaid-svg-wrapper.building .node ellipse,
+.mermaid-svg-wrapper.building path {
+  filter: none !important;
+}
+
+.mermaid-svg-wrapper.building path,
+.mermaid-svg-wrapper.building rect,
+.mermaid-svg-wrapper.building polygon {
+  will-change: stroke-dashoffset;
 }
 
 .stitch-live-canvas-overlay {

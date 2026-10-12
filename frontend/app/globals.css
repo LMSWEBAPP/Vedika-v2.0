@@ -127,6 +127,20 @@ html, body {
   }
 }
 
+/* Safeguards for Infographic & Flowchart Drawing Canvases (Block browser pinch & smooth rendering) */
+.mermaid-modal-viewport,
+.mermaid-viewport,
+.mermaid-canvas-stage {
+  touch-action: none !important;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mermaid-svg-wrapper svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
 body, button, input, textarea, select {
   font-family: var(--font-outfit), 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   color: var(--text);

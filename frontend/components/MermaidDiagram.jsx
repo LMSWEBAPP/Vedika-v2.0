@@ -192,6 +192,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const modalZoomRef = useRef(0.75);
   modalZoomRef.current = modalZoom;
 
+  const [isWheelZooming, setIsWheelZooming] = useState(false);
+  const wheelZoomTimeoutRef = useRef(null);
+  const touchDistRef = useRef(null);
+
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isKeypointsOpen, setIsKeypointsOpen] = useState(false); // Collapsed by default (inline chat)
@@ -382,9 +386,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     const zoomFactor = currentZoom > 0 ? currentZoom : 1;
 
-    // Helper to calculate exact stage coordinates from an SVG element & local point
+    // Helper to calculate exact stage coordinates from an SVG element & local point (uses cached stage rect to prevent forced layout reflow)
+    let cachedStageRect = stageRect;
     const getStagePoint = (elem, localPt) => {
-      const curStageRect = stageEl.getBoundingClientRect();
+      const curStageRect = cachedStageRect || stageEl.getBoundingClientRect();
       const curZoom = (isModal ? (modalZoomRef.current || 0.85) : zoom) || 1;
       try {
         const ctm = elem.getScreenCTM ? elem.getScreenCTM() : null;
@@ -546,6 +551,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           }));
 
           // Trace shape perimeter smoothly frame-by-frame (deliberate 500ms pace)
+          cachedStageRect = stageEl.getBoundingClientRect();
           await animateFrame(500, (t) => {
             if (shapeEl && shapeEl.style) {
               shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
@@ -554,7 +560,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               try {
                 const pt = shapeEl.getPointAtLength(shapeLen * t);
                 const stagePt = getStagePoint(shapeEl, pt);
-                setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+                setCursorState((prev) => {
+                  if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
+                  return { ...prev, x: stagePt.x, y: stagePt.y };
+                });
               } catch {}
             }
           });
@@ -595,13 +604,17 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             }));
 
             // Physically trace connector line from start to destination (420ms glide)
+            cachedStageRect = stageEl.getBoundingClientRect();
             await animateFrame(420, (t) => {
               edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
               if (typeof edgeEl.getPointAtLength === 'function') {
                 try {
                   const pt = edgeEl.getPointAtLength(edgeLen * t);
                   const stagePt = getStagePoint(edgeEl, pt);
-                  setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+                  setCursorState((prev) => {
+                    if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
+                    return { ...prev, x: stagePt.x, y: stagePt.y };
+                  });
                 } catch {}
               }
             });
@@ -911,45 +924,105 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.2));
   const handleModalZoomReset = () => setModalZoom(1);
 
-  // Attach non-passive wheel event listeners to viewports to zoom ONLY the canvas stage and strictly block webpage browser zoom
+  // Handle wheel events: Non-passive listeners to strictly block browser webpage zoom and smoothly zoom the canvas
   useEffect(() => {
-    const modalVp = modalViewportRef.current;
-    const inlineVp = containerRef.current;
+    if (!mounted) return;
 
-    const handleModalWheel = (e) => {
+    if (isModalOpen) {
+      // Fullscreen Modal: Intercept wheel events window-wide so trackpad pinch or Ctrl+wheel NEVER zooms the webpage
+      const handleWindowWheel = (e) => {
+        // 1. Pinch gesture or Ctrl/Cmd + wheel = Smooth Canvas Zoom
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          setIsWheelZooming(true);
+          clearTimeout(wheelZoomTimeoutRef.current);
+          wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
+
+          const factor = e.deltaY < 0 ? 1.08 : 0.92;
+          setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+          return;
+        }
+
+        // 2. Normal wheel: Two-finger trackpad panning or mouse wheel scrolling within modal viewport
+        const target = e.target;
+        const vp = modalViewportRef.current;
+        if (vp && (vp === target || vp.contains(target))) {
+          e.preventDefault();
+          vp.scrollLeft += e.deltaX;
+          vp.scrollTop += e.deltaY;
+        } else if (target && target.closest?.('.mermaid-modal-backdrop, .mermaid-modal-window')) {
+          e.preventDefault();
+        }
+      };
+
+      window.addEventListener('wheel', handleWindowWheel, { passive: false });
+      return () => {
+        window.removeEventListener('wheel', handleWindowWheel);
+      };
+    } else {
+      // Inline View: Intercept Ctrl/Cmd + wheel only when hovering over container to zoom inline canvas
+      const container = containerRef.current;
+      if (!container) return;
+
+      const handleInlineWheel = (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          setIsWheelZooming(true);
+          clearTimeout(wheelZoomTimeoutRef.current);
+          wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
+
+          const factor = e.deltaY < 0 ? 1.08 : 0.92;
+          setZoom((prev) => Math.max(0.25, Math.min(2.5, Number((prev * factor).toFixed(2)))));
+        }
+      };
+
+      container.addEventListener('wheel', handleInlineWheel, { passive: false });
+      return () => {
+        container.removeEventListener('wheel', handleInlineWheel);
+      };
+    }
+  }, [mounted, isModalOpen]);
+
+  // Touch handlers for 2-finger pinch-to-zoom on touchscreen laptops, tablets, and mobile devices
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      touchDistRef.current = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && touchDistRef.current) {
       e.preventDefault();
-      e.stopPropagation();
+      const currentDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = currentDist / touchDistRef.current;
+      if (ratio > 0.05 && ratio < 20) {
+        setIsWheelZooming(true);
+        clearTimeout(wheelZoomTimeoutRef.current);
+        wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
 
-      if (e.ctrlKey || e.metaKey) {
-        // Trackpad pinch-to-zoom or Ctrl+wheel zoom
-        const factor = e.deltaY < 0 ? 1.08 : 0.92;
-        setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
-      } else {
-        // Two-finger trackpad panning or mouse wheel scrolling within modal viewport
-        if (modalViewportRef.current) {
-          modalViewportRef.current.scrollLeft += e.deltaX;
-          modalViewportRef.current.scrollTop += e.deltaY;
+        if (isModalOpen) {
+          setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * ratio).toFixed(2)))));
+        } else {
+          setZoom((prev) => Math.max(0.25, Math.min(2.5, Number((prev * ratio).toFixed(2)))));
         }
       }
-    };
+      touchDistRef.current = currentDist;
+    }
+  };
 
-    const handleInlineWheel = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        const factor = e.deltaY < 0 ? 1.08 : 0.92;
-        setZoom(prev => Math.max(0.25, Math.min(2.5, Number((prev * factor).toFixed(2)))));
-      }
-    };
-
-    if (modalVp) modalVp.addEventListener('wheel', handleModalWheel, { passive: false });
-    if (inlineVp) inlineVp.addEventListener('wheel', handleInlineWheel, { passive: false });
-
-    return () => {
-      if (modalVp) modalVp.removeEventListener('wheel', handleModalWheel);
-      if (inlineVp) inlineVp.removeEventListener('wheel', handleInlineWheel);
-    };
-  }, [isModalOpen]);
+  const handleTouchEnd = () => {
+    touchDistRef.current = null;
+  };
 
   const handleFitToScreen = () => {
     autoFitModalChart();
@@ -958,7 +1031,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const handleMouseDown = (e) => {
     e.stopPropagation(); // Stop mousedown bubbling to document outside-click handler!
     if (e.button !== 0) return;
-    if (e.target.closest('button') || e.target.closest('a')) return;
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
     if (!modalViewportRef.current) return;
     setIsPanning(true);
     panStartRef.current = {
@@ -969,18 +1042,30 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     };
   };
 
-  const handleMouseMove = (e) => {
-    if (!isPanning || !modalViewportRef.current) return;
-    const dx = e.clientX - panStartRef.current.x;
-    const dy = e.clientY - panStartRef.current.y;
-    modalViewportRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
-    modalViewportRef.current.scrollTop = panStartRef.current.scrollTop - dy;
-  };
+  // Window-level dragging listener for buttery-smooth panning without boundary clipping
+  useEffect(() => {
+    if (!isPanning) return;
 
-  const handleMouseUp = (e) => {
-    if (e) e.stopPropagation();
-    setIsPanning(false);
-  };
+    const handleWindowMouseMove = (e) => {
+      if (!modalViewportRef.current) return;
+      const dx = e.clientX - panStartRef.current.x;
+      const dy = e.clientY - panStartRef.current.y;
+      modalViewportRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
+      modalViewportRef.current.scrollTop = panStartRef.current.scrollTop - dy;
+    };
+
+    const handleWindowMouseUp = (e) => {
+      if (e) e.stopPropagation();
+      setIsPanning(false);
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [isPanning]);
 
   const handleCopyCode = async () => {
     try {
@@ -1252,6 +1337,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         <div
           className="mermaid-viewport"
           ref={containerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           style={{
             position: 'relative',
             minHeight: 220,
@@ -1263,7 +1351,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             padding: '24px 20px',
             background: 'radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.85) 0%, rgba(8, 10, 18, 0.98) 100%)',
             userSelect: 'none',
-            overscrollBehavior: 'contain'
+            overscrollBehavior: 'contain',
+            touchAction: 'none',
+            scrollBehavior: 'auto'
           }}
         >
           {loading && (
@@ -1294,7 +1384,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               style={{
                 transform: `scale(${zoom})`,
                 transformOrigin: 'top center',
-                transition: 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: isWheelZooming ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1302,7 +1392,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 justifyContent: 'flex-start',
                 margin: '0 auto',
                 width: '100%',
-                maxWidth: '820px'
+                maxWidth: '820px',
+                touchAction: 'none'
               }}
             >
               {/* White Digital Stylus Pen Cursor */}
@@ -1724,9 +1815,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 ref={modalViewportRef}
                 data-feature-container="true"
                 onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   flex: 1,
@@ -1738,7 +1829,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   background: 'radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%)',
                   position: 'relative',
                   cursor: isPanning ? 'grabbing' : 'grab',
-                  scrollBehavior: 'smooth'
+                  scrollBehavior: 'auto',
+                  touchAction: 'none',
+                  overscrollBehavior: 'contain'
                 }}
               >
                 {svgHtml && (
@@ -1747,7 +1840,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                     style={{
                       transform: `scale(${modalZoom})`,
                       transformOrigin: 'top center',
-                      transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                      transition: (isPanning || isWheelZooming) ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
                       position: 'relative',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1756,7 +1849,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       margin: '0 auto',
                       width: '100%',
                       maxWidth: '1150px',
-                      paddingBottom: 80
+                      paddingBottom: 80,
+                      touchAction: 'none'
                     }}
                   >
                     {/* White Digital Stylus Pen Cursor for Fullscreen Modal */}
