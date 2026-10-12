@@ -131,8 +131,11 @@ button.mermaid-expand-btn:hover,
   max-width: 820px;
   transform-origin: top center;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
   touch-action: none !important;
+  /* Vector anti-aliasing: no will-change:transform to prevent low-res texture rasterization when zooming */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 
 .mermaid-canvas-stage.modal-stage {
@@ -244,24 +247,25 @@ button.mermaid-expand-btn:hover,
 
 /* Subgraph / Architecture Clusters */
 .mermaid-svg-wrapper .cluster rect {
-  fill: rgba(13, 17, 26, 0.6) !important;
-  stroke: rgba(148, 163, 184, 0.22) !important;
-  stroke-width: 1px !important;
-  stroke-dasharray: 4 4 !important;
-  rx: 10px !important;
-  ry: 10px !important;
-  filter: none !important;
+  fill: rgba(12, 17, 32, 0.72) !important;
+  stroke: rgba(91, 140, 248, 0.35) !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 5 4 !important;
+  rx: 16px !important;
+  ry: 16px !important;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6)) !important;
 }
 
 .mermaid-svg-wrapper .cluster text,
 .mermaid-svg-wrapper .cluster span,
 .mermaid-svg-wrapper .cluster .nodeLabel {
-  fill: #94A3B8 !important;
-  color: #94A3B8 !important;
-  font-weight: 600 !important;
-  font-size: 11px !important;
-  letter-spacing: 0.05em !important;
+  fill: #93C5FD !important;
+  color: #93C5FD !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.06em !important;
   text-transform: uppercase !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Stadium / Pill Shapes */
@@ -310,15 +314,18 @@ button.mermaid-expand-btn:hover,
   fill: #F8FAFC !important;
   font-family: var(--font-outfit), 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 600 !important;
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   letter-spacing: -0.01em !important;
-  line-height: 1.4 !important;
+  line-height: 1.45 !important;
   margin: 0 !important;
   padding: 0 !important;
   text-align: center !important;
   overflow: visible !important;
   white-space: normal !important;
-  text-shadow: none !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }
 
 /* 3. Flowchart Connector Arrows / Edges: Clean Blender-style noodle paths */
@@ -349,6 +356,26 @@ button.mermaid-expand-btn:hover,
   fill: #94A3B8;
   stroke: none;
   filter: none;
+}
+
+/* Frosted glass pill containers for connector labels */
+.mermaid-svg-wrapper .edgeLabel {
+  background-color: transparent !important;
+}
+.mermaid-svg-wrapper .edgeLabel span,
+.mermaid-svg-wrapper .edgeLabel p,
+.mermaid-svg-wrapper .edgeLabel .label {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  border-radius: 9999px !important;
+  padding: 2.5px 10px !important;
+  font-size: 11px !important;
+  color: #94A3B8 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  display: inline-block !important;
 }
 
 
@@ -617,7 +644,12 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   overflow-y: auto !important;
   overflow-x: auto !important;
   padding: 40px 30px 100px 30px;
-  background: radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%);
+  background-color: #070913;
+  background-image: 
+    radial-gradient(rgba(56, 189, 248, 0.16) 1.25px, transparent 1.25px),
+    radial-gradient(circle at 50% 25%, rgba(30, 58, 138, 0.25) 0%, transparent 75%);
+  background-size: 28px 28px, 100% 100%;
+  background-position: 0 0, center center;
   user-select: none;
   -webkit-user-select: none;
   position: relative;
@@ -949,5 +981,32 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
     padding: 16px 8px;
     min-height: 200px;
   }
+}
+
+/* Modal Bottom Status Bar Zoom Preset Chips */
+.mermaid-zoom-preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94A3B8;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.mermaid-zoom-preset-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #F8FAFC;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mermaid-zoom-preset-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
+  border-color: rgba(56, 189, 248, 0.45);
 }
 

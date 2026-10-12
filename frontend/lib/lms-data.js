@@ -255,28 +255,43 @@ export const TUTOR_SYSTEM = "You are an expert tutor. Teach one concept at a tim
 export const CODING_TUTOR_SYSTEM = "You are Vyomanta's expert coding and programming tutor. You are strictly restricted to responding ONLY to questions related to coding, programming, computer science, software engineering, algorithms, and data structures. If the user asks about any other topic (such as history, geography, sports, pop culture, cooking, music, etc.), you MUST politely but firmly refuse to answer and state that you can only help with programming-related topics. Teach one concept at a time with concrete examples and analogies. If you provide code examples, write them in Python by default and wrap them in triple-backticks with a language tag (e.g. ```python). Adapt your explanation depth and style to the user's selected mode and depth settings. Do NOT greet the user. Do NOT ask questions back. Just teach coding.";
 export const QUIZ_SYSTEM = "You are a quiz generator. Generate only the quiz questions in the specified format. Do not add explanations, introductions, or greetings.";
 export const FLASHCARD_SYSTEM = "You are a flashcard generator. Generate only the flashcards in the specified format. Do not add explanations, introductions, or greetings.";
-export const INFOGRAPHIC_SYSTEM = `You are an elite visual knowledge architect and diagram drawing specialist.
-Your mission is to distill concepts into clean, high-impact, aesthetic Mermaid.js infographics accompanied by crisp takeaway bullet points.
+export const INFOGRAPHIC_SYSTEM = `You are a world-class visual knowledge architect, information designer, and creative diagram specialist.
+Your mission is to transform educational concepts into rich, visually engaging, multi-dimensional Mermaid.js infographics accompanied by structured key takeaway bullet points.
+
+CREATIVE DESIGN PRINCIPLES:
+1. SPATIAL BALANCE & MULTI-TIER LAYOUT:
+   - NEVER generate a flat, boring single-line sequence of plain boxes (e.g. A --> B --> C --> D --> E). A horizontal line wastes 80% of canvas height.
+   - ALWAYS use structured 2D hierarchy: use 'flowchart TD' (or 'flowchart TB') with 2 to 3 logical grouping stages using \`subgraph\` containers.
+   - Group concepts into clear visual phases (e.g. "Stage 1: Inputs & Catalysts", "Stage 2: Core Transformation Engine", "Stage 3: Outputs & Impacts").
+   - Connect stages with thick conduits (\`==>\` or \`-->\`) with descriptive edge labels.
+
+2. DIVERSE ARCHITECTURAL SHAPES:
+   - Use varied shape semantics:
+     * Stadium pills \`(["⚡ Catalyst / Input / Result"])\` for starting triggers and deliverables.
+     * Cards \`["⚙️ Core Process / Component"]\` for primary operations.
+     * Hexagons \`{{ "❓ Condition / Checkpoint" }}\` for decisions, criteria, or branches.
+     * Cylinders \`[("🗄️ Storage / State / Reserves")]\` for databases, memory, or energy banks.
+     * Circles \`(("🎯 Milestone"))\` for key junctions.
+
+3. DESCRIPTIVE CONNECTOR LABELS:
+   - Make flow arrows tell a story with labels:
+     e.g. NodeA -->|"Transforms via"| NodeB
+     e.g. NodeB ==>|"High-Energy Release"| NodeC
+
+4. VISUAL HIERARCHY & METRIC BADGES:
+   - Prefix every node label with a relevant emoji icon (🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍, 🧬, 🌿, 🔬).
+   - Use multi-line text with subtitle details inside nodes using \`<br/><i>...</i>\` to add depth.
+     e.g. Node1["⚡ <b>Glycolysis</b><br/><i>Cytosol • 2 Net ATP</i>"]
 
 OUTPUT FORMAT REQUIREMENTS:
 1. Wrap the Mermaid code in a \`\`\`mermaid ... \`\`\` block.
-2. Directly beneath, write "Key Takeaways:" followed by 3 to 5 clear bullet points starting with "- **Topic**: Detail".
+2. Directly beneath, write "Key Takeaways:" followed by 4 to 5 clear bullet points starting with "- **Concept**: Detailed takeaway".
 
-ARCHITECTURAL RULES (CHOOSE THE BEST FIT):
-- PROCESS / PIPELINE: For sequential steps, lifecycle, or data pipelines, use horizontal flow: 'flowchart LR'.
-- HIERARCHY / ARCHITECTURE: For layered stacks, components, or systems, use top-down flow: 'flowchart TD' (optionally with subgraphs for distinct layers).
-- DECISION / EVALUATION: Use decision diamonds/hexagons {{ "❓ Condition?" }} for branches.
-- STORAGE / DATA: Use cylinders [("🗄️ Database/Cache")] for data stores.
-- TRIGGER / ENDPOINTS: Use stadium pills (["⚡ Trigger / Event"]) for entry or exit points.
-
-STRICT STYLING & SYNTAX RULES:
-- Include 4 to 6 logically connected nodes that tell a clear, concise visual story.
-- ALWAYS prefix each node label with a relevant, contextual emoji icon (e.g. 🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍, 🔒).
-- ALWAYS enclose node label text in double quotes: A(["⚡ Start Pipeline"]) --> B["⚙️ Process Data"] --> C[("🗄️ Store Result")].
-- Keep node labels concise (3-6 words per node).
-- NEVER include raw markdown syntax (**bold**, \`code\`, *italic*) inside node labels.
-- NEVER put unescaped parentheses, brackets, colons, or double quotes inside node labels.
-- Do NOT output any introductory or conversational text outside the mermaid block and bullet points.`;
+STRICT SYNTAX RULES:
+- ALWAYS enclose node label text in double quotes: NodeId["Label text"].
+- Inside double-quoted labels, do NOT use unescaped double quotes.
+- Do NOT use raw markdown formatting (**bold**, \`code\`) inside node labels; use <b> and <i> tags instead.
+- Output ONLY the mermaid code block and key takeaways. No conversational preamble.`;
 export const SIMPLER_SYSTEM = "You are a simplification expert. Rewrite the given concept using very basic language, short sentences, and everyday analogies. Assume the reader is a complete beginner.";
 export const EXAMPLES_SYSTEM = "You are an examples expert. Generate 3-5 real-world examples or practical applications of the given concept. Make them relatable and concrete.";
 
@@ -333,22 +348,41 @@ Output only the flashcards.`;
 }
 
 export function buildInfographicPrompt(topic, count = 5) {
-  return `Generate an interactive Mermaid.js visual infographic and ${count} key takeaway points about "${topic}".
-Select the most fitting visual structure (e.g. 'flowchart LR' for sequential process/pipeline or 'flowchart TD' for architecture/concept hierarchy).
+  return `Generate an interactive, creative Mermaid.js visual infographic and ${count} key takeaway points about "${topic}".
+Structure the diagram with 2 to 3 organized phases using \`subgraph\` containers in 'flowchart TD' so the infographic fills the visual space with 2D depth.
+Include varied node shapes (stadiums, cards, cylinders, hexagons), descriptive connector labels on arrows, and rich subtitle details.
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
-flowchart LR
-  A(["🎯 ${topic}"]) --> B["⚙️ Core Mechanism"]
-  B --> C["⚡ Processing & Logic"]
-  C --> D[("🗄️ Storage / State")]
-  D --> E(["🚀 Practical Outcome"])
+flowchart TD
+  subgraph Phase1 ["🌱 Stage 1: Inputs & Pre-Conditions"]
+    In1(["⚡ Primary Input"])
+    In2(["💧 Catalyst"])
+  end
+
+  subgraph Phase2 ["⚙️ Stage 2: Core Transformation Engine"]
+    direction TB
+    Proc1["🔧 <b>Step A: Execution</b><br/><i>Core mechanism</i>"]
+    Dec1{{"❓ Checkpoint / Branch"}}
+    Store1[("🗄️ Storage / State Reserve")]
+    Proc1 --> Dec1
+    Dec1 --> Store1
+  end
+
+  subgraph Phase3 ["🚀 Stage 3: Outputs & Real-World Impact"]
+    Out1(["🏆 High-Impact Deliverable"])
+    Out2["📊 System Metrics & Yield"]
+  end
+
+  Phase1 ==>|"Intake Transfer"| Phase2
+  Phase2 ==>|"Synthesis Result"| Phase3
 \`\`\`
 
 Key Takeaways:
-- **Core Concept**: Clear summary point
-- **Mechanism**: How it operates under the hood
-- **Practical Impact**: Real-world application and benefit`;
+- **Core Principle**: Summary of fundamental concept
+- **Mechanism**: How the underlying engine operates
+- **Key Metric**: Important performance or quantitative aspect
+- **Impact**: Real-world application and significance`;
 }
 
 // ── Feature prompt builder (on-demand features in chat) ──
@@ -375,16 +409,32 @@ BACK: [definition or explanation]
 
 Explanation:
 ${context}`,
-    infographic: `Based on the following explanation, generate a neat, structured Mermaid.js infographic diagram and 4-5 high-impact takeaway bullet points.
-Choose the best visual orientation: 'flowchart LR' (horizontal pipeline/process) or 'flowchart TD' (layered architecture/system hierarchy).
-Prefix every node label with a descriptive emoji (🎯, ⚡, 🛡️, ⚙️, 🚀, 💡, 📊, 🗄️, 🧠, 🔍) and enclose label text in double quotes.
+    infographic: `Based on the following explanation, generate a rich, multi-tiered Mermaid.js infographic diagram and 4-5 high-impact takeaway bullet points.
+Create a structured 2D hierarchy using 'flowchart TD' with 2 to 3 logical grouping stages (\`subgraph\` containers) like Stage 1 (Inputs), Stage 2 (Core Mechanism), and Stage 3 (Impact & Outputs) so the diagram fills the visual space with depth.
+Include descriptive connector labels (e.g. -->|"triggers"|), varied node shapes (stadiums, cylinders, hexagons), and concise subheadings inside nodes.
+Prefix node labels with contextual emoji icons and enclose all labels in double quotes.
 
 FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
 \`\`\`mermaid
-flowchart LR
-  A(["🎯 1. Core Principle"]) --> B["⚙️ 2. Execution Logic"]
-  B --> C["🔍 3. Analysis & State"]
-  C --> D(["🚀 4. Impact & Outcome"])
+flowchart TD
+  subgraph Phase1 ["🌱 1. Intake & Foundation"]
+    A(["🎯 Core Ingest"])
+    B["⚙️ Auxiliary Input"]
+  end
+  subgraph Phase2 ["⚙️ 2. Transformation Engine"]
+    direction TB
+    C["⚡ Core Processing Engine"]
+    D{{"❓ Decision Checkpoint"}}
+    E[("🗄️ State Bank / Memory")]
+    C --> D
+    D --> E
+  end
+  subgraph Phase3 ["🚀 3. Deliverables & Impacts"]
+    F(["🏆 Final Deliverable"])
+    G["📊 Performance Metric"]
+  end
+  Phase1 ==>|"Conduit"| Phase2
+  Phase2 ==>|"Yield"| Phase3
 \`\`\`
 
 Key Takeaways:
@@ -448,27 +498,55 @@ export function parseFlashcardsOutput(text) {
 export function generateMermaidFromPoints(points, title = "Visual Summary") {
   if (!points || !points.length) return "";
   const cleanTitle = (title || "Summary").replace(/["\(\)\[\]\{\}]/g, '').slice(0, 32);
-  const isPipeline = points.length <= 5;
-  let chart = isPipeline ? "flowchart LR\n" : "flowchart TD\n";
-  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠'];
-  chart += `  Root(["🎯 ${cleanTitle}"])\n`;
-  points.slice(0, 6).forEach((pt, idx) => {
-    let cleanPt = pt.replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (cleanPt.length > 38) cleanPt = cleanPt.substring(0, 35) + '...';
-    const icon = ICONS[idx % ICONS.length];
-    const id = `Node_${idx + 1}`;
-    if (idx === points.length - 1) {
-      chart += `  ${id}(["${icon} ${cleanPt}"])\n`;
-    } else {
-      chart += `  ${id}["${icon} ${cleanPt}"]\n`;
-    }
-    if (isPipeline && idx > 0) {
-      chart += `  Node_${idx} --> ${id}\n`;
-    } else {
-      chart += `  Root --> ${id}\n`;
-    }
-  });
-  return chart;
+  const clean = (str, len = 38) => {
+    let s = (str || '').replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
+    return s.length > len ? s.slice(0, len - 3) + '...' : s;
+  };
+  const pts = points.map(p => clean(p));
+  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
+
+  if (pts.length >= 3) {
+    const s1 = pts.slice(0, Math.ceil(pts.length / 3));
+    const s2 = pts.slice(Math.ceil(pts.length / 3), Math.ceil((pts.length * 2) / 3));
+    const s3 = pts.slice(Math.ceil((pts.length * 2) / 3));
+
+    let chart = 'flowchart TD\n';
+    chart += '  subgraph Phase1 ["🌱 Stage 1: Foundation & Inputs"]\n';
+    chart += '    direction TB\n';
+    s1.forEach((p, idx) => {
+      chart += `    In_${idx + 1}(["${ICONS[idx % ICONS.length]} ${p}"])\n`;
+    });
+    chart += '  end\n\n';
+
+    chart += '  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Logic"]\n';
+    chart += '    direction TB\n';
+    s2.forEach((p, idx) => {
+      const icon = ICONS[(idx + 2) % ICONS.length];
+      if (idx % 2 === 1) {
+        chart += `    Proc_${idx + 1}{{"${icon} ${p}"}}\n`;
+      } else {
+        chart += `    Proc_${idx + 1}[("${icon} ${p}")]\n`;
+      }
+      if (idx > 0) {
+        chart += `    Proc_${idx} -->|"Transfers state"| Proc_${idx + 1}\n`;
+      }
+    });
+    chart += '  end\n\n';
+
+    chart += '  subgraph Phase3 ["⚡ Stage 3: Key Deliverables & Outcomes"]\n';
+    chart += '    direction TB\n';
+    s3.forEach((p, idx) => {
+      const icon = ICONS[(idx + 4) % ICONS.length];
+      chart += `    Out_${idx + 1}(["${icon} ${p}"])\n`;
+    });
+    chart += '  end\n\n';
+
+    chart += '  Phase1 ==>|"Processes into"| Phase2\n';
+    chart += '  Phase2 ==>|"Yields output"| Phase3\n';
+    return chart;
+  }
+
+  return `flowchart TD\n  Root(["🎯 ${cleanTitle}"])\n  Node_1["⚡ ${pts[0]}"]\n  Node_2(["🚀 ${pts[1] || 'Outcome'}"])\n  Root ==> Node_1\n  Node_1 ==> Node_2\n`;
 }
 
 export function parseInfographicOutput(text) {

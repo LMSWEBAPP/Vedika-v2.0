@@ -174,11 +174,130 @@ function applyBlenderPalettes(root) {
       if (shape && shape.style) {
         shape.style.stroke = palette.stroke;
         shape.style.fill = palette.fill;
-        shape.style.strokeWidth = '1.5px';
+        shape.style.strokeWidth = '2px';
+        if (shape.tagName === 'rect') {
+          shape.style.rx = '14px';
+          shape.style.ry = '14px';
+        }
       }
     });
   });
 }
+
+/**
+ * Creative 2D architectural synthesizer when raw points are passed without a custom mermaid chart.
+ * Groups points into 2-3 logical visual phases using subgraphs instead of flat 1-line chains.
+ */
+function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architecture & Concept Flow") {
+  if (!points || points.length === 0) {
+    return `flowchart TD
+  subgraph Architecture ["🎯 Concept Architecture"]
+    direction TB
+    Root(["🌟 ${fallbackTitle}"])
+    Start["⚡ Interactive Visual Map Ready"]
+    Root ==>|"Initializes"| Start
+  end`;
+  }
+
+  const clean = (str, len = 48) => {
+    let s = (str || '').replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
+    return s.length > len ? s.slice(0, len - 3) + '...' : s;
+  };
+
+  const pts = points.map(p => clean(p));
+  const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
+
+  // Helper to split a point with delimiter (colon, dash, arrow) into title + subtitle badge
+  const parsePoint = (raw) => {
+    const parts = raw.split(/[:—–\-]/);
+    if (parts.length >= 2 && parts[0].trim().length >= 2 && parts[1].trim().length >= 2) {
+      return {
+        title: parts[0].trim(),
+        sub: parts.slice(1).join(' ').trim().slice(0, 34)
+      };
+    }
+    return { title: raw, sub: '' };
+  };
+
+  if (pts.length >= 3) {
+    const s1 = pts.slice(0, Math.ceil(pts.length / 3));
+    const s2 = pts.slice(Math.ceil(pts.length / 3), Math.ceil((pts.length * 2) / 3));
+    const s3 = pts.slice(Math.ceil((pts.length * 2) / 3));
+
+    let chart = 'flowchart TD\n';
+
+    // Stage 1: Ingestion & Foundation
+    chart += '  subgraph Phase1 ["🌱 Stage 1: Foundation & Inputs"]\n';
+    chart += '    direction TB\n';
+    s1.forEach((p, idx) => {
+      const { title, sub } = parsePoint(p);
+      const icon = ICONS[idx % ICONS.length];
+      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      chart += `    In_${idx + 1}(["${label}"])\n`;
+      if (idx > 0) {
+        chart += `    In_${idx} --> In_${idx + 1}\n`;
+      }
+    });
+    chart += '  end\n\n';
+
+    // Stage 2: Core Mechanism & Engine
+    chart += '  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Transformation Engine"]\n';
+    chart += '    direction TB\n';
+    s2.forEach((p, idx) => {
+      const { title, sub } = parsePoint(p);
+      const icon = ICONS[(idx + 2) % ICONS.length];
+      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      if (idx % 2 === 1) {
+        chart += `    Proc_${idx + 1}{{"${label}"}}\n`;
+      } else {
+        chart += `    Proc_${idx + 1}[("${label}")]\n`;
+      }
+      if (idx > 0) {
+        chart += `    Proc_${idx} -->|"Transfers state"| Proc_${idx + 1}\n`;
+      }
+    });
+    chart += '  end\n\n';
+
+    // Stage 3: High-Impact Output & Practical Yield
+    chart += '  subgraph Phase3 ["⚡ Stage 3: High-Impact Output & Yield"]\n';
+    chart += '    direction TB\n';
+    s3.forEach((p, idx) => {
+      const { title, sub } = parsePoint(p);
+      const icon = ICONS[(idx + 4) % ICONS.length];
+      const label = sub ? `<b>${icon} ${title}</b><br/><sub style='color:#94a3b8'>${sub}</sub>` : `${icon} ${title}`;
+      chart += `    Out_${idx + 1}(["${label}"])\n`;
+      if (idx > 0) {
+        chart += `    Out_${idx} --> Out_${idx + 1}\n`;
+      }
+    });
+    chart += '  end\n\n';
+
+    // Inter-phase conduit pipelines with descriptive labels
+    chart += '  Phase1 ==>|"Processes into"| Phase2\n';
+    chart += '  Phase2 ==>|"Yields deliverables"| Phase3\n';
+    return chart;
+  }
+
+  // 1-2 points fallback
+  const p1 = parsePoint(pts[0] || 'Core Foundation');
+  const p2 = parsePoint(pts[1] || 'Practical Deliverable');
+  return `flowchart TD
+  subgraph Phase1 ["🌱 Stage 1: Foundation"]
+    Node_1(["⚡ ${p1.title}${p1.sub ? `<br/><sub style='color:#94a3b8'>${p1.sub}</sub>` : ''}"])
+  end
+  subgraph Phase2 ["🚀 Stage 2: Practical Impact"]
+    Node_2(["🎯 ${p2.title}${p2.sub ? `<br/><sub style='color:#94a3b8'>${p2.sub}</sub>` : ''}"])
+  end
+  Phase1 ==>|"Drives"| Phase2\n`;
+}
+
+// ── Smart Dynamic Zoom Bounds for Infographics ──
+// Prevents over-zoomed pixelation and maintains holistic spatial diagram context
+const MIN_MODAL_ZOOM = 0.45;  // 45% minimum zoom
+const MAX_MODAL_ZOOM = 1.65;  // 165% maximum zoom (prevents text pixelation & maintains spatial context)
+const MIN_INLINE_ZOOM = 0.45;
+const MAX_INLINE_ZOOM = 1.50;
+const ZOOM_STEP = 0.15;
 
 export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
   const containerRef = useRef(null);
@@ -187,9 +306,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [svgHtml, setSvgHtml] = useState('');
   const [renderError, setRenderError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [zoom, setZoom] = useState(0.85);
-  const [modalZoom, setModalZoom] = useState(0.75);
-  const modalZoomRef = useRef(0.75);
+  const [zoom, setZoom] = useState(0.95);
+  const [modalZoom, setModalZoom] = useState(1.0);
+  const modalZoomRef = useRef(1.0);
   modalZoomRef.current = modalZoom;
 
   const [isWheelZooming, setIsWheelZooming] = useState(false);
@@ -332,9 +451,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const scaleH = availH / Math.max(40, renderedH);
     let ideal = Math.min(scaleW, scaleH);
 
-    // Allow down to 0.32 so tall/wide diagrams fit 100% on screen without box-by-box scrolling
-    const minZ = isModal ? 0.32 : 0.45;
-    const maxZ = isModal ? 1.25 : 1.15;
+    // Strict zoom bounds: clamp ideal fit between MIN_MODAL_ZOOM (0.45) and 1.30 to avoid microscopic shrink or over-zoomed pixelation
+    const minZ = isModal ? MIN_MODAL_ZOOM : MIN_INLINE_ZOOM;
+    const maxZ = isModal ? 1.30 : 1.15;
 
     return Number(Math.max(minZ, Math.min(maxZ, ideal)).toFixed(2));
   }, []);
@@ -753,12 +872,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   // Generate unique render ID per component mount to prevent SVG collisions
   const uniqueIdRef = useRef(`mermaid_${Math.random().toString(36).substr(2, 9)}`);
 
-  const activeChartCode = chart || (points.length > 0
-    ? (points.length <= 5
-        ? `flowchart LR\n  Root(["🎯 Visual Overview"])\n${points.slice(0, 5).map((p, i) => `  Node_${i + 1}["⚡ ${p.replace(/["\(\)\[\]\{\}]/g, ' ').trim().slice(0, 36)}"]\n  ${i === 0 ? 'Root' : `Node_${i}`} --> Node_${i + 1}`).join('\n')}`
-        : `flowchart TD\n  Root(["🎯 Visual Overview"])\n${points.slice(0, 6).map((p, i) => `  Node_${i + 1}["💡 ${p.replace(/["\(\)\[\]\{\}]/g, ' ').trim().slice(0, 36)}"]\n  Root --> Node_${i + 1}`).join('\n')}`
-      )
-    : `flowchart LR\n  Start(["🎯 Visual Overview"])`);
+  const activeChartCode = (chart && chart.trim().length > 15 && (chart.includes('subgraph') || !points || points.length === 0))
+    ? chart
+    : (points && points.length > 0
+        ? synthesizeCreativeInfographic(points, "Visual Architecture & Concept Flow")
+        : (chart && chart.trim().length > 5 ? chart : `flowchart TD\n  Root(["🎯 Concept Summary"])\n  Start["⚡ Ready to visualize"]\n  Root ==> Start`)
+      );
 
   useEffect(() => {
     let isMounted = true;
@@ -782,17 +901,20 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             secondaryColor: '#161324',
             tertiaryColor: '#0D1929',
             edgeLabelBackground: '#0F1420',
+            clusterBkg: 'rgba(12, 17, 32, 0.72)',
+            clusterBorder: 'rgba(56, 189, 248, 0.28)',
             fontFamily: 'var(--font-outfit), sans-serif',
-            fontSize: '12.5px',
+            fontSize: '13px',
             nodeBorder: 'solid'
           },
           securityLevel: 'loose',
           flowchart: {
             htmlLabels: true,
             curve: 'basis',
-            nodeSpacing: 45,
-            rankSpacing: 60,
-            padding: 16
+            useMaxWidth: false,
+            nodeSpacing: 50,
+            rankSpacing: 65,
+            padding: 18
           }
         });
 
@@ -832,7 +954,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         if (points && points.length > 0) {
           try {
             const mermaid = (await import('mermaid')).default;
-            const simpleChart = `flowchart TD\n  Root["🎯 Concept Summary"]\n${points.slice(0, 5).map((p, idx) => `  P${idx + 1}["${p.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().slice(0, 36)}"]\n  Root --> P${idx + 1}`).join('\n')}`;
+            const simpleChart = synthesizeCreativeInfographic(points, "Visual Concept Flow");
             const { svg } = await mermaid.render(`${uniqueIdRef.current}_fallback`, simpleChart);
             let cleanSvg = svg;
             cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
@@ -916,13 +1038,13 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     };
   }, [svgHtml, isLiveDrawEnabled, isModalOpen, mounted, runLiveDrawAnimation, stopAndCleanAnimation]);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 2.5));
-  const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.3));
-  const handleZoomReset = () => setZoom(1);
+  const handleZoomIn = () => setZoom(prev => Math.min(Number((prev + ZOOM_STEP).toFixed(2)), MAX_INLINE_ZOOM));
+  const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - ZOOM_STEP).toFixed(2)), MIN_INLINE_ZOOM));
+  const handleZoomReset = () => setZoom(0.95);
 
-  const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + 0.15).toFixed(2)), 3.5));
-  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.15).toFixed(2)), 0.2));
-  const handleModalZoomReset = () => setModalZoom(1);
+  const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + ZOOM_STEP).toFixed(2)), MAX_MODAL_ZOOM));
+  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - ZOOM_STEP).toFixed(2)), MIN_MODAL_ZOOM));
+  const handleModalZoomReset = () => setModalZoom(1.0);
 
   // Handle wheel events: Non-passive listeners to strictly block browser webpage zoom and smoothly zoom the canvas
   useEffect(() => {
@@ -941,7 +1063,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
 
           const factor = e.deltaY < 0 ? 1.08 : 0.92;
-          setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * factor).toFixed(2)))));
+          setModalZoom((prev) => Math.max(MIN_MODAL_ZOOM, Math.min(MAX_MODAL_ZOOM, Number((prev * factor).toFixed(2)))));
           return;
         }
 
@@ -976,7 +1098,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
 
           const factor = e.deltaY < 0 ? 1.08 : 0.92;
-          setZoom((prev) => Math.max(0.25, Math.min(2.5, Number((prev * factor).toFixed(2)))));
+          setZoom((prev) => Math.max(MIN_INLINE_ZOOM, Math.min(MAX_INLINE_ZOOM, Number((prev * factor).toFixed(2)))));
         }
       };
 
@@ -1011,9 +1133,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
 
         if (isModalOpen) {
-          setModalZoom((prev) => Math.max(0.2, Math.min(3.5, Number((prev * ratio).toFixed(2)))));
+          setModalZoom((prev) => Math.max(MIN_MODAL_ZOOM, Math.min(MAX_MODAL_ZOOM, Number((prev * ratio).toFixed(2)))));
         } else {
-          setZoom((prev) => Math.max(0.25, Math.min(2.5, Number((prev * ratio).toFixed(2)))));
+          setZoom((prev) => Math.max(MIN_INLINE_ZOOM, Math.min(MAX_INLINE_ZOOM, Number((prev * ratio).toFixed(2)))));
         }
       }
       touchDistRef.current = currentDist;
@@ -1716,24 +1838,26 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   <button
                     type="button"
                     className="mermaid-btn"
-                    style={btnBaseStyle}
+                    style={{ ...btnBaseStyle, opacity: modalZoom >= MAX_MODAL_ZOOM ? 0.45 : 1, cursor: modalZoom >= MAX_MODAL_ZOOM ? 'not-allowed' : 'pointer' }}
+                    disabled={modalZoom >= MAX_MODAL_ZOOM}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleModalZoomIn();
                     }}
-                    title="Zoom In"
+                    title={`Zoom In (Max: ${Math.round(MAX_MODAL_ZOOM * 100)}%)`}
                   >
                     <ZoomIn size={13} />
                   </button>
                   <button
                     type="button"
                     className="mermaid-btn"
-                    style={btnBaseStyle}
+                    style={{ ...btnBaseStyle, opacity: modalZoom <= MIN_MODAL_ZOOM ? 0.45 : 1, cursor: modalZoom <= MIN_MODAL_ZOOM ? 'not-allowed' : 'pointer' }}
+                    disabled={modalZoom <= MIN_MODAL_ZOOM}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleModalZoomOut();
                     }}
-                    title="Zoom Out"
+                    title={`Zoom Out (Min: ${Math.round(MIN_MODAL_ZOOM * 100)}%)`}
                   >
                     <ZoomOut size={13} />
                   </button>
@@ -1745,7 +1869,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       e.stopPropagation();
                       handleModalZoomReset();
                     }}
-                    title="Reset Zoom"
+                    title="Reset Zoom to 100%"
                   >
                     <RotateCcw size={12} />
                     <span>{Math.round(modalZoom * 100)}%</span>
@@ -1758,7 +1882,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       e.stopPropagation();
                       handleFitToScreen();
                     }}
-                    title="Fit Entire Flowchart to Screen"
+                    title="Fit Entire Infographic to Screen"
                   >
                     <Maximize2 size={12} />
                     <span>Fit</span>
@@ -1940,7 +2064,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               )}
             </div>
 
-            {/* Modal Bottom Status Bar */}
+            {/* Modal Bottom Status Bar with Presets & Bounds */}
             <div
               className="mermaid-modal-statusbar"
               style={{
@@ -1953,16 +2077,46 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 color: '#94A3B8',
                 fontSize: 11.5,
                 flexShrink: 0,
-                zIndex: 20
+                zIndex: 20,
+                gap: 12
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Move size={13} color="#60A5FA" />
                 <span>Click &amp; drag or scroll to pan canvas &bull; Ctrl + Scroll to zoom freely &bull; Esc to go back</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: '#64748B' }}>Canvas Zoom:</span>
-                <span style={{ color: '#38BDF8', fontWeight: 700 }}>{Math.round(modalZoom * 100)}%</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#64748B', marginRight: 2 }}>Presets:</span>
+                  <button
+                    type="button"
+                    className="mermaid-zoom-preset-btn"
+                    onClick={() => autoFitModalChart()}
+                    title="Fit Entire Diagram"
+                  >
+                    Fit
+                  </button>
+                  {[0.75, 1.0, 1.25, 1.50].map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      className={`mermaid-zoom-preset-btn ${Math.abs(modalZoom - lvl) < 0.04 ? 'active' : ''}`}
+                      onClick={() => {
+                        setModalZoom(lvl);
+                        modalZoomRef.current = lvl;
+                      }}
+                      title={`Set Zoom to ${Math.round(lvl * 100)}%`}
+                    >
+                      {Math.round(lvl * 100)}%
+                    </button>
+                  ))}
+                </div>
+                <div style={{ width: 1, height: 14, background: 'rgba(255, 255, 255, 0.12)', margin: '0 4px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#64748B' }}>Canvas Zoom:</span>
+                  <span style={{ color: '#38BDF8', fontWeight: 700 }}>{Math.round(modalZoom * 100)}%</span>
+                  <span style={{ color: '#475569', fontSize: 10.5 }}>(Limit: 45% - 165%)</span>
+                </div>
               </div>
             </div>
           </div>
