@@ -713,10 +713,10 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  transform-origin: top center;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  padding-bottom: 80px;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  padding-bottom: 10px;
 }
 
 /* Right-side Key Takeaways Drawer */
@@ -1119,19 +1119,45 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   line-height: 1.45;
 }
 
+/* ── 16:9 Laptop Responsive Blueprint Presentation ── */
+.infographic-poster-content {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.infographic-diagram-pane {
+  flex: 1 1 64%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.012);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 16px 12px;
+  position: relative;
+}
+
 /* Integrated Poster Key Takeaways Card */
 .infographic-poster-takeaways {
-  width: 100%;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 30, 0.95) 100%);
-  border: 1px solid rgba(245, 169, 91, 0.26);
+  flex: 0 0 36%;
+  max-width: 440px;
+  min-width: 320px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 15, 30, 0.96) 100%);
+  border: 1px solid rgba(245, 169, 91, 0.28);
   border-radius: 14px;
-  padding: 20px 22px;
+  padding: 18px 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 0;
 }
 
 .infographic-takeaways-head {
@@ -1154,19 +1180,31 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 }
 
 .infographic-takeaways-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  max-height: 520px;
+  padding-right: 4px;
+}
+
+.infographic-takeaways-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.infographic-takeaways-grid::-webkit-scrollbar-thumb {
+  background: rgba(245, 169, 91, 0.3);
+  border-radius: 4px;
 }
 
 .infographic-takeaway-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 11px 13px;
+  gap: 11px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
+  border-radius: 9px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1196,8 +1234,8 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
 
 .infographic-takeaway-body {
   flex: 1;
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.48;
   color: #E2E8F0;
 }
 
@@ -1205,5 +1243,26 @@ button.mermaid-takeaways-toggle:hover .mermaid-takeaways-title,
   color: #F8FAFC;
   font-weight: 700;
 }
+
+/* Mobile & Small Tablet: Graceful vertical fallback as requested */
+@media (max-width: 1023px) {
+  .infographic-poster-content {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .infographic-diagram-pane {
+    width: 100% !important;
+  }
+  .infographic-poster-takeaways {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .infographic-takeaways-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    max-height: none !important;
+  }
+}
+
 
 

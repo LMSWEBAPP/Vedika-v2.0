@@ -457,33 +457,46 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   // Compute stable intrinsic fit zoom so diagram fills viewport comfortably with zero sudden jumps or box-by-box scroll trap
   const computeFitZoom = useCallback((viewportEl, isModal) => {
     if (!viewportEl) return isModal ? 0.9 : 0.85;
+    const stageEl = viewportEl.querySelector('.mermaid-canvas-stage');
     const svgEl = viewportEl.querySelector('svg');
-    if (!svgEl) return isModal ? 0.9 : 0.85;
+    if (!svgEl && !stageEl) return isModal ? 0.9 : 0.85;
+
+    const vpH = viewportEl.clientHeight || (isModal ? 680 : 380);
+    const vpW = viewportEl.clientWidth || (isModal ? 1200 : 650);
+
+    const paddingX = isModal ? 48 : 32;
+    const paddingY = isModal ? 40 : 32;
+
+    const availW = Math.max(200, vpW - paddingX);
+    const availH = Math.max(200, vpH - paddingY);
+
+    if (isModal && stageEl) {
+      // In 16:9 widescreen modal mode, measure the total composition dimensions
+      const stageW = Math.max(800, stageEl.scrollWidth || stageEl.offsetWidth || 1200);
+      const stageH = Math.max(480, stageEl.scrollHeight || stageEl.offsetHeight || 650);
+
+      const scaleW = availW / stageW;
+      const scaleH = availH / stageH;
+      const ideal = Math.min(scaleW, scaleH);
+
+      return Number(Math.max(0.40, Math.min(1.20, ideal)).toFixed(2));
+    }
 
     let intrinsicW = 550;
     let intrinsicH = 380;
 
-    if (svgEl.viewBox?.baseVal?.width > 0 && svgEl.viewBox?.baseVal?.height > 0) {
+    if (svgEl?.viewBox?.baseVal?.width > 0 && svgEl?.viewBox?.baseVal?.height > 0) {
       intrinsicW = svgEl.viewBox.baseVal.width;
       intrinsicH = svgEl.viewBox.baseVal.height;
     } else {
-      const bbox = typeof svgEl.getBBox === 'function' ? svgEl.getBBox() : null;
+      const bbox = typeof svgEl?.getBBox === 'function' ? svgEl.getBBox() : null;
       if (bbox && bbox.width > 0 && bbox.height > 0) {
         intrinsicW = bbox.width;
         intrinsicH = bbox.height;
       }
     }
 
-    const vpH = viewportEl.clientHeight || (isModal ? 650 : 380);
-    const vpW = viewportEl.clientWidth || (isModal ? 900 : 650);
-
-    const paddingX = isModal ? 70 : 32;
-    const paddingY = isModal ? 80 : 32;
-
-    const availW = Math.max(200, vpW - paddingX);
-    const availH = Math.max(200, vpH - paddingY);
-
-    const maxStageW = isModal ? 1150 : 780;
+    const maxStageW = 780;
     const targetW = Math.min(availW, maxStageW);
 
     const aspect = intrinsicH / Math.max(40, intrinsicW);
@@ -494,11 +507,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const scaleH = availH / Math.max(40, renderedH);
     let ideal = Math.min(scaleW, scaleH);
 
-    // Strict zoom bounds: clamp ideal fit between MIN_MODAL_ZOOM (0.45) and 1.30 to avoid microscopic shrink or over-zoomed pixelation
-    const minZ = isModal ? MIN_MODAL_ZOOM : MIN_INLINE_ZOOM;
-    const maxZ = isModal ? 1.30 : 1.15;
-
-    return Number(Math.max(minZ, Math.min(maxZ, ideal)).toFixed(2));
+    return Number(Math.max(MIN_INLINE_ZOOM, Math.min(1.15, ideal)).toFixed(2));
   }, []);
 
   const autoFitModalChart = useCallback(() => {
@@ -1092,18 +1101,37 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - ZOOM_STEP).toFixed(2)), MIN_INLINE_ZOOM));
   const handleZoomReset = () => setZoom(0.95);
 
-  const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + ZOOM_STEP).toFixed(2)), MAX_MODAL_ZOOM));
-  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - ZOOM_STEP).toFixed(2)), MIN_MODAL_ZOOM));
-  const handleModalZoomReset = () => setModalZoom(1.0);
+  const handleModalZoomIn = () => setModalZoom(prev => Math.min(Number((prev + 0.10).toFixed(2)), MAX_MODAL_ZOOM));
+  const handleModalZoomOut = () => setModalZoom(prev => Math.max(Number((prev - 0.10).toFixed(2)), MIN_MODAL_ZOOM));
+  const handleModalZoomReset = () => {
+    if (modalViewportRef.current) autoFitModalChart();
+    else setModalZoom(1.0);
+  };
 
-  // Handle wheel events: Non-passive listeners to strictly block browser webpage zoom and smoothly zoom the canvas
+  // Auto-fit immediately when modal opens on laptop/desktop screens and keep responsive on resize
+  useEffect(() => {
+    if (isModalOpen) {
+      const timer = setTimeout(() => {
+        autoFitModalChart();
+      }, 50);
+      const handleResize = () => {
+        autoFitModalChart();
+      };
+      window.addEventListener('resize', handleResize);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [isModalOpen, autoFitModalChart]);
+
+  // Handle wheel events: Smooth zooming without hijacking natural scroll
   useEffect(() => {
     if (!mounted) return;
 
     if (isModalOpen) {
-      // Fullscreen Modal: Intercept wheel events window-wide so trackpad pinch or Ctrl+wheel NEVER zooms the webpage
+      // Fullscreen Modal: Trackpad pinch or Ctrl+wheel performs buttery-smooth zoom
       const handleWindowWheel = (e) => {
-        // 1. Pinch gesture or Ctrl/Cmd + wheel = Smooth Canvas Zoom
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           e.stopPropagation();
@@ -1112,21 +1140,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           clearTimeout(wheelZoomTimeoutRef.current);
           wheelZoomTimeoutRef.current = setTimeout(() => setIsWheelZooming(false), 140);
 
-          const factor = e.deltaY < 0 ? 1.08 : 0.92;
-          setModalZoom((prev) => Math.max(MIN_MODAL_ZOOM, Math.min(MAX_MODAL_ZOOM, Number((prev * factor).toFixed(2)))));
-          return;
+          const delta = -e.deltaY * 0.0025;
+          setModalZoom((prev) => Math.max(MIN_MODAL_ZOOM, Math.min(MAX_MODAL_ZOOM, Number((prev + delta).toFixed(2)))));
         }
-
-        // 2. Normal wheel: Two-finger trackpad panning or mouse wheel scrolling within modal viewport
-        const target = e.target;
-        const vp = modalViewportRef.current;
-        if (vp && (vp === target || vp.contains(target))) {
-          e.preventDefault();
-          vp.scrollLeft += e.deltaX;
-          vp.scrollTop += e.deltaY;
-        } else if (target && target.closest?.('.mermaid-modal-backdrop, .mermaid-modal-window')) {
-          e.preventDefault();
-        }
+        // When not pinching, native scrolling/trackpad momentum operates freely
       };
 
       window.addEventListener('wheel', handleWindowWheel, { passive: false });
@@ -1740,7 +1757,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: 'min(98vw, 1480px)',
+              width: 'min(98vw, 1560px)',
               height: 'min(96vh, 940px)',
               maxHeight: 'calc(100vh - 32px)',
               background: '#080B14',
@@ -2008,13 +2025,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   minHeight: 0,
                   overflowY: 'auto',
                   overflowX: 'auto',
-                  padding: '24px 20px 80px',
+                  padding: '16px 20px',
                   background: 'radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%)',
                   position: 'relative',
                   cursor: isPanning ? 'grabbing' : 'grab',
                   scrollBehavior: 'auto',
-                  touchAction: 'none',
-                  overscrollBehavior: 'contain'
+                  overscrollBehavior: 'contain',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {svgHtml && (
@@ -2022,8 +2042,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                     className="mermaid-canvas-stage modal-stage"
                     style={{
                       transform: `scale(${modalZoom})`,
-                      transformOrigin: 'top center',
-                      transition: (isPanning || isWheelZooming) ? 'none' : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                      transformOrigin: 'center center',
+                      transition: (isPanning || isWheelZooming) ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
                       position: 'relative',
                       display: 'flex',
                       flexDirection: 'column',
@@ -2031,9 +2051,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       justifyContent: 'flex-start',
                       margin: '0 auto',
                       width: '100%',
-                      maxWidth: '1150px',
-                      paddingBottom: 80,
-                      touchAction: 'none'
+                      maxWidth: '1480px',
+                      paddingBottom: 20
                     }}
                   >
                     {/* White Digital Stylus Pen Cursor for Fullscreen Modal */}
@@ -2060,44 +2079,49 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                       </p>
                     </div>
 
-                    <div
-                      className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
-                      style={{
-                        margin: '0 auto',
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'flex-start',
-                        textAlign: 'center'
-                      }}
-                      dangerouslySetInnerHTML={{ __html: svgHtml }}
-                    />
-
-                    {/* Integrated Key Takeaways Section directly beneath diagram on poster canvas */}
-                    {points && points.length > 0 && (
-                      <div className="infographic-poster-takeaways" ref={takeawaysRef}>
-                        <div className="infographic-takeaways-head">
-                          <div className="infographic-takeaways-headline">
-                            <Sparkles size={14} color="#F5A95B" />
-                            <span>Key Takeaways & System Insights</span>
-                          </div>
-                          <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
-                            {points.length} Essential Concepts
-                          </span>
-                        </div>
-                        <div className="infographic-takeaways-grid">
-                          {points.map((pt, idx) => (
-                            <div key={idx} className="infographic-takeaway-item">
-                              <span className="infographic-takeaway-badge">{idx + 1}</span>
-                              <div className="infographic-takeaway-body">
-                                {renderFormattedText(pt.replace(/^[-*•]\s+/, ''))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* 16:9 Laptop Responsive Blueprint Content */}
+                    <div className="infographic-poster-content">
+                      <div className="infographic-diagram-pane">
+                        <div
+                          className={`mermaid-svg-wrapper modal-chart ${isBuilding ? 'building' : ''}`}
+                          style={{
+                            margin: '0 auto',
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                          dangerouslySetInnerHTML={{ __html: svgHtml }}
+                        />
                       </div>
-                    )}
+
+                      {/* Integrated Key Takeaways Companion Section (Right on desktop, Below on mobile) */}
+                      {points && points.length > 0 && (
+                        <div className="infographic-poster-takeaways" ref={takeawaysRef}>
+                          <div className="infographic-takeaways-head">
+                            <div className="infographic-takeaways-headline">
+                              <Sparkles size={14} color="#F5A95B" />
+                              <span>Key Takeaways & System Insights</span>
+                            </div>
+                            <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
+                              {points.length} Essential Concepts
+                            </span>
+                          </div>
+                          <div className="infographic-takeaways-grid">
+                            {points.map((pt, idx) => (
+                              <div key={idx} className="infographic-takeaway-item">
+                                <span className="infographic-takeaway-badge">{idx + 1}</span>
+                                <div className="infographic-takeaway-body">
+                                  {renderFormattedText(pt.replace(/^[-*•]\s+/, ''))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
