@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head>
+  <script src="../frontend/node_modules/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+<pre id="log">Hexagon with space and quotes: PARSE FAILED -&gt; Parse error on line 2:
+Hexagon with quotes no space: PARSE OK
+Hexagon no quotes: PARSE OK
+Rectangle with quotes: PARSE OK
+</pre>
+<script>
+const logEl = document.getElementById('log');
+function log(msg) { logEl.textContent += msg + '\n'; console.log(msg); }
+
+async function test() {
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+
+  const tests = [
+    { name: 'Hexagon with space and quotes', code: 'flowchart TD\n  A{{ "Test Label" }}\n' },
+    { name: 'Hexagon with quotes no space', code: 'flowchart TD\n  A{{"Test Label"}}\n' },
+    { name: 'Hexagon no quotes', code: 'flowchart TD\n  A{{Test Label}}\n' },
+    { name: 'Rectangle with quotes', code: 'flowchart TD\n  A["Test Label"]\n' }
+  ];
+
+  for (const t of tests) {
+    try {
+      await mermaid.parse(t.code);
+      log(t.name + ': PARSE OK');
+    } catch (e) {
+      log(t.name + ': PARSE FAILED -> ' + e.message.split('\n')[0]);
+    }
+  }
+}
+test();
+</script>
+
+</body></html>

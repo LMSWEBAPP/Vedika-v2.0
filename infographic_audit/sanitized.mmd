@@ -1,0 +1,29 @@
+flowchart TD
+  subgraph Stage1 ["🌱 1. Cellular Ingestion & Fuel Supply"]
+    A(["🍇 Glucose<br/><i>Nutrient Fuel Source</i>"])
+    B(["🫁 Oxygen (O₂)<br/><i>Inhaled Gas Catalyst</i>"])
+  end
+
+  subgraph Stage2 ["⚙️ 2. Mitochondrial Power Plant"]
+    direction TB
+    C["🔬 Cellular Respiration<br/><i>Chemical Oxidation Engine</i>"]
+    E{{ "⚡ Bond Cleavage<br/><i>High-Energy Yield Check</i>" }}
+    D[("🗄️ ATP Battery Bank<br/><i>Charged Chemical Energy</i>")]
+    F["🌫️ Metabolic Byproducts<br/><i>CO₂ & Water Excretion</i>"]
+
+    C -->|"Feeds Chemical Reaction"| E
+    E -->|"Packs Energy Into"| D
+    C -->|"Generates Exhaust"| F
+  end
+
+  subgraph Stage3 ["🚀 3. Physiological Work & Impact"]
+    G(["💪 Muscle Contraction<br/><i>Physical Movement & Force</i>"])
+    H(["🫀 Cardiac Rhythm<br/><i>Continuous Heartbeat Pumping</i>"])
+    I(["🧠 Neural Transmission<br/><i>Brain Signal & Cognition</i>"])
+  end
+
+  A -->|"Delivers Carbon Fuel"| C
+  B -->|"Enables Cellular Respiration"| C
+  D ==>|"Discharges Power"| G
+  D ==>|"Sustains Function"| H
+  D ==>|"Fuels Synapses"| I

@@ -1,0 +1,36 @@
+```mermaid
+flowchart TD
+  subgraph Phase1 ["🌱 Stage 1: Biochemical Inputs"]
+    direction LR
+    A(["🌽 Glucose Fuel<br/><i>Nutritional Carbon Source</i>"])
+    B(["💨 Inhaled Oxygen<br/><i>Essential O₂ Acceptor</i>"])
+  end
+
+  subgraph Phase2 ["⚙️ Stage 2: Mitochondrial Transformation"]
+    direction TB
+    C[("🏭 Mitochondrion Organelle<br/><i>The Cellular Power Plant</i>")]
+    D["⚡ Cellular Respiration Engine<br/><i>Combines Glucose + O₂</i>"]
+    E{{"🔥 Energy Release<br/><i>Exergonic Reaction</i>"}}
+    F(("🔋 ATP Synthesis<br/><i>Recharges ADP to ATP</i>"))
+
+    C -->|"Hosts Process"| D
+    D ==>|"Releases Free Energy"| E
+    E -->|"Drives Phosphorylation"| F
+  end
+
+  subgraph Phase3 ["🚀 Stage 3: Cellular Work & Outputs"]
+    direction LR
+    G["💪 Muscle Contraction<br/><i>Mechanical Movement & Force</i>"]
+    H["❤️ Cardiac Pulses<br/><i>Rhythmic Heartbeat Function</i>"]
+    I["🧠 Neural Processing<br/><i>Cognitive Work & Thinking</i>"]
+  end
+
+  Phase1 ==>|"Transferred to Cell"| Phase2
+  F ==>|"Distributes Chemical Energy"| Phase3
+```
+
+Key Takeaways:
+- **Core Concept**: Mitochondria act as microscopic power plants inside cells, transforming raw biochemical fuels into usable cellular energy.
+- **Biochemical Reaction**: Cellular respiration combines glucose (from food) and oxygen (from breathing) to break down chemical bonds and release energy.
+- **Energy Transfer Mechanism**: Released energy is captured by converting low-energy ADP into high-energy ATP, which functions like a rechargeable battery for the cell.
+- **Physiological Application**: High-energy ATP molecules directly fuel critical life processes, including muscular movement, cardiovascular pumping, and neural brain activity.

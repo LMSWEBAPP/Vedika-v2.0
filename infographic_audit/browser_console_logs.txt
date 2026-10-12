@@ -1,0 +1,5 @@
+[info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[warning] [JWT Cache] Fetching a fresh JWT token from API...
+[warning] [GeneralTutor] Successfully retrieved JWT token.
+[warning] [GeneralTutor] Successfully retrieved JWT token.
+[warning] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled

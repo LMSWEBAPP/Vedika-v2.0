@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unified Infographic Poster Validation</title>
+  <link rel="stylesheet" href="../frontend/app/globals.css">
+  <link rel="stylesheet" href="../frontend/components/MermaidDiagram.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+    body {
+      margin: 0;
+      padding: 0;
+      background: #02050c;
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+    }
+  </style>
+  <script src="../frontend/node_modules/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <div id="modal-root"></div>
+
+  <script type="module">
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      themeVariables: {
+        darkMode: true,
+        background: 'transparent',
+        primaryColor: '#0F1420',
+        primaryTextColor: '#F8FAFC',
+        primaryBorderColor: '#38BDF8',
+        lineColor: '#64748B',
+        secondaryColor: '#161324',
+        tertiaryColor: '#0D1929',
+        edgeLabelBackground: '#0F1420',
+        clusterBkg: 'rgba(12, 17, 32, 0.72)',
+        clusterBorder: 'rgba(56, 189, 248, 0.28)',
+        fontFamily: "'Outfit', sans-serif",
+        fontSize: '13px',
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'basis',
+        useMaxWidth: false,
+        nodeSpacing: 50,
+        rankSpacing: 65,
+        padding: 18
+      }
+    });
+
+    window.runAudit = async function(mode = 'llm') {
+      await document.fonts.ready;
+
+      const points = [
+        "**Power Plant Role**: The mitochondrion acts as the cell's primary power plant, converting fuel into usable cellular energy.",
+        "**Cellular Respiration Mechanism**: Combines glucose and oxygen biochemically to release energy through metabolic pathways.",
+        "**ATP Energy Storage**: Energy is packaged into ATP (Adenosine Triphosphate), serving as rechargeable batteries for cellular work.",
+        "**Physiological Demands**: ATP powers vital functions including muscle contractions, heartbeats, and cognitive brain processes."
+      ];
+
+      // 1. LLM 2D Mermaid diagram (with strict {{"..."}} syntax and direction LR in Stage 1 & 3)
+      const sanitizedLlmCode = `flowchart TD
+  subgraph Stage1 ["🌱 Stage 1: Cellular Inputs & Substrates"]
+    direction LR
+    In_Glu(["🍇 <b>Glucose Fuel</b><br/><i>Nutrient Chemical Energy</i>"])
+    In_O2(["🫁 <b>Oxygen Gas</b><br/><i>Essential Terminal Acceptor</i>"])
+    In_Glu ~~~ In_O2
+  end
+
+  subgraph Stage2 ["⚙️ Stage 2: Mitochondrial Transformation Engine"]
+    direction TB
+    Mito[("🏭 <b>Mitochondrion Matrix</b><br/><i>Cellular Power Plant Hub</i>")]
+    Resp["⚡ <b>Cellular Respiration</b><br/><i>Combines Glucose + O₂</i>"]
+    ATP_Pack{{"🔋 <b>ATP Energy Packaging</b><br/><i>Synthesizes Rechargeable Units</i>"}}
+
+    Mito -->|"Houses Process"| Resp
+    Resp ==>|"Releases Free Energy"| ATP_Pack
+  end
+
+  subgraph Stage3 ["🚀 Stage 3: Cellular Work & Biological Yield"]
+    direction LR
+    Out_Muscles(["💪 <b>Muscle Contraction</b><br/><i>Mechanical Movement Work</i>"])
+    Out_Heart(["❤️ <b>Heartbeat Maintenance</b><br/><i>Continuous Cardiac Pumping</i>"])
+    Out_Brain(["🧠 <b>Neural Processing</b><br/><i>High-Demand Thinking & Cognition</i>"])
+    Out_Muscles ~~~ Out_Heart ~~~ Out_Brain
+  end
+
+  Stage1 ==>|"Processes Substrates"| Stage2
+  Stage2 ==>|"Distributes Charged ATP"| Stage3`;
+
+      // 2. Updated 2D Fallback synthesizer
+      const parsePoint = (raw) => {
+        let clean = (raw || '')
+          .replace(/^[-*\d.)\s]+/, '')
+          .replace(/\*\*/g, '')
+          .replace(/`/g, '')
+          .replace(/["\(\)\[\]\{\}]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        let match = clean.match(/^([^:]+?):\s*(.+)$/);
+        if (!match) match = clean.match(/^([^—–]+?)\s*[—–]\s*(.+)$/);
+        if (!match) match = clean.match(/^([^\-]+?)\s+-\s+(.+)$/);
+
+        if (match && match[1].trim().length >= 2 && match[2].trim().length >= 2) {
+          return { title: match[1].trim().slice(0, 36), sub: match[2].trim().slice(0, 65) };
+        }
+        return { title: clean.slice(0, 40), sub: '' };
+      };
+
+      const pts = points.map(p => parsePoint(p));
+      const ICONS = ['⚡', '⚙️', '🔍', '💡', '🚀', '📊', '🛡️', '🧠', '🗄️', '💎'];
+      const s1 = pts.slice(0, Math.ceil(pts.length / 3));
+      const s2 = pts.slice(Math.ceil(pts.length / 3), Math.ceil((pts.length * 2) / 3));
+      const s3 = pts.slice(Math.ceil((pts.length * 2) / 3));
+
+      let fallbackCode = 'flowchart TD\n';
+      fallbackCode += '  subgraph Phase1 ["🌱 Stage 1: Foundation & Inputs"]\n    direction LR\n';
+      s1.forEach((pt, idx) => {
+        const icon = ICONS[idx % ICONS.length];
+        const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
+        fallbackCode += `    In_${idx + 1}(["${label}"])\n`;
+      });
+      if (s1.length > 1) {
+        fallbackCode += `    ${s1.map((_, i) => `In_${i + 1}`).join(' ~~~ ')}\n`;
+      }
+      fallbackCode += '  end\n\n  subgraph Phase2 ["⚙️ Stage 2: Core Mechanism & Logic"]\n    direction TB\n';
+      s2.forEach((pt, idx) => {
+        const icon = ICONS[(idx + 2) % ICONS.length];
+        const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
+        if (idx % 2 === 1) fallbackCode += `    Proc_${idx + 1}{{"${label}"}}\n`;
+        else fallbackCode += `    Proc_${idx + 1}[("${label}")]\n`;
+        if (idx > 0) fallbackCode += `    Proc_${idx} -->|"Transfers state"| Proc_${idx + 1}\n`;
+      });
+      fallbackCode += '  end\n\n  subgraph Phase3 ["⚡ Stage 3: Key Deliverables & Outcomes"]\n    direction LR\n';
+      s3.forEach((pt, idx) => {
+        const icon = ICONS[(idx + 4) % ICONS.length];
+        const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
+        fallbackCode += `    Out_${idx + 1}(["${label}"])\n`;
+      });
+      if (s3.length > 1) {
+        fallbackCode += `    ${s3.map((_, i) => `Out_${i + 1}`).join(' ~~~ ')}\n`;
+      }
+      fallbackCode += '  end\n\n  Phase1 ==>|"Processes into"| Phase2\n  Phase2 ==>|"Yields deliverables"| Phase3\n';
+
+      const codeToRender = mode === 'fallback' ? fallbackCode : sanitizedLlmCode;
+      const renderId = 'audit-svg-' + Date.now();
+      const { svg: rawSvg } = await mermaid.render(renderId, codeToRender);
+      let svgHtml = rawSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
+        return `<svg ${attrs} style="display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; overflow: visible;"`;
+      });
+
+      // Render Unified Poster HTML
+      const root = document.getElementById('modal-root');
+      root.innerHTML = `
+        <div class="mermaid-modal-backdrop" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(2, 4, 10, 0.9); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+          <div class="mermaid-modal-window" style="width: min(98vw, 1480px); height: min(96vh, 940px); max-height: calc(100vh - 32px); background: #080B14; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+            <div class="mermaid-modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(14, 19, 32, 0.98); border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; height: 58px; box-sizing: border-box;">
+              <span style="color: #fff; font-weight: 700; font-size: 14px;">Mitochondria & Cellular Respiration (${mode.toUpperCase()})</span>
+            </div>
+            <div class="mermaid-modal-body" style="flex: 1; display: flex; flex-direction: row; min-height: 0; overflow: hidden; position: relative; height: calc(100% - 94px);">
+              <div class="mermaid-modal-viewport" id="viewport" style="flex: 1; height: 100%; min-height: 0; overflow-y: auto; overflow-x: auto; padding: 24px 20px 80px; box-sizing: border-box; background: radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.85) 0%, rgba(7, 9, 16, 0.98) 100%); position: relative;">
+                <div class="mermaid-canvas-stage modal-stage" id="stage" style="transform-origin: top center; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin: 0 auto; width: 100%; maxWidth: 1150px; padding-bottom: 80px;">
+                  
+                  <!-- Poster Header Banner -->
+                  <div class="infographic-poster-header">
+                    <div class="infographic-poster-badge">
+                      <span>Interactive Knowledge Blueprint</span>
+                    </div>
+                    <h2 class="infographic-poster-title">Mitochondria & Cellular Respiration</h2>
+                    <p class="infographic-poster-subtitle">
+                      Comprehensive multi-tier architectural flow & system mechanism
+                    </p>
+                  </div>
+
+                  <!-- Center SVG Diagram -->
+                  <div class="mermaid-svg-wrapper modal-chart" id="svg-wrapper" style="margin: 0 auto; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center;">
+                    ${svgHtml}
+                  </div>
+
+                  <!-- Integrated Key Takeaways Card on Poster Canvas -->
+                  <div class="infographic-poster-takeaways">
+                    <div class="infographic-takeaways-head">
+                      <div class="infographic-takeaways-headline">
+                        <span>Key Takeaways & System Insights</span>
+                      </div>
+                      <span style="font-size: 11px; color: #94A3B8; font-weight: 600;">
+                        ${points.length} Essential Concepts
+                      </span>
+                    </div>
+                    <div class="infographic-takeaways-grid">
+                      ${points.map((pt, idx) => `
+                        <div class="infographic-takeaway-item">
+                          <span class="infographic-takeaway-badge">${idx + 1}</span>
+                          <div class="infographic-takeaway-body">
+                            ${pt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="mermaid-modal-statusbar" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 20px; background: rgba(10, 14, 26, 0.96); border-top: 1px solid rgba(255, 255, 255, 0.08); color: #94A3B8; font-size: 11.5px; flex-shrink: 0; height: 36px; box-sizing: border-box;">
+              <span>Verified 2D Architecture • Fit Zoom Active</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Apply computeFitZoom
+      const vp = document.getElementById('viewport');
+      const svg = vp.querySelector('svg');
+      if (!svg) throw new Error('SVG not found');
+      const vbAttr = svg.getAttribute('viewBox') || '';
+      const vbParts = vbAttr.split(/[\s,]+/).map(Number);
+      const naturalW = (svg.viewBox?.baseVal?.width) || vbParts[2] || svg.clientWidth || 800;
+      const naturalH = (svg.viewBox?.baseVal?.height) || vbParts[3] || svg.clientHeight || 600;
+
+      const availW = vp.clientWidth - 70;
+      const availH = vp.clientHeight - 80;
+      const targetW = Math.min(availW, 1150);
+      const aspect = naturalH / naturalW;
+      const renderedH = targetW * aspect;
+
+      const scaleW = availW / targetW;
+      const scaleH = availH / renderedH;
+      const rawFit = Math.min(scaleW, scaleH);
+      const MIN_MODAL_ZOOM = 0.45;
+      const MAX_MODAL_ZOOM = 1.30;
+      const finalZoom = Math.min(Math.max(rawFit, MIN_MODAL_ZOOM), MAX_MODAL_ZOOM);
+
+      const stage = document.getElementById('stage');
+      stage.style.transform = `scale(${finalZoom})`;
+
+      // Run clipping analysis on all foreignObjects
+      const rows = [];
+      let totalClipped = 0;
+      svg.querySelectorAll('foreignObject').forEach(fo => {
+        const inner = fo.firstElementChild;
+        const foW = +fo.getAttribute('width');
+        const foH = +fo.getAttribute('height');
+        const contentW = inner ? inner.scrollWidth : 0;
+        const contentH = inner ? inner.scrollHeight : 0;
+        // In our fixed CSS, foreignObject has overflow: visible, so even if inner slightly exceeds, it is not visually clipped
+        const isClipped = getComputedStyle(fo).overflow === 'hidden' && (contentW > foW + 1 || contentH > foH + 1);
+        if (isClipped) totalClipped++;
+        rows.push({
+          text: fo.textContent.trim().slice(0, 40),
+          foW,
+          foH,
+          contentW,
+          contentH,
+          overflow: getComputedStyle(fo).overflow,
+          isClipped
+        });
+      });
+
+      const fitData = {
+        mode,
+        viewBox: vbAttr,
+        naturalWidth: naturalW,
+        naturalHeight: naturalH,
+        aspectRatio: (naturalW / naturalH).toFixed(3),
+        viewportW: vp.clientWidth,
+        viewportH: vp.clientHeight,
+        finalZoom: +finalZoom.toFixed(2),
+        clampedBy045: rawFit < MIN_MODAL_ZOOM,
+        totalForeignObjects: rows.length,
+        totalClipped
+      };
+
+      return { rows, fitData };
+    };
+  </script>
+</body>
+</html>
