@@ -2135,12 +2135,15 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                                   maxWidth: '88%',
                                   padding: '10px 14px',
-                                  borderRadius: 10,
-                                  background: m.role === 'user' ? panelColor : T.s1,
-                                  color: m.role === 'user' ? '#fff' : T.text,
+                                  borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px',
+                                  background: m.role === 'user' 
+                                    ? 'linear-gradient(135deg, #7F00FF 0%, #B800FF 30%, #FF007A 70%, #FF5A36 100%)' 
+                                    : 'linear-gradient(135deg, rgba(16, 24, 52, 0.95) 0%, rgba(26, 36, 80, 0.92) 42%, rgba(14, 46, 72, 0.92) 80%, rgba(10, 26, 48, 0.95) 100%)',
+                                  color: m.role === 'user' ? '#FFFFFF' : '#F8FAFC',
                                   fontSize: 12,
                                   lineHeight: 1.55,
-                                  border: m.role === 'user' ? 'none' : `1px solid ${T.border}`
+                                  border: m.role === 'user' ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid rgba(56, 189, 248, 0.32)',
+                                  boxShadow: m.role === 'user' ? '0 8px 24px -4px rgba(255, 0, 122, 0.38)' : '0 10px 35px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12)'
                                 }}
                               >
                                 {m.role === 'user' ? m.text : renderFormattedChatMessage(m.text, (sec) => setVideoSeekTime(sec))}
