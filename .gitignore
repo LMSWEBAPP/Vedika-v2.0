@@ -32,6 +32,8 @@ frontend/.pnpm-debug.log*
 # Next.js local env files
 frontend/.env*.local
 frontend/.env
+infographics-template/.env
+infographics-template/output/
 
 # Local logs and debug files
 frontend/lib/api_consumption.json
