@@ -253,11 +253,11 @@ button.mermaid-expand-btn:hover,
 /* Subgraph / Architecture Clusters */
 .mermaid-svg-wrapper .cluster rect {
   fill: rgba(12, 17, 32, 0.72) !important;
-  stroke: rgba(91, 140, 248, 0.35) !important;
+  stroke: rgba(91, 140, 248, 0.38) !important;
   stroke-width: 1.5px !important;
-  stroke-dasharray: 5 4 !important;
-  rx: 16px !important;
-  ry: 16px !important;
+  stroke-dasharray: 6 5 !important;
+  rx: 20px !important;
+  ry: 20px !important;
   filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6)) !important;
 }
 
@@ -271,8 +271,8 @@ button.mermaid-expand-btn:hover,
   fill: #93C5FD !important;
   color: #93C5FD !important;
   font-weight: 700 !important;
-  font-size: 12.5px !important;
-  letter-spacing: 0.01em !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
   text-transform: none !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
 }

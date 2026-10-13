@@ -336,9 +336,10 @@ const DIAGRAM_CONFIGS = {
       htmlLabels: true,
       curve: 'basis',
       useMaxWidth: false,
-      nodeSpacing: 50,
-      rankSpacing: 65,
-      padding: 18
+      nodeSpacing: 85,
+      rankSpacing: 130,
+      padding: 58,
+      subGraphTitleMargin: { top: 30, bottom: 32 }
     }
   },
   mindmap: {
@@ -355,9 +356,10 @@ const DIAGRAM_CONFIGS = {
       htmlLabels: true,
       curve: 'basis',
       useMaxWidth: false,
-      nodeSpacing: 50,
-      rankSpacing: 65,
-      padding: 18
+      nodeSpacing: 85,
+      rankSpacing: 130,
+      padding: 58,
+      subGraphTitleMargin: { top: 30, bottom: 32 }
     }
   },
   classDiagram: {
@@ -539,6 +541,13 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         allMarkers.forEach((m) => {
           m.style.opacity = '1';
         });
+        const allClusters = wrapper.querySelectorAll('.cluster, g.cluster');
+        allClusters.forEach((c) => {
+          const rect = c.querySelector('rect');
+          if (rect && rect.style) rect.style.strokeDashoffset = '0';
+          const labels = c.querySelectorAll('text, span, .nodeLabel, foreignObject');
+          labels.forEach((l) => { l.style.opacity = '1'; });
+        });
       }
     });
   }, []);
@@ -664,6 +673,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const stageEl = container.querySelector('.mermaid-canvas-stage') || wrapper;
 
     const stageRect = stageEl.getBoundingClientRect();
+    const rawClusterEls = Array.from(wrapper.querySelectorAll('.cluster, g.cluster'));
     const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
     const rawEdgeEls = Array.from(wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path'));
     const rawMarkerEls = Array.from(wrapper.querySelectorAll('marker, .arrowMarkerPath, .arrowheadPath, [id*="pointEnd"] path, [id*="arrow"] path'));
@@ -717,6 +727,32 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         animFrameRef.current = requestAnimationFrame(step);
       });
     };
+
+    // 1. Prepare clusters (Stage 1, Stage 2, Stage 3 containers)
+    const clusters = rawClusterEls.map((c, cIdx) => {
+      const rect = c.querySelector('rect');
+      let rectLen = 0;
+      if (rect) {
+        const rwAttr = parseFloat(rect.getAttribute('width') || '320');
+        const rhAttr = parseFloat(rect.getAttribute('height') || '160');
+        rectLen = 2 * (rwAttr + rhAttr);
+        rect.style.strokeDasharray = `${rectLen}`;
+        rect.style.strokeDashoffset = `${rectLen}`;
+        rect.style.transition = 'none';
+      }
+      const labelEls = Array.from(c.querySelectorAll('text, span, .nodeLabel, foreignObject'));
+      labelEls.forEach((l) => {
+        l.style.opacity = '0';
+        l.style.transition = 'opacity 0.25s ease';
+      });
+      const cr = (rect || c).getBoundingClientRect();
+      const cx = (cr.left - stageRect.left) / zoomFactor;
+      const cy = (cr.top - stageRect.top) / zoomFactor;
+      const rw = Math.max(120, cr.width / zoomFactor);
+      const rh = Math.max(80, cr.height / zoomFactor);
+      const text = c.textContent?.trim().replace(/\s+/g, ' ') || `Stage ${cIdx + 1}`;
+      return { id: c.id || `cluster_${cIdx}`, el: c, rect, rectLen, rw, rh, labelEls, x: cx, y: cy, text };
+    });
 
     const nodes = rawNodeEls.map((el, idx) => {
       const r = el.getBoundingClientRect();
@@ -816,17 +852,72 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     // 2. Execute point-to-point drawing sequence
     (async () => {
       try {
-        await new Promise((r) => setTimeout(r, 160));
+        await new Promise((r) => setTimeout(r, 140));
         if (animCancelledRef.current) return;
 
-        // Performance optimization: For diagrams with many nodes, use faster animation
         const isComplexDiagram = nodes.length > 12;
-        const nodeAnimDuration = isComplexDiagram ? 200 : 500;
-        const edgeAnimDuration = isComplexDiagram ? 150 : 420;
-        const nodeDelay = isComplexDiagram ? 30 : 80;
-        const edgeDelay = isComplexDiagram ? 20 : 60;
-        const cursorUpdateThreshold = isComplexDiagram ? 5 : 1; // Update cursor less frequently for complex diagrams
+        const nodeAnimDuration = isComplexDiagram ? 200 : 340;
+        const edgeAnimDuration = isComplexDiagram ? 160 : 280;
+        const clusterAnimDuration = 200;
+        const nodeDelay = isComplexDiagram ? 30 : 50;
+        const edgeDelay = isComplexDiagram ? 20 : 40;
+        const cursorUpdateThreshold = isComplexDiagram ? 3 : 1;
 
+        // Frame and draw each cluster stage first with the digital stylus gliding along the perimeter
+        for (let cIdx = 0; cIdx < clusters.length; cIdx++) {
+          if (animCancelledRef.current) break;
+          const cluster = clusters[cIdx];
+          const cRect = cluster.rect;
+          const rw = cluster.rw;
+          const rh = cluster.rh;
+          const perim = 2 * (rw + rh);
+
+          setCursorState((prev) => ({
+            ...prev,
+            status: `Framing Stage ${cIdx + 1}: ${cluster.text.slice(0, 24)}...`,
+            label: `Stage ${cIdx + 1}`,
+            accentColor: '#38BDF8',
+            x: cluster.x,
+            y: cluster.y,
+            isTracing: true,
+            isClicking: true
+          }));
+
+          cachedStageRect = stageEl.getBoundingClientRect();
+          let cFrameCount = 0;
+          await animateFrame(clusterAnimDuration, (t) => {
+            if (cRect && cRect.style) {
+              cRect.style.strokeDashoffset = `${cluster.rectLen * (1 - t)}`;
+            }
+            // Glide the pen around the 4 sides of the cluster rectangle!
+            const d = t * perim;
+            let px = cluster.x;
+            let py = cluster.y;
+            if (d < rw) {
+              px = cluster.x + d;
+              py = cluster.y;
+            } else if (d < rw + rh) {
+              px = cluster.x + rw;
+              py = cluster.y + (d - rw);
+            } else if (d < 2 * rw + rh) {
+              px = cluster.x + rw - (d - (rw + rh));
+              py = cluster.y + rh;
+            } else {
+              px = cluster.x;
+              py = cluster.y + rh - (d - (2 * rw + rh));
+            }
+            if (cFrameCount % cursorUpdateThreshold === 0) {
+              setCursorState((prev) => ({ ...prev, x: px, y: py }));
+            }
+            cFrameCount++;
+          });
+
+          if (cRect && cRect.style) cRect.style.strokeDashoffset = '0';
+          cluster.labelEls.forEach((l) => { l.style.opacity = '1'; });
+          await new Promise((r) => setTimeout(r, 40));
+        }
+
+        // Sequentially draw each node with glowing vector stylus
         for (let idx = 0; idx < nodes.length; idx++) {
           if (animCancelledRef.current) break;
           const node = nodes[idx];
@@ -835,7 +926,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           const shapeEl = node.shapeEl;
           const shapeLen = node.shapeLen;
 
-          // Pen arrives at node and begins tracing perimeter
           setCursorState((prev) => ({
             ...prev,
             status: `Drawing Node (${idx + 1}/${nodes.length})`,
@@ -845,30 +935,52 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             isClicking: true
           }));
 
-          // Trace shape perimeter smoothly frame-by-frame
           cachedStageRect = stageEl.getBoundingClientRect();
           let frameCount = 0;
           await animateFrame(nodeAnimDuration, (t) => {
             if (shapeEl && shapeEl.style) {
               shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
             }
-            // Throttle cursor updates for performance
-            if (shapeEl && typeof shapeEl.getPointAtLength === 'function' && frameCount % cursorUpdateThreshold === 0) {
-              try {
-                const pt = shapeEl.getPointAtLength(shapeLen * t);
-                const stagePt = getStagePoint(shapeEl, pt);
-                setCursorState((prev) => {
-                  if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
-                  return { ...prev, x: stagePt.x, y: stagePt.y };
-                });
-              } catch {}
+            if (frameCount % cursorUpdateThreshold === 0) {
+              let stagePt = null;
+              if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
+                try {
+                  const pt = shapeEl.getPointAtLength(shapeLen * t);
+                  stagePt = getStagePoint(shapeEl, pt);
+                } catch {}
+              }
+              if (!stagePt) {
+                const nw = node.w;
+                const nh = node.h;
+                const perim = 2 * (nw + nh);
+                const d = t * perim;
+                let px = node.x;
+                let py = node.y;
+                if (d < nw) {
+                  px = node.x + d;
+                  py = node.y;
+                } else if (d < nw + nh) {
+                  px = node.x + nw;
+                  py = node.y + (d - nw);
+                } else if (d < 2 * nw + nh) {
+                  px = node.x + nw - (d - (nw + nh));
+                  py = node.y + nh;
+                } else {
+                  px = node.x;
+                  py = node.y + nh - (d - (2 * nw + nh));
+                }
+                stagePt = { x: px, y: py };
+              }
+              setCursorState((prev) => {
+                if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
+                return { ...prev, x: stagePt.x, y: stagePt.y };
+              });
             }
             frameCount++;
           });
 
           if (animCancelledRef.current) break;
 
-          // Settle node shape and reveal content cleanly (NO border glow!)
           if (shapeEl && shapeEl.style) shapeEl.style.strokeDashoffset = '0';
           node.textEls.forEach((t) => { t.style.opacity = '1'; });
           node.el.style.filter = '';
@@ -882,8 +994,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
           await new Promise((r) => setTimeout(r, nodeDelay));
 
-          // Trace connecting arrow to the next node if present
-          if (idx < nodes.length - 1 && rawEdgeEls[idx]) {
+          // Trace connecting arrow along conduit path
+          if (idx < rawEdgeEls.length) {
             const edgeEl = rawEdgeEls[idx];
             const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
 
@@ -901,27 +1013,30 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               isTracing: true
             }));
 
-            // Physically trace connector line from start to destination
             cachedStageRect = stageEl.getBoundingClientRect();
             let edgeFrameCount = 0;
             await animateFrame(edgeAnimDuration, (t) => {
               edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
-              if (typeof edgeEl.getPointAtLength === 'function' && edgeFrameCount % cursorUpdateThreshold === 0) {
-                try {
-                  const pt = edgeEl.getPointAtLength(edgeLen * t);
-                  const stagePt = getStagePoint(edgeEl, pt);
+              if (edgeFrameCount % cursorUpdateThreshold === 0) {
+                let stagePt = null;
+                if (typeof edgeEl.getPointAtLength === 'function') {
+                  try {
+                    const pt = edgeEl.getPointAtLength(edgeLen * t);
+                    stagePt = getStagePoint(edgeEl, pt);
+                  } catch {}
+                }
+                if (stagePt) {
                   setCursorState((prev) => {
                     if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
                     return { ...prev, x: stagePt.x, y: stagePt.y };
                   });
-                } catch {}
+                }
               }
               edgeFrameCount++;
             });
 
             if (animCancelledRef.current) break;
 
-            // Arrow has reached destination: reveal marker and label
             edgeEl.style.strokeDashoffset = '0';
             rawMarkerEls.forEach((m) => {
               m.style.opacity = '1';
@@ -932,6 +1047,43 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
           await new Promise((r) => setTimeout(r, edgeDelay));
         }
+
+        // Trace any remaining conduits & pipelines (e.g. inter-stage arrows) with the stylus pen
+        for (let eIdx = nodes.length; eIdx < rawEdgeEls.length; eIdx++) {
+          if (animCancelledRef.current) break;
+          const edgeEl = rawEdgeEls[eIdx];
+          const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
+          edgeEl.style.opacity = '1';
+          edgeEl.style.stroke = '#38BDF8';
+          edgeEl.style.strokeWidth = '1.75px';
+          edgeEl.style.strokeDasharray = `${edgeLen}`;
+          edgeEl.style.strokeDashoffset = `${edgeLen}`;
+
+          setCursorState((prev) => ({
+            ...prev,
+            status: 'Linking Pipeline ➔',
+            label: 'Pipeline',
+            accentColor: '#38BDF8',
+            isTracing: true
+          }));
+
+          cachedStageRect = stageEl.getBoundingClientRect();
+          let rFrameCount = 0;
+          await animateFrame(edgeAnimDuration, (t) => {
+            edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
+            if (rFrameCount % cursorUpdateThreshold === 0 && typeof edgeEl.getPointAtLength === 'function') {
+              try {
+                const pt = edgeEl.getPointAtLength(edgeLen * t);
+                const stagePt = getStagePoint(edgeEl, pt);
+                setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
+              } catch {}
+            }
+            rFrameCount++;
+          });
+          edgeEl.style.strokeDashoffset = '0';
+        }
+        rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
+        rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
 
         if (!animCancelledRef.current) {
           hasAnimatedRef.current = true;
@@ -945,7 +1097,6 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         }
       } finally {
         hasAnimatedRef.current = true;
-        // ALWAYS ensure every element is 100% visible and offsets zeroed out
         if (wrapper) {
           wrapper.classList.remove('building');
           const allNodes = wrapper.querySelectorAll('.node, g.node');
@@ -975,6 +1126,13 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           const allMarkers = wrapper.querySelectorAll('marker, .arrowheadPath, .arrowMarkerPath, [id*="pointEnd"] path, [id*="arrow"] path, .edgeLabel, .edgeLabels');
           allMarkers.forEach((m) => {
             m.style.opacity = '1';
+          });
+          const allClusters = wrapper.querySelectorAll('.cluster, g.cluster');
+          allClusters.forEach((c) => {
+            const rect = c.querySelector('rect');
+            if (rect && rect.style) rect.style.strokeDashoffset = '0';
+            const labels = c.querySelectorAll('text, span, .nodeLabel, foreignObject');
+            labels.forEach((l) => { l.style.opacity = '1'; });
           });
         }
 
@@ -1017,7 +1175,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   }, []);
 
 
-  // Reset modal scroll and state whenever modal is opened
+  // Reset modal scroll and trigger live draw when modal is opened
   useEffect(() => {
     if (isModalOpen) {
       const timer = setTimeout(() => {
@@ -1025,24 +1183,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
           modalViewportRef.current.scrollTop = 0;
           modalViewportRef.current.scrollLeft = 0;
           autoFitModalChart();
-          // Ensure Blender palettes and 100% visibility on modal open so diagram is never gone
           applyBlenderPalettes(modalViewportRef.current);
-          const wrapper = modalViewportRef.current.querySelector('.mermaid-svg-wrapper');
-          if (wrapper) {
-            wrapper.style.opacity = '1';
-            const allNodes = wrapper.querySelectorAll('.node, g.node');
-            allNodes.forEach((n) => {
-              n.style.opacity = '1';
-              const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
-              if (shape && shape.style) shape.style.strokeDashoffset = '0';
-              const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
-              texts.forEach((t) => { t.style.opacity = '1'; });
-            });
-            const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
-            allEdges.forEach((e) => {
-              e.style.opacity = '1';
-              if (e.style) e.style.strokeDashoffset = '0';
-            });
+
+          // If live draw is active and diagram hasn't been drawn yet, execute live draw!
+          if (isLiveDrawEnabled && !hasAnimatedRef.current) {
+            runLiveDrawAnimation(modalViewportRef.current);
+          } else {
+            // Already animated or live draw disabled: ensure 100% full visibility
+            stopAndCleanAnimation(modalViewportRef.current);
           }
         }
       }, 70);
@@ -1051,7 +1199,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       // Modal closed: safely clean up any ongoing animation
       stopAndCleanAnimation();
     }
-  }, [isModalOpen, autoFitModalChart, stopAndCleanAnimation]);
+  }, [isModalOpen, isLiveDrawEnabled, autoFitModalChart, runLiveDrawAnimation, stopAndCleanAnimation]);
 
   // Generate unique render ID per component mount to prevent SVG collisions
   const uniqueIdRef = useRef(`mermaid_${Math.random().toString(36).substr(2, 9)}`);
@@ -1070,12 +1218,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     async function renderChart() {
       try {
+        hasAnimatedRef.current = false;
         const mermaid = (await import('mermaid')).default;
         const diagramConfig = getMermaidConfig(diagramType);
         
         const baseConfig = {
           startOnLoad: false,
           theme: 'base',
+          flowchart: DIAGRAM_CONFIGS.flowchart.config,
           themeVariables: {
             darkMode: true,
             background: 'transparent',
@@ -1135,6 +1285,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               autoFitInlineChart();
               applyBlenderPalettes(containerRef.current);
             }
+            if (isLiveDrawEnabled && !hasAnimatedRef.current) {
+              const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
+              runLiveDrawAnimation(activeTarget);
+            }
           }, 60);
         }
       } catch (err) {
@@ -1143,6 +1297,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         if (points && points.length > 0) {
           try {
             const mermaid = (await import('mermaid')).default;
+            mermaid.initialize(baseConfig);
             if (typeof document !== 'undefined' && document.fonts) {
               await document.fonts.ready;
             }
@@ -1169,6 +1324,10 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 if (containerRef.current) {
                   autoFitInlineChart();
                   applyBlenderPalettes(containerRef.current);
+                }
+                if (isLiveDrawEnabled && !hasAnimatedRef.current) {
+                  const activeTarget = (isModalOpen && modalViewportRef.current) ? modalViewportRef.current : containerRef.current;
+                  runLiveDrawAnimation(activeTarget);
                 }
               }, 60);
               return;
