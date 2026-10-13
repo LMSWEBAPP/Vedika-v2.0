@@ -1,3 +1,4 @@
+
 /* ── MermaidDiagram.css ── */
 /* Dynamic Interactive Mermaid.js Flowchart & Infographic Container */
 
@@ -323,9 +324,9 @@ button.mermaid-expand-btn:hover,
   fill: #F8FAFC !important;
   font-family: var(--font-outfit), 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 600 !important;
-  font-size: 13px !important;
+  font-size: 14.5px !important;
   letter-spacing: -0.01em !important;
-  line-height: 1.45 !important;
+  line-height: 1.4 !important;
   margin: 0 !important;
   padding: 0 !important;
   text-align: center !important;
@@ -341,19 +342,20 @@ button.mermaid-expand-btn:hover,
 .mermaid-svg-wrapper .node .nodeLabel i,
 .mermaid-svg-wrapper .node foreignObject i,
 .mermaid-svg-wrapper .node text i {
-  color: #94A3B8 !important;
-  font-size: 11px !important;
-  font-style: italic !important;
-  font-weight: 500 !important;
+  color: #CBD5E1 !important;
+  font-size: 12.5px !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
   display: inline-block !important;
-  margin-top: 3px !important;
-  line-height: 1.3 !important;
+  margin-top: 4px !important;
+  line-height: 1.4 !important;
+  opacity: 0.92 !important;
 }
 
 .mermaid-svg-wrapper .node .nodeLabel sub,
 .mermaid-svg-wrapper .node foreignObject sub {
   display: inline-block !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   line-height: 1.3 !important;
   vertical-align: baseline !important;
   margin-top: 2px !important;
@@ -364,7 +366,8 @@ button.mermaid-expand-btn:hover,
 .mermaid-svg-wrapper .node text b {
   color: #FFFFFF !important;
   font-weight: 700 !important;
-  font-size: 13px !important;
+  font-size: 15.5px !important;
+  letter-spacing: -0.01em !important;
 }
 
 /* 3. Flowchart Connector Arrows / Edges: Clean Blender-style noodle paths */
@@ -397,29 +400,41 @@ button.mermaid-expand-btn:hover,
   filter: none;
 }
 
-/* Frosted glass pill containers for connector labels */
-.mermaid-svg-wrapper .edgeLabel {
-  background-color: transparent !important;
+/* Single neat pill container for connector labels (processes into / yields deliverables) */
+.mermaid-svg-wrapper .edgeLabel,
+.mermaid-svg-wrapper .edgeLabel .label,
+.mermaid-svg-wrapper .edgeLabel foreignObject,
+.mermaid-svg-wrapper .edgeLabel div {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
   overflow: visible !important;
 }
-.mermaid-svg-wrapper .edgeLabel foreignObject {
-  overflow: visible !important;
+
+.mermaid-svg-wrapper .edgeLabel rect,
+.mermaid-svg-wrapper .edgeLabel .background {
+  display: none !important;
+  fill: transparent !important;
+  stroke: none !important;
 }
+
 .mermaid-svg-wrapper .edgeLabel span,
-.mermaid-svg-wrapper .edgeLabel p,
-.mermaid-svg-wrapper .edgeLabel .label {
-  background: rgba(15, 23, 42, 0.94) !important;
-  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+.mermaid-svg-wrapper .edgeLabel .nodeLabel {
+  background: rgba(13, 20, 36, 0.96) !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
   border-radius: 9999px !important;
-  padding: 2px 8px !important;
-  font-size: 11px !important;
-  color: #94A3B8 !important;
+  padding: 3px 12px !important;
+  font-size: 12px !important;
+  color: #93C5FD !important;
   font-weight: 600 !important;
   letter-spacing: normal !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(8px) !important;
   display: inline-block !important;
   white-space: nowrap !important;
+  line-height: 1.3 !important;
 }
 
 

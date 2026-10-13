@@ -260,8 +260,8 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
     chart += '    direction LR\n';
     s1.forEach((pt, idx) => {
       const icon = ICONS[idx % ICONS.length];
-      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
-      chart += `    In_${idx + 1}(["${label}"])\n`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `<b>${icon} ${pt.title}</b>`;
+      chart += `    In_${idx + 1}["${label}"]\n`;
     });
     if (s1.length > 1) {
       chart += `    ${s1.map((_, i) => `In_${i + 1}`).join(' ~~~ ')}\n`;
@@ -273,12 +273,8 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
     chart += '    direction LR\n';
     s2.forEach((pt, idx) => {
       const icon = ICONS[(idx + 2) % ICONS.length];
-      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
-      if (idx % 2 === 1) {
-        chart += `    Proc_${idx + 1}{{"${label}"}}\n`;
-      } else {
-        chart += `    Proc_${idx + 1}[("${label}")]\n`;
-      }
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `<b>${icon} ${pt.title}</b>`;
+      chart += `    Proc_${idx + 1}["${label}"]\n`;
     });
     if (s2.length > 1) {
       chart += `    ${s2.map((_, i) => `Proc_${i + 1}`).join(' ~~~ ')}\n`;
@@ -290,8 +286,8 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
     chart += '    direction LR\n';
     s3.forEach((pt, idx) => {
       const icon = ICONS[(idx + 4) % ICONS.length];
-      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `${icon} ${pt.title}`;
-      chart += `    Out_${idx + 1}(["${label}"])\n`;
+      const label = pt.sub ? `<b>${icon} ${pt.title}</b><br/><i>${pt.sub}</i>` : `<b>${icon} ${pt.title}</b>`;
+      chart += `    Out_${idx + 1}["${label}"]\n`;
     });
     if (s3.length > 1) {
       chart += `    ${s3.map((_, i) => `Out_${i + 1}`).join(' ~~~ ')}\n`;
@@ -307,15 +303,15 @@ function synthesizeCreativeInfographic(points, fallbackTitle = "Visual Architect
   // 1-2 points fallback
   const p1 = pts[0] || { title: 'Core Foundation', sub: '' };
   const p2 = pts[1] || { title: 'Practical Deliverable', sub: '' };
-  const lbl1 = p1.sub ? `<b>⚡ ${p1.title}</b><br/><i>${p1.sub}</i>` : `⚡ ${p1.title}`;
-  const lbl2 = p2.sub ? `<b>🎯 ${p2.title}</b><br/><i>${p2.sub}</i>` : `🎯 ${p2.title}`;
+  const lbl1 = p1.sub ? `<b>⚡ ${p1.title}</b><br/><i>${p1.sub}</i>` : `<b>⚡ ${p1.title}</b>`;
+  const lbl2 = p2.sub ? `<b>🎯 ${p2.title}</b><br/><i>${p2.sub}</i>` : `<b>🎯 ${p2.title}</b>`;
 
   return `flowchart TD
   subgraph Phase1 ["🌱 Stage 1: Foundation"]
-    Node_1(["${lbl1}"])
+    Node_1["${lbl1}"]
   end
   subgraph Phase2 ["🚀 Stage 2: Practical Impact"]
-    Node_2(["${lbl2}"])
+    Node_2["${lbl2}"]
   end
   Phase1 ==>|"Drives"| Phase2\n`;
 }
@@ -336,10 +332,10 @@ const DIAGRAM_CONFIGS = {
       htmlLabels: true,
       curve: 'basis',
       useMaxWidth: false,
-      nodeSpacing: 85,
-      rankSpacing: 130,
-      padding: 58,
-      subGraphTitleMargin: { top: 30, bottom: 32 }
+      nodeSpacing: 40,
+      rankSpacing: 60,
+      padding: 24,
+      subGraphTitleMargin: { top: 14, bottom: 16 }
     }
   },
   mindmap: {
@@ -356,10 +352,10 @@ const DIAGRAM_CONFIGS = {
       htmlLabels: true,
       curve: 'basis',
       useMaxWidth: false,
-      nodeSpacing: 85,
-      rankSpacing: 130,
-      padding: 58,
-      subGraphTitleMargin: { top: 30, bottom: 32 }
+      nodeSpacing: 40,
+      rankSpacing: 60,
+      padding: 24,
+      subGraphTitleMargin: { top: 14, bottom: 16 }
     }
   },
   classDiagram: {
@@ -652,7 +648,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     }
   }, [computeFitZoom]);
 
-  // Point-to-point live vector drawing animation engine
+  // Point-to-point live vector drawing animation engine: draws boxes, text, and arrow connections one after the other, one at a time!
   const runLiveDrawAnimation = useCallback((containerEl) => {
     const isModal = isModalOpen && modalViewportRef.current;
     const container = containerEl || (isModal ? modalViewportRef.current : containerRef.current);
@@ -664,15 +660,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     container.scrollTop = 0;
     container.scrollLeft = 0;
 
-    const currentZoom = isModal ? (modalZoomRef.current || 0.85) : zoom;
-
     const wrapper = container.querySelector('.mermaid-svg-wrapper');
     if (!wrapper) return;
     const svgEl = wrapper.querySelector('svg');
     if (!svgEl) return;
     const stageEl = container.querySelector('.mermaid-canvas-stage') || wrapper;
 
-    const stageRect = stageEl.getBoundingClientRect();
     const rawClusterEls = Array.from(wrapper.querySelectorAll('.cluster, g.cluster'));
     const rawNodeEls = Array.from(wrapper.querySelectorAll('.node, g.node'));
     const rawEdgeEls = Array.from(wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path'));
@@ -681,31 +674,13 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     if (rawNodeEls.length === 0) return;
 
-    const zoomFactor = currentZoom > 0 ? currentZoom : 1;
-
-    // Helper to calculate exact stage coordinates from an SVG element & local point (uses cached stage rect to prevent forced layout reflow)
-    let cachedStageRect = stageRect;
-    const getStagePoint = (elem, localPt) => {
-      const curStageRect = cachedStageRect || stageEl.getBoundingClientRect();
-      const curZoom = (isModal ? (modalZoomRef.current || 0.85) : zoom) || 1;
-      try {
-        const ctm = elem.getScreenCTM ? elem.getScreenCTM() : null;
-        const ownerSvg = elem.ownerSVGElement || svgEl;
-        if (ctm && ownerSvg && ownerSvg.createSVGPoint && localPt) {
-          const p = ownerSvg.createSVGPoint();
-          p.x = localPt.x;
-          p.y = localPt.y;
-          const screenP = p.matrixTransform(ctm);
-          return {
-            x: (screenP.x - curStageRect.left) / curZoom,
-            y: (screenP.y - curStageRect.top) / curZoom
-          };
-        }
-      } catch {}
-      const er = elem.getBoundingClientRect();
+    // Helper: converts any client-space position (clientX, clientY) directly into stage-local coordinates
+    const toStagePoint = (clientX, clientY) => {
+      const sRect = stageEl.getBoundingClientRect();
+      const scale = stageEl.offsetWidth > 0 ? (sRect.width / stageEl.offsetWidth) : 1;
       return {
-        x: (er.left - curStageRect.left) / curZoom + (er.width / curZoom) / 2,
-        y: (er.top - curStageRect.top) / curZoom + (er.height / curZoom) / 2
+        x: (clientX - sRect.left) / scale,
+        y: (clientY - sRect.top) / scale
       };
     };
 
@@ -728,83 +703,42 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       });
     };
 
-    // 1. Prepare clusters (Stage 1, Stage 2, Stage 3 containers)
-    const clusters = rawClusterEls.map((c, cIdx) => {
+    // Sort clusters in visual top-to-bottom order
+    const sortedClusters = rawClusterEls.slice().sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
+    // Initial state: hide all clusters, nodes, text, edges, markers, labels
+    sortedClusters.forEach((c) => {
       const rect = c.querySelector('rect');
-      let rectLen = 0;
       if (rect) {
-        const rwAttr = parseFloat(rect.getAttribute('width') || '320');
-        const rhAttr = parseFloat(rect.getAttribute('height') || '160');
-        rectLen = 2 * (rwAttr + rhAttr);
-        rect.style.strokeDasharray = `${rectLen}`;
-        rect.style.strokeDashoffset = `${rectLen}`;
+        const cr = rect.getBoundingClientRect();
+        const perim = 2 * (cr.width + cr.height);
+        rect.dataset.rectLength = String(perim);
+        rect.style.strokeDasharray = `${perim}`;
+        rect.style.strokeDashoffset = `${perim}`;
         rect.style.transition = 'none';
       }
-      const labelEls = Array.from(c.querySelectorAll('text, span, .nodeLabel, foreignObject'));
+      const labelEls = c.querySelectorAll('text, span, .nodeLabel, foreignObject');
       labelEls.forEach((l) => {
         l.style.opacity = '0';
         l.style.transition = 'opacity 0.25s ease';
       });
-      const cr = (rect || c).getBoundingClientRect();
-      const cx = (cr.left - stageRect.left) / zoomFactor;
-      const cy = (cr.top - stageRect.top) / zoomFactor;
-      const rw = Math.max(120, cr.width / zoomFactor);
-      const rh = Math.max(80, cr.height / zoomFactor);
-      const text = c.textContent?.trim().replace(/\s+/g, ' ') || `Stage ${cIdx + 1}`;
-      return { id: c.id || `cluster_${cIdx}`, el: c, rect, rectLen, rw, rh, labelEls, x: cx, y: cy, text };
     });
 
-    const nodes = rawNodeEls.map((el, idx) => {
-      const r = el.getBoundingClientRect();
-      const text = el.textContent?.trim().replace(/\s+/g, ' ') || `Step ${idx + 1}`;
-      let x = (r.left - stageRect.left) / zoomFactor;
-      let y = (r.top - stageRect.top) / zoomFactor;
-      let w = Math.max(80, r.width / zoomFactor);
-      let h = Math.max(36, r.height / zoomFactor);
-
-      if (r.width === 0 || r.height === 0) {
-        const transform = el.getAttribute('transform');
-        const match = transform && transform.match(/translate\(([^,\)]+)[,\s]+([^,\)]+)\)/);
-        if (match) {
-          x = parseFloat(match[1]);
-          y = parseFloat(match[2]);
-          w = 120;
-          h = 44;
-        }
+    rawNodeEls.forEach((n) => {
+      n.style.opacity = '1';
+      const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+      const nr = (shape || n).getBoundingClientRect();
+      const perim = 2 * (nr.width + nr.height);
+      shape.dataset.shapeLength = String(perim);
+      if (shape.style) {
+        shape.style.strokeDasharray = `${perim}`;
+        shape.style.strokeDashoffset = `${perim}`;
+        shape.style.transition = 'none';
       }
-
-      // Find shape element (rect, polygon, path, cylinder, circle, stadium)
-      const shapeEl = el.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || el;
-      let shapeLen = 0;
-      if (typeof shapeEl.getTotalLength === 'function') {
-        try { shapeLen = shapeEl.getTotalLength(); } catch {}
-      }
-      if (!shapeLen || isNaN(shapeLen)) {
-        shapeLen = 2 * (w + h);
-      }
-
-      const textEls = Array.from(el.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel'));
-
-      return { id: el.id || `node_${idx}`, text, x, y, w, h, el, shapeEl, shapeLen, textEls };
-    });
-
-    // 1. Initial State: Prepare node shapes with stroke dashoffset and hide text & edges
-    nodes.forEach((n, idx) => {
-      const palette = NODE_PALETTES[idx % NODE_PALETTES.length];
-      n.el.classList.add(`node-palette-${idx % NODE_PALETTES.length}`);
-      n.el.style.opacity = '1';
-      n.el.style.filter = '';
-      if (n.shapeEl && n.shapeEl.style) {
-        n.shapeEl.style.stroke = palette.stroke;
-        n.shapeEl.style.fill = palette.fill;
-        n.shapeEl.style.strokeWidth = '1.5px';
-        n.shapeEl.style.strokeDasharray = `${n.shapeLen}`;
-        n.shapeEl.style.strokeDashoffset = `${n.shapeLen}`;
-        n.shapeEl.style.transition = 'none';
-      }
-      n.textEls.forEach((t) => {
+      const textEls = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+      textEls.forEach((t) => {
         t.style.opacity = '0';
-        t.style.transition = 'opacity 0.22s ease';
+        t.style.transition = 'opacity 0.25s ease';
       });
     });
 
@@ -828,260 +762,327 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
 
     rawLabelEls.forEach((l) => {
       l.style.opacity = '0';
-      l.style.transition = 'opacity 0.2s ease';
+      l.style.transition = 'opacity 0.25s ease';
     });
 
     wrapper.classList.add('building');
     setIsBuilding(true);
 
-    // Initial position: White hairline vector stylus hovers above first node
-    const firstNode = nodes[0];
-    const startX = firstNode.x + firstNode.w / 2;
-    const startY = Math.max(15, firstNode.y - 30);
+    // Initial position: White hairline vector stylus hovers above first item
+    const firstTarget = sortedClusters[0] || rawNodeEls[0];
+    const fr = firstTarget.getBoundingClientRect();
+    const startPt = toStagePoint(fr.left + fr.width / 2, Math.max(10, fr.top - 24));
 
     setCursorState({
-      x: startX,
-      y: startY,
+      x: startPt.x,
+      y: startPt.y,
       visible: true,
-      status: '🧠 Drafting Diagram...',
+      status: '🧠 Drafting Blueprint...',
       label: 'Vedika AI',
       isClicking: false,
       isTracing: false
     });
 
-    // 2. Execute point-to-point drawing sequence
+    // Helper to find all nodes visually inside a cluster
+    const getNodesForCluster = (clusterEl, allNodes) => {
+      const cr = clusterEl.getBoundingClientRect();
+      const matched = allNodes.filter((n) => {
+        const nr = n.getBoundingClientRect();
+        const centerY = nr.top + nr.height / 2;
+        return centerY >= cr.top - 5 && centerY <= cr.bottom + 5;
+      });
+      // Sort left-to-right
+      return matched.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+    };
+
+    // Sequential point-to-point drawing: boxes -> text -> arrows (one after the other, one at a time!)
     (async () => {
       try {
-        await new Promise((r) => setTimeout(r, 140));
+        await new Promise((r) => setTimeout(r, 120));
         if (animCancelledRef.current) return;
 
-        const isComplexDiagram = nodes.length > 12;
-        const nodeAnimDuration = isComplexDiagram ? 200 : 340;
-        const edgeAnimDuration = isComplexDiagram ? 160 : 280;
-        const clusterAnimDuration = 200;
-        const nodeDelay = isComplexDiagram ? 30 : 50;
-        const edgeDelay = isComplexDiagram ? 20 : 40;
-        const cursorUpdateThreshold = isComplexDiagram ? 3 : 1;
+        let nodeColorCounter = 0;
 
-        // Frame and draw each cluster stage first with the digital stylus gliding along the perimeter
-        for (let cIdx = 0; cIdx < clusters.length; cIdx++) {
-          if (animCancelledRef.current) break;
-          const cluster = clusters[cIdx];
-          const cRect = cluster.rect;
-          const rw = cluster.rw;
-          const rh = cluster.rh;
-          const perim = 2 * (rw + rh);
+        if (sortedClusters.length > 0) {
+          // Diagram has Stages / Clusters
+          for (let cIdx = 0; cIdx < sortedClusters.length; cIdx++) {
+            if (animCancelledRef.current) break;
+            const clusterEl = sortedClusters[cIdx];
+            const cRectEl = clusterEl.querySelector('rect');
+            const clusterText = clusterEl.textContent?.trim().replace(/\s+/g, ' ') || `Stage ${cIdx + 1}`;
 
-          setCursorState((prev) => ({
-            ...prev,
-            status: `Framing Stage ${cIdx + 1}: ${cluster.text.slice(0, 24)}...`,
-            label: `Stage ${cIdx + 1}`,
-            accentColor: '#38BDF8',
-            x: cluster.x,
-            y: cluster.y,
-            isTracing: true,
-            isClicking: true
-          }));
+            // Step 1: Draw the Stage container box frame
+            if (cRectEl) {
+              const cr = cRectEl.getBoundingClientRect();
+              const cStartPt = toStagePoint(cr.left, cr.top);
 
-          cachedStageRect = stageEl.getBoundingClientRect();
-          let cFrameCount = 0;
-          await animateFrame(clusterAnimDuration, (t) => {
-            if (cRect && cRect.style) {
-              cRect.style.strokeDashoffset = `${cluster.rectLen * (1 - t)}`;
-            }
-            // Glide the pen around the 4 sides of the cluster rectangle!
-            const d = t * perim;
-            let px = cluster.x;
-            let py = cluster.y;
-            if (d < rw) {
-              px = cluster.x + d;
-              py = cluster.y;
-            } else if (d < rw + rh) {
-              px = cluster.x + rw;
-              py = cluster.y + (d - rw);
-            } else if (d < 2 * rw + rh) {
-              px = cluster.x + rw - (d - (rw + rh));
-              py = cluster.y + rh;
-            } else {
-              px = cluster.x;
-              py = cluster.y + rh - (d - (2 * rw + rh));
-            }
-            if (cFrameCount % cursorUpdateThreshold === 0) {
-              setCursorState((prev) => ({ ...prev, x: px, y: py }));
-            }
-            cFrameCount++;
-          });
+              setCursorState((prev) => ({
+                ...prev,
+                status: `Drawing ${clusterText.slice(0, 24)}...`,
+                label: `Stage ${cIdx + 1}`,
+                accentColor: '#38BDF8',
+                x: cStartPt.x,
+                y: cStartPt.y,
+                isTracing: true,
+                isClicking: true
+              }));
 
-          if (cRect && cRect.style) cRect.style.strokeDashoffset = '0';
-          cluster.labelEls.forEach((l) => { l.style.opacity = '1'; });
-          await new Promise((r) => setTimeout(r, 40));
-        }
+              const rw = cr.width;
+              const rh = cr.height;
+              const perim = 2 * (rw + rh);
+              const rectLen = parseFloat(cRectEl.dataset.rectLength || String(perim));
 
-        // Sequentially draw each node with glowing vector stylus
-        for (let idx = 0; idx < nodes.length; idx++) {
-          if (animCancelledRef.current) break;
-          const node = nodes[idx];
-          const colorIdx = idx % NODE_PALETTES.length;
-          const palette = NODE_PALETTES[colorIdx];
-          const shapeEl = node.shapeEl;
-          const shapeLen = node.shapeLen;
-
-          setCursorState((prev) => ({
-            ...prev,
-            status: `Drawing Node (${idx + 1}/${nodes.length})`,
-            label: node.text.slice(0, 24),
-            accentColor: palette.stroke,
-            isTracing: true,
-            isClicking: true
-          }));
-
-          cachedStageRect = stageEl.getBoundingClientRect();
-          let frameCount = 0;
-          await animateFrame(nodeAnimDuration, (t) => {
-            if (shapeEl && shapeEl.style) {
-              shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
-            }
-            if (frameCount % cursorUpdateThreshold === 0) {
-              let stagePt = null;
-              if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
-                try {
-                  const pt = shapeEl.getPointAtLength(shapeLen * t);
-                  stagePt = getStagePoint(shapeEl, pt);
-                } catch {}
-              }
-              if (!stagePt) {
-                const nw = node.w;
-                const nh = node.h;
-                const perim = 2 * (nw + nh);
+              await animateFrame(200, (t) => {
+                cRectEl.style.strokeDashoffset = `${rectLen * (1 - t)}`;
                 const d = t * perim;
-                let px = node.x;
-                let py = node.y;
-                if (d < nw) {
-                  px = node.x + d;
-                  py = node.y;
-                } else if (d < nw + nh) {
-                  px = node.x + nw;
-                  py = node.y + (d - nw);
-                } else if (d < 2 * nw + nh) {
-                  px = node.x + nw - (d - (nw + nh));
-                  py = node.y + nh;
-                } else {
-                  px = node.x;
-                  py = node.y + nh - (d - (2 * nw + nh));
-                }
-                stagePt = { x: px, y: py };
-              }
-              setCursorState((prev) => {
-                if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
-                return { ...prev, x: stagePt.x, y: stagePt.y };
+                let cx = cr.left, cy = cr.top;
+                if (d < rw) { cx = cr.left + d; cy = cr.top; }
+                else if (d < rw + rh) { cx = cr.right; cy = cr.top + (d - rw); }
+                else if (d < 2 * rw + rh) { cx = cr.right - (d - (rw + rh)); cy = cr.bottom; }
+                else { cx = cr.left; cy = cr.bottom - (d - (2 * rw + rh)); }
+                const pt = toStagePoint(cx, cy);
+                setCursorState((prev) => ({ ...prev, x: pt.x, y: pt.y }));
               });
+              cRectEl.style.strokeDashoffset = '0';
             }
-            frameCount++;
-          });
 
-          if (animCancelledRef.current) break;
+            // Reveal Stage Title Text
+            const clusterLabels = clusterEl.querySelectorAll('text, span, .nodeLabel, foreignObject');
+            clusterLabels.forEach((l) => { l.style.opacity = '1'; });
+            await new Promise((r) => setTimeout(r, 60));
 
-          if (shapeEl && shapeEl.style) shapeEl.style.strokeDashoffset = '0';
-          node.textEls.forEach((t) => { t.style.opacity = '1'; });
-          node.el.style.filter = '';
+            // Step 2: Draw each node inside this Stage (box first, then the text in it!)
+            const stageNodes = getNodesForCluster(clusterEl, rawNodeEls);
+            for (let nIdx = 0; nIdx < stageNodes.length; nIdx++) {
+              if (animCancelledRef.current) break;
+              const nodeEl = stageNodes[nIdx];
+              const shapeEl = nodeEl.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || nodeEl;
+              const textEls = nodeEl.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+              const nodeTitle = nodeEl.querySelector('b, strong')?.textContent?.trim() || nodeEl.textContent?.trim().slice(0, 20) || `Node`;
 
-          setCursorState((prev) => ({
-            ...prev,
-            isClicking: false,
-            isTracing: false,
-            status: `Node ${idx + 1} Ready ✨`
-          }));
+              const nr = (shapeEl || nodeEl).getBoundingClientRect();
+              const nStartPt = toStagePoint(nr.left, nr.top);
+              const colorIdx = nodeColorCounter % NODE_PALETTES.length;
+              nodeColorCounter++;
+              const palette = NODE_PALETTES[colorIdx];
 
-          await new Promise((r) => setTimeout(r, nodeDelay));
+              setCursorState((prev) => ({
+                ...prev,
+                status: `Drawing Box: ${nodeTitle}`,
+                label: nodeTitle.slice(0, 18),
+                accentColor: palette.stroke,
+                x: nStartPt.x,
+                y: nStartPt.y,
+                isTracing: true,
+                isClicking: true
+              }));
 
-          // Trace connecting arrow along conduit path
-          if (idx < rawEdgeEls.length) {
-            const edgeEl = rawEdgeEls[idx];
-            const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
+              // 2a. Pen draws the node box outline
+              const nw = nr.width;
+              const nh = nr.height;
+              const nPerim = 2 * (nw + nh);
+              const shapeLen = parseFloat(shapeEl.dataset.shapeLength || String(nPerim));
 
-            edgeEl.style.opacity = '1';
-            edgeEl.style.stroke = palette.stroke;
-            edgeEl.style.strokeWidth = '1.75px';
-            edgeEl.style.strokeDasharray = `${edgeLen}`;
-            edgeEl.style.strokeDashoffset = `${edgeLen}`;
+              await animateFrame(220, (t) => {
+                if (shapeEl.style) {
+                  shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
+                }
+                const d = t * nPerim;
+                let cx = nr.left, cy = nr.top;
+                if (d < nw) { cx = nr.left + d; cy = nr.top; }
+                else if (d < nw + nh) { cx = nr.right; cy = nr.top + (d - nw); }
+                else if (d < 2 * nw + nh) { cx = nr.right - (d - (nw + nh)); cy = nr.bottom; }
+                else { cx = nr.left; cy = nr.bottom - (d - (2 * nw + nh)); }
+                const pt = toStagePoint(cx, cy);
+                setCursorState((prev) => ({ ...prev, x: pt.x, y: pt.y }));
+              });
+              if (shapeEl.style) shapeEl.style.strokeDashoffset = '0';
+
+              // 2b. Pen writes the text inside the box!
+              const nCenterPt = toStagePoint(nr.left + nw / 2, nr.top + nh / 2);
+              setCursorState((prev) => ({
+                ...prev,
+                status: `Writing text: ${nodeTitle}`,
+                x: nCenterPt.x,
+                y: nCenterPt.y,
+                isClicking: false
+              }));
+
+              // Reveal text in this box
+              textEls.forEach((t) => { t.style.opacity = '1'; });
+              if (shapeEl.style) {
+                shapeEl.style.stroke = palette.stroke;
+                shapeEl.style.fill = palette.fill;
+              }
+              await new Promise((r) => setTimeout(r, 90));
+            }
+
+            // Step 3: Draw the connecting arrow to the next Stage
+            if (cIdx < sortedClusters.length - 1) {
+              if (animCancelledRef.current) break;
+              const edgeEl = rawEdgeEls[cIdx];
+              if (edgeEl) {
+                const er = edgeEl.getBoundingClientRect();
+                const edgeStartPt = toStagePoint(er.left + er.width / 2, er.top);
+                const edgeLen = parseFloat(edgeEl.dataset.pathLength || String(Math.max(80, er.height)));
+
+                edgeEl.style.opacity = '1';
+                edgeEl.style.stroke = '#38BDF8';
+                edgeEl.style.strokeWidth = '1.75px';
+                edgeEl.style.strokeDasharray = `${edgeLen}`;
+                edgeEl.style.strokeDashoffset = `${edgeLen}`;
+
+                setCursorState((prev) => ({
+                  ...prev,
+                  status: `Connecting to Stage ${cIdx + 2} ➔`,
+                  label: '➔',
+                  accentColor: '#38BDF8',
+                  x: edgeStartPt.x,
+                  y: edgeStartPt.y,
+                  isTracing: true,
+                  isClicking: true
+                }));
+
+                // Pen glides along the arrow path from top to bottom
+                await animateFrame(180, (t) => {
+                  edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
+                  const cx = er.left + er.width / 2;
+                  const cy = er.top + t * er.height;
+                  const pt = toStagePoint(cx, cy);
+                  setCursorState((prev) => ({ ...prev, x: pt.x, y: pt.y }));
+                });
+                edgeEl.style.strokeDashoffset = '0';
+
+                // Reveal arrowhead marker
+                if (cIdx < rawMarkerEls.length) {
+                  rawMarkerEls[cIdx].style.opacity = '1';
+                  rawMarkerEls[cIdx].style.fill = '#38BDF8';
+                }
+
+                // Pen moves to and reveals the single neat pill label ("Processes into" / "Yields deliverables")
+                if (cIdx < rawLabelEls.length) {
+                  const lbl = rawLabelEls[cIdx];
+                  lbl.style.opacity = '1';
+                  const lr = lbl.getBoundingClientRect();
+                  const lPt = toStagePoint(lr.left + lr.width / 2, lr.top + lr.height / 2);
+                  setCursorState((prev) => ({
+                    ...prev,
+                    status: lbl.textContent?.trim() || 'Connected',
+                    label: '➔',
+                    x: lPt.x,
+                    y: lPt.y,
+                    isClicking: false
+                  }));
+                }
+                await new Promise((r) => setTimeout(r, 90));
+              }
+            }
+          }
+        } else {
+          // Diagram without clusters: simple top-to-bottom sequence
+          const sortedNodes = rawNodeEls.slice().sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+          for (let idx = 0; idx < sortedNodes.length; idx++) {
+            if (animCancelledRef.current) break;
+            const nodeEl = sortedNodes[idx];
+            const shapeEl = nodeEl.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || nodeEl;
+            const textEls = nodeEl.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+            const nodeTitle = nodeEl.querySelector('b, strong')?.textContent?.trim() || nodeEl.textContent?.trim().slice(0, 20) || `Node ${idx + 1}`;
+
+            const nr = (shapeEl || nodeEl).getBoundingClientRect();
+            const nStartPt = toStagePoint(nr.left, nr.top);
+            const palette = NODE_PALETTES[idx % NODE_PALETTES.length];
 
             setCursorState((prev) => ({
               ...prev,
-              status: 'Linking Flow ➔',
-              label: '➔',
+              status: `Drawing: ${nodeTitle}`,
+              label: nodeTitle.slice(0, 18),
               accentColor: palette.stroke,
-              isTracing: true
+              x: nStartPt.x,
+              y: nStartPt.y,
+              isTracing: true,
+              isClicking: true
             }));
 
-            cachedStageRect = stageEl.getBoundingClientRect();
-            let edgeFrameCount = 0;
-            await animateFrame(edgeAnimDuration, (t) => {
-              edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
-              if (edgeFrameCount % cursorUpdateThreshold === 0) {
-                let stagePt = null;
-                if (typeof edgeEl.getPointAtLength === 'function') {
-                  try {
-                    const pt = edgeEl.getPointAtLength(edgeLen * t);
-                    stagePt = getStagePoint(edgeEl, pt);
-                  } catch {}
-                }
-                if (stagePt) {
-                  setCursorState((prev) => {
-                    if (Math.abs(prev.x - stagePt.x) < 1 && Math.abs(prev.y - stagePt.y) < 1) return prev;
-                    return { ...prev, x: stagePt.x, y: stagePt.y };
-                  });
-                }
-              }
-              edgeFrameCount++;
+            const nw = nr.width;
+            const nh = nr.height;
+            const nPerim = 2 * (nw + nh);
+            const shapeLen = parseFloat(shapeEl.dataset.shapeLength || String(nPerim));
+
+            await animateFrame(220, (t) => {
+              if (shapeEl.style) shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
+              const d = t * nPerim;
+              let cx = nr.left, cy = nr.top;
+              if (d < nw) { cx = nr.left + d; cy = nr.top; }
+              else if (d < nw + nh) { cx = nr.right; cy = nr.top + (d - nw); }
+              else if (d < 2 * nw + nh) { cx = nr.right - (d - (nw + nh)); cy = nr.bottom; }
+              else { cx = nr.left; cy = nr.bottom - (d - (2 * nw + nh)); }
+              const pt = toStagePoint(cx, cy);
+              setCursorState((prev) => ({ ...prev, x: pt.x, y: pt.y }));
             });
+            if (shapeEl.style) shapeEl.style.strokeDashoffset = '0';
 
-            if (animCancelledRef.current) break;
-
-            edgeEl.style.strokeDashoffset = '0';
-            rawMarkerEls.forEach((m) => {
-              m.style.opacity = '1';
-              m.style.fill = palette.stroke;
-            });
-            rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
-          }
-
-          await new Promise((r) => setTimeout(r, edgeDelay));
-        }
-
-        // Trace any remaining conduits & pipelines (e.g. inter-stage arrows) with the stylus pen
-        for (let eIdx = nodes.length; eIdx < rawEdgeEls.length; eIdx++) {
-          if (animCancelledRef.current) break;
-          const edgeEl = rawEdgeEls[eIdx];
-          const edgeLen = parseFloat(edgeEl.dataset.pathLength || '140');
-          edgeEl.style.opacity = '1';
-          edgeEl.style.stroke = '#38BDF8';
-          edgeEl.style.strokeWidth = '1.75px';
-          edgeEl.style.strokeDasharray = `${edgeLen}`;
-          edgeEl.style.strokeDashoffset = `${edgeLen}`;
-
-          setCursorState((prev) => ({
-            ...prev,
-            status: 'Linking Pipeline ➔',
-            label: 'Pipeline',
-            accentColor: '#38BDF8',
-            isTracing: true
-          }));
-
-          cachedStageRect = stageEl.getBoundingClientRect();
-          let rFrameCount = 0;
-          await animateFrame(edgeAnimDuration, (t) => {
-            edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
-            if (rFrameCount % cursorUpdateThreshold === 0 && typeof edgeEl.getPointAtLength === 'function') {
-              try {
-                const pt = edgeEl.getPointAtLength(edgeLen * t);
-                const stagePt = getStagePoint(edgeEl, pt);
-                setCursorState((prev) => ({ ...prev, x: stagePt.x, y: stagePt.y }));
-              } catch {}
+            // Write text inside the box
+            const nCenterPt = toStagePoint(nr.left + nw / 2, nr.top + nh / 2);
+            setCursorState((prev) => ({
+              ...prev,
+              status: `Writing text: ${nodeTitle}`,
+              x: nCenterPt.x,
+              y: nCenterPt.y,
+              isClicking: false
+            }));
+            textEls.forEach((t) => { t.style.opacity = '1'; });
+            if (shapeEl.style) {
+              shapeEl.style.stroke = palette.stroke;
+              shapeEl.style.fill = palette.fill;
             }
-            rFrameCount++;
-          });
-          edgeEl.style.strokeDashoffset = '0';
+            await new Promise((r) => setTimeout(r, 90));
+
+            // Draw outgoing arrow if available
+            if (idx < rawEdgeEls.length) {
+              const edgeEl = rawEdgeEls[idx];
+              const er = edgeEl.getBoundingClientRect();
+              const edgeStartPt = toStagePoint(er.left + er.width / 2, er.top);
+              const edgeLen = parseFloat(edgeEl.dataset.pathLength || String(Math.max(80, er.height)));
+
+              edgeEl.style.opacity = '1';
+              edgeEl.style.stroke = palette.stroke;
+              edgeEl.style.strokeWidth = '1.75px';
+              edgeEl.style.strokeDasharray = `${edgeLen}`;
+              edgeEl.style.strokeDashoffset = `${edgeLen}`;
+
+              setCursorState((prev) => ({
+                ...prev,
+                status: 'Connecting ➔',
+                label: '➔',
+                accentColor: palette.stroke,
+                x: edgeStartPt.x,
+                y: edgeStartPt.y,
+                isTracing: true
+              }));
+
+              await animateFrame(180, (t) => {
+                edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
+                const cx = er.left + er.width / 2;
+                const cy = er.top + t * er.height;
+                const pt = toStagePoint(cx, cy);
+                setCursorState((prev) => ({ ...prev, x: pt.x, y: pt.y }));
+              });
+              edgeEl.style.strokeDashoffset = '0';
+
+              if (idx < rawMarkerEls.length) {
+                rawMarkerEls[idx].style.opacity = '1';
+                rawMarkerEls[idx].style.fill = palette.stroke;
+              }
+              if (idx < rawLabelEls.length) {
+                rawLabelEls[idx].style.opacity = '1';
+              }
+              await new Promise((r) => setTimeout(r, 60));
+            }
+          }
         }
+
+        // Complete any remaining edges/markers/labels
+        rawEdgeEls.forEach((e) => { e.style.opacity = '1'; if (e.style) e.style.strokeDashoffset = '0'; });
         rawMarkerEls.forEach((m) => { m.style.opacity = '1'; });
         rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
 
@@ -1097,52 +1098,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         }
       } finally {
         hasAnimatedRef.current = true;
-        if (wrapper) {
-          wrapper.classList.remove('building');
-          const allNodes = wrapper.querySelectorAll('.node, g.node');
-          allNodes.forEach((n, i) => {
-            n.style.opacity = '1';
-            n.style.filter = '';
-            const pal = NODE_PALETTES[i % NODE_PALETTES.length];
-            n.classList.add(`node-palette-${i % NODE_PALETTES.length}`);
-            const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
-            if (shape && shape.style) {
-              shape.style.strokeDashoffset = '0';
-              shape.style.stroke = pal.stroke;
-              shape.style.fill = pal.fill;
-              shape.style.strokeWidth = '1.5px';
-            }
-            const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
-            texts.forEach((t) => { t.style.opacity = '1'; });
-          });
-          const allEdges = wrapper.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
-          allEdges.forEach((e) => {
-            e.style.opacity = '1';
-            if (e.style) {
-              e.style.strokeDashoffset = '0';
-              e.style.stroke = '#64748B';
-            }
-          });
-          const allMarkers = wrapper.querySelectorAll('marker, .arrowheadPath, .arrowMarkerPath, [id*="pointEnd"] path, [id*="arrow"] path, .edgeLabel, .edgeLabels');
-          allMarkers.forEach((m) => {
-            m.style.opacity = '1';
-          });
-          const allClusters = wrapper.querySelectorAll('.cluster, g.cluster');
-          allClusters.forEach((c) => {
-            const rect = c.querySelector('rect');
-            if (rect && rect.style) rect.style.strokeDashoffset = '0';
-            const labels = c.querySelectorAll('text, span, .nodeLabel, foreignObject');
-            labels.forEach((l) => { l.style.opacity = '1'; });
-          });
-        }
-
+        stopAndCleanAnimation(container);
         setTimeout(() => {
           setCursorState((prev) => ({ ...prev, visible: false }));
           setIsBuilding(false);
-        }, 300);
+        }, 400);
       }
     })();
-  }, [isModalOpen, zoom]);
+  }, [isModalOpen, zoom, stopAndCleanAnimation]);
 
   const handleSkipBuild = (targetEl) => {
     hasAnimatedRef.current = true;
@@ -1235,7 +1198,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             lineColor: '#64748B',
             secondaryColor: '#161324',
             tertiaryColor: '#0D1929',
-            edgeLabelBackground: '#0F1420',
+            edgeLabelBackground: 'transparent',
             clusterBkg: 'rgba(12, 17, 32, 0.72)',
             clusterBorder: 'rgba(56, 189, 248, 0.28)',
             fontFamily: 'var(--font-outfit), sans-serif',
@@ -1263,6 +1226,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         // Render SVG dynamically
         const { svg } = await mermaid.render(renderId, sanitized);
         let cleanSvg = svg;
+        // Strip duplicate SVG rect boxes inserted by Mermaid under edge labels
+        cleanSvg = cleanSvg.replace(/<rect[^>]*class=["'][^"']*(?:background|edgeLabel)[^"']*["'][^>]*\/?>/gi, '');
         // Clean transparent arrowheads or default strokes
         cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
         cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 1.5px');
@@ -1305,6 +1270,8 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             const fallbackId = 'mmd_fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
             const { svg } = await mermaid.render(fallbackId, simpleChart);
             let cleanSvg = svg;
+            // Strip duplicate SVG rect boxes inserted by Mermaid under edge labels
+            cleanSvg = cleanSvg.replace(/<rect[^>]*class=["'][^"']*(?:background|edgeLabel)[^"']*["'][^>]*\/?>/gi, '');
             cleanSvg = cleanSvg.replace(/fill:\s*rgba\(255,\s*255,\s*255,\s*0\)/g, 'fill: #64748B');
             cleanSvg = cleanSvg.replace(/stroke:\s*1\.25px/g, 'stroke: #38BDF8; stroke-width: 1.5px');
             cleanSvg = cleanSvg.replace(/<svg\s+([^>]*?)style="([^"]*?)"/i, (m, attrs, style) => {
