@@ -28,12 +28,12 @@ function getGeminiClient() {
   return new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
 }
 
-// Vertex AI model names for GenerateContent (use latest available in project)
+// Vertex AI model names - prioritize more available models
 const TEXT_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.5-flash',
-  'gemini-3.1-flash',
-  'gemini-2.0-flash',
+  'gemini-3.5-flash',    // More available, faster
+  'gemini-3.8-flash',    // Latest but high demand
+  'gemini-3.1-flash',    // Fallback
+  'gemini-2.0-flash',    // Fallback
 ];
 
 export async function POST(request) {
@@ -94,6 +94,13 @@ export async function POST(request) {
     let textResult = null;
     let lastError = null;
 
+    // Timeout wrapper (30 seconds max per model)
+    const withTimeout = (promise, ms = 30000) => 
+      Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Model timeout after ' + ms + 'ms')), ms))
+      ]);
+
     for (let attempt = 0; attempt < Math.min(3, GEMINI_KEYS.length); attempt++) {
       const ai = getGeminiClient();
       
@@ -101,7 +108,7 @@ export async function POST(request) {
         try {
           console.log(`[Gemini Vertex] Trying ${modelName} with key index ${attempt}`);
           
-          const response = await ai.models.generateContent({
+          const response = await withTimeout(ai.models.generateContent({
             model: modelName,
             contents: [{ role: 'user', parts }],
             config: {
@@ -109,7 +116,7 @@ export async function POST(request) {
               temperature: 0.4,
               maxOutputTokens: clampedTokens,
             },
-          });
+          }), 30000); // 30 second timeout per model
 
           textResult = response.text;
           
