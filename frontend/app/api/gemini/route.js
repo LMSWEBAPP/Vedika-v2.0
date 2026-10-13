@@ -28,12 +28,12 @@ function getGeminiClient() {
   return new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
 }
 
-// Vertex AI model names - prioritize more available models
+// Gemini text generation models - prioritizing fast, highly-available models
 const TEXT_MODELS = [
-  'gemini-3.5-flash',    // More available, faster
-  'gemini-3.8-flash',    // Latest but high demand
-  'gemini-3.1-flash',    // Fallback
-  'gemini-2.0-flash',    // Fallback
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-pro',
 ];
 
 export async function POST(request) {

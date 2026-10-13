@@ -975,13 +975,26 @@ export default function GeneralTutor() {
         if (intent.feature === 'quiz') features.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
         else if (intent.feature === 'flashcards') features.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
         else if (intent.feature === 'infographic') {
-          // Use dynamic infographic engine that analyzes content and picks optimal diagram type
-          const infographicResult = generateInfographic(text);
-          features.infographic = { 
-            points: infographicResult.points, 
-            mermaid: infographicResult.mermaid,
-            diagramType: infographicResult.diagramType
-          };
+          let parsed = null;
+          if (text && text.trim()) {
+            const res = parseInfographicOutput(text);
+            if (res && res.mermaid && res.mermaid.trim().length > 10) {
+              parsed = {
+                points: res.points?.length > 0 ? res.points : (Array.isArray(res) ? res : []),
+                mermaid: res.mermaid,
+                diagramType: 'flowchart'
+              };
+            }
+          }
+          if (!parsed) {
+            const localResult = generateInfographic(intent.topic || text);
+            parsed = {
+              points: localResult.points,
+              mermaid: localResult.mermaid,
+              diagramType: localResult.diagramType || 'flowchart'
+            };
+          }
+          features.infographic = parsed;
         }
         else if (intent.feature === 'simpler') features.simpler = { text };
         else if (intent.feature === 'examples') features.examples = { text };
@@ -1054,6 +1067,53 @@ export default function GeneralTutor() {
 
     setGenerating({ msgIdx, type });
     try {
+      if (type === 'infographic') {
+        let text = '';
+        try {
+          const system = FEATURE_SYSTEMS[type] || TUTOR_SYSTEM;
+          const prompt = buildFeaturePrompt(type, msg.content, mode);
+          text = await geminiCall(system, prompt, 1500, { sessionId: currentSessionId, userId });
+        } catch (callErr) {
+          console.warn('[GeneralTutor] Gemini infographic call notice:', callErr?.message);
+        }
+
+        let parsed = null;
+        if (text && text.trim()) {
+          const res = parseInfographicOutput(text);
+          if (res && res.mermaid && res.mermaid.trim().length > 10) {
+            parsed = {
+              points: res.points?.length > 0 ? res.points : (Array.isArray(res) ? res : []),
+              mermaid: res.mermaid,
+              diagramType: 'flowchart'
+            };
+          }
+        }
+
+        // Graceful fallback to dynamic local infographic engine using actual content
+        if (!parsed) {
+          const localResult = generateInfographic(msg.content);
+          parsed = {
+            points: localResult.points,
+            mermaid: localResult.mermaid,
+            diagramType: localResult.diagramType || 'flowchart'
+          };
+        }
+
+        setMessages(prev => {
+          const next = prev.map((m, i) => {
+            if (i !== msgIdx) return m;
+            return {
+              ...m,
+              features: { ...m.features, infographic: parsed },
+              activeFeature: 'infographic'
+            };
+          });
+          setTimeout(() => saveSession(next, currentSessionId), 50);
+          return next;
+        });
+        return;
+      }
+
       const system = FEATURE_SYSTEMS[type] || TUTOR_SYSTEM;
       const prompt = buildFeaturePrompt(type, msg.content, mode);
       const tokens = type === 'simpler' || type === 'examples' ? 1000 : 1500;
@@ -1066,15 +1126,6 @@ export default function GeneralTutor() {
           const f = { ...m.features };
           if (type === 'quiz') f.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
           else if (type === 'flashcards') f.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
-          else if (type === 'infographic') {
-            // Use dynamic infographic engine that analyzes content and picks optimal diagram type
-            const infographicResult = generateInfographic(text);
-            f.infographic = { 
-              points: infographicResult.points, 
-              mermaid: infographicResult.mermaid,
-              diagramType: infographicResult.diagramType
-            };
-          }
           else if (type === 'simpler') f.simpler = { text };
           else if (type === 'examples') f.examples = { text };
           return { ...m, features: f, activeFeature: type };

@@ -428,8 +428,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const derivedTopicTitle = React.useMemo(() => {
     if (chatHistory && chatHistory.length > 0) {
       const userMsg = [...chatHistory].reverse().find(m => m.sender === 'user' || m.role === 'user');
-      if (userMsg && userMsg.text) {
-        let t = userMsg.text.replace(/^(explain|teach me|what is|tell me about|how does|why is|draw|generate an infographic about|infographic on)\s+/i, '').trim();
+      const rawUserText = userMsg ? (userMsg.content || userMsg.text || '') : '';
+      if (rawUserText) {
+        let t = rawUserText.replace(/^(explain|teach me|what is|tell me about|how does|why is|draw|generate an infographic about|infographic on|visual summary of|visual summary on)\s+/i, '').trim();
         t = t.replace(/[?!.]+$/, '').trim();
         if (t.length > 0 && t.length <= 60) {
           return t.charAt(0).toUpperCase() + t.slice(1);

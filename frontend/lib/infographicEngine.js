@@ -511,7 +511,11 @@ function extractYear(text) {
 
 // ─── Main Generator ───
 
-export function generateInfographic(text, options = {}) {
+export function generateInfographic(rawText, options = {}) {
+  // Strip code blocks (e.g. ```mermaid ... ```) so code fences never contaminate extracted points
+  const cleanedText = (rawText || '').replace(/```[\s\S]*?```/g, '').trim();
+  const text = cleanedText.length > 20 ? cleanedText : (rawText || '');
+
   const analysis = analyzeContent(text);
   const points = extractKeyPoints(text);
   const entities = extractEntities(text);
