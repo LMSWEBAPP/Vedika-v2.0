@@ -18,6 +18,7 @@ import {
   TUTOR_SYSTEM, QUIZ_SYSTEM, FLASHCARD_SYSTEM, INFOGRAPHIC_SYSTEM, SIMPLER_SYSTEM, EXAMPLES_SYSTEM,
   MAX_TOKENS
 } from '@/lib/lms-data';
+import { generateInfographic } from '@/lib/infographicEngine';
 import VoiceAgentView from '@/components/voice-tutor/VoiceAgentView';
 import MermaidDiagram from '@/components/MermaidDiagram';
 import { getJwtToken } from '@/lib/jwtCache';
@@ -974,8 +975,13 @@ export default function GeneralTutor() {
         if (intent.feature === 'quiz') features.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
         else if (intent.feature === 'flashcards') features.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
         else if (intent.feature === 'infographic') {
-          const parsed = parseInfographicOutput(text);
-          features.infographic = { points: parsed.points || parsed, mermaid: parsed.mermaid || '' };
+          // Use dynamic infographic engine that analyzes content and picks optimal diagram type
+          const infographicResult = generateInfographic(text);
+          features.infographic = { 
+            points: infographicResult.points, 
+            mermaid: infographicResult.mermaid,
+            diagramType: infographicResult.diagramType
+          };
         }
         else if (intent.feature === 'simpler') features.simpler = { text };
         else if (intent.feature === 'examples') features.examples = { text };
@@ -1061,8 +1067,13 @@ export default function GeneralTutor() {
           if (type === 'quiz') f.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
           else if (type === 'flashcards') f.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
           else if (type === 'infographic') {
-            const parsed = parseInfographicOutput(text);
-            f.infographic = { points: parsed.points || parsed, mermaid: parsed.mermaid || '' };
+            // Use dynamic infographic engine that analyzes content and picks optimal diagram type
+            const infographicResult = generateInfographic(text);
+            f.infographic = { 
+              points: infographicResult.points, 
+              mermaid: infographicResult.mermaid,
+              diagramType: infographicResult.diagramType
+            };
           }
           else if (type === 'simpler') f.simpler = { text };
           else if (type === 'examples') f.examples = { text };
@@ -2102,6 +2113,7 @@ export default function GeneralTutor() {
                                   chart={msg.features.infographic.mermaid}
                                   points={msg.features.infographic.points}
                                   chatHistory={messages}
+                                  diagramType={msg.features.infographic.diagramType || 'flowchart'}
                                   onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
                                   onClose={() => {
                                     setMessages(prev => prev.map((m, i) => i === mi ? { ...m, activeFeature: null } : m));

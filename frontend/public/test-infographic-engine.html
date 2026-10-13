@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Infographic Engine Test</title>
+  <link rel="stylesheet" href="../components/MermaidDiagram.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+    body { margin: 0; padding: 20px; background: #02050c; font-family: 'Outfit', sans-serif; color: #F8FAFC; min-height: 100vh; }
+    .container { max-width: 1600px; margin: 0 auto; }
+    h1 { text-align: center; background: linear-gradient(135deg, #38BDF8 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 30px; }
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 1200px) { .test-grid { grid-template-columns: 1fr; } }
+    .panel { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 20px; }
+    .panel h3 { color: #38BDF8; margin-top: 0; font-size: 16px; }
+    textarea { width: 100%; min-height: 200px; background: #070913; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #E2E8F0; font-family: 'JetBrains Mono', monospace; font-size: 13px; resize: vertical; }
+    button { background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%); color: #030712; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer; margin: 5px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result { margin-top: 20px; }
+    .diagram-type { display: inline-block; background: rgba(56, 189, 248, 0.2); color: #38BDF8; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+    .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 8px; margin-top: 16px; }
+    .takeaway { background: rgba(245, 169, 91, 0.1); border: 1px solid rgba(245, 169, 91, 0.3); border-radius: 8px; padding: 12px; font-size: 13px; }
+    .takeaway strong { color: #F5A95B; }
+    #mermaid-mount { min-height: 400px; background: rgba(10, 15, 30, 0.8); border-radius: 12px; padding: 20px; overflow: auto; }
+    .log { background: #050811; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8; max-height: 200px; overflow: auto; margin-top: 10px; }
+    .sample-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94A3B8; font-size: 12px; padding: 6px 12px; }
+    .sample-btn:hover { background: rgba(56, 189, 248, 0.1); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3); }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 Dynamic Infographic Engine Test</h1>
+    
+    <div class="test-grid">
+      <!-- Left Panel: Input & Controls -->
+      <div class="panel">
+        <h3>📝 Input Text</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+          <button class="sample-btn" onclick="loadSample('process')">⚙️ Process</button>
+          <button class="sample-btn" onclick="loadSample('decision')">🔀 Decision</button>
+          <button class="sample-btn" onclick="loadSample('hierarchy')">🌳 Hierarchy</button>
+          <button class="sample-btn" onclick="loadSample('timeline')">📅 Timeline</button>
+          <button class="sample-btn" onclick="loadSample('comparison')">⚖️ Comparison</button>
+          <button class="sample-btn" onclick="loadSample('architecture')">🏗️ Architecture</button>
+          <button class="sample-btn" onclick="loadSample('sequence')">↕️ Sequence</button>
+          <button class="sample-btn" onclick="loadSample('mindmap')">🧠 Mindmap</button>
+        </div>
+        <textarea id="inputText" placeholder="Paste Vedika response here..."></textarea>
+        <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button onclick="generateInfographic()">✨ Generate Infographic</button>
+          <button onclick="copyMermaid()">📋 Copy Mermaid</button>
+          <button onclick="clearAll()">🗑️ Clear</button>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+      
+      <!-- Right Panel: Output -->
+      <div class="panel">
+        <h3>📊 Generated Output</h3>
+        <div id="output" class="result">
+          <div class="diagram-type" id="diagramType">No output yet</div>
+          <div id="mermaid-mount"></div>
+          <div class="takeaways" id="takeaways"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { generateInfographic, analyzeContent, DIAGRAM_TYPES } from '../lib/infographicEngine.js';
+    
+    // Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      themeVariables: {
+        darkMode: true,
+        background: 'transparent',
+        primaryColor: '#0F1420',
+        primaryTextColor: '#F8FAFC',
+        primaryBorderColor: '#38BDF8',
+        lineColor: '#64748B',
+        secondaryColor: '#161324',
+        tertiaryColor: '#0D1929',
+        edgeLabelBackground: '#0F1420',
+        clusterBkg: 'rgba(12, 17, 32, 0.72)',
+        clusterBorder: 'rgba(56, 189, 248, 0.28)',
+        fontFamily: "'Outfit', sans-serif",
+        fontSize: '13px',
+      },
+      flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: false, nodeSpacing: 50, rankSpacing: 65, padding: 18 }
+    });
+    
+    const SAMPLES = {
+      process: `Mitochondria are the powerhouses of the cell. The process begins with glycolysis where glucose is broken down into pyruvate in the cytoplasm. Pyruvate then enters the mitochondrial matrix where the citric acid cycle (Krebs cycle) occurs, producing NADH and FADH2. These electron carriers feed into the electron transport chain along the inner mitochondrial membrane. As electrons flow through complexes I-IV, protons are pumped into the intermembrane space creating a gradient. Finally, ATP synthase uses this proton gradient to phosphorylate ADP into ATP.`,
+      
+      decision: `When a cell receives a signal, it first checks if the receptor is activated. If the signal is strong enough, the cell initiates the MAPK pathway. If the signal is weak, it may trigger apoptosis instead. The decision depends on the phosphorylation state of key proteins. Once the pathway is chosen, downstream effectors are activated leading to either cell proliferation or programmed cell death.`,
+      
+      hierarchy: `The cardiovascular system consists of the heart, blood vessels, and blood. The heart has four chambers: two atria and two ventricles. Blood vessels are classified into arteries, veins, and capillaries. Arteries carry oxygenated blood away from the heart (except pulmonary artery). Veins return deoxygenated blood to the heart (except pulmonary vein). Capillaries are the site of gas exchange. Blood contains red blood cells, white blood cells, platelets, and plasma.`,
+      
+      timeline: `Earth formed 4.5 billion years ago. The first single-celled life appeared around 3.8 billion years ago. Photosynthesis evolved 2.5 billion years ago, oxygenating the atmosphere. The Cambrian explosion 541 million years ago saw rapid diversification. Dinosaurs dominated from 245 to 66 million years ago. Mammals rose after the K-T extinction. Humans evolved around 300,000 years ago.`,
+      
+      comparison: `Photosynthesis vs Cellular Respiration. Photosynthesis occurs in chloroplasts, uses CO2 and H2O, produces glucose and O2, requires light energy. Cellular respiration occurs in mitochondria, uses glucose and O2, produces CO2 and H2O, releases ATP energy. They are complementary processes - the products of one are the reactants of the other. Both involve electron transport chains and ATP synthesis.`,
+      
+      architecture: `A modern web application follows a layered architecture. The presentation layer handles UI rendering with React/Vue, state management with Redux, and API communication. The business logic layer contains services, controllers, validation, and domain models. The data layer uses ORM like Prisma, database connections, migrations, and caching with Redis. Infrastructure includes load balancers, containers, CI/CD pipelines, and monitoring.`,
+      
+      sequence: `The TCP three-way handshake establishes a reliable connection. Step 1: Client sends SYN with initial sequence number. Step 2: Server responds with SYN-ACK acknowledging client's sequence and sending its own. Step 3: Client sends ACK confirming server's sequence. Both sides now have synchronized sequence numbers and can exchange data reliably.`,
+      
+      mindmap: `Cellular respiration is the central concept. It branches into three main stages: Glycolysis in the cytoplasm, Citric Acid Cycle in the mitochondrial matrix, and Electron Transport Chain on the inner membrane. Glycolysis produces pyruvate and NADH. The Citric Acid Cycle generates NADH, FADH2, and GTP. The Electron Transport Chain creates a proton gradient driving ATP synthase. Key molecules: glucose, oxygen, ATP, NAD+, FAD.`
+    };
+    
+    window.loadSample = function(key) {
+      document.getElementById('inputText').value = SAMPLES[key] || '';
+      log(`Loaded sample: ${key}`);
+    };
+    
+    function log(msg) {
+      const el = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      el.textContent += `[${time}] ${msg}\n`;
+      el.scrollTop = el.scrollHeight;
+    }
+    
+    window.generateInfographic = async function() {
+      const text = document.getElementById('inputText').value.trim();
+      if (!text) { alert('Please enter some text'); return; }
+      
+      log('Analyzing content...');
+      const analysis = analyzeContent(text);
+      log(`Detected type: ${analysis.primaryType} (confidence: ${(analysis.confidence * 100).toFixed(0)}%)`);
+      log(`Signals: ${Object.entries(analysis.signals).filter(([_,v]) => v).map(([k]) => k).join(', ')}`);
+      
+      log('Generating infographic...');
+      const result = generateInfographic(text);
+      
+      log(`Generated: ${result.diagramType} diagram with ${result.points.length} takeaways`);
+      
+      // Update UI
+      document.getElementById('diagramType').textContent = `${DIAGRAM_TYPES[result.diagramType]?.icon || '📊'} ${DIAGRAM_TYPES[result.diagramType]?.name || result.diagramType}`;
+      document.getElementById('diagramType').style.background = 'rgba(16, 185, 129, 0.2)';
+      document.getElementById('diagramType').style.color = '#10B981';
+      
+      // Render takeaways
+      const takeawaysEl = document.getElementById('takeaways');
+      takeawaysEl.innerHTML = result.points.map((pt, i) => `
+        <div class="takeaway">
+          <strong>${i + 1}.</strong> ${pt}
+        </div>
+      `).join('');
+      
+      // Render Mermaid
+      const mount = document.getElementById('mermaid-mount');
+      mount.innerHTML = '<div style="text-align:center;color:#94A3B8;padding:40px;">Rendering...</div>';
+      
+      try {
+        const renderId = 'infographic-' + Date.now();
+        const { svg } = await mermaid.render(renderId, result.mermaid);
+        mount.innerHTML = svg;
+        log('Render successful!');
+      } catch (err) {
+        mount.innerHTML = `<div style="color:#F87171;padding:20px;">Error: ${err.message}</div>`;
+        log(`Render error: ${err.message}`);
+        console.error(err);
+      }
+    };
+    
+    window.copyMermaid = function() {
+      // Would need to store last result
+      log('Copy not implemented in demo');
+    };
+    
+    window.clearAll = function() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('mermaid-mount').innerHTML = '';
+      document.getElementById('takeaways').innerHTML = '';
+      document.getElementById('diagramType').textContent = 'No output yet';
+      document.getElementById('diagramType').style.background = '';
+      document.getElementById('diagramType').style.color = '';
+      document.getElementById('log').textContent = '';
+    };
+    
+    // Load initial sample
+    loadSample('process');
+  </script>
+</body>
+</html>

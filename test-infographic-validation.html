@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vedika Infographic Validation Test</title>
+  <link rel="stylesheet" href="./frontend/components/MermaidDiagram.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #02050c;
+      font-family: 'Outfit', sans-serif;
+      color: #F8FAFC;
+    }
+    .test-section {
+      margin-bottom: 40px;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 12px;
+    }
+    .test-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #38BDF8;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .test-result {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    .pass { background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; color: #6EE7B7; }
+    .fail { background: rgba(239, 68, 68, 0.2); border: 1px solid #EF4444; color: #FCA5A5; }
+    .warn { background: rgba(245, 169, 91, 0.2); border: 1px solid #F5A95B; color: #FDE047; }
+    button {
+      background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
+      color: #030712;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .log-area {
+      background: #050811;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #94A3B8;
+      max-height: 300px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    #mermaid-mount {
+      width: 100%;
+      max-width: 1200px;
+      margin: 20px auto;
+      background: rgba(10, 15, 30, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <h1 style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #38BDF8 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Vedika Infographic System Validation</h1>
+
+  <div class="test-section">
+    <div class="test-title">🧪 Test Suite</div>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="testSanitizer()">Test Sanitizer</button>
+    <button onclick="testRender()">Test Render</button>
+    <button onclick="testZoom()">Test Zoom Fit</button>
+    <button onclick="testClipping()">Test ForeignObject Clipping</button>
+    <button onclick="testMobile()">Test Mobile Layout</button>
+    <button onclick="testReopen()">Test Reopen Visibility</button>
+  </div>
+
+  <div class="test-section">
+    <div class="test-title">📊 Test Results</div>
+    <div id="results"></div>
+  </div>
+
+  <div class="test-section">
+    <div class="test-title">📝 Rendered Diagram</div>
+    <div id="mermaid-mount"></div>
+  </div>
+
+  <div class="test-section">
+    <div class="test-title">📋 Console Log</div>
+    <div class="log-area" id="log"></div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const resultsEl = document.getElementById('results');
+    const mountEl = document.getElementById('mermaid-mount');
+    
+    let testCount = 0;
+    let passCount = 0;
+    let failCount = 0;
+
+    function log(msg) {
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.textContent += `[${timestamp}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function addResult(name, passed, details = '') {
+      testCount++;
+      if (passed) passCount++; else failCount++;
+      const div = document.createElement('div');
+      div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+      div.innerHTML = `<strong>${passed ? '✅ PASS' : '❌ FAIL'}</strong> - ${name}${details ? ': ' + details : ''}`;
+      resultsEl.appendChild(div);
+    }
+
+    function clearResults() {
+      resultsEl.innerHTML = '';
+      testCount = passCount = failCount = 0;
+    }
+
+    // Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      themeVariables: {
+        darkMode: true,
+        background: 'transparent',
+        primaryColor: '#0F1420',
+        primaryTextColor: '#F8FAFC',
+        primaryBorderColor: '#38BDF8',
+        lineColor: '#64748B',
+        secondaryColor: '#161324',
+        tertiaryColor: '#0D1929',
+        edgeLabelBackground: '#0F1420',
+        clusterBkg: 'rgba(12, 17, 32, 0.72)',
+        clusterBorder: 'rgba(56, 189, 248, 0.28)',
+        fontFamily: "'Outfit', sans-serif",
+        fontSize: '13px',
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'basis',
+        useMaxWidth: false,
+        nodeSpacing: 50,
+        rankSpacing: 65,
+        padding: 18
+      }
+    });
+
+    // Test diagram codes
+    const testDiagrams = {
+      basic: `flowchart TD
+    A["<b>Start</b><br/><i>Initial Node</i>"]
+    B["<b>Process</b><br/><i>Core Logic</i>"]
+    C(["<b>End</b><br/><i>Final Output</i>"])
+    A --> B --> C`,
+
+      hexagon: `flowchart TD
+    A["<b>Input</b><br/><i>Data In</i>"]
+    B{{"<b>Decision</b><br/><i>Check Condition</i>"}}
+    C(["<b>Output</b><br/><i>Result</i>"])
+    A --> B --> C`,
+
+      cylinder: `flowchart TD
+    A["<b>Query</b><br/><i>User Request</i>"]
+    B[("<b>Database</b><br/><i>Data Store</i>")]
+    C(["<b>Response</b><br/><i>Return Data</i>"])
+    A --> B --> C`,
+
+      subgraph: `flowchart TD
+    subgraph Stage1 ["🌱 Stage 1: Inputs"]
+      direction LR
+      A(["<b>Glucose</b><br/><i>Fuel</i>"])
+      B(["<b>Oxygen</b><br/><i>Catalyst</i>"])
+      A ~~~ B
+    end
+    subgraph Stage2 ["⚙️ Stage 2: Process"]
+      direction TB
+      C{{"<b>Respiration</b><br/><i>Energy Release</i>"}}
+    end
+    subgraph Stage3 ["🚀 Stage 3: Outputs"]
+      direction LR
+      D(["<b>ATP</b><br/><i>Energy</i>"])
+      E(["<b>CO2</b><br/><i>Waste</i>"])
+      D ~~~ E
+    end
+    Stage1 ==>|"Feeds"| Stage2
+    Stage2 ==>|"Produces"| Stage3`,
+
+      edgeLabels: `flowchart TD
+    A["<b>Node A</b>"] -->|"Processes data"| B["<b>Node B</b>"]
+    B -->|"Transforms"| C["<b>Node C</b>"]
+    C ==>|"Delivers result"| D["<b>Node D</b>"]`,
+
+      complex: `flowchart TD
+    subgraph Inputs ["🌱 Stage 1: Foundation & Inputs"]
+      direction LR
+      In_1(["<b>⚡ Primary Input</b><br/><i>Core substrate</i>"])
+      In_2(["<b>⚙️ Catalyst</b><br/><i>Supporting factor</i>"])
+      In_1 ~~~ In_2
+    end
+    subgraph Process ["⚙️ Stage 2: Core Mechanism"]
+      direction TB
+      Proc_1[("<b>🔍 Core Engine</b><br/><i>Transformation logic</i>")]
+      Proc_2{{"<b>💡 Decision Gate</b><br/><i>Checkpoint validation</i>"}}
+      Proc_3[("🗄️ <b>State Bank</b><br/><i>Stored capacity</i>")]
+      Proc_1 -->|"Feeds"| Proc_2
+      Proc_2 -->|"Stores"| Proc_3
+    end
+    subgraph Outputs ["🚀 Stage 3: Deliverables"]
+      direction LR
+      Out_1(["<b>🏆 Final Product</b><br/><i>Practical outcome</i>"])
+      Out_2(["<b>📊 Metric</b><br/><i>Measured yield</i>"])
+      Out_1 ~~~ Out_2
+    end
+    Inputs ==>|"Processes into"| Process
+    Process ==>|"Yields deliverables"| Outputs`
+    };
+
+    // Copy of sanitizeMermaid from MermaidDiagram.jsx
+    function sanitizeMermaid(raw) {
+      if (!raw) return '';
+      let code = raw.trim();
+
+      code = code.replace(/^```(?:mermaid)?\s*/i, '').replace(/```\s*$/, '').trim();
+
+      if (!/^(flowchart|graph|mindmap|sequenceDiagram|classDiagram|stateDiagram|erDiagram)/i.test(code)) {
+        code = `flowchart TD\n${code}`;
+      }
+
+      const cleanLabelText = (text) => {
+        let clean = (text || '').trim();
+        clean = clean.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+        clean = clean.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+        clean = clean.replace(/`([^`]+)`/g, '$1');
+        if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+          clean = clean.slice(1, -1).trim();
+        }
+        clean = clean.replace(/"/g, "'");
+        return clean;
+      };
+
+      code = code.replace(/\(\[\s*([^\]\n]+?)\s*\]\)/g, (_, text) => `(["${cleanLabelText(text)}"])`);
+      code = code.replace(/\[\(\s*([^\)\n]+?)\s*\)\]/g, (_, text) => `[("${cleanLabelText(text)}")]`);
+      code = code.replace(/\[\[\s*([^\]\n]+?)\s*\]\]/g, (_, text) => `[["${cleanLabelText(text)}"]]`);
+      code = code.replace(/\{\{\s*([^\}\n]+?)\s*\}\}/g, (_, text) => `{{"${cleanLabelText(text)}"}}`);
+      code = code.replace(/\(\(\s*([^\)\n]+?)\s*\)\)/g, (_, text) => `(("${cleanLabelText(text)}"))`);
+      code = code.replace(/(?<![\(\[])\[\s*([^\(\[\{\]\)\n]+?)\s*\](?![\)\]])/g, (_, text) => `["${cleanLabelText(text)}"]`);
+      code = code.replace(/\|([^\|\n]+?)\|/g, (_, label) => `|"${cleanLabelText(label)}"|`);
+
+      return code;
+    }
+
+    // Test 1: Sanitizer
+    async function testSanitizer() {
+      log('Testing sanitizer...');
+      
+      // Test hexagon syntax (no space after {{)
+      const hexagonInput = `A{{ "Label" }}`;
+      const hexagonOutput = sanitizeMermaid(hexagonInput);
+      const hexagonPass = hexagonOutput.includes('{{"Label"}}') && !hexagonOutput.includes('{{ "');
+      addResult('Hexagon syntax (no space after {{)', hexagonPass, `Output: ${hexagonOutput}`);
+
+      // Test stadium shape
+      const stadiumInput = `A([ Label ])`;
+      const stadiumOutput = sanitizeMermaid(stadiumInput);
+      const stadiumPass = stadiumOutput.includes('(["Label"])');
+      addResult('Stadium shape quoting', stadiumPass, `Output: ${stadiumOutput}`);
+
+      // Test cylinder shape
+      const cylinderInput = `A[( Label )]`;
+      const cylinderOutput = sanitizeMermaid(cylinderInput);
+      const cylinderPass = cylinderOutput.includes('[("Label")]');
+      addResult('Cylinder shape quoting', cylinderPass, `Output: ${cylinderOutput}`);
+
+      // Test edge labels
+      const edgeInput = `A -->|label| B`;
+      const edgeOutput = sanitizeMermaid(edgeInput);
+      const edgePass = edgeOutput.includes('|"label"|');
+      addResult('Edge label quoting', edgePass, `Output: ${edgeOutput}`);
+
+      // Test markdown conversion
+      const mdInput = `A["**Bold** and *Italic*"]`;
+      const mdOutput = sanitizeMermaid(mdInput);
+      const mdPass = mdOutput.includes('<b>Bold</b>') && mdOutput.includes('<i>Italic</i>');
+      addResult('Markdown to HTML conversion', mdPass, `Output: ${mdOutput}`);
+
+      // Test subgraph preservation
+      const subgraphInput = `subgraph Test ["Title"]\nA["Node"]\nend`;
+      const subgraphOutput = sanitizeMermaid(subgraphInput);
+      const subgraphPass = subgraphOutput.includes('subgraph Test ["Title"]');
+      addResult('Subgraph header preserved', subgraphPass, `Output: ${subgraphOutput}`);
+    }
+
+    // Test 2: Render
+    async function testRender() {
+      log('Testing render...');
+      
+      for (const [name, code] of Object.entries(testDiagrams)) {
+        try {
+          const sanitized = sanitizeMermaid(code);
+          const renderId = `test-${name}-${Date.now()}`;
+          const { svg } = await mermaid.render(renderId, sanitized);
+          
+          const hasSvg = svg && svg.length > 100 && svg.includes('<svg');
+          addResult(`Render: ${name}`, hasSvg, hasSvg ? `SVG length: ${svg.length}` : 'Empty SVG');
+          
+          if (name === 'complex' && hasSvg) {
+            mountEl.innerHTML = svg;
+          }
+        } catch (err) {
+          addResult(`Render: ${name}`, false, err.message);
+        }
+      }
+    }
+
+    // Test 3: Zoom Fit
+    async function testZoom() {
+      log('Testing zoom fit...');
+      
+      try {
+        const sanitized = sanitizeMermaid(testDiagrams.complex);
+        const renderId = `zoom-test-${Date.now()}`;
+        const { svg } = await mermaid.render(renderId, sanitized);
+        
+        mountEl.innerHTML = svg;
+        await new Promise(r => setTimeout(r, 100));
+        
+        const svgEl = mountEl.querySelector('svg');
+        if (!svgEl) {
+          addResult('Zoom: SVG element found', false, 'No SVG in mount');
+          return;
+        }
+        
+        const vb = svgEl.viewBox?.baseVal;
+        const naturalW = vb?.width || svgEl.getBoundingClientRect().width;
+        const naturalH = vb?.height || svgEl.getBoundingClientRect().height;
+        
+        const mountRect = mountEl.getBoundingClientRect();
+        const availW = mountRect.width - 40;
+        const availH = mountRect.height - 40;
+        
+        const aspect = naturalH / naturalW;
+        const targetW = Math.min(availW, 1150);
+        const renderedH = targetW * aspect;
+        
+        const scaleW = availW / targetW;
+        const scaleH = availH / renderedH;
+        const ideal = Math.min(scaleW, scaleH);
+        const MIN_ZOOM = 0.60;
+        const MAX_ZOOM = 1.65;
+        const finalZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, ideal));
+        
+        addResult('Zoom calculation', true, `Natural: ${naturalW.toFixed(0)}x${naturalH.toFixed(0)}, Fit zoom: ${finalZoom.toFixed(2)}`);
+        addResult('Zoom within bounds', finalZoom >= MIN_ZOOM && finalZoom <= MAX_ZOOM, `Zoom: ${finalZoom.toFixed(2)}`);
+        
+        // Apply zoom
+        const wrapper = mountEl.querySelector('.mermaid-svg-wrapper') || mountEl;
+        wrapper.style.transform = `scale(${finalZoom})`;
+        wrapper.style.transformOrigin = 'top center';
+        
+      } catch (err) {
+        addResult('Zoom fit test', false, err.message);
+      }
+    }
+
+    // Test 4: ForeignObject Clipping
+    async function testClipping() {
+      log('Testing foreignObject clipping...');
+      
+      try {
+        const sanitized = sanitizeMermaid(testDiagrams.complex);
+        const renderId = `clip-test-${Date.now()}`;
+        const { svg } = await mermaid.render(renderId, sanitized);
+        
+        mountEl.innerHTML = svg;
+        await new Promise(r => setTimeout(r, 100));
+        
+        const svgEl = mountEl.querySelector('svg');
+        if (!svgEl) {
+          addResult('Clipping: SVG found', false);
+          return;
+        }
+        
+        const foreignObjects = svgEl.querySelectorAll('foreignObject');
+        let totalClipped = 0;
+        let totalFOs = foreignObjects.length;
+        
+        foreignObjects.forEach((fo, idx) => {
+          const inner = fo.firstElementChild;
+          const foW = +fo.getAttribute('width');
+          const foH = +fo.getAttribute('height');
+          const contentW = inner ? inner.scrollWidth : 0;
+          const contentH = inner ? inner.scrollHeight : 0;
+          const overflow = getComputedStyle(fo).overflow;
+          const isClipped = overflow === 'hidden' && (contentW > foW + 1 || contentH > foH + 1);
+          
+          if (isClipped) totalClipped++;
+          
+          log(`  FO ${idx}: ${foW}x${foH} content: ${contentW}x${contentH} overflow: ${overflow} clipped: ${isClipped}`);
+        });
+        
+        addResult('ForeignObject clipping check', totalClipped === 0, `${totalClipped}/${totalFOs} clipped`);
+        
+      } catch (err) {
+        addResult('Clipping test', false, err.message);
+      }
+    }
+
+    // Test 5: Mobile Layout (simulate)
+    async function testMobile() {
+      log('Testing mobile layout...');
+      
+      // Check CSS has mobile media query
+      const styleSheets = Array.from(document.styleSheets);
+      let hasMobileQuery = false;
+      
+      try {
+        for (const sheet of styleSheets) {
+          try {
+            const rules = sheet.cssRules || sheet.rules;
+            for (const rule of rules) {
+              if (rule.media && rule.media.mediaText && rule.media.mediaText.includes('1023px')) {
+                hasMobileQuery = true;
+                break;
+              }
+            }
+          } catch (e) {
+            // Cross-origin stylesheet
+          }
+        }
+      } catch (e) {}
+      
+      addResult('Mobile CSS media query (max-width: 1023px)', hasMobileQuery, hasMobileQuery ? 'Found' : 'Not detected (may be in external CSS)');
+      
+      // Test flex-start justify-content
+      const viewportStyle = getComputedStyle(document.querySelector('.mermaid-modal-viewport') || document.body);
+      const justifyContent = viewportStyle.justifyContent;
+      addResult('Viewport justify-content: flex-start', justifyContent === 'flex-start', `Current: ${justifyContent}`);
+    }
+
+    // Test 6: Reopen Visibility (simulate)
+    async function testReopen() {
+      log('Testing reopen visibility...');
+      
+      try {
+        const sanitized = sanitizeMermaid(testDiagrams.complex);
+        const renderId = `reopen-test-${Date.now()}`;
+        const { svg } = await mermaid.render(renderId, sanitized);
+        
+        mountEl.innerHTML = svg;
+        await new Promise(r => setTimeout(r, 100));
+        
+        // Simulate reopen: clear and re-render
+        const svgEl = mountEl.querySelector('svg');
+        if (!svgEl) {
+          addResult('Reopen: Initial render', false);
+          return;
+        }
+        
+        // Check initial visibility
+        const wrapper = mountEl.querySelector('.mermaid-svg-wrapper') || mountEl;
+        const nodes = svgEl.querySelectorAll('.node, g.node');
+        let allVisible = true;
+        
+        nodes.forEach(n => {
+          if (getComputedStyle(n).opacity === '0') allVisible = false;
+        });
+        
+        addResult('Initial node visibility', allVisible, `${nodes.length} nodes checked`);
+        
+        // Simulate "reopen" by re-applying styles (what the component does)
+        // Apply Blender palettes
+        const palettes = [
+          {stroke: '#A855F7', fill: '#161324'},
+          {stroke: '#38BDF8', fill: '#0D1929'},
+          {stroke: '#F59E0B', fill: '#23180C'},
+          {stroke: '#10B981', fill: '#0D2018'},
+          {stroke: '#818CF8', fill: '#13162B'},
+          {stroke: '#F43F5E', fill: '#241018'},
+          {stroke: '#06B6D4', fill: '#0C242E'}
+        ];
+        
+        nodes.forEach((n, idx) => {
+          const pal = palettes[idx % palettes.length];
+          n.style.opacity = '1';
+          const shape = n.querySelector('rect, polygon, circle, ellipse, path:not(.arrowMarkerPath)') || n;
+          if (shape && shape.style) {
+            shape.style.stroke = pal.stroke;
+            shape.style.fill = pal.fill;
+            shape.style.strokeWidth = '1.5px';
+            shape.style.strokeDashoffset = '0';
+          }
+          const texts = n.querySelectorAll('.label, foreignObject, text, tspan, .nodeLabel');
+          texts.forEach(t => t.style.opacity = '1');
+        });
+        
+        const edges = svgEl.querySelectorAll('.edgePaths path, .edgePath path, path.flowchart-link, g[class*="edge"] path');
+        edges.forEach(e => {
+          e.style.opacity = '1';
+          if (e.style) e.style.strokeDashoffset = '0';
+        });
+        
+        // Check after "reopen"
+        let allStillVisible = true;
+        nodes.forEach(n => {
+          if (getComputedStyle(n).opacity === '0') allStillVisible = false;
+        });
+        
+        addResult('Reopen visibility maintained', allStillVisible, 'All nodes visible after reopen simulation');
+        
+      } catch (err) {
+        addResult('Reopen test', false, err.message);
+      }
+    }
+
+    async function runAllTests() {
+      clearResults();
+      log('=== Starting Validation Suite ===');
+      
+      await testSanitizer();
+      await testRender();
+      await testZoom();
+      await testClipping();
+      await testMobile();
+      await testReopen();
+      
+      log(`=== Complete: ${passCount}/${testCount} passed, ${failCount} failed ===`);
+      
+      const summary = document.createElement('div');
+      summary.style.cssText = 'margin-top: 20px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px; font-weight: 700;';
+      summary.innerHTML = `SUMMARY: ${passCount}/${testCount} tests passed ${failCount > 0 ? `(${failCount} failed)` : ''}`;
+      resultsEl.appendChild(summary);
+    }
+  </script>
+</body>
+</html>

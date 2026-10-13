@@ -103,6 +103,20 @@ function sanitizeMermaid(raw) {
   // 7. Connector edge labels: -->|"label"| or -->|label|
   code = code.replace(/\|([^\|\n]+?)\|/g, (_, label) => `|"${cleanLabelText(label)}"|`);
 
+  // 8. Subgraph labels: subgraph Title ["Label"] - sanitize the label inside brackets
+  code = code.replace(/subgraph\s+(\w+)\s*\[([^\]]+)\]/gi, (match, id, label) => {
+    return `subgraph ${id} ["${cleanLabelText(label)}"]`;
+  });
+
+  // 9. Clickable links: click nodeId "url" "tooltip" - preserve but sanitize tooltip
+  code = code.replace(/click\s+(\w+)\s+"([^"]+)"\s+"([^"]+)"/gi, (match, nodeId, url, tooltip) => {
+    return `click ${nodeId} "${url}" "${cleanLabelText(tooltip)}"`;
+  });
+
+  // 10. ClassDef labels: classDef className fill:#color,stroke:#color,stroke-width:2px,color:#fff;
+  //    Ensure classDef names don't have spaces and sanitize any label-like content
+  //    (Mermaid classDef doesn't typically have labels, but handle if present)
+
   return code;
 }
 
@@ -314,7 +328,79 @@ const MIN_INLINE_ZOOM = 0.60;
 const MAX_INLINE_ZOOM = 1.50;
 const ZOOM_STEP = 0.15;
 
-export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose }) {
+// ── Diagram Type Configurations ──
+const DIAGRAM_CONFIGS = {
+  flowchart: {
+    mermaidType: 'flowchart',
+    config: {
+      htmlLabels: true,
+      curve: 'basis',
+      useMaxWidth: false,
+      nodeSpacing: 50,
+      rankSpacing: 65,
+      padding: 18
+    }
+  },
+  mindmap: {
+    mermaidType: 'mindmap',
+    config: {}
+  },
+  timeline: {
+    mermaidType: 'timeline',
+    config: {}
+  },
+  graph: {
+    mermaidType: 'graph',
+    config: {
+      htmlLabels: true,
+      curve: 'basis',
+      useMaxWidth: false,
+      nodeSpacing: 50,
+      rankSpacing: 65,
+      padding: 18
+    }
+  },
+  classDiagram: {
+    mermaidType: 'classDiagram',
+    config: {}
+  },
+  sequenceDiagram: {
+    mermaidType: 'sequenceDiagram',
+    config: {
+      useMaxWidth: false,
+      diagramMarginX: 50,
+      diagramMarginY: 10,
+      actorMargin: 50,
+      width: 150,
+      height: 65,
+      boxMargin: 10,
+      boxTextMargin: 5,
+      noteMargin: 10,
+      messageMargin: 35,
+      mirrorActors: true,
+      bottomMarginAdj: 1
+    }
+  },
+  quadrantChart: {
+    mermaidType: 'quadrantChart',
+    config: {}
+  },
+  pie: {
+    mermaidType: 'pie',
+    config: {}
+  },
+  pieChart: {
+    mermaidType: 'pie',
+    config: {}
+  }
+};
+
+function getMermaidConfig(diagramType) {
+  const cfg = DIAGRAM_CONFIGS[diagramType] || DIAGRAM_CONFIGS.flowchart;
+  return cfg;
+}
+
+export default function MermaidDiagram({ chart, points = [], chatHistory = [], onRegenerate, onClose, diagramType = 'flowchart' }) {
   const containerRef = useRef(null);
   const modalViewportRef = useRef(null);
   const [mounted, setMounted] = useState(false);
@@ -329,6 +415,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
   const [isWheelZooming, setIsWheelZooming] = useState(false);
   const wheelZoomTimeoutRef = useRef(null);
   const touchDistRef = useRef(null);
+  const resizeTimerRef = useRef(null);
 
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -465,6 +552,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const vpH = viewportEl.clientHeight || (isModal ? 680 : 380);
     const vpW = viewportEl.clientWidth || (isModal ? 1200 : 650);
 
+    // Guard against zero or negative dimensions
+    if (vpW <= 0 || vpH <= 0) return isModal ? 0.9 : 0.85;
+
     const paddingX = isModal ? 48 : 32;
     const paddingY = isModal ? 40 : 32;
 
@@ -502,6 +592,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
       }
     }
 
+    // Guard against invalid dimensions
+    if (intrinsicW <= 0 || intrinsicH <= 0) return isModal ? 0.9 : 0.85;
+
     const maxStageW = 780;
     const targetW = Math.min(availW, maxStageW);
 
@@ -513,7 +606,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const scaleH = availH / Math.max(40, renderedH);
     let ideal = Math.min(scaleW, scaleH);
 
-    return Number(Math.max(MIN_INLINE_ZOOM, Math.min(1.15, ideal)).toFixed(2));
+    // Clamp to reasonable bounds to prevent extreme zoom
+    const maxZoom = isModal ? 1.15 : 1.15;
+    const minZoom = isModal ? MIN_MODAL_ZOOM : MIN_INLINE_ZOOM;
+    ideal = Math.max(minZoom, Math.min(maxZoom, ideal));
+
+    return Number(ideal.toFixed(2));
   }, []);
 
   const autoFitModalChart = useCallback(() => {
@@ -521,8 +619,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     const fit = computeFitZoom(modalViewportRef.current, true);
     setModalZoom(fit);
     modalZoomRef.current = fit;
+    // Reset scroll position to prevent negative scroll trap
     modalViewportRef.current.scrollTop = 0;
     modalViewportRef.current.scrollLeft = 0;
+    // Ensure stage is centered
+    const stageEl = modalViewportRef.current.querySelector('.mermaid-canvas-stage');
+    if (stageEl) {
+      stageEl.style.transformOrigin = 'center center';
+    }
   }, [computeFitZoom]);
 
   const autoFitInlineChart = useCallback(() => {
@@ -531,6 +635,11 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     setZoom(fit);
     containerRef.current.scrollTop = 0;
     containerRef.current.scrollLeft = 0;
+    // Ensure stage is centered
+    const stageEl = containerRef.current.querySelector('.mermaid-canvas-stage');
+    if (stageEl) {
+      stageEl.style.transformOrigin = 'top center';
+    }
   }, [computeFitZoom]);
 
   // Point-to-point live vector drawing animation engine
@@ -709,6 +818,14 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         await new Promise((r) => setTimeout(r, 160));
         if (animCancelledRef.current) return;
 
+        // Performance optimization: For diagrams with many nodes, use faster animation
+        const isComplexDiagram = nodes.length > 12;
+        const nodeAnimDuration = isComplexDiagram ? 200 : 500;
+        const edgeAnimDuration = isComplexDiagram ? 150 : 420;
+        const nodeDelay = isComplexDiagram ? 30 : 80;
+        const edgeDelay = isComplexDiagram ? 20 : 60;
+        const cursorUpdateThreshold = isComplexDiagram ? 5 : 1; // Update cursor less frequently for complex diagrams
+
         for (let idx = 0; idx < nodes.length; idx++) {
           if (animCancelledRef.current) break;
           const node = nodes[idx];
@@ -727,13 +844,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             isClicking: true
           }));
 
-          // Trace shape perimeter smoothly frame-by-frame (deliberate 500ms pace)
+          // Trace shape perimeter smoothly frame-by-frame
           cachedStageRect = stageEl.getBoundingClientRect();
-          await animateFrame(500, (t) => {
+          let frameCount = 0;
+          await animateFrame(nodeAnimDuration, (t) => {
             if (shapeEl && shapeEl.style) {
               shapeEl.style.strokeDashoffset = `${shapeLen * (1 - t)}`;
             }
-            if (shapeEl && typeof shapeEl.getPointAtLength === 'function') {
+            // Throttle cursor updates for performance
+            if (shapeEl && typeof shapeEl.getPointAtLength === 'function' && frameCount % cursorUpdateThreshold === 0) {
               try {
                 const pt = shapeEl.getPointAtLength(shapeLen * t);
                 const stagePt = getStagePoint(shapeEl, pt);
@@ -743,6 +862,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                 });
               } catch {}
             }
+            frameCount++;
           });
 
           if (animCancelledRef.current) break;
@@ -759,7 +879,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             status: `Node ${idx + 1} Ready ✨`
           }));
 
-          await new Promise((r) => setTimeout(r, 80));
+          await new Promise((r) => setTimeout(r, nodeDelay));
 
           // Trace connecting arrow to the next node if present
           if (idx < nodes.length - 1 && rawEdgeEls[idx]) {
@@ -780,11 +900,12 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
               isTracing: true
             }));
 
-            // Physically trace connector line from start to destination (420ms glide)
+            // Physically trace connector line from start to destination
             cachedStageRect = stageEl.getBoundingClientRect();
-            await animateFrame(420, (t) => {
+            let edgeFrameCount = 0;
+            await animateFrame(edgeAnimDuration, (t) => {
               edgeEl.style.strokeDashoffset = `${edgeLen * (1 - t)}`;
-              if (typeof edgeEl.getPointAtLength === 'function') {
+              if (typeof edgeEl.getPointAtLength === 'function' && edgeFrameCount % cursorUpdateThreshold === 0) {
                 try {
                   const pt = edgeEl.getPointAtLength(edgeLen * t);
                   const stagePt = getStagePoint(edgeEl, pt);
@@ -794,6 +915,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
                   });
                 } catch {}
               }
+              edgeFrameCount++;
             });
 
             if (animCancelledRef.current) break;
@@ -807,7 +929,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             rawLabelEls.forEach((l) => { l.style.opacity = '1'; });
           }
 
-          await new Promise((r) => setTimeout(r, 60));
+          await new Promise((r) => setTimeout(r, edgeDelay));
         }
 
         if (!animCancelledRef.current) {
@@ -948,8 +1070,9 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     async function renderChart() {
       try {
         const mermaid = (await import('mermaid')).default;
+        const diagramConfig = getMermaidConfig(diagramType);
         
-        mermaid.initialize({
+        const baseConfig = {
           startOnLoad: false,
           theme: 'base',
           themeVariables: {
@@ -968,16 +1091,15 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
             fontSize: '13px',
             nodeBorder: 'solid'
           },
-          securityLevel: 'loose',
-          flowchart: {
-            htmlLabels: true,
-            curve: 'basis',
-            useMaxWidth: false,
-            nodeSpacing: 50,
-            rankSpacing: 65,
-            padding: 18
-          }
-        });
+          securityLevel: 'loose'
+        };
+        
+        // Add diagram-specific config
+        if (diagramConfig.config) {
+          baseConfig[diagramConfig.mermaidType] = diagramConfig.config;
+        }
+        
+        mermaid.initialize(baseConfig);
 
         const sanitized = sanitizeMermaid(activeChartCode);
         const renderId = 'mmd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -1066,7 +1188,7 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
     return () => {
       isMounted = false;
     };
-  }, [activeChartCode, points, autoFitModalChart, autoFitInlineChart]);
+  }, [activeChartCode, points, autoFitModalChart, autoFitInlineChart, diagramType]);
 
   // Trigger Stitch AI live draw once the active viewport & its SVG nodes are mounted
   useEffect(() => {
@@ -1132,11 +1254,16 @@ export default function MermaidDiagram({ chart, points = [], chatHistory = [], o
         autoFitModalChart();
       }, 50);
       const handleResize = () => {
-        autoFitModalChart();
+        // Debounce resize
+        clearTimeout(resizeTimerRef.current);
+        resizeTimerRef.current = setTimeout(() => {
+          autoFitModalChart();
+        }, 100);
       };
       window.addEventListener('resize', handleResize);
       return () => {
         clearTimeout(timer);
+        clearTimeout(resizeTimerRef.current);
         window.removeEventListener('resize', handleResize);
       };
     }
