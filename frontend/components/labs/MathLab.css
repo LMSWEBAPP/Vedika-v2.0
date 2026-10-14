@@ -111,28 +111,31 @@
 /* 2. Primary Tab Switcher (Whiteboard / Graph) */
 .math-lab-tabs-bar {
   display: flex;
+  align-items: center;
   width: 100%;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 4px;
+  border-radius: 9999px;
+  padding: 3px 4px;
   gap: 4px;
   margin-bottom: 16px;
   backdrop-filter: blur(14px);
   box-sizing: border-box;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  height: 44px;
 }
 
 .math-lab-tab {
   flex: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 40px;
-  border-radius: 14px;
+  gap: 8px;
+  height: 36px;
+  border-radius: 9999px;
   border: none;
-  font-size: 0.82rem;
+  font-family: inherit;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
@@ -140,13 +143,35 @@
   color: #94A3B8;
   outline: none;
   white-space: nowrap;
+  padding: 0 16px;
+  box-sizing: border-box;
+  user-select: none;
+  margin: 0;
+  line-height: 1;
+}
+
+.math-lab-tab:hover:not(.active) {
+  color: #F1F5F9;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.math-lab-tab span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.math-lab-tab svg {
+  flex-shrink: 0;
+  display: block;
 }
 
 .math-lab-tab.active {
   background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 0 18px rgba(236, 72, 153, 0.45);
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.45);
 }
 
 /* 3. Smart Handwriting Whiteboard Card */
@@ -606,9 +631,8 @@
 
   .math-lab-tabs-bar {
     width: auto;
-    min-width: 420px;
+    min-width: 440px;
     margin-bottom: 0;
-    height: 40px;
     flex-shrink: 0;
   }
 
