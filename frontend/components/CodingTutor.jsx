@@ -1192,7 +1192,7 @@ export default function CodingTutor() {
         }
         
         const label = FEATURE_LABELS[intent.feature] || 'response';
-        const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: `Here's a ${label} on ${intent.topic}:`, features };
+        const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: `Here's a ${label} on ${intent.topic}:`, features, activeFeature: intent.feature };
         const next = [...msgsWithUser, aiMsg];
         setMessages(next); saveSession(next, sid);
       } catch (e) {
@@ -1276,29 +1276,39 @@ export default function CodingTutor() {
         // Sending a mismatched localStorage userId causes a 403 Forbidden response.
         body: JSON.stringify({ system: systemPrompt, user: finalPrompt, maxOutputTokens: tokens, sessionId: sid, ...(jwtToken ? {} : { userId }), courseId: 'general' }),
       });
-      if (!res.ok) {
-        let errMsg = `HTTP ${res.status}`;
-        try { const d = await res.json(); errMsg = d.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let fullText = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullText += decoder.decode(value, { stream: true });
-        if (streamElRef.current) {
-          let displayStream = fullText.replace(/<analytics>[\s\S]*?<\/analytics>/i, '');
-          if (displayStream.includes('<analytics>')) {
-            displayStream = displayStream.split('<analytics>')[0];
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+          if (streamElRef.current) {
+            let displayStream = fullText.replace(/<analytics>[\s\S]*?<\/analytics>/i, '');
+            if (displayStream.includes('<analytics>')) {
+              displayStream = displayStream.split('<analytics>')[0];
+            }
+            const match = displayStream.match(/([\s\S]*?```python[\s\S]*?```)([\s\S]*)/);
+            streamElRef.current.textContent = match ? match[1] : displayStream;
           }
-          const match = displayStream.match(/([\s\S]*?```python[\s\S]*?```)([\s\S]*)/);
-          streamElRef.current.textContent = match ? match[1] : displayStream;
         }
       }
+
+      // Resilient fallback to reliable non-streaming endpoint if stream returned empty
       if (!fullText.trim()) {
-        throw new Error('Gemini returned an empty response. If you asked an off-topic question, please note I can only help with programming-related topics.');
+        try {
+          const fallbackText = await geminiCall(systemPrompt, finalPrompt, tokens, { sessionId: sid, userId });
+          if (fallbackText && fallbackText.trim()) {
+            fullText = fallbackText;
+          }
+        } catch (callErr) {
+          console.warn('[CodingTutor] Direct gemini fallback notice:', callErr?.message);
+        }
+      }
+
+      if (!fullText.trim()) {
+        throw new Error('AI response generation timed out. Please try asking again.');
       }
 
       const analyticsRegex = /<analytics>([\s\S]*?)<\/analytics>/i;

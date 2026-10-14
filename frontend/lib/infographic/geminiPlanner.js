@@ -1,31 +1,33 @@
 import { GoogleGenAI } from "@google/genai";
+import { getAllKeys } from "../keys.js";
 import { STAGE1_RESPONSE_SCHEMA, STAGE1_SYSTEM_PROMPT, REPAIR_SCENE_PROMPT } from "./prompts.js";
-
-const GEMINI_KEYS = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY_1,
-  process.env.GEMINI_API_KEY_2,
-  process.env.GEMINI_API_KEY_3,
-  process.env.GEMINI_API_KEY_4,
-].filter(Boolean);
 
 let connectionCount = 0;
 
-function getGeminiClient() {
-  if (GEMINI_KEYS.length === 0) return null;
-  const apiKey = GEMINI_KEYS[connectionCount % GEMINI_KEYS.length];
+function getGeminiClients() {
+  const keys = getAllKeys();
+  if (!keys || keys.length === 0) return [];
+  // Return clients with rotated starting index
+  const clients = [];
+  const startIdx = connectionCount % keys.length;
   connectionCount++;
-  return new GoogleGenAI({ apiKey, httpOptions: { headers: { "User-Agent": "aistudio-build" } } });
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[(startIdx + i) % keys.length];
+    clients.push(new GoogleGenAI({ apiKey: key, httpOptions: { headers: { "User-Agent": "aistudio-build" } } }));
+  }
+  return clients;
 }
 
 export function isGeminiConfigured() {
-  return GEMINI_KEYS.length > 0;
+  const keys = getAllKeys();
+  return keys && keys.length > 0;
 }
 
 const PLANNING_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-2.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+  "gemini-3.5-flash",
 ];
 
 export async function planWithGemini(
@@ -35,8 +37,8 @@ export async function planWithGemini(
   level,
   userPreference
 ) {
-  const ai = getGeminiClient();
-  if (!ai) return null;
+  const clients = getGeminiClients();
+  if (clients.length === 0) return null;
 
   const startTime = Date.now();
   const promptContent = `
@@ -60,51 +62,58 @@ Remember:
 4. Supply explicit directional connectors linking the node IDs.
 `.trim();
 
-  for (const model of PLANNING_MODELS) {
-    try {
-      const result = await ai.models.generateContent({
-        model,
-        contents: promptContent,
-        config: {
-          systemInstruction: STAGE1_SYSTEM_PROMPT,
-          responseMimeType: "application/json",
-          responseSchema: STAGE1_RESPONSE_SCHEMA,
-          temperature: 0.2,
-        },
-      });
+  // Try each client key in rotation, and for each key try models with fast fallback
+  for (const ai of clients.slice(0, 3)) {
+    for (const model of PLANNING_MODELS) {
+      try {
+        const result = await ai.models.generateContent({
+          model,
+          contents: promptContent,
+          config: {
+            systemInstruction: STAGE1_SYSTEM_PROMPT,
+            responseMimeType: "application/json",
+            responseSchema: STAGE1_RESPONSE_SCHEMA,
+            temperature: 0.2,
+          },
+        });
 
-      const responseText = result.text;
-      if (!responseText) continue;
+        const responseText = result.text;
+        if (!responseText) continue;
 
-      const cleanedJson = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-      const parsed = JSON.parse(cleanedJson);
+        const cleanedJson = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+        const parsed = JSON.parse(cleanedJson);
 
-      if (!parsed.nodes || !Array.isArray(parsed.nodes) || parsed.nodes.length < 2) {
-        continue;
+        if (!parsed.nodes || !Array.isArray(parsed.nodes) || parsed.nodes.length < 2) {
+          continue;
+        }
+
+        // Clamp nodes strictly to [3, 8]
+        if (parsed.nodes.length > 8) {
+          parsed.nodes = parsed.nodes.slice(0, 8);
+        }
+
+        const validNodeIds = new Set(parsed.nodes.map((n) => n.id));
+        if (Array.isArray(parsed.connectors)) {
+          parsed.connectors = parsed.connectors.filter(
+            (c) => validNodeIds.has(c.from) && validNodeIds.has(c.to) && c.from !== c.to
+          );
+        } else {
+          parsed.connectors = [];
+        }
+
+        const durationMs = Date.now() - startTime;
+        return {
+          plan: parsed,
+          model,
+          durationMs,
+        };
+      } catch (err) {
+        console.warn(`[GeminiPlanner] Model ${model} planning notice:`, err?.message?.slice(0, 100));
+        // If quota limit or high demand, move to next model/key
+        if (err?.message?.includes("429") || err?.message?.includes("quota")) {
+          break; // break to next client key
+        }
       }
-
-      // Clamp nodes strictly to [3, 8]
-      if (parsed.nodes.length > 8) {
-        parsed.nodes = parsed.nodes.slice(0, 8);
-      }
-
-      const validNodeIds = new Set(parsed.nodes.map((n) => n.id));
-      if (Array.isArray(parsed.connectors)) {
-        parsed.connectors = parsed.connectors.filter(
-          (c) => validNodeIds.has(c.from) && validNodeIds.has(c.to) && c.from !== c.to
-        );
-      } else {
-        parsed.connectors = [];
-      }
-
-      const durationMs = Date.now() - startTime;
-      return {
-        plan: parsed,
-        model,
-        durationMs,
-      };
-    } catch (err) {
-      console.warn(`[GeminiPlanner] Model ${model} planning notice:`, err?.message);
     }
   }
 
@@ -112,8 +121,8 @@ Remember:
 }
 
 export async function repairWithGemini(rawScene, validationErrors) {
-  const ai = getGeminiClient();
-  if (!ai) return null;
+  const clients = getGeminiClients();
+  if (clients.length === 0) return null;
 
   const prompt = `
 ${REPAIR_SCENE_PROMPT.replace("${errors}", validationErrors.join("\n- "))}
@@ -122,23 +131,28 @@ INVALID SCENE SPECIFICATION:
 ${JSON.stringify(rawScene, null, 2)}
 `.trim();
 
-  for (const model of PLANNING_MODELS) {
-    try {
-      const result = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-        },
-      });
+  for (const ai of clients.slice(0, 3)) {
+    for (const model of PLANNING_MODELS) {
+      try {
+        const result = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+          },
+        });
 
-      const text = result.text;
-      if (!text) continue;
-      const cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-      return JSON.parse(cleaned);
-    } catch (err) {
-      console.warn(`[GeminiPlanner] Repair error on ${model}:`, err?.message);
+        const text = result.text;
+        if (!text) continue;
+        const cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+        return JSON.parse(cleaned);
+      } catch (err) {
+        console.warn(`[GeminiPlanner] Repair notice on ${model}:`, err?.message?.slice(0, 100));
+        if (err?.message?.includes("429") || err?.message?.includes("quota")) {
+          break;
+        }
+      }
     }
   }
 

@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Layers,
   ChevronRight,
+  ChevronDown,
   Eye,
 } from "lucide-react";
 import { SceneRenderer } from "./SceneRenderer";
@@ -33,6 +34,7 @@ export const InfographicCanvas = ({
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [isStylusVisible, setIsStylusVisible] = useState(true);
   const [showTakeaways, setShowTakeaways] = useState(false);
+  const [isInlineTakeawaysOpen, setIsInlineTakeawaysOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   const svgRef = useRef(null);
@@ -324,6 +326,16 @@ export const InfographicCanvas = ({
             />
           )}
 
+          {/* Inline Live Drawing Stylus Pen */}
+          {scene && isStylusVisible && (
+            <DrawingCursor
+              x={animationController.cursorPosition.x}
+              y={animationController.cursorPosition.y}
+              visible={animationController.cursorPosition.visible}
+              label={animationController.cursorPosition.label}
+            />
+          )}
+
           {/* Hover Overlay Hint */}
           <div
             style={{
@@ -347,6 +359,89 @@ export const InfographicCanvas = ({
             <span>Click to enter interactive full-window canvas</span>
           </div>
         </div>
+
+        {/* Key Takeaways Section (Original Vedika Design Integration) */}
+        {displayPoints.length > 0 && (
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "rgba(10, 15, 28, 0.9)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setIsInlineTakeawaysOpen((prev) => !prev)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                color: "#e2e8f0",
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#38bdf8" }}>
+                <Sparkles size={14} />
+                <span>Key Takeaways ({displayPoints.length})</span>
+              </div>
+              <ChevronDown
+                size={16}
+                style={{
+                  transform: isInlineTakeawaysOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                  color: "#94a3b8",
+                }}
+              />
+            </button>
+
+            {isInlineTakeawaysOpen && (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                {displayPoints.map((pt, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      padding: "8px 12px",
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      borderRadius: 8,
+                      fontSize: 12.5,
+                      color: "#cbd5e1",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: "rgba(56, 189, 248, 0.15)",
+                        color: "#38bdf8",
+                        border: "1px solid rgba(56, 189, 248, 0.3)",
+                        padding: "1px 7px",
+                        borderRadius: 12,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span style={{ flex: 1 }}>{pt.replace(/^[-*•]\s+/, "")}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── 2. FULL-WINDOW CANVAS MODAL (Options strictly docked at bottom) ── */}

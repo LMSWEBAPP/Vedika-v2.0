@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { verifyJwt } from "@/lib/auth";
+import { trackApiConsumption } from "@/lib/memory";
 import { planWithGemini, repairWithGemini } from "@/lib/infographic/geminiPlanner";
 import { extractContentHeuristic } from "@/lib/infographic/extractContent";
 import { selectLayout } from "@/lib/infographic/selectLayout";
@@ -13,10 +15,20 @@ export async function POST(req) {
   const startTime = Date.now();
 
   try {
+    // Optional JWT verification for rate control / tracking
+    const authHeader = req.headers.get("Authorization");
+    let authenticatedUser = null;
+    if (authHeader) {
+      const payload = verifyJwt(authHeader);
+      if (payload) {
+        authenticatedUser = payload.user_id || payload.email || payload.sub;
+      }
+    }
+
     const body = await req.json();
     const { question, response, subject, level, aspectRatio, style } = body || {};
 
-    // 1. Server-side validation and size limits
+    // 1. Server-side validation and security boundaries
     if (!response || typeof response !== "string" || response.trim().length === 0) {
       return NextResponse.json(
         { error: "Field 'response' is required and cannot be empty." },
@@ -31,6 +43,12 @@ export async function POST(req) {
       );
     }
 
+    // Sanitize optional inputs
+    const cleanQuestion = typeof question === "string" ? question.slice(0, 2000).trim() : "";
+    const cleanSubject = typeof subject === "string" ? subject.slice(0, 100).trim() : "General";
+    const cleanLevel = typeof level === "string" ? level.slice(0, 50).trim() : "Standard";
+    const cleanStyle = typeof style === "string" ? style.slice(0, 50).trim() : "automatic";
+
     const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const planningStart = Date.now();
     let sceneDraft = null;
@@ -39,11 +57,11 @@ export async function POST(req) {
     // 2. Autonomous Gemini Art Director & Information Architect
     // Server-side only: uses rotated keys securely
     const geminiResult = await planWithGemini(
-      question,
+      cleanQuestion,
       response,
-      subject,
-      level,
-      style
+      cleanSubject,
+      cleanLevel,
+      cleanStyle
     );
 
     if (geminiResult && geminiResult.plan) {
@@ -54,18 +72,21 @@ export async function POST(req) {
         requestId,
         modelUsed,
       });
+      if (authenticatedUser) {
+        trackApiConsumption(authenticatedUser, `Infographic: ${cleanQuestion || cleanSubject}`, `Generated ${geminiResult.plan.layoutGrammar} infographic`);
+      }
     } else {
       // Fallback: Deterministic heuristic extraction + semantic layout selection
-      const extraction = extractContentHeuristic(response, question);
-      if (subject) {
+      const extraction = extractContentHeuristic(response, cleanQuestion);
+      if (cleanSubject) {
         extraction.metadata = {
           ...extraction.metadata,
           charCount: response.length,
           wordCount: response.split(/\s+/).length,
-          questionContext: `${question || ""} (${subject})`.trim(),
+          questionContext: `${cleanQuestion || ""} (${cleanSubject})`.trim(),
         };
       }
-      const layoutPlan = selectLayout(extraction, style);
+      const layoutPlan = selectLayout(extraction, cleanStyle);
       sceneDraft = buildSceneFromExtraction(extraction, layoutPlan, {
         aspectRatio: aspectRatio || "16:9",
         theme: "dark",

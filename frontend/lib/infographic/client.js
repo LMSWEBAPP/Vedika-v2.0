@@ -1,6 +1,7 @@
 import { extractContentHeuristic } from "./extractContent.js";
 import { selectLayout } from "./selectLayout.js";
 import { buildSceneFromExtraction } from "./spatialEngine.js";
+import { getJwtToken } from "@/lib/jwtCache";
 
 /**
  * Client helper to request a dynamic infographic from the server-side
@@ -15,9 +16,15 @@ export async function generateDynamicInfographic({
   style,
 }) {
   try {
+    const headers = { "Content-Type": "application/json" };
+    try {
+      const token = await getJwtToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } catch (_) {}
+
     const res = await fetch("/api/infographic/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         response,
         question,

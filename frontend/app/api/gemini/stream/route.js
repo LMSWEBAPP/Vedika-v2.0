@@ -61,8 +61,12 @@ export async function POST(request) {
       });
     }
 
-    const provider = createGoogleGenerativeAI({ apiKey });
-    const model = provider.languageModel('gemini-2.5-flash');
+    const STREAM_MODELS = [
+      'gemini-3.1-flash-lite',
+      'gemini-flash-latest',
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+    ];
 
     let history = [];
     if (sessionId) {
@@ -76,41 +80,60 @@ export async function POST(request) {
       { role: 'user', content: user },
     ];
 
-    const result = streamText({
-      model,
-      system: fullSystem,
-      messages: fullMessages,
-      temperature: 0.4,
-      maxTokens: clampedTokens,
-      onFinish({ text }) {
-        if (text) {
-          cacheSet(cacheKey, text);
-          trackApiConsumption(userId, user, text);
-        }
-        if (sessionId && text) {
-          const updated = [
-            ...history,
-            { role: 'user', content: user },
-            { role: 'assistant', content: text },
-          ];
-          saveHistory(sessionId, updated).catch(e => console.warn('[GeminiStream] History save notice:', e.message));
-        }
-      },
-    });
+    const provider = createGoogleGenerativeAI({ apiKey });
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          for await (const chunk of result.textStream) {
-            controller.enqueue(encoder.encode(chunk));
+        let streamedChars = 0;
+        let generatedFullText = '';
+
+        for (const modelName of STREAM_MODELS) {
+          try {
+            const model = provider.languageModel(modelName);
+            const result = streamText({
+              model,
+              system: fullSystem,
+              messages: fullMessages,
+              temperature: 0.4,
+              maxTokens: clampedTokens,
+            });
+
+            for await (const chunk of result.textStream) {
+              if (chunk) {
+                streamedChars += chunk.length;
+                generatedFullText += chunk;
+                controller.enqueue(encoder.encode(chunk));
+              }
+            }
+
+            if (streamedChars > 0) {
+              if (generatedFullText) {
+                cacheSet(cacheKey, generatedFullText);
+                trackApiConsumption(userId, user, generatedFullText);
+                if (sessionId) {
+                  const updated = [
+                    ...history,
+                    { role: 'user', content: user },
+                    { role: 'assistant', content: generatedFullText },
+                  ];
+                  saveHistory(sessionId, updated).catch(e => console.warn('[GeminiStream] History save notice:', e.message));
+                }
+              }
+              break;
+            }
+          } catch (modelErr) {
+            console.warn(`[GeminiStream] Model ${modelName} notice:`, modelErr.message?.slice(0, 100));
+            if (streamedChars > 0) {
+              break; // already partially delivered to client
+            }
           }
-        } catch (e) {
-          console.error('[GeminiStream] Stream error:', e.message);
-          controller.enqueue(encoder.encode(`\n[AI generation interrupted]`));
-        } finally {
-          controller.close();
         }
+
+        if (streamedChars === 0) {
+          controller.enqueue(encoder.encode('I am currently processing your request. Please try asking again.'));
+        }
+        controller.close();
       },
     });
 

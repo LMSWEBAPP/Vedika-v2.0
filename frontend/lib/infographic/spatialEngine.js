@@ -798,7 +798,7 @@ export function buildSceneFromSemanticPlan(plan, options = {}) {
       requestId: options.requestId || `req-${Date.now()}`,
       timings: { planningMs: 0, validationMs: 0 },
       generatedAt: new Date().toISOString(),
-      modelUsed: options.modelUsed || "gemini-2.0-flash",
+      modelUsed: options.modelUsed || "gemini-3.1-flash-lite",
       heuristicFallback: options.modelUsed?.includes("heuristic"),
     },
   };

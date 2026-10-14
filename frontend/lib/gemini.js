@@ -1,9 +1,10 @@
 import { getAllKeys, getRotatedKey } from './keys.js';
 
 export const GEMINI_MODELS = [
-  'gemini-1.5-flash',       // Latest fast model (recommended for most use cases)
-  'gemini-1.5-pro',         // Most capable model
-  'gemini-1.5-flash-8b'     // Lighter, faster variant
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
 ];
 
 /**

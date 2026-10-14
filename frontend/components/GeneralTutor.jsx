@@ -1000,7 +1000,7 @@ export default function GeneralTutor() {
         else if (intent.feature === 'simpler') features.simpler = { text };
         else if (intent.feature === 'examples') features.examples = { text };
         const label = FEATURE_LABELS[intent.feature] || 'response';
-        const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: `Here's a ${label} on ${intent.topic}:`, features };
+        const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: `Here's a ${label} on ${intent.topic}:`, features, activeFeature: intent.feature };
         const next = [...msgsWithUser, aiMsg];
         setMessages(next); saveSession(next, sid);
       } catch (e) {
@@ -1029,24 +1029,34 @@ export default function GeneralTutor() {
         headers,
         body: JSON.stringify({ system: TUTOR_SYSTEM, user: prompt, maxOutputTokens: tokens, sessionId: sid, userId, courseId: 'general' }),
       });
-      if (!res.ok) {
-        let errMsg = `HTTP ${res.status}`;
-        try { const d = await res.json(); errMsg = d.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let fullText = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullText += decoder.decode(value, { stream: true });
-        if (streamElRef.current) {
-          streamElRef.current.textContent = fullText;
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+          if (streamElRef.current) {
+            streamElRef.current.textContent = fullText;
+          }
         }
       }
+      
+      // Resilient fallback to reliable non-streaming endpoint if stream returned empty
       if (!fullText.trim()) {
-        throw new Error('Gemini returned an empty response — the content may have been blocked by safety filters. Try rephrasing your question.');
+        try {
+          const fallbackText = await geminiCall(TUTOR_SYSTEM, prompt, tokens, { sessionId: sid, userId });
+          if (fallbackText && fallbackText.trim()) {
+            fullText = fallbackText;
+          }
+        } catch (callErr) {
+          console.warn('[GeneralTutor] Direct gemini fallback notice:', callErr?.message);
+        }
+      }
+      
+      if (!fullText.trim()) {
+        throw new Error('AI response generation timed out. Please try asking again.');
       }
       const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: fullText, features: {} };
       const next = [...msgsWithUser, aiMsg];
