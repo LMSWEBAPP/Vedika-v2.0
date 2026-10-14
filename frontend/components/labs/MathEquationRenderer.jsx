@@ -16,8 +16,18 @@ try {
 // Safely render LaTeX math using KaTeX HTML string output
 export function renderMathToHTML(tex, displayMode = false) {
   if (!tex || typeof tex !== 'string') return null;
-  const cleanTex = tex.trim();
+  let cleanTex = tex.trim();
   if (!cleanTex) return null;
+
+  // 1. Sanitize unescaped underscores inside \text{...}, \mathrm{...}, \mathbf{...} etc.
+  cleanTex = cleanTex.replace(/\\(text|mathrm|mathbf|textit|operatorname)\{([^{}]+)\}/g, (_, tag, inner) => {
+    return `\\${tag}{${inner.replace(/_/g, '\\_')}}`;
+  });
+
+  // 2. Sanitize multiple unescaped underscores in subscripts e.g. A_{cylinder_curved} -> A_{\text{cylinder\_curved}}
+  cleanTex = cleanTex.replace(/_\{([a-zA-Z0-9]+)_([a-zA-Z0-9_]+)\}/g, (_, p1, p2) => {
+    return `_{\\text{${p1}\\_${p2.replace(/_/g, '\\_')}}}`;
+  });
 
   if (katex) {
     try {
@@ -112,6 +122,14 @@ export function parseLaTeXInText(content) {
 
   // Convert literal '\\n' strings into actual line breaks
   str = str.replace(/\\n/g, '\n');
+
+  // Sanitize unescaped underscores inside text and subscript commands
+  str = str.replace(/\\(text|mathrm|mathbf|textit|operatorname)\{([^{}]+)\}/g, (_, tag, inner) => {
+    return `\\${tag}{${inner.replace(/_/g, '\\_')}}`;
+  });
+  str = str.replace(/_\{([a-zA-Z0-9]+)_([a-zA-Z0-9_]+)\}/g, (_, p1, p2) => {
+    return `_{\\text{${p1}\\_${p2.replace(/_/g, '\\_')}}}`;
+  });
 
   // Normalize LaTeX block delimiters \[ ... \] and inline \( ... \)
   str = str
@@ -320,6 +338,11 @@ export default function MathEquationRenderer({ content, theme = {} }) {
         }
         .katex .sqrt > .svg-align {
           max-width: 100% !important;
+        }
+        .katex-error {
+          color: inherit !important;
+          border-bottom: none !important;
+          background: transparent !important;
         }
       `}</style>
       <ReactMarkdown

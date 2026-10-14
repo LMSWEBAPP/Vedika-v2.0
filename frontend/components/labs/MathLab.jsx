@@ -25,6 +25,15 @@ import './MathLab.css';
 function preprocessLaTeX(text) {
   if (!text) return '';
   let str = String(text).replace(/\\n/g, '\n');
+
+  // Sanitize unescaped underscores inside \text{...} and subscripts
+  str = str.replace(/\\(text|mathrm|mathbf|textit|operatorname)\{([^{}]+)\}/g, (_, tag, inner) => {
+    return `\\${tag}{${inner.replace(/_/g, '\\_')}}`;
+  });
+  str = str.replace(/_\{([a-zA-Z0-9]+)_([a-zA-Z0-9_]+)\}/g, (_, p1, p2) => {
+    return `_{\\text{${p1}\\_${p2.replace(/_/g, '\\_')}}}`;
+  });
+
   str = str
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => `\n\n$$\n${formula.trim()}\n$$\n\n`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => ` $${formula.trim()}$ `);
@@ -467,9 +476,11 @@ export default function MathLab() {
     };
 
     handleResize();
-    const timer = setTimeout(handleResize, 120);
+    const raf = requestAnimationFrame(handleResize);
+    const timer = setTimeout(handleResize, 150);
     window.addEventListener('resize', handleResize);
     return () => {
+      cancelAnimationFrame(raf);
       clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
     };
@@ -900,7 +911,7 @@ Respond ONLY with valid JSON in this exact structure:
       }
     }
 
-  }, [zoomScale, paramA, paramB, paramC, paramD, plotMode, hoverCoord]);
+  }, [zoomScale, paramA, paramB, paramC, paramD, plotMode, hoverCoord, graphCanvasSize.w, graphCanvasSize.h, activeTab]);
 
   const handleGraphMouseMove = (e) => {
     const canvas = graphCanvasRef.current;
