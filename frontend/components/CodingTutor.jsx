@@ -25,6 +25,8 @@ import {
 import { generateInfographic } from '@/lib/infographicEngine';
 import VoiceAgentView from '@/components/voice-tutor/VoiceAgentView';
 import MermaidDiagram from '@/components/MermaidDiagram';
+import { InfographicCanvas } from '@/components/infographic/InfographicCanvas';
+import { generateDynamicInfographic } from '@/lib/infographic/client';
 import { getJwtToken } from '@/lib/jwtCache';
 import MobileNav from '@/components/MobileNav';
 import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
@@ -1165,17 +1167,16 @@ export default function CodingTutor() {
           features.flashcards = { cards: parsed, currentIdx: 0, flipped: false };
         } else if (intent.feature === 'infographic') {
           let parsed = null;
-          if (text && text.trim()) {
-            const res = parseInfographicOutput(text);
-            if (res && res.mermaid && res.mermaid.trim().length > 10) {
-              parsed = {
-                points: res.points?.length > 0 ? res.points : (Array.isArray(res) ? res : []),
-                mermaid: res.mermaid,
-                diagramType: 'flowchart'
-              };
-            }
+          try {
+            parsed = await generateDynamicInfographic({
+              response: text || intent.topic,
+              question: intent.topic,
+              subject: 'Coding',
+            });
+          } catch (err) {
+            console.warn('[CodingTutor] Infographic intent generation notice:', err);
           }
-          if (!parsed) {
+          if (!parsed || !parsed.scene) {
             const localResult = generateInfographic(intent.topic || text);
             parsed = {
               points: localResult.points,
@@ -1338,29 +1339,20 @@ export default function CodingTutor() {
     setGenerating({ msgIdx, type });
     try {
       if (type === 'infographic') {
-        let text = '';
-        try {
-          const system = getCodingFeatureSystem(type);
-          const prompt = buildFeaturePrompt(type, msg.content, mode);
-          text = await geminiCall(system, prompt, 1500, { sessionId: currentSessionId, userId });
-        } catch (callErr) {
-          console.warn('[CodingTutor] Gemini infographic call notice:', callErr?.message);
-        }
-
         let parsed = null;
-        if (text && text.trim()) {
-          const res = parseInfographicOutput(text);
-          if (res && res.mermaid && res.mermaid.trim().length > 10) {
-            parsed = {
-              points: res.points?.length > 0 ? res.points : (Array.isArray(res) ? res : []),
-              mermaid: res.mermaid,
-              diagramType: 'flowchart'
-            };
-          }
+        try {
+          const lastUserMsg = [...messages.slice(0, msgIdx)].reverse().find(m => m.role === 'user');
+          parsed = await generateDynamicInfographic({
+            response: msg.content,
+            question: lastUserMsg?.content || '',
+            subject: 'Coding',
+          });
+        } catch (callErr) {
+          console.warn('[CodingTutor] Dynamic infographic call notice:', callErr?.message);
         }
 
         // Graceful fallback to dynamic local infographic engine using actual content
-        if (!parsed) {
+        if (!parsed || !parsed.scene) {
           const localResult = generateInfographic(msg.content);
           parsed = {
             points: localResult.points,
@@ -2518,7 +2510,19 @@ export default function CodingTutor() {
                               )}
 
                               {msg.activeFeature === 'infographic' && (
-                                (msg.features?.infographic?.points?.length > 0 || msg.features?.infographic?.mermaid) ? (
+                                msg.features?.infographic?.scene ? (
+                                  <div style={{ marginTop: 8 }}>
+                                    <InfographicCanvas
+                                      scene={msg.features.infographic.scene}
+                                      points={msg.features.infographic.points || []}
+                                      topicTitle={msg.features.infographic.topic || msg.features.infographic.scene?.header?.title || 'Visual Infographic'}
+                                      onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
+                                      onClose={() => {
+                                        setMessages(prev => prev.map((m, i) => i === mi ? { ...m, activeFeature: null } : m));
+                                      }}
+                                    />
+                                  </div>
+                                ) : (msg.features?.infographic?.points?.length > 0 || msg.features?.infographic?.mermaid) ? (
                                   <div style={{ marginTop: 8 }}>
                                     <MermaidDiagram
                                       chart={msg.features.infographic.mermaid}
