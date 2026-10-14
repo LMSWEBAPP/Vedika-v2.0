@@ -17,6 +17,7 @@ import {
 import { T } from '@/lib/lms-data';
 import { getMascotBridge } from '@/lib/mascotBridge';
 import MathEquationRenderer from '@/components/labs/MathEquationRenderer';
+import DynamicMathVisualizer from '@/components/labs/DynamicMathVisualizer';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import './MathLab.css';
 
@@ -209,432 +210,8 @@ function parseMathEquation(rawEq, modeFromAI, paramsFromAI, canonicalFromAI) {
   return { eqText: 'y = x + 1', mode: 'linear', a: 1, b: 0, c: 1, d: 0, rawEq };
 }
 
-// ----------------------------------------------------
-// DYNAMIC TEXTBOOK MATH VISUALIZER CANVAS COMPONENT
-// ----------------------------------------------------
-function DynamicMathVisualizer({ spec }) {
-  const [params, setParams] = useState(spec?.params || {});
+// DynamicMathVisualizer is imported from ./DynamicMathVisualizer.jsx
 
-  useEffect(() => {
-    if (spec?.params) setParams(spec.params);
-  }, [spec]);
-
-  if (!spec || !spec.type) return null;
-
-  const updateParam = (key, val) => {
-    setParams(prev => ({ ...prev, [key]: parseFloat(val) }));
-  };
-
-  const isAngleType = ['angles', 'supplementary_angles', 'complementary_angles', 'ratio_angles'].includes(spec.type);
-
-  return (
-    <div style={{
-      marginTop: 16,
-      background: 'rgba(10, 15, 28, 0.92)',
-      borderRadius: 16,
-      border: '1px solid rgba(168, 85, 247, 0.3)',
-      padding: '14px 12px',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-      width: '100%',
-      maxWidth: '100%',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Box size={18} color="#C084FC" />
-          <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#FFF' }}>
-            {spec.title || 'Dynamic Math Visualizer'}
-          </h4>
-        </div>
-        <span style={{ fontSize: 11, background: 'rgba(168, 85, 247, 0.2)', color: '#E9D5FF', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
-          Interactive Canvas
-        </span>
-      </div>
-
-      <div className="math-visualizer-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: 14,
-        alignItems: 'start',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        {/* SVG VISUALIZER CANVAS */}
-        <div style={{
-          background: '#070B16',
-          borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.08)',
-          padding: '10px 8px',
-          textAlign: 'center',
-          width: '100%',
-          maxWidth: '100%',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        }}>
-          <svg
-            viewBox="0 0 380 260"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              width: '100%',
-              maxWidth: 380,
-              height: 'auto',
-              background: '#050811',
-              borderRadius: 8,
-              display: 'block',
-              margin: '0 auto'
-            }}
-          >
-            
-            {/* 1. ANGLES / SUPPLEMENTARY / COMPLEMENTARY VISUALIZER */}
-            {isAngleType && (() => {
-              const totalAngle = params.totalAngle || (spec.type === 'complementary_angles' ? 90 : 180);
-              const angle1 = params.angle1 !== undefined ? params.angle1 : (totalAngle === 180 ? 36 : 30);
-              const angle2 = params.angle2 !== undefined ? (totalAngle - angle1) : (totalAngle - angle1);
-              
-              const cx = 190, cy = 190, r = 110;
-              const rad1 = (angle1 * Math.PI) / 180;
-              const radTotal = (totalAngle * Math.PI) / 180;
-
-              const xBaseline = cx + r;
-              const yBaseline = cy;
-
-              const xRay1 = cx + r * Math.cos(rad1);
-              const yRay1 = cy - r * Math.sin(rad1);
-
-              const xRayTotal = cx + r * Math.cos(radTotal);
-              const yRayTotal = cy - r * Math.sin(radTotal);
-
-              const arc1Path = `M ${cx},${cy} L ${cx + 45},${cy} A 45 45 0 0 0 ${cx + 45 * Math.cos(rad1)},${cy - 45 * Math.sin(rad1)} Z`;
-              const arc2Path = `M ${cx},${cy} L ${cx + 45 * Math.cos(rad1)},${cy - 45 * Math.sin(rad1)} A 45 45 0 0 0 ${xRayTotal === cx ? cx : cx + 45 * Math.cos(radTotal)},${cy - 45 * Math.sin(radTotal)} Z`;
-
-              const common = calcGcd(angle1, angle2);
-              const r1 = Math.round(angle1 / common) || 1;
-              const r2 = Math.round(angle2 / common) || 4;
-
-              return (
-                <g>
-                  {/* Base rays */}
-                  <line x1={cx - (totalAngle === 180 ? r : 0)} y1={cy} x2={cx + r} y2={cy} stroke="#6B7280" strokeWidth="2.5" />
-                  {totalAngle === 90 && <line x1={cx} y1={cy} x2={cx} y2={cy - r} stroke="#6B7280" strokeWidth="2.5" />}
-
-                  {/* Ray 1 (Dividing ray) */}
-                  <line x1={cx} y1={cy} x2={xRay1} y2={yRay1} stroke="#EC4899" strokeWidth="3" />
-
-                  {/* Shaded arcs */}
-                  <path d={arc1Path} fill="rgba(236, 72, 153, 0.3)" stroke="#EC4899" strokeWidth="1.5" />
-                  <path d={arc2Path} fill="rgba(6, 182, 212, 0.3)" stroke="#06B6D4" strokeWidth="1.5" />
-
-                  <circle cx={cx} cy={cy} r={4} fill="#FFF" />
-
-                  {/* Angle Labels */}
-                  <text x={cx + 55 * Math.cos(rad1 / 2)} y={cy - 55 * Math.sin(rad1 / 2)} fill="#EC4899" fontSize="13" fontWeight="bold">
-                    {angle1}°
-                  </text>
-                  <text x={cx + 60 * Math.cos(rad1 + (radTotal - rad1) / 2)} y={cy - 60 * Math.sin(rad1 + (radTotal - rad1) / 2)} fill="#06B6D4" fontSize="13" fontWeight="bold">
-                    {angle2}°
-                  </text>
-
-                  {/* Calculation Card */}
-                  <rect x={15} y={15} width={350} height={42} rx={8} fill="rgba(139, 92, 246, 0.2)" stroke="#8B5CF6" />
-                  <text x={190} y={35} fill="#C4B5FD" fontSize="13" fontWeight="bold" textAnchor="middle">
-                    {angle1}° + {angle2}° = {totalAngle}° {totalAngle === 180 ? '(Supplementary)' : '(Complementary)'}
-                  </text>
-                  <text x={190} y={50} fill="#F59E0B" fontSize="11" textAnchor="middle">
-                    Ratio = {r1}:{r2}
-                  </text>
-                </g>
-              );
-            })()}
-
-            {/* 2. TRIANGLE VISUALIZER */}
-            {(spec.type === 'triangle' || spec.type === 'right_triangle' || spec.type === 'pythagoras') && (() => {
-              const base = params.base || 6;
-              const height = params.height || 8;
-              const ox = 60, oy = 210;
-              const scale = Math.min(240 / Math.max(base, 1), 160 / Math.max(height, 1));
-
-              const bx = base * scale;
-              const hy = height * scale;
-              const hypotenuse = Math.sqrt(base * base + height * height).toFixed(2);
-              const area = (0.5 * base * height).toFixed(2);
-
-              return (
-                <g>
-                  <line x1={0} y1={oy} x2={380} y2={oy} stroke="rgba(255,255,255,0.1)" />
-                  <line x1={ox} y1={0} x2={ox} y2={260} stroke="rgba(255,255,255,0.1)" />
-
-                  <polygon
-                    points={`${ox},${oy} ${ox + bx},${oy} ${ox},${oy - hy}`}
-                    fill="rgba(139, 92, 246, 0.25)"
-                    stroke="#8B5CF6"
-                    strokeWidth="3"
-                  />
-
-                  <path d={`M ${ox + 12},${oy} L ${ox + 12},${oy - 12} L ${ox},${oy - 12}`} fill="none" stroke="#FFF" strokeWidth="1.5" />
-
-                  <text x={ox + bx / 2} y={oy + 18} fill="#06B6D4" fontSize="12" fontWeight="bold" textAnchor="middle">
-                    Base = {base}
-                  </text>
-                  <text x={ox - 16} y={oy - hy / 2} fill="#F59E0B" fontSize="12" fontWeight="bold" textAnchor="middle">
-                    Height = {height}
-                  </text>
-                  <text x={ox + bx / 2 + 10} y={oy - hy / 2 - 6} fill="#EC4899" fontSize="12" fontWeight="bold">
-                    c = {hypotenuse}
-                  </text>
-
-                  <rect x={180} y={20} width={180} height={36} rx={8} fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" />
-                  <text x={270} y={42} fill="#10B981" fontSize="13" fontWeight="bold" textAnchor="middle">
-                    Area = ½ × b × h = {area}
-                  </text>
-                </g>
-              );
-            })()}
-
-            {/* 3. CIRCLE SECTOR VISUALIZER */}
-            {(spec.type === 'sector' || spec.type === 'circle_sector') && (() => {
-              const r = params.radius || 10;
-              const angle = params.angle || 30;
-              const cx = 190, cy = 140;
-              const scale = Math.min(100 / Math.max(r, 1), 18);
-              const cr = r * scale;
-
-              const rad = (angle * Math.PI) / 180;
-              const x2 = cx + cr * Math.cos(rad);
-              const y2 = cy - cr * Math.sin(rad);
-              const largeArc = angle > 180 ? 1 : 0;
-              const sectorPath = `M ${cx},${cy} L ${cx + cr},${cy} A ${cr} ${cr} 0 ${largeArc} 0 ${x2},${y2} Z`;
-              const sectorArea = ((angle / 360) * Math.PI * r * r).toFixed(2);
-
-              return (
-                <g>
-                  <circle cx={cx} cy={cy} r={cr} fill="none" stroke="rgba(255,255,255,0.15)" strokeDasharray="4" />
-                  <path d={sectorPath} fill="rgba(139, 92, 246, 0.35)" stroke="#8B5CF6" strokeWidth="3" />
-                  <line x1={cx} y1={cy} x2={cx + cr} y2={cy} stroke="#06B6D4" strokeWidth="2.5" />
-                  <line x1={cx} y1={cy} x2={x2} y2={y2} stroke="#EC4899" strokeWidth="2.5" />
-                  <circle cx={cx} cy={cy} r={4} fill="#FFF" />
-
-                  <text x={cx + 20} y={cy - 6} fill="#F59E0B" fontSize="12" fontWeight="bold">θ = {angle}°</text>
-                  <text x={cx + cr / 2} y={cy + 16} fill="#06B6D4" fontSize="12" fontWeight="bold">r = {r}</text>
-
-                  <rect x={180} y={15} width={185} height={36} rx={8} fill="rgba(139, 92, 246, 0.2)" stroke="#8B5CF6" />
-                  <text x={272.5} y={37} fill="#A78BFA" fontSize="13" fontWeight="bold" textAnchor="middle">
-                    Sector Area = {sectorArea}
-                  </text>
-                </g>
-              );
-            })()}
-
-            {/* 4. SOLID SURFACE AREA VISUALIZER */}
-            {(spec.type === 'solid_surface' || spec.type === '3d_surface') && (() => {
-              const r = params.radius || 7;
-              const h = params.height || 14;
-              const cx = 190, cy = 130;
-              const cr = 45;
-              const ch = 80;
-
-              const tsa = (2 * Math.PI * r * h + 2 * Math.PI * r * r).toFixed(1);
-
-              return (
-                <g>
-                  <rect x={cx - cr} y={cy - ch / 2} width={cr * 2} height={ch} fill="rgba(139, 92, 246, 0.2)" stroke="#8B5CF6" strokeWidth="2.5" />
-                  <ellipse cx={cx} cy={cy - ch / 2} rx={cr} ry={14} fill="rgba(236, 72, 153, 0.3)" stroke="#EC4899" strokeWidth="2" />
-                  <ellipse cx={cx} cy={cy + ch / 2} rx={cr} ry={14} fill="rgba(139, 92, 246, 0.3)" stroke="#8B5CF6" strokeWidth="2" />
-
-                  <line x1={cx - cr - 15} y1={cy - ch / 2} x2={cx - cr - 15} y2={cy + ch / 2} stroke="#F59E0B" strokeWidth="2" strokeDasharray="4" />
-                  <text x={cx - cr - 25} y={cy} fill="#F59E0B" fontSize="11" fontWeight="bold" textAnchor="end">h = {h}</text>
-
-                  <line x1={cx} y1={cy - ch / 2} x2={cx + cr} y2={cy - ch / 2} stroke="#06B6D4" strokeWidth="2" />
-                  <text x={cx + cr / 2} y={cy - ch / 2 - 6} fill="#06B6D4" fontSize="11" fontWeight="bold" textAnchor="middle">r = {r}</text>
-
-                  <rect x={180} y={15} width={185} height={36} rx={8} fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" />
-                  <text x={272.5} y={37} fill="#10B981" fontSize="12" fontWeight="bold" textAnchor="middle">
-                    Surface Area = {tsa}
-                  </text>
-                </g>
-              );
-            })()}
-
-            {/* 5. FULL CIRCLE VISUALIZER */}
-            {spec.type === 'circle' && (() => {
-              const r = params.radius || 5;
-              const cx = 190, cy = 130;
-              const scale = Math.min(100 / Math.max(r, 1), 18);
-              const cr = r * scale;
-
-              const area = (Math.PI * r * r).toFixed(2);
-              const perimeter = (2 * Math.PI * r).toFixed(2);
-
-              return (
-                <g>
-                  <circle cx={cx} cy={cy} r={cr} fill="rgba(236, 72, 153, 0.2)" stroke="#EC4899" strokeWidth="3" />
-                  <circle cx={cx} cy={cy} r={4} fill="#FFF" />
-                  <line x1={cx} y1={cy} x2={cx + cr} y2={cy} stroke="#F59E0B" strokeWidth="2.5" strokeDasharray="4" />
-                  <text x={cx + cr / 2} y={cy - 8} fill="#F59E0B" fontSize="12" fontWeight="bold" textAnchor="middle">
-                    r = {r}
-                  </text>
-
-                  <rect x={20} y={15} width={140} height={50} rx={8} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" />
-                  <text x={30} y={35} fill="#EC4899" fontSize="12" fontWeight="bold">Area = πr² = {area}</text>
-                  <text x={30} y={52} fill="#06B6D4" fontSize="12" fontWeight="bold">Perimeter = {perimeter}</text>
-                </g>
-              );
-            })()}
-
-            {/* 6. AREA UNDER CURVE VISUALIZER */}
-            {spec.type === 'area_under_curve' && (() => {
-              const a = params.a !== undefined ? params.a : 0;
-              const b = params.b !== undefined ? params.b : 3;
-              const cx = 80, cy = 200, scaleX = 40, scaleY = 15;
-
-              const f = (x) => (params.func === '2x+1' ? 2 * x + 1 : x * x);
-              const points = [];
-              for (let x = -1; x <= 4; x += 0.1) {
-                const px = cx + x * scaleX;
-                const py = cy - f(x) * scaleY;
-                points.push(`${px},${py}`);
-              }
-
-              const fillPoints = [];
-              fillPoints.push(`${cx + a * scaleX},${cy}`);
-              for (let x = a; x <= b; x += 0.1) {
-                fillPoints.push(`${cx + x * scaleX},${cy - f(x) * scaleY}`);
-              }
-              fillPoints.push(`${cx + b * scaleX},${cy}`);
-
-              const calcArea = params.func === '2x+1' ? (b * b + b) - (a * a + a) : (Math.pow(b, 3) / 3 - Math.pow(a, 3) / 3);
-
-              return (
-                <g>
-                  <line x1={0} y1={cy} x2={380} y2={cy} stroke="rgba(255,255,255,0.2)" />
-                  <line x1={cx} y1={0} x2={cx} y2={260} stroke="rgba(255,255,255,0.2)" />
-
-                  <polygon points={fillPoints.join(' ')} fill="rgba(16, 185, 129, 0.35)" stroke="none" />
-                  <path d={`M ${points.join(' L ')}`} fill="none" stroke="#8B5CF6" strokeWidth="3" />
-
-                  <line x1={cx + a * scaleX} y1={cy} x2={cx + a * scaleX} y2={cy - f(a) * scaleY} stroke="#F59E0B" strokeWidth="2" strokeDasharray="3" />
-                  <line x1={cx + b * scaleX} y1={cy} x2={cx + b * scaleX} y2={cy - f(b) * scaleY} stroke="#F59E0B" strokeWidth="2" strokeDasharray="3" />
-
-                  <text x={cx + a * scaleX} y={cy + 15} fill="#F59E0B" fontSize="11" fontWeight="bold">a={a}</text>
-                  <text x={cx + b * scaleX} y={cy + 15} fill="#F59E0B" fontSize="11" fontWeight="bold">b={b}</text>
-
-                  <rect x={220} y={15} width={145} height={40} rx={8} fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" />
-                  <text x={292} y={38} fill="#10B981" fontSize="12" fontWeight="bold" textAnchor="middle">
-                    ∫ Area = {calcArea.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })()}
-
-            {/* DEFAULT RICH DYNAMIC CONCEPT CARD (No Text Overflow!) */}
-            {(!['triangle', 'right_triangle', 'pythagoras', 'circle', 'sector', 'circle_sector', 'solid_surface', '3d_surface', 'area_under_curve'].includes(spec.type) && !isAngleType) && (
-              <g>
-                <rect x={20} y={20} width={340} height={220} rx={14} fill="rgba(139,92,246,0.1)" stroke="#8B5CF6" strokeWidth="2" />
-                <circle cx={70} cy={70} r={28} fill="rgba(139,92,246,0.2)" stroke="#A78BFA" strokeWidth="1.5" />
-                <path d="M 58 70 L 66 78 L 82 62" fill="none" stroke="#A78BFA" strokeWidth="3" strokeLinecap="round" />
-
-                <foreignObject x={110} y={35} width={230} height={70}>
-                  <div style={{ color: '#FFF', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>
-                    {spec.title || 'Dynamic Concept Visualizer'}
-                  </div>
-                  <div style={{ color: '#C4B5FD', fontSize: 11, marginTop: 4 }}>
-                    Interactive Concept Spec
-                  </div>
-                </foreignObject>
-
-                {/* Parameters Pills */}
-                <foreignObject x={35} y={115} width={310} height={110}>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {Object.entries(params).map(([k, v]) => (
-                      <span key={k} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F472B6', padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                        {k}: {String(v)}
-                      </span>
-                    ))}
-                  </div>
-                </foreignObject>
-              </g>
-            )}
-          </svg>
-        </div>
-
-        {/* PARAMETER SLIDERS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#A78BFA', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Sliders size={14} /> Dynamic Controls
-          </span>
-
-          {isAngleType && (
-            <>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Angle 1 (θ₁):</span> <b>{params.angle1 || 36}°</b>
-                </label>
-                <input type="range" min="1" max={(params.totalAngle || 180) - 1} value={params.angle1 || 36} onChange={(e) => updateParam('angle1', e.target.value)} style={{ width: '100%', accentColor: '#EC4899' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Angle 2 (θ₂):</span> <b>{(params.totalAngle || 180) - (params.angle1 || 36)}°</b>
-                </label>
-                <input type="range" disabled value={(params.totalAngle || 180) - (params.angle1 || 36)} style={{ width: '100%', opacity: 0.5 }} />
-              </div>
-            </>
-          )}
-
-          {(spec.type === 'triangle' || spec.type === 'right_triangle' || spec.type === 'pythagoras') && (
-            <>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Base:</span> <b>{params.base || 6}</b>
-                </label>
-                <input type="range" min="1" max="15" value={params.base || 6} onChange={(e) => updateParam('base', e.target.value)} style={{ width: '100%', accentColor: '#06B6D4' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Height:</span> <b>{params.height || 8}</b>
-                </label>
-                <input type="range" min="1" max="15" value={params.height || 8} onChange={(e) => updateParam('height', e.target.value)} style={{ width: '100%', accentColor: '#F59E0B' }} />
-              </div>
-            </>
-          )}
-
-          {(spec.type === 'sector' || spec.type === 'circle_sector') && (
-            <>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Radius r:</span> <b>{params.radius || 10}</b>
-                </label>
-                <input type="range" min="5" max="50" value={params.radius || 10} onChange={(e) => updateParam('radius', e.target.value)} style={{ width: '100%', accentColor: '#06B6D4' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Angle θ:</span> <b>{params.angle || 30}°</b>
-                </label>
-                <input type="range" min="5" max="355" step="5" value={params.angle || 30} onChange={(e) => updateParam('angle', e.target.value)} style={{ width: '100%', accentColor: '#F59E0B' }} />
-              </div>
-            </>
-          )}
-
-          {(spec.type === 'solid_surface' || spec.type === '3d_surface') && (
-            <>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Radius r:</span> <b>{params.radius || 7}</b>
-                </label>
-                <input type="range" min="1" max="20" value={params.radius || 7} onChange={(e) => updateParam('radius', e.target.value)} style={{ width: '100%', accentColor: '#06B6D4' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Height h:</span> <b>{params.height || 14}</b>
-                </label>
-                <input type="range" min="2" max="40" value={params.height || 14} onChange={(e) => updateParam('height', e.target.value)} style={{ width: '100%', accentColor: '#F59E0B' }} />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Safe React Error Boundary for Math components
 class SafeMathRenderer extends React.Component {
@@ -760,7 +337,11 @@ export default function MathLab() {
         }
       }
       if (subtab) {
-        const validSubtabs = ['pythagoras', 'sector', 'solid', 'trig', 'calculus'];
+        const validSubtabs = [
+          'pythagoras', 'sector', 'solid', 'cone', 'sphere', 'composite',
+          'elevation', 'coordgeo', 'parabola', 'trapezoid', 'venn', 'bellcurve',
+          'vectors', 'tangent', 'inequality', 'trig', 'calculus', 'angles'
+        ];
         if (validSubtabs.includes(subtab.toLowerCase())) {
           setActiveTab('graph');
           setVisualizerSubTab(subtab.toLowerCase());
@@ -791,7 +372,11 @@ export default function MathLab() {
           }
         } else if (action === 'select_visualizer' || action === 'select_experiment') {
           const sub = target?.toLowerCase();
-          const validSubtabs = ['pythagoras', 'sector', 'solid', 'trig', 'calculus'];
+          const validSubtabs = [
+            'pythagoras', 'sector', 'solid', 'cone', 'sphere', 'composite',
+            'elevation', 'coordgeo', 'parabola', 'trapezoid', 'venn', 'bellcurve',
+            'vectors', 'tangent', 'inequality', 'trig', 'calculus', 'angles'
+          ];
           if (validSubtabs.includes(sub)) {
             setActiveTab('graph');
             setVisualizerSubTab(sub);
@@ -814,7 +399,12 @@ export default function MathLab() {
           if (tab && ['whiteboard', 'graph', 'visualizer'].includes(tab.toLowerCase())) {
             setActiveTab(tab.toLowerCase() === 'visualizer' ? 'graph' : tab.toLowerCase());
           }
-          if (subtab && ['pythagoras', 'sector', 'solid', 'trig', 'calculus'].includes(subtab.toLowerCase())) {
+          const validSubtabs = [
+            'pythagoras', 'sector', 'solid', 'cone', 'sphere', 'composite',
+            'elevation', 'coordgeo', 'parabola', 'trapezoid', 'venn', 'bellcurve',
+            'vectors', 'tangent', 'inequality', 'trig', 'calculus', 'angles'
+          ];
+          if (subtab && validSubtabs.includes(subtab.toLowerCase())) {
             setActiveTab('graph');
             setVisualizerSubTab(subtab.toLowerCase());
           }
@@ -1295,7 +885,71 @@ Respond ONLY with valid JSON in this exact structure:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system: "You are Vedika Math AI, an expert math tutor. Format your explanations with crystal-clear mathematical rigor and beautiful presentation:\n\n1. Mathematical Notation:\n- ALWAYS use standard LaTeX math syntax for ALL formulas, equations, variables, and calculations.\n- For standalone equations and multi-line derivations, ALWAYS use display math $$...$$ on their own lines (e.g. $$A_{\\text{total}} = 2\\pi r h + 2\\pi r^2$$).\n- For inline symbols, variables, numbers with units, and expressions, ALWAYS use inline math $...$ (e.g. $r = 7\\text{ cm}$, $h = 10\\text{ cm}$, $\\pi \\approx \\frac{22}{7}$).\n- Use \\times for multiplication (NEVER bare * or x).\n- Use \\frac{numerator}{denominator} for fractions.\n- NEVER output bare LaTeX commands (like \\pi, \\times, \\text) without wrapping them in $...$ or $$...$$.\n\n2. Structure Your Response:\n- ### Given & Required: State values with units as inline LaTeX.\n- ### Formulas Used: Display the key formulas.\n- ### Step-by-Step Solution: Clear numbered steps (e.g., Step 1: ..., Step 2: ...).\n- ### Final Answer: Put the final answer inside $$\\boxed{\\text{Answer: } ...}$$.\n\n3. ALWAYS append a ```json block at the VERY END containing a visualSpec JSON:\n```json\n{\n  \"type\": \"supplementary_angles\" | \"complementary_angles\" | \"angles\" | \"triangle\" | \"sector\" | \"circle\" | \"solid_surface\" | \"linear_graph\" | \"quadratic_graph\" | \"quadrilateral\",\n  \"title\": \"Dynamic Visualizer Title\",\n  \"params\": {\"angle1\": 36, \"angle2\": 144, \"totalAngle\": 180, \"base\": 6, \"height\": 8, \"radius\": 10, \"angle\": 30},\n  \"labels\": {\"val1\": \"36°\", \"val2\": \"144°\", \"result\": \"180°\"}\n}\n```",
+          system: `You are Vedika Math AI, an expert math tutor. Format your explanations with crystal-clear mathematical rigor and beautiful presentation:
+
+1. Mathematical Notation:
+- ALWAYS use standard LaTeX math syntax for ALL formulas, equations, variables, and calculations.
+- For standalone equations and multi-line derivations, ALWAYS use display math $$...$$ on their own lines (e.g. $$A_{\\text{total}} = 2\\pi r h + 2\\pi r^2$$).
+- For inline symbols, variables, numbers with units, and expressions, ALWAYS use inline math $...$ (e.g. $r = 7\\text{ cm}$, $h = 10\\text{ cm}$, $\\pi \\approx \\frac{22}{7}$).
+- Use \\times for multiplication (NEVER bare * or x).
+- Use \\frac{numerator}{denominator} for fractions.
+- NEVER output bare LaTeX commands (like \\pi, \\times, \\text) without wrapping them in $...$ or $$...$$.
+
+2. Structure Your Response:
+- ### Given & Required: State values with units as inline LaTeX.
+- ### Formulas Used: Display the key formulas.
+- ### Step-by-Step Solution: Clear numbered steps (e.g., Step 1: ..., Step 2: ...).
+- ### Final Answer: Put the final answer inside $$\\boxed{\\text{Answer: } ...}$$.
+
+3. Visual Diagram Generation:
+ALWAYS append a \`\`\`json block at the VERY END containing a visualSpec JSON object.
+Select the single best-matching "type" from the 18 mathematical visualizer categories below, and populate its numeric parameters according to the question values:
+
+1. "angles" | "supplementary_angles" | "complementary_angles":
+   params: {"angle1": number, "angle2": number, "totalAngle": 90 | 180}
+2. "triangle" | "pythagoras":
+   params: {"base": number, "height": number}
+3. "sector":
+   params: {"radius": number, "angle": number}
+4. "solid_surface" | "cylinder":
+   params: {"radius": number, "height": number}
+5. "cone":
+   params: {"radius": number, "height": number}
+6. "sphere_hemisphere":
+   params: {"radius": number, "mode": "sphere" | "hemisphere"}
+7. "composite_solid":
+   params: {"radius": number, "height": number}
+8. "elevation_depression" | "heights_distances":
+   params: {"distance": number, "angle": number}
+9. "coordinate_geometry":
+   params: {"x1": number, "y1": number, "x2": number, "y2": number, "m": number, "n": number}
+10. "quadratic_parabola":
+   params: {"a": number, "b": number, "c": number}
+11. "trapezoid":
+   params: {"a": number, "b": number, "h": number}
+12. "venn_diagram":
+   params: {"onlyA": number, "onlyB": number, "both": number, "total": number}
+13. "bell_curve":
+   params: {"mean": number, "sd": number}
+14. "vector_addition":
+   params: {"magA": number, "magB": number, "angle": number}
+15. "tangent_derivative":
+   params: {"x0": number}
+16. "number_line_inequality":
+   params: {"min": number, "max": number, "leftInclusive": boolean, "rightInclusive": boolean}
+17. "circle":
+   params: {"radius": number}
+18. "area_under_curve":
+   params: {"a": number, "b": number, "func": "x^2" | "2x+1"}
+
+Example:
+\`\`\`json
+{
+  "type": "elevation_depression",
+  "title": "Heights & Distances (Tower Elevation)",
+  "params": {"distance": 50, "angle": 30}
+}
+\`\`\``,
           user: `Solve and explain this mathematical equation or question step-by-step:\n"${q}"`
         })
       });
@@ -1319,17 +973,29 @@ Respond ONLY with valid JSON in this exact structure:
 
       const rawText = data.text || 'Unable to generate response.';
 
-      const jsonMatch = rawText.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+      let specObj = null;
+      const jsonMatch = rawText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i);
       if (jsonMatch) {
         try {
-          const specObj = JSON.parse(jsonMatch[1]);
-          setParsedVisualSpec(specObj);
+          specObj = JSON.parse(jsonMatch[1]);
         } catch (e) {
           console.warn("Visual spec parsing failed:", e);
         }
+      } else {
+        const nakedMatch = rawText.match(/(\{\s*"type"\s*:[\s\S]*?"params"\s*:[\s\S]*?\})/);
+        if (nakedMatch) {
+          try {
+            specObj = JSON.parse(nakedMatch[1]);
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+      if (specObj) {
+        setParsedVisualSpec(specObj);
       }
 
-      setTutorResponse(rawText.replace(/```json\s*\{[\s\S]*?\}\s*```/, ''));
+      setTutorResponse(rawText.replace(/```(?:json)?\s*\{[\s\S]*?\}\s*```/gi, '').trim());
     } catch (err) {
       console.error("Math AI Connection Error:", err);
       setTutorResponse(`Notice: ${err.message || 'Failed to connect to Math AI engine.'}`);
@@ -1788,9 +1454,22 @@ Respond ONLY with valid JSON in this exact structure:
                   {[
                     { id: 'pythagoras', label: 'Pythagoras', icon: Triangle },
                     { id: 'sector', label: 'Circle Sector', icon: Compass },
-                    { id: 'solid', label: '3D Solid Surface', icon: Box },
-                    { id: 'trig', label: 'Trigonometry', icon: Circle },
-                    { id: 'calculus', label: 'Calculus', icon: TrendingUp }
+                    { id: 'elevation', label: 'Heights & Distances', icon: Maximize2 },
+                    { id: 'solid', label: '3D Cylinder', icon: Box },
+                    { id: 'cone', label: 'Cone', icon: Triangle },
+                    { id: 'sphere', label: 'Sphere', icon: Circle },
+                    { id: 'composite', label: 'Composite Solid', icon: Layers },
+                    { id: 'parabola', label: 'Quadratic Parabola', icon: TrendingUp },
+                    { id: 'coordgeo', label: 'Coordinate Geometry', icon: LineChart },
+                    { id: 'trapezoid', label: 'Trapezoid', icon: Square },
+                    { id: 'venn', label: 'Venn Diagram', icon: Circle },
+                    { id: 'bellcurve', label: 'Normal Bell Curve', icon: Activity },
+                    { id: 'vectors', label: 'Vectors Law', icon: Award },
+                    { id: 'tangent', label: 'Tangent & Slope', icon: TrendingUp },
+                    { id: 'inequality', label: 'Inequality Line', icon: Calculator },
+                    { id: 'trig', label: 'Unit Circle', icon: Circle },
+                    { id: 'calculus', label: 'Calculus Integral', icon: TrendingUp },
+                    { id: 'angles', label: 'Supplementary Angles', icon: Calculator }
                   ].map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
@@ -1824,14 +1503,53 @@ Respond ONLY with valid JSON in this exact structure:
                   {visualizerSubTab === 'sector' && (
                     <DynamicMathVisualizer spec={{ type: 'sector', title: 'Circle Sector & Clock Hand Visualizer', params: { radius: 10, angle: 30 } }} />
                   )}
+                  {visualizerSubTab === 'elevation' && (
+                    <DynamicMathVisualizer spec={{ type: 'elevation_depression', title: 'Heights & Distances (Angle of Elevation)', params: { distance: 50, angle: 30 } }} />
+                  )}
                   {visualizerSubTab === 'solid' && (
-                    <DynamicMathVisualizer spec={{ type: 'solid_surface', title: '3D Cylinder & Solid Surface Area Visualizer', params: { radius: 7, height: 14 } }} />
+                    <DynamicMathVisualizer spec={{ type: 'solid_surface', title: '3D Cylinder Surface Area & Volume', params: { radius: 7, height: 14 } }} />
+                  )}
+                  {visualizerSubTab === 'cone' && (
+                    <DynamicMathVisualizer spec={{ type: 'cone', title: 'Cone Slant Height & Surface Area', params: { radius: 6, height: 8 } }} />
+                  )}
+                  {visualizerSubTab === 'sphere' && (
+                    <DynamicMathVisualizer spec={{ type: 'sphere_hemisphere', title: 'Sphere & Hemisphere Geometry', params: { radius: 7, mode: 'sphere' } }} />
+                  )}
+                  {visualizerSubTab === 'composite' && (
+                    <DynamicMathVisualizer spec={{ type: 'composite_solid', title: 'Composite Solid (Cylinder + Hemisphere)', params: { radius: 3.5, height: 10 } }} />
+                  )}
+                  {visualizerSubTab === 'parabola' && (
+                    <DynamicMathVisualizer spec={{ type: 'quadratic_parabola', title: 'Quadratic Parabola & Roots', params: { a: 1, b: -4, c: 3 } }} />
+                  )}
+                  {visualizerSubTab === 'coordgeo' && (
+                    <DynamicMathVisualizer spec={{ type: 'coordinate_geometry', title: 'Coordinate Geometry & Section Formula', params: { x1: 2, y1: 3, x2: 8, y2: 9, m: 2, n: 1 } }} />
+                  )}
+                  {visualizerSubTab === 'trapezoid' && (
+                    <DynamicMathVisualizer spec={{ type: 'trapezoid', title: 'Trapezoid & Altitude Visualizer', params: { a: 10, b: 18, h: 8 } }} />
+                  )}
+                  {visualizerSubTab === 'venn' && (
+                    <DynamicMathVisualizer spec={{ type: 'venn_diagram', title: 'Venn Diagram & Set Operations', params: { onlyA: 20, onlyB: 15, both: 10, total: 50 } }} />
+                  )}
+                  {visualizerSubTab === 'bellcurve' && (
+                    <DynamicMathVisualizer spec={{ type: 'bell_curve', title: 'Gaussian Normal Distribution (Bell Curve)', params: { mean: 70, sd: 10 } }} />
+                  )}
+                  {visualizerSubTab === 'vectors' && (
+                    <DynamicMathVisualizer spec={{ type: 'vector_addition', title: 'Parallelogram Law of Vector Addition', params: { magA: 5, magB: 12, angle: 90 } }} />
+                  )}
+                  {visualizerSubTab === 'tangent' && (
+                    <DynamicMathVisualizer spec={{ type: 'tangent_derivative', title: 'Curve Tangent & Derivative Slope', params: { x0: 2 } }} />
+                  )}
+                  {visualizerSubTab === 'inequality' && (
+                    <DynamicMathVisualizer spec={{ type: 'number_line_inequality', title: 'Number Line Inequality Interval', params: { min: -3, max: 5, leftInclusive: false, rightInclusive: true } }} />
                   )}
                   {visualizerSubTab === 'trig' && (
                     <DynamicMathVisualizer spec={{ type: 'circle', title: 'Unit Circle Visualizer', params: { radius: 5 } }} />
                   )}
                   {visualizerSubTab === 'calculus' && (
                     <DynamicMathVisualizer spec={{ type: 'area_under_curve', title: 'Calculus Integral Area Visualizer', params: { a: 0, b: 3, func: 'x^2' } }} />
+                  )}
+                  {visualizerSubTab === 'angles' && (
+                    <DynamicMathVisualizer spec={{ type: 'angles', title: 'Supplementary & Complementary Angles', params: { angle1: 36, angle2: 144, totalAngle: 180 } }} />
                   )}
                 </div>
               </div>
@@ -1927,11 +1645,16 @@ Respond ONLY with valid JSON in this exact structure:
                 </span>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {[
-                    "Surface area of cylinder joined with hemisphere",
+                    "A 50m tower observed from ground at 30° angle of elevation",
+                    "Surface area of cylinder joined with hemisphere (r=3.5, h=10)",
+                    "Find point P dividing line segment (2,3) to (8,9) in ratio 2:1",
+                    "Find roots and vertex of quadratic equation 2x² - 4x - 6 = 0",
+                    "Slant height and CSA of cone with radius 6cm and height 8cm",
+                    "In a class of 50 students, 30 like Math, 25 like Science, 10 like both",
+                    "Normal distribution of scores with mean 70 and standard deviation 10",
+                    "Resultant of two forces 5N and 12N acting at 90° angle",
                     "Area swept by 10cm minute hand in 5 minutes",
-                    "Total area cleaned by two 40cm wipers sweeping 115°",
-                    "Find hypotenuse of right triangle with base 6 and height 8",
-                    "Solve quadratic equation 2x² - 4x - 6 = 0"
+                    "Two supplementary angles in ratio 1:4. Find both angles"
                   ].map(ex => (
                     <button
                       key={ex}
