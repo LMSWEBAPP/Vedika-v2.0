@@ -9,7 +9,7 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import {
   Calculator, Edit3, Eraser, Trash2, RotateCcw, Play, Sparkles,
-  Sliders, Activity, HelpCircle, Compass, Zap, Lightbulb, ChevronRight,
+  Sliders, Activity, HelpCircle, Compass, Zap, Lightbulb, ChevronRight, ChevronDown, X,
   TrendingUp, Circle, Triangle, Layers, ZoomIn, ZoomOut, RefreshCw, Send, Image as ImageIcon,
   Crop, Mic, MicOff, Square, CheckCircle2, Award, Box, Volume2,
   Maximize2, Minimize2, PenLine, LineChart
@@ -278,6 +278,10 @@ export default function MathLab() {
   const [hasDrawn, setHasDrawn] = useState(false);
   const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 0, h: 0, isSelecting: false, isSelected: false });
   const [isWhiteboardExpanded, setIsWhiteboardExpanded] = useState(false);
+  const [canvasSize, setCanvasSize] = useState({ w: 600, h: 390 });
+  const [graphCanvasSize, setGraphCanvasSize] = useState({ w: 600, h: 300 });
+  const [showVisualConcepts, setShowVisualConcepts] = useState(false);
+  const [showOcrCard, setShowOcrCard] = useState(true);
 
   // Equation State
   const [equationText, setEquationText] = useState('y = x + 1');
@@ -433,6 +437,45 @@ export default function MathLab() {
   }, [activeTab, visualizerSubTab, plotMode]);
 
   // ----------------------------------------------------
+  // RESPONSIVE RESIZE FOR DESKTOP FULL-SCREEN CANVAS
+  // ----------------------------------------------------
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window === 'undefined') return;
+      if (window.innerWidth >= 1024) {
+        if (canvasRef.current && canvasRef.current.parentElement) {
+          const rect = canvasRef.current.parentElement.getBoundingClientRect();
+          if (rect.width > 150 && rect.height > 150) {
+            const newW = Math.round(rect.width);
+            const newH = Math.round(rect.height);
+            setCanvasSize(prev => (prev.w !== newW || prev.h !== newH ? { w: newW, h: newH } : prev));
+          }
+        }
+        if (graphCanvasRef.current && graphCanvasRef.current.parentElement) {
+          const gRect = graphCanvasRef.current.parentElement.getBoundingClientRect();
+          if (gRect.width > 150 && gRect.height > 150) {
+            const newGW = Math.round(gRect.width);
+            const newGH = Math.round(gRect.height);
+            setGraphCanvasSize(prev => (prev.w !== newGW || prev.h !== newGH ? { w: newGW, h: newGH } : prev));
+          }
+        }
+      } else {
+        const mobH = isWhiteboardExpanded ? 540 : 390;
+        setCanvasSize(prev => (prev.w !== 600 || prev.h !== mobH ? { w: 600, h: mobH } : prev));
+        setGraphCanvasSize(prev => (prev.w !== 600 || prev.h !== 300 ? { w: 600, h: 300 } : prev));
+      }
+    };
+
+    handleResize();
+    const timer = setTimeout(handleResize, 120);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [activeTab, isWhiteboardExpanded]);
+
+  // ----------------------------------------------------
   // WHITEBOARD & CROPPING
   // ----------------------------------------------------
   useEffect(() => {
@@ -452,6 +495,8 @@ export default function MathLab() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
     setRecognizedText('');
+    setAiExplanation('');
+    setShowOcrCard(false);
     setCropBox({ x: 0, y: 0, w: 0, h: 0, isSelecting: false, isSelected: false });
   };
 
@@ -657,6 +702,7 @@ Respond ONLY with valid JSON in this exact structure:
       setAiExplanation("Recognition error: " + (error.message || "Failed to analyze selection"));
     } finally {
       setIsRecognizing(false);
+      setShowOcrCard(true);
       clearCropSelection();
       setDrawTool('pen');
     }
@@ -860,8 +906,10 @@ Respond ONLY with valid JSON in this exact structure:
     const canvas = graphCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
+    const scaleX = rect.width ? canvas.width / rect.width : 1;
+    const scaleY = rect.height ? canvas.height / rect.height : 1;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top) * scaleY;
     const originX = canvas.width / 2;
     const originY = canvas.height / 2;
     const mathX = (px - originX) / zoomScale;
@@ -1034,126 +1082,137 @@ Example:
   };
 
   return (
-    <div className="math-lab-container">
+    <div className={`math-lab-container ${activeTab === 'ai_solver' ? 'tab-ai_solver' : ''}`}>
       <div className="math-lab-inner">
 
-        {/* 1. HEADER (matching image: Badge + Title + Subtitle) */}
-        <header className="math-lab-header">
-          <div className="math-lab-badge">
-            <Calculator size={26} color="#FFF" />
-          </div>
-          <div className="math-lab-titles">
-            <h1 className="math-lab-title">Vedika Math Lab</h1>
-            <p className="math-lab-subtitle">
-              Smart Crop Selection OCR & Interactive Visual Experiments
-            </p>
-          </div>
-        </header>
+        {/* TOP ROW: Header on Left, Tab Switcher on Right (Desktop) / Stacked (Mobile) */}
+        <div className="math-lab-top-row">
+          {/* 1. HEADER (matching image: Badge + Title + Subtitle) */}
+          <header className="math-lab-header">
+            <div className="math-lab-badge">
+              <Calculator size={26} color="#FFF" />
+            </div>
+            <div className="math-lab-titles">
+              <h1 className="math-lab-title">Vedika Math Lab</h1>
+              <p className="math-lab-subtitle">
+                Smart Crop Selection OCR & Interactive Visual Experiments
+              </p>
+            </div>
+          </header>
 
-        {/* 2. TAB SWITCHER CAPSULE (Whiteboard / Graph / AI Math Solve) */}
-        <div className="math-lab-tabs-bar" role="tablist">
-          <button
-            role="tab"
-            aria-selected={activeTab === 'whiteboard'}
-            className={`math-lab-tab ${activeTab === 'whiteboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('whiteboard')}
-          >
-            <PenLine size={15} />
-            <span>Whiteboard</span>
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === 'graph'}
-            className={`math-lab-tab ${activeTab === 'graph' ? 'active' : ''}`}
-            onClick={() => setActiveTab('graph')}
-          >
-            <LineChart size={15} />
-            <span>Graph</span>
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === 'ai_solver'}
-            className={`math-lab-tab ${activeTab === 'ai_solver' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ai_solver')}
-          >
-            <Sparkles size={15} />
-            <span>AI Math Solve</span>
-          </button>
+          {/* 2. TAB SWITCHER CAPSULE (Whiteboard / Graph / AI Math Solve) */}
+          <div className="math-lab-tabs-bar" role="tablist">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'whiteboard'}
+              className={`math-lab-tab ${activeTab === 'whiteboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('whiteboard')}
+            >
+              <PenLine size={15} />
+              <span>Whiteboard</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'graph'}
+              className={`math-lab-tab ${activeTab === 'graph' ? 'active' : ''}`}
+              onClick={() => setActiveTab('graph')}
+            >
+              <LineChart size={15} />
+              <span>Graph</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'ai_solver'}
+              className={`math-lab-tab ${activeTab === 'ai_solver' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ai_solver')}
+            >
+              <Sparkles size={15} />
+              <span>AI Math Solve</span>
+            </button>
+          </div>
         </div>
 
         {/* 3. TAB CONTENT */}
         {activeTab === 'whiteboard' && (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="math-tab-content-pane">
 
             {/* SMART HANDWRITING WHITEBOARD CARD */}
             <section className="math-whiteboard-card" aria-label="Smart Handwriting Whiteboard">
 
-              {/* Card Header with Expand toggle */}
-              <div className="math-card-header">
+              {/* Whiteboard Bar: Title + Drawing Tools + Desktop Recognize Action */}
+              <div className="math-whiteboard-bar">
                 <div className="math-card-header-left">
                   <PenLine size={18} color="#C084FC" />
                   <span className="math-card-title">Smart Handwriting Whiteboard</span>
                 </div>
+
+                {/* Toolbar: Pen, Select, Eraser, Trash */}
+                <div className="math-toolbar" role="toolbar" aria-label="Drawing tools">
+                  <button
+                    type="button"
+                    className={`math-tool-btn ${drawTool === 'pen' ? 'active-pen' : ''}`}
+                    onClick={() => switchTool('pen')}
+                    title="Draw handwriting pen"
+                  >
+                    <PenLine size={15} />
+                    <span>Pen</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`math-tool-btn ${drawTool === 'select' ? 'active-select' : ''}`}
+                    onClick={() => switchTool('select')}
+                    title="Crop selection box"
+                  >
+                    <Crop size={15} />
+                    <span>Select</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`math-tool-btn ${drawTool === 'eraser' ? 'active-eraser' : ''}`}
+                    onClick={() => switchTool('eraser')}
+                    title="Erase handwriting strokes"
+                  >
+                    <Eraser size={15} />
+                    <span>Eraser</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="math-tool-trash-btn"
+                    onClick={clearWhiteboard}
+                    title="Clear entire whiteboard"
+                    aria-label="Clear whiteboard"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                {/* Desktop-Only Inline Quick Recognize Button */}
                 <button
                   type="button"
-                  className="math-card-expand-btn"
-                  onClick={() => setIsWhiteboardExpanded(prev => !prev)}
-                  title={isWhiteboardExpanded ? "Collapse canvas view" : "Expand canvas view"}
-                  aria-label={isWhiteboardExpanded ? "Collapse canvas" : "Expand canvas"}
+                  className="math-recognize-inline-btn"
+                  onClick={() => handleRecognizeCanvas(cropBox.isSelected)}
+                  disabled={isRecognizing}
                 >
-                  {isWhiteboardExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  <Sparkles size={16} />
+                  <span>
+                    {isRecognizing
+                      ? 'Analyzing...'
+                      : cropBox.isSelected
+                      ? 'Recognize Selection'
+                      : 'Recognize Whiteboard'}
+                  </span>
                 </button>
               </div>
 
-              {/* Toolbar: Pen, Select, Eraser, Trash */}
-              <div className="math-toolbar" role="toolbar" aria-label="Drawing tools">
-                <button
-                  type="button"
-                  className={`math-tool-btn ${drawTool === 'pen' ? 'active-pen' : ''}`}
-                  onClick={() => switchTool('pen')}
-                  title="Draw handwriting pen"
-                >
-                  <PenLine size={15} />
-                  <span>Pen</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={`math-tool-btn ${drawTool === 'select' ? 'active-select' : ''}`}
-                  onClick={() => switchTool('select')}
-                  title="Crop selection box"
-                >
-                  <Crop size={15} />
-                  <span>Select</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={`math-tool-btn ${drawTool === 'eraser' ? 'active-eraser' : ''}`}
-                  onClick={() => switchTool('eraser')}
-                  title="Erase handwriting strokes"
-                >
-                  <Eraser size={15} />
-                  <span>Eraser</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="math-tool-trash-btn"
-                  onClick={clearWhiteboard}
-                  title="Clear entire whiteboard"
-                  aria-label="Clear whiteboard"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-
-              {/* Dotted Matrix Canvas Area */}
+              {/* Dotted Matrix Canvas Area (Dynamic Full-Screen on Desktop) */}
               <div className={`math-whiteboard-canvas-wrap ${isWhiteboardExpanded ? 'expanded' : ''}`}>
                 <canvas
                   ref={canvasRef}
-                  width={600}
-                  height={isWhiteboardExpanded ? 540 : 390}
+                  width={canvasSize.w}
+                  height={canvasSize.h}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
@@ -1170,7 +1229,7 @@ Example:
                 {/* Crop Bounding Box Overlay */}
                 {(cropBox.isSelecting || cropBox.isSelected) && (
                   <svg
-                    viewBox={`0 0 600 ${isWhiteboardExpanded ? 540 : 390}`}
+                    viewBox={`0 0 ${canvasSize.w} ${canvasSize.h}`}
                     preserveAspectRatio="none"
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
                   >
@@ -1198,7 +1257,7 @@ Example:
                     onClick={() => handleRecognizeCanvas(true)}
                     style={{
                       position: 'absolute',
-                      top: Math.max(12, ((cropBox.y * (isWhiteboardExpanded ? 540 : 390)) / (isWhiteboardExpanded ? 540 : 390)) - 42),
+                      top: Math.max(12, cropBox.y - 42),
                       left: Math.max(12, cropBox.x),
                       zIndex: 20,
                       background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)',
@@ -1218,349 +1277,468 @@ Example:
                     <Sparkles size={14} /> Analyze Selected Box
                   </button>
                 )}
-              </div>
-            </section>
 
-            {/* 4. FULL-WIDTH RECOGNIZE BUTTON */}
-            <button
-              type="button"
-              className="math-recognize-full-btn"
-              onClick={() => handleRecognizeCanvas(cropBox.isSelected)}
-              disabled={isRecognizing}
-            >
-              <Sparkles size={18} />
-              <span>
-                {isRecognizing
-                  ? 'Analyzing Handwriting...'
-                  : cropBox.isSelected
-                  ? 'Recognize Selected Region'
-                  : 'Recognize Full Whiteboard'}
-              </span>
-            </button>
-
-            {/* AI OCR Detection & Quick Actions Card */}
-            {aiExplanation && (
-              <div className="math-ai-solution-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#C084FC', fontWeight: 700, fontSize: 14 }}>
-                    <Sparkles size={16} /> AI OCR Detection
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('graph')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(168, 85, 247, 0.4)',
-                        background: 'rgba(168, 85, 247, 0.2)',
-                        color: '#FFFFFF',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                    >
-                      View in Graph ➔
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('ai_solver');
-                        if (recognizedText) {
-                          setTutorQuery(`Solve and explain step by step: ${recognizedText}`);
-                          handleAskTutor(`Solve and explain step by step: ${recognizedText}`);
-                        }
-                      }}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(236, 72, 153, 0.4)',
-                        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(168, 85, 247, 0.25))',
-                        color: '#FFFFFF',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                    >
-                      Solve with AI ➔
-                    </button>
-                  </div>
-                </div>
-                <p style={{ fontSize: 13, color: '#E2E8F0', margin: 0, lineHeight: 1.5 }}>
-                  {aiExplanation}
-                </p>
-                {recognizedText && (
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 10, fontFamily: 'monospace', color: '#F472B6', fontSize: 15, fontWeight: 700 }}>
-                    Detected Equation: {recognizedText}
+                {/* Desktop Floating Glass OCR Result Card (Never forces vertical page scroll) */}
+                {aiExplanation && showOcrCard && (
+                  <div className="math-ai-solution-card desktop-floating">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#C084FC', fontWeight: 700, fontSize: 13 }}>
+                        <Sparkles size={15} /> AI OCR Detection
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('graph')}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                            background: 'rgba(168, 85, 247, 0.2)',
+                            color: '#FFFFFF',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Graph ➔
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('ai_solver');
+                            if (recognizedText) {
+                              setTutorQuery(`Solve and explain step by step: ${recognizedText}`);
+                              handleAskTutor(`Solve and explain step by step: ${recognizedText}`);
+                            }
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(236, 72, 153, 0.4)',
+                            background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.35), rgba(168, 85, 247, 0.35))',
+                            color: '#FFFFFF',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Solve ➔
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowOcrCard(false)}
+                          style={{
+                            padding: '4px 6px',
+                            borderRadius: 8,
+                            border: 'none',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            color: '#94A3B8',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          title="Dismiss notification"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: 12, color: '#E2E8F0', margin: '6px 0', lineHeight: 1.45 }}>
+                      {aiExplanation}
+                    </p>
+                    {recognizedText && (
+                      <div style={{ background: 'rgba(0,0,0,0.4)', padding: '6px 10px', borderRadius: 8, fontFamily: 'monospace', color: '#F472B6', fontSize: 13, fontWeight: 700 }}>
+                        {recognizedText}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </section>
+
+            {/* Mobile-Only Bottom Area: Full Recognize Button + Detection Card */}
+            <div className="math-mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+              <button
+                type="button"
+                className="math-recognize-full-btn"
+                onClick={() => handleRecognizeCanvas(cropBox.isSelected)}
+                disabled={isRecognizing}
+              >
+                <Sparkles size={18} />
+                <span>
+                  {isRecognizing
+                    ? 'Analyzing Handwriting...'
+                    : cropBox.isSelected
+                    ? 'Recognize Selected Region'
+                    : 'Recognize Full Whiteboard'}
+                </span>
+              </button>
+
+              {aiExplanation && (
+                <div className="math-ai-solution-card">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#C084FC', fontWeight: 700, fontSize: 14 }}>
+                      <Sparkles size={16} /> AI OCR Detection
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('graph')}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(168, 85, 247, 0.4)',
+                          background: 'rgba(168, 85, 247, 0.2)',
+                          color: '#FFFFFF',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}
+                      >
+                        View in Graph ➔
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('ai_solver');
+                          if (recognizedText) {
+                            setTutorQuery(`Solve and explain step by step: ${recognizedText}`);
+                            handleAskTutor(`Solve and explain step by step: ${recognizedText}`);
+                          }
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(236, 72, 153, 0.4)',
+                          background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(168, 85, 247, 0.25))',
+                          color: '#FFFFFF',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}
+                      >
+                        Solve with AI ➔
+                      </button>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 13, color: '#E2E8F0', margin: 0, lineHeight: 1.5 }}>
+                    {aiExplanation}
+                  </p>
+                  {recognizedText && (
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 10, fontFamily: 'monospace', color: '#F472B6', fontSize: 15, fontWeight: 700 }}>
+                      Detected Equation: {recognizedText}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
           </div>
         )}
 
         {/* 5. TAB 2: GRAPH PLOTTER & VISUAL CONCEPTS */}
         {activeTab === 'graph' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <section className="math-graph-card" aria-label="Real-Time 2D Graph Plotter">
-              
-              {/* Header */}
-              <div className="math-card-header">
-                <div className="math-card-header-left">
-                  <LineChart size={18} color="#C084FC" />
-                  <span className="math-card-title">Real-Time 2D Graph Plotter</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => setZoomScale(p => Math.min(p + 5, 60))}
-                    className="math-card-expand-btn"
-                    title="Zoom in"
-                    aria-label="Zoom in"
-                  >
-                    <ZoomIn size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setZoomScale(p => Math.max(p - 5, 15))}
-                    className="math-card-expand-btn"
-                    title="Zoom out"
-                    aria-label="Zoom out"
-                  >
-                    <ZoomOut size={14} />
-                  </button>
-                </div>
+          <div className="math-tab-content-pane">
+            <div className="math-graph-layout">
+
+              {/* MAIN GRAPH COLUMN: Full-Screen 2D Canvas */}
+              <div className="math-graph-main-col">
+                <section className="math-graph-card" aria-label="Real-Time 2D Graph Plotter">
+                  {/* Header Bar */}
+                  <div className="math-card-header">
+                    <div className="math-card-header-left">
+                      <LineChart size={18} color="#C084FC" />
+                      <span className="math-card-title">Real-Time 2D Graph Plotter</span>
+                    </div>
+
+                    {/* Desktop Curve Formula Badge */}
+                    <div className="math-curve-badge-header">
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#F472B6', fontFamily: 'monospace' }}>
+                        {getFormattedFormula()}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#A78BFA', fontWeight: 600, marginLeft: 6 }}>
+                        ({plotMode === 'linear' ? 'Linear Line' : plotMode === 'vertical' ? 'Vertical Line' : plotMode === 'quadratic' ? 'Parabola' : plotMode === 'sine' ? 'Sine Wave' : 'Curve'})
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setZoomScale(p => Math.min(p + 5, 60))}
+                        className="math-card-expand-btn"
+                        title="Zoom in"
+                        aria-label="Zoom in"
+                      >
+                        <ZoomIn size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoomScale(p => Math.max(p - 5, 15))}
+                        className="math-card-expand-btn"
+                        title="Zoom out"
+                        aria-label="Zoom out"
+                      >
+                        <ZoomOut size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Responsive Graph Canvas */}
+                  <div className="math-graph-canvas-wrap">
+                    <canvas
+                      ref={graphCanvasRef}
+                      width={graphCanvasSize.w}
+                      height={graphCanvasSize.h}
+                      onMouseMove={handleGraphMouseMove}
+                      onMouseLeave={() => setHoverCoord(null)}
+                      className="math-graph-canvas"
+                    />
+                    {hoverCoord && (
+                      <div style={{ position: 'absolute', bottom: 8, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '3px 8px', borderRadius: 6, fontSize: 11, color: '#A78BFA' }}>
+                        x: {hoverCoord.x.toFixed(2)}, y: {hoverCoord.y.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                </section>
               </div>
 
-              {/* Active Curve Banner */}
-              <div className="math-curve-badge">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Active 2D Curve
-                  </span>
-                  {recognizedText && (
-                    <span style={{ fontSize: 11, background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>
-                      Handwritten: {recognizedText}
+              {/* SIDE CONTROLS COLUMN: Presets, Sliders & Collapsible Visual Concepts */}
+              <div className="math-graph-side-col">
+                {/* Mobile-Only Curve Banner */}
+                <div className="math-curve-badge math-mobile-only">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Active 2D Curve
                     </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: '#F472B6', fontFamily: 'monospace' }}>
-                    {getFormattedFormula()}
-                  </span>
-                  <span style={{ fontSize: 12, color: '#A78BFA', fontWeight: 600 }}>
-                    ({plotMode === 'linear' ? 'Linear Line' : plotMode === 'vertical' ? 'Vertical Line' : plotMode === 'quadratic' ? 'Parabola' : plotMode === 'sine' ? 'Sine Wave' : 'Curve'})
-                  </span>
-                </div>
-              </div>
-
-              {/* Graph Canvas */}
-              <div className="math-graph-canvas-wrap">
-                <canvas
-                  ref={graphCanvasRef}
-                  width={600}
-                  height={300}
-                  onMouseMove={handleGraphMouseMove}
-                  onMouseLeave={() => setHoverCoord(null)}
-                  className="math-graph-canvas"
-                />
-                {hoverCoord && (
-                  <div style={{ position: 'absolute', bottom: 8, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '3px 8px', borderRadius: 6, fontSize: 11, color: '#A78BFA' }}>
-                    x: {hoverCoord.x.toFixed(2)}, y: {hoverCoord.y.toFixed(2)}
+                    {recognizedText && (
+                      <span style={{ fontSize: 11, background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>
+                        Handwritten: {recognizedText}
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-
-              {/* Quick Mode Presets */}
-              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                {[
-                  { id: 'linear', label: 'Linear' },
-                  { id: 'quadratic', label: 'Quadratic' },
-                  { id: 'sine', label: 'Sine' },
-                  { id: 'cubic', label: 'Cubic' },
-                  { id: 'vertical', label: 'Vertical' }
-                ].map(m => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setPlotMode(m.id)}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 10,
-                      border: plotMode === m.id ? '1px solid #A855F7' : '1px solid rgba(255,255,255,0.08)',
-                      background: plotMode === m.id ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.04)',
-                      color: plotMode === m.id ? '#FFFFFF' : '#94A3B8',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Live Parameter Sliders */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: 12, borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Sliders size={14} /> Live Parameter Sliders
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Slope/Scale (a):</span> <b>{paramA}</b>
-                    </label>
-                    <input
-                      type="range"
-                      min={Math.min(-10, Math.floor(paramA - 2))}
-                      max={Math.max(10, Math.ceil(paramA + 2))}
-                      step="0.5"
-                      value={paramA}
-                      onChange={e => setParamA(parseFloat(e.target.value))}
-                      style={{ width: '100%', accentColor: '#A855F7' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Intercept/Offset (c):</span> <b>{paramC}</b>
-                    </label>
-                    <input
-                      type="range"
-                      min={Math.min(-15, Math.floor(paramC - 2))}
-                      max={Math.max(15, Math.ceil(paramC + 2))}
-                      step="0.5"
-                      value={paramC}
-                      onChange={e => setParamC(parseFloat(e.target.value))}
-                      style={{ width: '100%', accentColor: '#10B981' }}
-                    />
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: '#F472B6', fontFamily: 'monospace' }}>
+                      {getFormattedFormula()}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#A78BFA', fontWeight: 600 }}>
+                      ({plotMode === 'linear' ? 'Linear Line' : plotMode === 'vertical' ? 'Vertical Line' : plotMode === 'quadratic' ? 'Parabola' : plotMode === 'sine' ? 'Sine Wave' : 'Curve'})
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Interactive Visual Concepts */}
-              <div style={{ marginTop: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#E2E8F0', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Triangle size={14} color="#EC4899" /> Interactive Visual Concepts
-                </div>
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6 }}>
+                {/* Quick Mode Presets */}
+                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
                   {[
-                    { id: 'pythagoras', label: 'Pythagoras', icon: Triangle },
-                    { id: 'sector', label: 'Circle Sector', icon: Compass },
-                    { id: 'elevation', label: 'Heights & Distances', icon: Maximize2 },
-                    { id: 'solid', label: '3D Cylinder', icon: Box },
-                    { id: 'cone', label: 'Cone', icon: Triangle },
-                    { id: 'sphere', label: 'Sphere', icon: Circle },
-                    { id: 'composite', label: 'Composite Solid', icon: Layers },
-                    { id: 'parabola', label: 'Quadratic Parabola', icon: TrendingUp },
-                    { id: 'coordgeo', label: 'Coordinate Geometry', icon: LineChart },
-                    { id: 'trapezoid', label: 'Trapezoid', icon: Square },
-                    { id: 'venn', label: 'Venn Diagram', icon: Circle },
-                    { id: 'bellcurve', label: 'Normal Bell Curve', icon: Activity },
-                    { id: 'vectors', label: 'Vectors Law', icon: Award },
-                    { id: 'tangent', label: 'Tangent & Slope', icon: TrendingUp },
-                    { id: 'inequality', label: 'Inequality Line', icon: Calculator },
-                    { id: 'trig', label: 'Unit Circle', icon: Circle },
-                    { id: 'calculus', label: 'Calculus Integral', icon: TrendingUp },
-                    { id: 'angles', label: 'Supplementary Angles', icon: Calculator }
-                  ].map(({ id, label, icon: Icon }) => (
+                    { id: 'linear', label: 'Linear' },
+                    { id: 'quadratic', label: 'Quadratic' },
+                    { id: 'sine', label: 'Sine' },
+                    { id: 'cubic', label: 'Cubic' },
+                    { id: 'vertical', label: 'Vertical' }
+                  ].map(m => (
                     <button
-                      key={id}
+                      key={m.id}
                       type="button"
-                      onClick={() => setVisualizerSubTab(id)}
+                      onClick={() => setPlotMode(m.id)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
+                        flex: 1,
                         padding: '6px 10px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background: visualizerSubTab === id ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
-                        color: visualizerSubTab === id ? '#C084FC' : '#94A3B8',
-                        fontWeight: 600,
+                        borderRadius: 10,
+                        border: plotMode === m.id ? '1px solid #A855F7' : '1px solid rgba(255,255,255,0.08)',
+                        background: plotMode === m.id ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.04)',
+                        color: plotMode === m.id ? '#FFFFFF' : '#94A3B8',
                         fontSize: 12,
+                        fontWeight: 600,
                         cursor: 'pointer',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center'
                       }}
                     >
-                      <Icon size={13} />
-                      {label}
+                      {m.label}
                     </button>
                   ))}
                 </div>
 
-                <div style={{ marginTop: 8 }}>
-                  {visualizerSubTab === 'pythagoras' && (
-                    <DynamicMathVisualizer spec={{ type: 'triangle', title: 'Pythagoras Proof Visualizer', params: { base: pythA, height: pythB } }} />
-                  )}
-                  {visualizerSubTab === 'sector' && (
-                    <DynamicMathVisualizer spec={{ type: 'sector', title: 'Circle Sector & Clock Hand Visualizer', params: { radius: 10, angle: 30 } }} />
-                  )}
-                  {visualizerSubTab === 'elevation' && (
-                    <DynamicMathVisualizer spec={{ type: 'elevation_depression', title: 'Heights & Distances (Angle of Elevation)', params: { distance: 50, angle: 30 } }} />
-                  )}
-                  {visualizerSubTab === 'solid' && (
-                    <DynamicMathVisualizer spec={{ type: 'solid_surface', title: '3D Cylinder Surface Area & Volume', params: { radius: 7, height: 14 } }} />
-                  )}
-                  {visualizerSubTab === 'cone' && (
-                    <DynamicMathVisualizer spec={{ type: 'cone', title: 'Cone Slant Height & Surface Area', params: { radius: 6, height: 8 } }} />
-                  )}
-                  {visualizerSubTab === 'sphere' && (
-                    <DynamicMathVisualizer spec={{ type: 'sphere_hemisphere', title: 'Sphere & Hemisphere Geometry', params: { radius: 7, mode: 'sphere' } }} />
-                  )}
-                  {visualizerSubTab === 'composite' && (
-                    <DynamicMathVisualizer spec={{ type: 'composite_solid', title: 'Composite Solid (Cylinder + Hemisphere)', params: { radius: 3.5, height: 10 } }} />
-                  )}
-                  {visualizerSubTab === 'parabola' && (
-                    <DynamicMathVisualizer spec={{ type: 'quadratic_parabola', title: 'Quadratic Parabola & Roots', params: { a: 1, b: -4, c: 3 } }} />
-                  )}
-                  {visualizerSubTab === 'coordgeo' && (
-                    <DynamicMathVisualizer spec={{ type: 'coordinate_geometry', title: 'Coordinate Geometry & Section Formula', params: { x1: 2, y1: 3, x2: 8, y2: 9, m: 2, n: 1 } }} />
-                  )}
-                  {visualizerSubTab === 'trapezoid' && (
-                    <DynamicMathVisualizer spec={{ type: 'trapezoid', title: 'Trapezoid & Altitude Visualizer', params: { a: 10, b: 18, h: 8 } }} />
-                  )}
-                  {visualizerSubTab === 'venn' && (
-                    <DynamicMathVisualizer spec={{ type: 'venn_diagram', title: 'Venn Diagram & Set Operations', params: { onlyA: 20, onlyB: 15, both: 10, total: 50 } }} />
-                  )}
-                  {visualizerSubTab === 'bellcurve' && (
-                    <DynamicMathVisualizer spec={{ type: 'bell_curve', title: 'Gaussian Normal Distribution (Bell Curve)', params: { mean: 70, sd: 10 } }} />
-                  )}
-                  {visualizerSubTab === 'vectors' && (
-                    <DynamicMathVisualizer spec={{ type: 'vector_addition', title: 'Parallelogram Law of Vector Addition', params: { magA: 5, magB: 12, angle: 90 } }} />
-                  )}
-                  {visualizerSubTab === 'tangent' && (
-                    <DynamicMathVisualizer spec={{ type: 'tangent_derivative', title: 'Curve Tangent & Derivative Slope', params: { x0: 2 } }} />
-                  )}
-                  {visualizerSubTab === 'inequality' && (
-                    <DynamicMathVisualizer spec={{ type: 'number_line_inequality', title: 'Number Line Inequality Interval', params: { min: -3, max: 5, leftInclusive: false, rightInclusive: true } }} />
-                  )}
-                  {visualizerSubTab === 'trig' && (
-                    <DynamicMathVisualizer spec={{ type: 'circle', title: 'Unit Circle Visualizer', params: { radius: 5 } }} />
-                  )}
-                  {visualizerSubTab === 'calculus' && (
-                    <DynamicMathVisualizer spec={{ type: 'area_under_curve', title: 'Calculus Integral Area Visualizer', params: { a: 0, b: 3, func: 'x^2' } }} />
-                  )}
-                  {visualizerSubTab === 'angles' && (
-                    <DynamicMathVisualizer spec={{ type: 'angles', title: 'Supplementary & Complementary Angles', params: { angle1: 36, angle2: 144, totalAngle: 180 } }} />
+                {/* Live Parameter Sliders */}
+                <div className="math-graph-controls-card">
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Sliders size={14} /> Live Parameter Sliders
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 11, color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Slope/Scale (a):</span> <b>{paramA}</b>
+                      </label>
+                      <input
+                        type="range"
+                        min={Math.min(-10, Math.floor(paramA - 2))}
+                        max={Math.max(10, Math.ceil(paramA + 2))}
+                        step="0.5"
+                        value={paramA}
+                        onChange={e => setParamA(parseFloat(e.target.value))}
+                        style={{ width: '100%', accentColor: '#A855F7' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Intercept/Offset (c):</span> <b>{paramC}</b>
+                      </label>
+                      <input
+                        type="range"
+                        min={Math.min(-15, Math.floor(paramC - 2))}
+                        max={Math.max(15, Math.ceil(paramC + 2))}
+                        step="0.5"
+                        value={paramC}
+                        onChange={e => setParamC(parseFloat(e.target.value))}
+                        style={{ width: '100%', accentColor: '#10B981' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collapsible Interactive Visual Concepts (COLLAPSED BY DEFAULT) */}
+                <div className="math-visual-concepts-accordion">
+                  <button
+                    type="button"
+                    className="math-accordion-btn"
+                    onClick={() => setShowVisualConcepts(prev => !prev)}
+                    aria-expanded={showVisualConcepts}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Triangle size={14} color="#EC4899" />
+                      <span>Interactive Visual Concepts (18)</span>
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        transform: showVisualConcepts ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease'
+                      }}
+                    />
+                  </button>
+
+                  {showVisualConcepts && (
+                    <div className="math-visual-concepts-body">
+                      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6 }}>
+                        {[
+                          { id: 'pythagoras', label: 'Pythagoras', icon: Triangle },
+                          { id: 'sector', label: 'Circle Sector', icon: Compass },
+                          { id: 'elevation', label: 'Heights & Distances', icon: Maximize2 },
+                          { id: 'solid', label: '3D Cylinder', icon: Box },
+                          { id: 'cone', label: 'Cone', icon: Triangle },
+                          { id: 'sphere', label: 'Sphere', icon: Circle },
+                          { id: 'composite', label: 'Composite Solid', icon: Layers },
+                          { id: 'parabola', label: 'Quadratic Parabola', icon: TrendingUp },
+                          { id: 'coordgeo', label: 'Coordinate Geometry', icon: LineChart },
+                          { id: 'trapezoid', label: 'Trapezoid', icon: Square },
+                          { id: 'venn', label: 'Venn Diagram', icon: Circle },
+                          { id: 'bellcurve', label: 'Normal Bell Curve', icon: Activity },
+                          { id: 'vectors', label: 'Vectors Law', icon: Award },
+                          { id: 'tangent', label: 'Tangent & Slope', icon: TrendingUp },
+                          { id: 'inequality', label: 'Inequality Line', icon: Calculator },
+                          { id: 'trig', label: 'Unit Circle', icon: Circle },
+                          { id: 'calculus', label: 'Calculus Integral', icon: TrendingUp },
+                          { id: 'angles', label: 'Supplementary Angles', icon: Calculator }
+                        ].map(({ id, label, icon: Icon }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setVisualizerSubTab(id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 10px',
+                              borderRadius: 8,
+                              border: 'none',
+                              background: visualizerSubTab === id ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                              color: visualizerSubTab === id ? '#C084FC' : '#94A3B8',
+                              fontWeight: 600,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <Icon size={13} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div style={{ marginTop: 8 }}>
+                        {visualizerSubTab === 'pythagoras' && (
+                          <DynamicMathVisualizer spec={{ type: 'triangle', title: 'Pythagoras Proof Visualizer', params: { base: pythA, height: pythB } }} />
+                        )}
+                        {visualizerSubTab === 'sector' && (
+                          <DynamicMathVisualizer spec={{ type: 'sector', title: 'Circle Sector & Clock Hand Visualizer', params: { radius: 10, angle: 30 } }} />
+                        )}
+                        {visualizerSubTab === 'elevation' && (
+                          <DynamicMathVisualizer spec={{ type: 'elevation_depression', title: 'Heights & Distances (Angle of Elevation)', params: { distance: 50, angle: 30 } }} />
+                        )}
+                        {visualizerSubTab === 'solid' && (
+                          <DynamicMathVisualizer spec={{ type: 'solid_surface', title: '3D Cylinder Surface Area & Volume', params: { radius: 7, height: 14 } }} />
+                        )}
+                        {visualizerSubTab === 'cone' && (
+                          <DynamicMathVisualizer spec={{ type: 'cone', title: 'Cone Slant Height & Surface Area', params: { radius: 6, height: 8 } }} />
+                        )}
+                        {visualizerSubTab === 'sphere' && (
+                          <DynamicMathVisualizer spec={{ type: 'sphere_hemisphere', title: 'Sphere & Hemisphere Geometry', params: { radius: 7, mode: 'sphere' } }} />
+                        )}
+                        {visualizerSubTab === 'composite' && (
+                          <DynamicMathVisualizer spec={{ type: 'composite_solid', title: 'Composite Solid (Cylinder + Hemisphere)', params: { radius: 3.5, height: 10 } }} />
+                        )}
+                        {visualizerSubTab === 'parabola' && (
+                          <DynamicMathVisualizer spec={{ type: 'quadratic_parabola', title: 'Quadratic Parabola & Roots', params: { a: 1, b: -4, c: 3 } }} />
+                        )}
+                        {visualizerSubTab === 'coordgeo' && (
+                          <DynamicMathVisualizer spec={{ type: 'coordinate_geometry', title: 'Coordinate Geometry & Section Formula', params: { x1: 2, y1: 3, x2: 8, y2: 9, m: 2, n: 1 } }} />
+                        )}
+                        {visualizerSubTab === 'trapezoid' && (
+                          <DynamicMathVisualizer spec={{ type: 'trapezoid', title: 'Trapezoid & Altitude Visualizer', params: { a: 10, b: 18, h: 8 } }} />
+                        )}
+                        {visualizerSubTab === 'venn' && (
+                          <DynamicMathVisualizer spec={{ type: 'venn_diagram', title: 'Venn Diagram & Set Operations', params: { onlyA: 20, onlyB: 15, both: 10, total: 50 } }} />
+                        )}
+                        {visualizerSubTab === 'bellcurve' && (
+                          <DynamicMathVisualizer spec={{ type: 'bell_curve', title: 'Gaussian Normal Distribution (Bell Curve)', params: { mean: 70, sd: 10 } }} />
+                        )}
+                        {visualizerSubTab === 'vectors' && (
+                          <DynamicMathVisualizer spec={{ type: 'vector_addition', title: 'Parallelogram Law of Vector Addition', params: { magA: 5, magB: 12, angle: 90 } }} />
+                        )}
+                        {visualizerSubTab === 'tangent' && (
+                          <DynamicMathVisualizer spec={{ type: 'tangent_derivative', title: 'Curve Tangent & Derivative Slope', params: { x0: 2 } }} />
+                        )}
+                        {visualizerSubTab === 'inequality' && (
+                          <DynamicMathVisualizer spec={{ type: 'number_line_inequality', title: 'Number Line Inequality Interval', params: { min: -3, max: 5, leftInclusive: false, rightInclusive: true } }} />
+                        )}
+                        {visualizerSubTab === 'trig' && (
+                          <DynamicMathVisualizer spec={{ type: 'circle', title: 'Unit Circle Visualizer', params: { radius: 5 } }} />
+                        )}
+                        {visualizerSubTab === 'calculus' && (
+                          <DynamicMathVisualizer spec={{ type: 'area_under_curve', title: 'Calculus Integral Area Visualizer', params: { a: 0, b: 3, func: 'x^2' } }} />
+                        )}
+                        {visualizerSubTab === 'angles' && (
+                          <DynamicMathVisualizer spec={{ type: 'angles', title: 'Supplementary & Complementary Angles', params: { angle1: 36, angle2: 144, totalAngle: 180 } }} />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-            </section>
+              </div>
+            </div>
           </div>
         )}
 
         {/* 6. TAB 3: AI MATH SOLVER (Dedicated 3rd Option) */}
         {activeTab === 'ai_solver' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="math-tab-content-pane" style={{ overflowY: 'auto' }}>
             <section className="math-solver-card" aria-label="AI Step-by-Step Math Solver">
               {/* Header */}
               <div className="math-card-header" style={{ marginBottom: 4 }}>

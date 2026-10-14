@@ -25,6 +25,45 @@
   flex-direction: column;
 }
 
+.math-lab-top-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.math-tab-content-pane {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.math-whiteboard-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.math-graph-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.math-graph-main-col {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.math-graph-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
 /* 1. Header Section (matching image: Badge + Vedika Math Lab + Subtitle) */
 .math-lab-header {
   display: flex;
@@ -386,13 +425,321 @@
   }
 }
 
-/* Tablet & Desktop Scaling */
-@media (min-width: 900px) {
+/* 11. Responsive Controls, Inline Buttons & Collapsible Visual Concepts */
+.math-recognize-inline-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.45);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.math-recognize-inline-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 22px rgba(236, 72, 153, 0.65);
+}
+
+.math-recognize-inline-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.math-desktop-only {
+  display: none;
+}
+
+.math-curve-badge-header {
+  display: none;
+}
+
+.math-graph-controls-card {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.math-visual-concepts-accordion {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.math-accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  background: rgba(236, 72, 153, 0.1);
+  color: #F472B6;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.math-accordion-btn:hover {
+  background: rgba(236, 72, 153, 0.18);
+  border-color: rgba(236, 72, 153, 0.5);
+}
+
+.math-visual-concepts-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  animation: mathFadeIn 0.2s ease-out;
+}
+
+@keyframes mathFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpFloat {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================================
+   12. LAPTOP & DESKTOP SCREEN SIZES (min-width: 1024px)
+   Full screen for the whole page with NO vertical scrolling for Whiteboard
+   and Graph. AI Math Solver is allowed to scroll vertically.
+   Mobile sizes remain 100% untouched.
+   ========================================================================= */
+@media (min-width: 1024px) {
+  .math-mobile-only {
+    display: none !important;
+  }
+
+  .math-desktop-only {
+    display: flex !important;
+  }
+
+  .math-recognize-inline-btn {
+    display: flex !important;
+  }
+
+  .math-recognize-full-btn {
+    display: none !important;
+  }
+
+  /* Full screen container: exact viewport height with NO vertical scrolling */
+  .math-lab-container {
+    height: calc(100vh - 54px);
+    max-height: calc(100vh - 54px);
+    padding: 10px 24px 12px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Dedicated AI Math Solver tab CAN be scrollable */
+  .math-lab-container.tab-ai_solver {
+    height: auto;
+    min-height: calc(100vh - 54px);
+    max-height: none;
+    overflow-y: auto;
+    padding-bottom: 40px;
+  }
+
   .math-lab-inner {
-    max-width: 900px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top bar row: Title on the left, tab capsule on the right */
+  .math-lab-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .math-lab-header {
+    margin: 0;
+  }
+
+  .math-lab-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .math-lab-title {
+    font-size: 1.18rem;
+  }
+
+  .math-lab-subtitle {
+    font-size: 0.73rem;
+  }
+
+  .math-lab-tabs-bar {
+    width: auto;
+    min-width: 420px;
+    margin-bottom: 0;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .math-tab-content-pane {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* 1. WHITEBOARD TAB: Full screen with no vertical scroll */
+  .math-whiteboard-card {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .math-whiteboard-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 12px;
+    width: 100%;
   }
 
   .math-whiteboard-canvas-wrap {
-    height: 440px;
+    flex: 1;
+    min-height: 0;
+    height: 100% !important;
+    width: 100%;
+    border-radius: 14px;
+    position: relative;
+  }
+
+  .math-whiteboard-canvas-wrap.expanded {
+    height: 100% !important;
+  }
+
+  /* Floating OCR detection card on desktop: zero layout push, zero vertical scroll */
+  .math-ai-solution-card.desktop-floating {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 390px;
+    max-width: calc(100% - 40px);
+    z-index: 50;
+    margin: 0;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(168, 85, 247, 0.35);
+    background: rgba(10, 15, 28, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    animation: slideUpFloat 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* 2. GRAPH TAB: Full screen with two-column studio layout & no vertical scroll */
+  .math-graph-layout {
+    display: flex;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .math-graph-main-col {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .math-graph-side-col {
+    width: 380px;
+    flex-shrink: 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .math-graph-side-col::-webkit-scrollbar {
+    width: 5px;
+  }
+  .math-graph-side-col::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.25);
+    border-radius: 4px;
+  }
+
+  .math-graph-card {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .math-graph-canvas-wrap {
+    flex: 1;
+    min-height: 0;
+    height: 100% !important;
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  .math-curve-badge-header {
+    display: flex !important;
+    align-items: center;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    padding: 4px 10px;
+    border-radius: 8px;
+  }
+
+  /* 3. AI SOLVER TAB: Center-aligned workstation */
+  .math-solver-card {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 20px 24px;
   }
 }
