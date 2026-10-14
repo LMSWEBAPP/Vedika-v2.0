@@ -6,35 +6,32 @@ import {
   Sparkles,
   Maximize2,
   X,
-  Move,
   RotateCcw,
   Layers,
   ChevronRight,
   ChevronDown,
-  Eye,
+  Loader2,
 } from "lucide-react";
 import { SceneRenderer } from "./SceneRenderer";
-import { DrawingCursor } from "./DrawingCursor";
 import { BottomToolbar } from "./BottomToolbar";
 import { useDrawingSequence } from "@/lib/infographic/useDrawingSequence";
-import { buildSceneFromSemanticPlan } from "@/lib/infographic/spatialEngine";
 
 export const InfographicCanvas = ({
   scene: initialScene,
+  isLoading = false,
   points = [],
   onRegenerate,
   onClose,
   topicTitle,
-  initialExpanded = false,
+  initialExpanded = true,
 }) => {
   const [scene, setScene] = useState(initialScene);
   const [isModalOpen, setIsModalOpen] = useState(initialExpanded);
   const [modalZoom, setModalZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
-  const [isStylusVisible, setIsStylusVisible] = useState(true);
   const [showTakeaways, setShowTakeaways] = useState(false);
-  const [isInlineTakeawaysOpen, setIsInlineTakeawaysOpen] = useState(true);
+  const [isInlineTakeawaysOpen, setIsInlineTakeawaysOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const svgRef = useRef(null);
@@ -52,7 +49,7 @@ export const InfographicCanvas = ({
     }
   }, [initialScene]);
 
-  // Hook for deterministic animation
+  // Hook for deterministic sequential entrance animation
   const animationController = useDrawingSequence(scene);
 
   // Keyboard shortcut: Escape to close full-window modal
@@ -69,7 +66,6 @@ export const InfographicCanvas = ({
 
   // Pan handlers for full window canvas
   const handleMouseDown = (e) => {
-    // Only drag on left click and not on interactive buttons
     if (e.button !== 0 || e.target.closest("button") || e.target.closest("select")) return;
     setIsPanning(true);
     dragStartRef.current = { x: e.clientX, y: e.clientY };
@@ -126,76 +122,30 @@ export const InfographicCanvas = ({
     }
   };
 
-  // Interactive instant re-layout across 9 visual grammars
-  const handleSwitchLayout = (targetLayout) => {
-    if (!scene) return;
-
-    const semanticNodes = (scene.elements || [])
-      .filter((e) => e.type !== "chart" || (e.text && e.text.trim().length > 0))
-      .map((e, idx) => ({
-        id: e.id,
-        title: e.text || e.id,
-        subtitle: e.subtitle || "",
-        category: e.category,
-        icon: e.icon,
-        equation: e.equation,
-        highlight: e.highlight,
-        semanticRole: e.semanticRole || (idx === 0 ? "hero" : "stage"),
-        sourceEvidence: e.sourceEvidence,
-      }));
-
-    const plan = {
-      detectedTopic: scene.title,
-      coreThesis: scene.summary,
-      structuralPattern: `Interactive layout switch to ${targetLayout}`,
-      layoutGrammar: targetLayout,
-      designRationale: `User switched layout grammar to preview ${targetLayout}.`,
-      alternateLayout: scene.layout?.type || "editorial",
-      nodes: semanticNodes,
-      connectors: (scene.connectors || []).map((c) => ({
-        id: c.id,
-        from: c.from,
-        to: c.to,
-        label: c.label,
-        style: c.style,
-      })),
-      chartData:
-        targetLayout === "data-chart"
-          ? {
-              labels: semanticNodes.slice(0, 4).map((n) => n.title.slice(0, 14)),
-              values: [85, 92, 78, 88].slice(0, Math.min(4, semanticNodes.length)),
-              unit: "%",
-            }
-          : null,
-    };
-
-    const newScene = buildSceneFromSemanticPlan(plan, {
-      aspectRatio: scene.layout?.aspectRatio || "16:9",
-      theme: scene.canvas?.theme || "dark",
-      requestId: scene.metadata?.requestId,
-      modelUsed: scene.metadata?.modelUsed,
-    });
-
-    setScene(newScene);
-  };
+  const displayPoints = (points && points.length > 0)
+    ? points
+    : (scene?.elements || [])
+        .filter((e) => e.text && e.subtitle)
+        .map((e) => `${e.text}: ${e.subtitle}`);
 
   const title = scene?.title || topicTitle || "Visual Summary";
-  const displayPoints = points && points.length > 0 ? points : [];
 
   return (
-    <div className="infographic-container" style={{ margin: "12px 0", width: "100%" }}>
-      {/* ── 1. INLINE CHAT MESSAGE CARD (Widescreen High-Impact Preview) ── */}
-      <div
-        className="infographic-inline-card"
-        style={{
-          background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 14, 26, 0.98) 100%)",
-          border: "1px solid rgba(56, 189, 248, 0.25)",
-          borderRadius: 14,
-          overflow: "hidden",
-          boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.6)",
-        }}
-      >
-        {/* Inline Header Bar */}
+    <div
+      className="infographic-container"
+      style={{
+        position: "relative",
+        width: "100%",
+        borderRadius: 14,
+        overflow: "hidden",
+        border: "1px solid rgba(56, 189, 248, 0.25)",
+        background: "#080d1a",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.45)",
+      }}
+    >
+      {/* ── 1. INLINE CHAT FEED CARD ── */}
+      <div className="infographic-inline-view">
+        {/* Top Header Bar */}
         <div
           style={{
             display: "flex",
@@ -283,7 +233,7 @@ export const InfographicCanvas = ({
               }}
             >
               <Maximize2 size={12} />
-              <span>Expand Full Window</span>
+              <span>Full Screen</span>
             </button>
 
             {onClose && (
@@ -317,22 +267,12 @@ export const InfographicCanvas = ({
             cursor: "pointer",
           }}
           onClick={() => setIsModalOpen(true)}
-          title="Click to open interactive full-window canvas"
+          title="Click to open interactive full-screen blueprint"
         >
           {scene && (
             <SceneRenderer
               scene={scene}
               animationController={animationController}
-            />
-          )}
-
-          {/* Inline Live Drawing Stylus Pen */}
-          {scene && isStylusVisible && (
-            <DrawingCursor
-              x={animationController.cursorPosition.x}
-              y={animationController.cursorPosition.y}
-              visible={animationController.cursorPosition.visible}
-              label={animationController.cursorPosition.label}
             />
           )}
 
@@ -356,50 +296,45 @@ export const InfographicCanvas = ({
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
           >
             <Maximize2 size={16} />
-            <span>Click to enter interactive full-window canvas</span>
+            <span>Click to Expand Full Screen</span>
           </div>
         </div>
 
-        {/* Key Takeaways Section (Original Vedika Design Integration) */}
+        {/* Collapsible Key Takeaways Section (Inline - Collapsed by default) */}
         {displayPoints.length > 0 && (
           <div
             style={{
-              padding: "10px 14px",
-              background: "rgba(10, 15, 28, 0.9)",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              padding: "10px 16px",
+              background: "rgba(15, 23, 42, 0.6)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.06)",
             }}
           >
             <button
               type="button"
-              onClick={() => setIsInlineTakeawaysOpen((prev) => !prev)}
+              onClick={() => setIsInlineTakeawaysOpen((v) => !v)}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 width: "100%",
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: 8,
-                padding: "8px 12px",
-                color: "#e2e8f0",
-                fontSize: 12.5,
-                fontWeight: 700,
+                background: "transparent",
+                border: "none",
+                padding: "2px 0",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
+                color: "#f5a95b",
+                fontSize: 12,
+                fontWeight: 700,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#38bdf8" }}>
-                <Sparkles size={14} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Sparkles size={13} color="#f5a95b" />
                 <span>Key Takeaways ({displayPoints.length})</span>
               </div>
-              <ChevronDown
-                size={16}
-                style={{
-                  transform: isInlineTakeawaysOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s ease",
-                  color: "#94a3b8",
-                }}
-              />
+              {isInlineTakeawaysOpen ? (
+                <ChevronDown size={14} color="#94a3b8" />
+              ) : (
+                <ChevronRight size={14} color="#94a3b8" />
+              )}
             </button>
 
             {isInlineTakeawaysOpen && (
@@ -444,7 +379,7 @@ export const InfographicCanvas = ({
         )}
       </div>
 
-      {/* ── 2. FULL-WINDOW CANVAS MODAL (Options strictly docked at bottom) ── */}
+      {/* ── 2. FULL-SCREEN CANVAS MODAL (Opens by default on click) ── */}
       {isModalOpen && mounted && createPortal(
         <div
           className="infographic-modal-overlay"
@@ -452,14 +387,14 @@ export const InfographicCanvas = ({
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            background: "rgba(3, 7, 18, 0.96)",
-            backdropFilter: "blur(18px)",
+            background: "rgba(4, 7, 16, 0.97)",
+            backdropFilter: "blur(20px)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
           }}
         >
-          {/* Top Bar: Strictly CLEAN & MINIMAL - Just Title and Close Button */}
+          {/* Top Bar: Minimal - Title and Back to Chat */}
           <div
             className="infographic-modal-topbar"
             style={{
@@ -467,7 +402,7 @@ export const InfographicCanvas = ({
               alignItems: "center",
               justifyContent: "space-between",
               padding: "10px 24px",
-              background: "rgba(9, 14, 26, 0.95)",
+              background: "rgba(8, 12, 24, 0.95)",
               borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
               zIndex: 40,
             }}
@@ -489,7 +424,7 @@ export const InfographicCanvas = ({
                 }}
               >
                 <Sparkles size={12} />
-                <span>INTERACTIVE KNOWLEDGE BLUEPRINT</span>
+                <span>INTERACTIVE VISUAL SUMMARY</span>
               </div>
               <h2
                 style={{
@@ -504,7 +439,7 @@ export const InfographicCanvas = ({
               </h2>
             </div>
 
-            {/* Close Button: Clean and prominent on top right */}
+            {/* Prominent Back to Chat Button on top right */}
             <button
               type="button"
               onClick={() => {
@@ -532,168 +467,221 @@ export const InfographicCanvas = ({
             </button>
           </div>
 
-          {/* Canvas Viewport (Pan & Zoom Stage) */}
-          <div
-            ref={viewportRef}
-            className="infographic-viewport"
-            onMouseDown={handleMouseDown}
-            onWheel={handleWheel}
-            style={{
-              flex: 1,
-              position: "relative",
-              overflow: "hidden",
-              cursor: isPanning ? "grabbing" : "grab",
-              background: "radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.9) 0%, rgba(6, 9, 16, 0.99) 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {/* The Scaled SVG Stage */}
+          {/* Canvas Viewport or Generating Loading Screen */}
+          {isLoading || !scene ? (
             <div
-              className="infographic-stage"
               style={{
-                transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${modalZoom})`,
-                transformOrigin: "center center",
-                transition: isPanning ? "none" : "transform 0.18s ease-out",
-                width: "1200px",
-                height: "675px",
-                maxWidth: "100%",
-                maxHeight: "100%",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 20,
+                padding: 30,
+                textAlign: "center",
+                background: "radial-gradient(circle at 50% 45%, rgba(18, 25, 42, 0.95) 0%, rgba(6, 9, 16, 0.99) 100%)",
+              }}
+            >
+              {/* Futuristic orbital loading indicator */}
+              <div style={{ position: "relative", width: 80, height: 80 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    border: "3px solid rgba(56, 189, 248, 0.15)",
+                    borderTopColor: "#38bdf8",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 10,
+                    borderRadius: "50%",
+                    border: "2px solid rgba(192, 132, 252, 0.2)",
+                    borderBottomColor: "#c084fc",
+                    animation: "spin 1.8s linear infinite reverse",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#38bdf8",
+                  }}
+                >
+                  <Sparkles size={28} />
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>
+                  Generating Visual Summary...
+                </h3>
+                <p style={{ margin: 0, fontSize: 13.5, color: "#94a3b8", maxWidth: 440, lineHeight: 1.6 }}>
+                  Gemini is analyzing the concept architecture and structuring the optimal visual diagram layout.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  fontSize: 12,
+                  color: "#64748b",
+                }}
+              >
+                <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
+                <span>Autonomous layout synthesis in progress...</span>
+              </div>
+            </div>
+          ) : (
+            <div
+              ref={viewportRef}
+              className="infographic-viewport"
+              onMouseDown={handleMouseDown}
+              onWheel={handleWheel}
+              style={{
+                flex: 1,
                 position: "relative",
+                overflow: "hidden",
+                cursor: isPanning ? "grabbing" : "grab",
+                background: "radial-gradient(circle at 50% 30%, rgba(18, 25, 42, 0.9) 0%, rgba(6, 9, 16, 0.99) 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              {/* Drawing Stylus Pen */}
-              {scene && isStylusVisible && (
-                <DrawingCursor
-                  x={animationController.cursorPosition.x}
-                  y={animationController.cursorPosition.y}
-                  visible={animationController.cursorPosition.visible}
-                  label={animationController.cursorPosition.label}
-                />
-              )}
-
-              {/* Master Vector SVG Scene */}
-              {scene && (
+              {/* Scaled SVG Stage */}
+              <div
+                className="infographic-stage"
+                style={{
+                  transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${modalZoom})`,
+                  transformOrigin: "center center",
+                  transition: isPanning ? "none" : "transform 0.18s ease-out",
+                  width: "1200px",
+                  height: "675px",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {/* Master Vector SVG Scene */}
                 <SceneRenderer
                   scene={scene}
                   animationController={animationController}
                   svgRef={svgRef}
                 />
-              )}
-            </div>
+              </div>
 
-            {/* Key Takeaways Companion Drawer (Slide-in from right when toggled) */}
-            {showTakeaways && displayPoints.length > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 16,
-                  right: 16,
-                  bottom: 16,
-                  width: 320,
-                  maxWidth: "90%",
-                  background: "rgba(10, 15, 28, 0.95)",
-                  border: "1px solid rgba(245, 169, 91, 0.35)",
-                  borderRadius: 14,
-                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.8)",
-                  backdropFilter: "blur(20px)",
-                  zIndex: 25,
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                }}
-              >
+              {/* Key Takeaways Companion Drawer (Collapsed by default; slides in from right when opened) */}
+              {showTakeaways && displayPoints.length > 0 && (
                 <div
                   style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    bottom: 16,
+                    width: 340,
+                    maxWidth: "92%",
+                    background: "rgba(10, 15, 28, 0.96)",
+                    border: "1px solid rgba(245, 169, 91, 0.4)",
+                    borderRadius: 14,
+                    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.85)",
+                    backdropFilter: "blur(20px)",
+                    zIndex: 25,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 16px",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                    background: "rgba(245, 169, 91, 0.1)",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    animation: "fadeInRight 0.25s ease-out",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#f5a95b", fontWeight: 700, fontSize: 13 }}>
-                    <Sparkles size={14} />
-                    <span>Key Takeaways</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowTakeaways(false)}
-                    style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "14px 18px",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                      background: "rgba(245, 169, 91, 0.1)",
+                    }}
                   >
-                    <X size={14} />
-                  </button>
-                </div>
-
-                <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {displayPoints.map((pt, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: 10,
-                        borderRadius: 8,
-                        background: "rgba(255, 255, 255, 0.03)",
-                        border: "1px solid rgba(255, 255, 255, 0.06)",
-                        fontSize: 12,
-                        color: "#e2e8f0",
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      <div style={{ color: "#f5a95b", fontWeight: 700, marginBottom: 4, fontSize: 10.5 }}>
-                        POINT {idx + 1}
-                      </div>
-                      {pt.replace(/^[-*•]\s+/, "")}
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#f5a95b", fontWeight: 700, fontSize: 13.5 }}>
+                      <Sparkles size={15} />
+                      <span>Key Takeaways</span>
                     </div>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowTakeaways(false)}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.06)",
+                        border: "none",
+                        color: "#cbd5e1",
+                        cursor: "pointer",
+                        borderRadius: 6,
+                        padding: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title="Collapse Takeaways"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                    {displayPoints.map((pt, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: 12,
+                          borderRadius: 10,
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.06)",
+                          fontSize: 12.5,
+                          color: "#f1f5f9",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        <div style={{ color: "#f5a95b", fontWeight: 700, marginBottom: 5, fontSize: 10.5, letterSpacing: "0.05em" }}>
+                          POINT {String(idx + 1).padStart(2, "0")}
+                        </div>
+                        {pt.replace(/^[-*•]\s+/, "")}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Helper Banner */}
-          <div
-            style={{
-              padding: "4px 20px",
-              background: "rgba(6, 10, 20, 0.98)",
-              borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-              color: "#64748b",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Move size={12} color="#38bdf8" />
-              <span>Click &amp; drag to pan canvas &bull; Ctrl + Scroll to zoom &bull; Esc to go back</span>
+              )}
             </div>
-            <div>
-              <span>Model: {scene?.metadata?.modelUsed || "Gemini Multi-Design Engine"}</span>
-            </div>
-          </div>
+          )}
 
-          {/* ALL CANVAS OPTIONS LOCATED HERE AT THE BOTTOM */}
-          <BottomToolbar
-            scene={scene}
-            animationController={animationController}
-            isStylusVisible={isStylusVisible}
-            onToggleStylus={() => setIsStylusVisible((v) => !v)}
-            onSwitchLayout={handleSwitchLayout}
-            zoom={modalZoom}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onZoomReset={handleZoomReset}
-            onFitToScreen={handleFitToScreen}
-            svgRef={svgRef}
-            takeawaysCount={displayPoints.length}
-            showTakeaways={showTakeaways}
-            onToggleTakeaways={() => setShowTakeaways((v) => !v)}
-          />
+          {/* ALL CANVAS OPTIONS IN ONE SLEEK LINE */}
+          {scene && (
+            <BottomToolbar
+              scene={scene}
+              zoom={modalZoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onZoomReset={handleZoomReset}
+              onFitToScreen={handleFitToScreen}
+              takeawaysCount={displayPoints.length}
+              showTakeaways={showTakeaways}
+              onToggleTakeaways={() => setShowTakeaways((v) => !v)}
+            />
+          )}
         </div>,
         document.body
       )}

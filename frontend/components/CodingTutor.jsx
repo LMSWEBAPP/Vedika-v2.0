@@ -2519,16 +2519,29 @@ export default function CodingTutor() {
                                 )
                               )}
 
-                              {msg.activeFeature === 'infographic' && (
+                              {(msg.activeFeature === 'infographic' || isGeneratingFeature(mi, 'infographic')) && (
                                 msg.features?.infographic?.scene ? (
                                   <div style={{ marginTop: 8 }}>
                                     <InfographicCanvas
                                       scene={msg.features.infographic.scene}
                                       points={msg.features.infographic.points || []}
-                                      topicTitle={msg.features.infographic.topic || msg.features.infographic.scene?.header?.title || 'Visual Infographic'}
+                                      topicTitle={msg.features.infographic.topic || msg.features.infographic.scene?.title || 'Visual Summary'}
+                                      initialExpanded={true}
                                       onRegenerate={() => handleGenerateFeature(mi, 'infographic')}
                                       onClose={() => {
                                         setMessages(prev => prev.map((m, i) => i === mi ? { ...m, activeFeature: null } : m));
+                                      }}
+                                    />
+                                  </div>
+                                ) : isGeneratingFeature(mi, 'infographic') ? (
+                                  <div style={{ marginTop: 8 }}>
+                                    <InfographicCanvas
+                                      scene={null}
+                                      isLoading={true}
+                                      topicTitle="Visual Summary"
+                                      initialExpanded={true}
+                                      onClose={() => {
+                                        setGenerating({ msgIdx: null, type: null });
                                       }}
                                     />
                                   </div>
@@ -2545,12 +2558,7 @@ export default function CodingTutor() {
                                       }}
                                     />
                                   </div>
-                                ) : (
-                                  <div style={{ textAlign: 'center', padding: '24px 0', color: T.muted }}>
-                                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 10px' }} />
-                                    Generating Visual Infographic...
-                                  </div>
-                                )
+                                ) : null
                               )}
 
                               {msg.activeFeature === 'simpler' && (

@@ -452,12 +452,12 @@ export function buildSceneFromSemanticPlan(plan, options = {}) {
     }
 
     case "hierarchy": {
-      const tierHeight = Math.round(Math.max(10, Math.min(14, 56 / N)));
+      const tierHeight = Math.round(Math.max(12, Math.min(16, 58 / N)));
 
       for (let i = 0; i < N; i++) {
         const node = nodes[i];
-        const y = Math.round((22 + (i * (84 - 22)) / Math.max(1, N - 1)) * 10) / 10;
-        const width = Math.round((24 + (i * (68 - 24)) / Math.max(1, N - 1)) * 10) / 10;
+        const y = Math.round((20 + (i * (78 - 20)) / Math.max(1, N - 1)) * 10) / 10;
+        const width = Math.round((28 + (i * (70 - 28)) / Math.max(1, N - 1)) * 10) / 10;
         const style = resolveNodeStyle("tier", layoutType, i, N, node.category);
 
         elements.push({

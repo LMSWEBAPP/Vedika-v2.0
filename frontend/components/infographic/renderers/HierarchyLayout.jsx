@@ -36,9 +36,17 @@ export const HierarchyLayout = ({
         const bandH = ch + 10;
         const bandLeft = cx - bandW / 2;
         const bandTop = cy - bandH / 2;
+        const isRevealed = animationController.revealedElementIds.has(elem.id);
 
         return (
-          <g key={`stratum-${elem.id}`} id={`stratum-band-${elem.id}`}>
+          <g
+            key={`stratum-${elem.id}`}
+            id={`stratum-band-${elem.id}`}
+            style={{
+              opacity: isRevealed ? 1 : 0,
+              transition: "opacity 0.5s ease-out",
+            }}
+          >
             <rect
               x={bandLeft}
               y={bandTop}

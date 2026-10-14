@@ -139,10 +139,11 @@ export const SvgElementNode = ({
     <g
       id={`svg-elem-${element.id}`}
       style={{
-        opacity: isRevealed ? 1 : 0.08,
-        transform: isRevealed ? "scale(1)" : "scale(0.96)",
+        opacity: isRevealed ? 1 : 0,
+        transform: isRevealed ? "translateY(0) scale(1)" : "translateY(16px) scale(0.94)",
         transformOrigin: `${pixelX}px ${pixelY}px`,
-        transition: "opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        transition: "opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        pointerEvents: isRevealed ? "auto" : "none",
       }}
       className="cursor-pointer select-none"
       onClick={() => onSelect?.(element)}
@@ -349,34 +350,35 @@ export const SvgElementNode = ({
           {element.category && (
             <text
               x={stepNumber !== undefined ? left + width - 36 : left + width - 14}
-              y={top + 22}
-              fill="#94a3b8"
-              fontSize="9"
-              fontWeight="600"
-              fontFamily="monospace, system-ui, sans-serif"
+              y={top + 23}
+              fill={strokeColor}
+              fontSize="9.5"
+              fontWeight="700"
+              fontFamily="ui-monospace, monospace, system-ui"
               textAnchor="end"
-              letterSpacing="0.04em"
+              letterSpacing="0.06em"
             >
               {element.category}
             </text>
           )}
 
           {(() => {
-            const rightReserved = (stepNumber !== undefined ? 36 : 14) + (element.category ? element.category.length * 6 : 0);
+            const rightReserved = (stepNumber !== undefined ? 36 : 14) + (element.category ? element.category.length * 6.5 : 0);
             const titleLeft = element.icon ? left + 46 : left + 14;
-            const availableTitleWidth = Math.max(left + width - titleLeft - rightReserved - 8, 50);
-            const maxTitleChars = Math.max(12, Math.floor(availableTitleWidth / 6.8));
+            const availableTitleWidth = Math.max(left + width - titleLeft - rightReserved - 8, 60);
+            const maxTitleChars = Math.max(12, Math.floor(availableTitleWidth / 7.2));
             const titleLines = wrapSvgText(element.text || element.id, maxTitleChars, 2);
 
             if (titleLines.length <= 1) {
               return (
                 <text
                   x={titleLeft}
-                  y={top + 25}
-                  fill="#f8fafc"
-                  fontSize="12.5"
+                  y={top + 26}
+                  fill="#ffffff"
+                  fontSize="13.5"
                   fontWeight="700"
                   fontFamily="system-ui, -apple-system, sans-serif"
+                  letterSpacing="-0.01em"
                 >
                   {titleLines[0] || element.id}
                 </text>
@@ -387,13 +389,14 @@ export const SvgElementNode = ({
               <text
                 x={titleLeft}
                 y={top + 19}
-                fill="#f8fafc"
-                fontSize="11.5"
+                fill="#ffffff"
+                fontSize="12.5"
                 fontWeight="700"
                 fontFamily="system-ui, -apple-system, sans-serif"
+                letterSpacing="-0.01em"
               >
                 <tspan x={titleLeft} dy="0">{titleLines[0]}</tspan>
-                <tspan x={titleLeft} dy="14">{titleLines[1]}</tspan>
+                <tspan x={titleLeft} dy="16">{titleLines[1]}</tspan>
               </text>
             );
           })()}
@@ -414,7 +417,7 @@ export const SvgElementNode = ({
                 x={left + width / 2}
                 y={top + 67}
                 fill="#38bdf8"
-                fontSize="10.5"
+                fontSize="11"
                 fontFamily="ui-monospace, monospace"
                 textAnchor="middle"
               >
@@ -423,20 +426,21 @@ export const SvgElementNode = ({
             </g>
           ) : element.subtitle ? (
             (() => {
-              const maxChars = Math.max(Math.floor((width - 28) / 6.8), 20);
+              const maxChars = Math.max(Math.floor((width - 28) / 7.2), 22);
               const maxLines = height > 140 ? 3 : 2;
               const subLines = wrapSvgText(element.subtitle, maxChars, maxLines);
 
               return (
                 <text
                   x={left + 14}
-                  y={top + 56}
-                  fill="#cbd5e1"
-                  fontSize="10.5"
+                  y={top + 58}
+                  fill="#f1f5f9"
+                  fontSize="11.5"
+                  fontWeight="400"
                   fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {subLines.map((line, idx) => (
-                    <tspan key={idx} x={left + 14} dy={idx === 0 ? "0" : "15"}>
+                    <tspan key={idx} x={left + 14} dy={idx === 0 ? "0" : "17"}>
                       {line}
                     </tspan>
                   ))}
@@ -593,7 +597,7 @@ export const SvgConnectorPath = ({
         r="3"
         fill={strokeColor}
         style={{
-          opacity: isDrawn ? 0.9 : 0.05,
+          opacity: isDrawn ? 0.9 : 0,
           transition: "opacity 0.3s ease-out",
         }}
       />
@@ -602,13 +606,13 @@ export const SvgConnectorPath = ({
         d={pathD}
         fill="none"
         stroke={strokeColor}
-        strokeWidth="1.8"
+        strokeWidth="2.0"
         strokeLinecap="round"
         strokeDasharray={connector.style === "dashed" ? "6,5" : approxPathLen}
         strokeDashoffset={connector.style === "dashed" ? 0 : isDrawn ? 0 : approxPathLen}
         markerEnd={`url(#arrowhead-${connector.id})`}
         style={{
-          opacity: isDrawn ? 0.75 : 0.05,
+          opacity: isDrawn ? 0.95 : 0,
           transition: "stroke-dashoffset 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease-out",
         }}
       />
