@@ -1,0 +1,23 @@
+# Environment variables and secrets
+.env
+.env.*
+*.env
+
+# Python cache & virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# Logs & temp files
+*.log
+crash.log
+scratch/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
