@@ -3,9 +3,33 @@ import crypto from 'crypto';
 import { signJwt } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/organizations';
 
-// Default Super Admin credentials for initial setup
+import { getFrappeDb } from '@/lib/frappe-db';
+import { verifyPassword } from '@/lib/auth-passlib';
+
 const DEFAULT_EMAIL = 'superadmin@vedika.ai';
-const DEFAULT_PASSWORD = 'VedikaSuperAdmin2026!';
+
+// Rate limiting map for super-admin login
+const superAdminLoginAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000;
+
+function checkSuperAdminRateLimit(ip) {
+  const now = Date.now();
+  const record = superAdminLoginAttempts.get(ip);
+  if (!record || now > record.resetAt) {
+    superAdminLoginAttempts.set(ip, { attempts: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (record.attempts >= MAX_ATTEMPTS) {
+    return false;
+  }
+  record.attempts += 1;
+  return true;
+}
+
+function clearSuperAdminRateLimit(ip) {
+  superAdminLoginAttempts.delete(ip);
+}
 
 function timingSafeMatch(a, b) {
   const bufA = Buffer.from(String(a || ''));
@@ -16,6 +40,17 @@ function timingSafeMatch(a, b) {
 
 export async function POST(request) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     request.headers.get('x-real-ip') || 
+                     '127.0.0.1';
+    
+    if (!checkSuperAdminRateLimit(clientIp)) {
+      return NextResponse.json(
+        { error: 'Too many failed Super Admin login attempts. Locked for 15 minutes.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body || {};
 
@@ -27,20 +62,45 @@ export async function POST(request) {
     }
 
     const expectedEmail = (process.env.SUPER_ADMIN_EMAIL || DEFAULT_EMAIL).trim().toLowerCase();
-    const expectedPassword = (process.env.SUPER_ADMIN_PASSWORD || DEFAULT_PASSWORD).trim();
-
     const inputEmail = String(email).trim().toLowerCase();
     const inputPassword = String(password).trim();
 
-    const emailMatch = timingSafeMatch(inputEmail, expectedEmail);
-    const passMatch = timingSafeMatch(inputPassword, expectedPassword);
-
-    if (!emailMatch || !passMatch) {
+    if (inputEmail !== expectedEmail) {
       return NextResponse.json(
         { error: 'Invalid Super Administrator credentials.' },
         { status: 401 }
       );
     }
+
+    let authenticated = false;
+
+    // 1. Check TiDB database __Auth hash for Super Admin
+    try {
+      const db = getFrappeDb();
+      const [authRows] = await db.query(
+        'SELECT password FROM `__Auth` WHERE doctype = "User" AND name = ? AND fieldname = "password" LIMIT 1',
+        [expectedEmail]
+      );
+      if (authRows && authRows.length > 0 && authRows[0].password) {
+        authenticated = verifyPassword(inputPassword, authRows[0].password);
+      }
+    } catch (dbErr) {
+      console.warn('[SuperAdminLogin] Database check notice:', dbErr.message);
+    }
+
+    // 2. Check environment variable SUPER_ADMIN_PASSWORD
+    if (!authenticated && process.env.SUPER_ADMIN_PASSWORD) {
+      authenticated = timingSafeMatch(inputPassword, process.env.SUPER_ADMIN_PASSWORD.trim());
+    }
+
+    if (!authenticated) {
+      return NextResponse.json(
+        { error: 'Invalid Super Administrator credentials.' },
+        { status: 401 }
+      );
+    }
+
+    clearSuperAdminRateLimit(clientIp);
 
     // Sign high-privilege Super Admin JWT with 12-hour expiry
     const token = signJwt({

@@ -24,16 +24,23 @@ const inMemoryStore = {
   activeTabInfo: null,
 };
 
-function corsHeaders() {
+function corsHeaders(request) {
+  const origin = request?.headers?.get('origin');
+  const isAllowed = !origin || 
+                    origin.includes('localhost') || 
+                    origin.includes('127.0.0.1') || 
+                    origin.endsWith('.vedika.ai') || 
+                    origin === 'https://vedika.ai';
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': isAllowed ? (origin || '*') : 'null',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Vary': 'Origin'
   };
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() });
+export async function OPTIONS(request) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
 }
 
 export async function GET(request) {
@@ -74,7 +81,7 @@ export async function GET(request) {
         success: true,
         role: 'browser',
         command: nextCommand,
-      }, { headers: corsHeaders() });
+      }, { headers: corsHeaders(request) });
 
     } else if (role === 'mascot') {
       // Mascot polling for events emitted by the browser tab
@@ -107,7 +114,7 @@ export async function GET(request) {
         role: 'mascot',
         hasActiveTab,
         event: nextEvent,
-      }, { headers: corsHeaders() });
+      }, { headers: corsHeaders(request) });
 
     } else {
       // Status check
@@ -128,10 +135,10 @@ export async function GET(request) {
         success: true,
         hasActiveTab,
         tabInfo,
-      }, { headers: corsHeaders() });
+      }, { headers: corsHeaders(request) });
     }
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500, headers: corsHeaders() });
+    return NextResponse.json({ success: false, error: err.message }, { status: 500, headers: corsHeaders(request) });
   }
 }
 
@@ -143,6 +150,21 @@ export async function POST(request) {
     const source = body.source || 'mascot'; // 'mascot' | 'browser'
     const payload = body.payload || body;
     const type = body.type || payload.type || 'NAVIGATE_WEBAPP';
+
+    // Validate navigation targets to prevent open redirection
+    if (type === 'NAVIGATE_WEBAPP') {
+      const target = payload.route || payload.url || (typeof payload === 'string' ? payload : null);
+      if (typeof target === 'string') {
+        const isRelative = target.startsWith('/') && !target.startsWith('//');
+        const isLmsUrl = target.startsWith('http://localhost') || target.startsWith('http://127.0.0.1') || target.startsWith('https://vedika.ai');
+        if (!isRelative && !isLmsUrl) {
+          return NextResponse.json(
+            { error: 'Prohibited navigation destination.' },
+            { status: 400, headers: corsHeaders(request) }
+          );
+        }
+      }
+    }
 
     const message = {
       type,
@@ -176,7 +198,7 @@ export async function POST(request) {
         queued: true,
         hasActiveTab,
         messageId: message.id,
-      }, { headers: corsHeaders() });
+      }, { headers: corsHeaders(request) });
 
     } else {
       // Event from browser tab destined for desktop mascot
@@ -206,7 +228,7 @@ export async function POST(request) {
         success: true,
         delivered: true,
         messageId: message.id,
-      }, { headers: corsHeaders() });
+      }, { headers: corsHeaders(request) });
     }
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500, headers: corsHeaders() });

@@ -1490,25 +1490,22 @@ class DesktopPetApp(QObject):
         import threading
         import sys
         import webbrowser
+        import urllib.parse
 
         def _async_browser_launch(url):
             try:
-                if sys.platform == "win32" and hasattr(os, "startfile"):
-                    try:
-                        print(f"[Browser Launcher] Launching via Windows ShellExecute (os.startfile): {url}")
-                        os.startfile(url)
-                    except Exception as win_err:
-                        print(f"[Browser Launcher] os.startfile fallback to webbrowser.open ({win_err})")
-                        webbrowser.open(url)
-                else:
-                    webbrowser.open(url)
+                # Security fix (VDK-CONF-06): Validate URL scheme to prevent arbitrary local process execution
+                parsed = urllib.parse.urlparse(url)
+                if parsed.scheme not in ('http', 'https'):
+                    print(f"[Browser Launcher] Blocked unsafe URL scheme: {parsed.scheme} in '{url}'")
+                    return
+
+                # Ensure URL is dispatched strictly to web browser, avoiding os.startfile ShellExecute
+                print(f"[Browser Launcher] Opening verified HTTP(S) URL via web browser: {url}")
+                webbrowser.open(url)
                 print(f"[Browser Launcher] Browser launch command dispatched successfully.")
             except Exception as e:
                 print(f"[Browser Launcher] Browser launch error: {e}")
-                try:
-                    webbrowser.open(url)
-                except Exception as ex:
-                    print(f"[Browser Launcher] Final fallback error: {ex}")
 
         threading.Thread(target=_async_browser_launch, args=(target_url,), daemon=True).start()
 

@@ -351,6 +351,20 @@ async function generateWithFallback({ contents, systemInstruction, responseMimeT
   throw lastError || new Error("Failed to generate response with Gemini API");
 }
 
+// Rate limiting map for YouTube explanation requests (VDK-CONF-08 fix)
+const youtubeRateMap = new Map();
+function checkYoutubeRateLimit(ip, limit = 30, windowMs = 60 * 1000) {
+  const now = Date.now();
+  const record = youtubeRateMap.get(ip);
+  if (!record || now > record.resetAt) {
+    youtubeRateMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (record.count >= limit) return false;
+  record.count += 1;
+  return true;
+}
+
 export async function POST(request) {
   let currentSeconds = 0;
   let formattedCurrentTime = '0:00';
@@ -363,6 +377,17 @@ export async function POST(request) {
   let detectedChapter = null;
 
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     request.headers.get('x-real-ip') || 
+                     '127.0.0.1';
+
+    if (!checkYoutubeRateLimit(clientIp)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded for video tutor explanations. Please wait 60 seconds.' },
+        { status: 429 }
+      );
+    }
+
     // Optional auth: Allow students / guests / demo users without blocking
     await authenticateRequest(request, { requireAuth: false });
 

@@ -139,7 +139,7 @@ nextApp.prepare().then(() => {
               const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
               const now = Math.floor(Date.now() / 1000);
               if (!payload.exp || payload.exp >= now) {
-                return { valid: true, user: payload.user_id || payload.email, sessionId: null };
+                return { valid: true, user: payload.user_id || payload.email, sessionId: searchParams.get('sessionId') };
               }
             }
           }
@@ -149,13 +149,8 @@ nextApp.prepare().then(() => {
       }
     }
 
-    const sessionId = searchParams.get('sessionId');
-  const userId = searchParams.get('userId');
-  if (sessionId) {
-    return { valid: true, user: userId || 'student', sessionId };
-  }
-
-  return { valid: false };
+    // Security fix (VDK-CONF-01): Strictly reject unauthenticated connections
+    return { valid: false };
   }
 
   wss.on('connection', async (clientWs, request) => {

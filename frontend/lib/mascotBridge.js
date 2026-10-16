@@ -251,8 +251,12 @@ class MascotBridge {
       } else {
         // Fallback only if no router listener is mounted
         if (typeof window !== 'undefined') {
-          console.log('[MascotBridge] No navListener registered; using window.location.href:', targetRoute);
-          window.location.href = targetRoute;
+          if (typeof targetRoute === 'string' && targetRoute.startsWith('/') && !targetRoute.startsWith('//')) {
+            console.log('[MascotBridge] Using relative window.location.href:', targetRoute);
+            window.location.href = targetRoute;
+          } else {
+            console.warn('[MascotBridge] Blocked external/unsafe redirection attempt:', targetRoute);
+          }
         }
       }
     }

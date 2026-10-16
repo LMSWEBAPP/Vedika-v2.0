@@ -8,8 +8,33 @@ import { loadHistory, saveHistory, recall, buildMemoryContext, trackApiConsumpti
 const MAX_USER_INPUT_CHARS = 12000;
 const MAX_SYSTEM_CHARS = 12000;
 
+// Rate limiting map for Gemini streaming inference (VDK-CONF-08 fix)
+const streamRateMap = new Map();
+function checkAiRateLimit(key, limit = 40, windowMs = 60 * 1000) {
+  const now = Date.now();
+  const record = streamRateMap.get(key);
+  if (!record || now > record.resetAt) {
+    streamRateMap.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (record.count >= limit) return false;
+  record.count += 1;
+  return true;
+}
+
 export async function POST(request) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     request.headers.get('x-real-ip') || 
+                     '127.0.0.1';
+
+    if (!checkAiRateLimit(clientIp)) {
+      return NextResponse.json(
+        { error: 'Inference rate limit exceeded. Please wait a moment before sending more queries.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { system, user, maxOutputTokens, sessionId, userId } = body || {};
     const apiKey = getRotatedKey();

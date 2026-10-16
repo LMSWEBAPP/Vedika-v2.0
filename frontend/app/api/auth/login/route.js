@@ -4,14 +4,55 @@ import { signJwt } from '@/lib/auth';
 import { getFrappeDb } from '@/lib/frappe-db';
 import { verifyPassword } from '@/lib/auth-passlib';
 
+// Simple in-memory rate limiting against credential brute force
+const loginAttempts = new Map();
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(key) {
+  const now = Date.now();
+  const record = loginAttempts.get(key);
+  if (!record || now > record.resetAt) {
+    loginAttempts.set(key, { attempts: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (record.attempts >= MAX_ATTEMPTS) {
+    return false;
+  }
+  record.attempts += 1;
+  return true;
+}
+
+function clearRateLimit(key) {
+  loginAttempts.delete(key);
+}
+
+function timingSafeMatch(a, b) {
+  const bufA = Buffer.from(String(a || ''));
+  const bufB = Buffer.from(String(b || ''));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export async function POST(request) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     request.headers.get('x-real-ip') || 
+                     '127.0.0.1';
     const body = await request.json().catch(() => ({}));
     const userIdentifier = (body.usr || body.email || '').trim();
     const userPassword = (body.pwd || body.password || '').trim();
 
     if (!userIdentifier || !userPassword) {
       return NextResponse.json({ error: 'Username/email and password are required.' }, { status: 400 });
+    }
+
+    const rateKey = `${clientIp}:${userIdentifier.toLowerCase()}`;
+    if (!checkRateLimit(rateKey)) {
+      return NextResponse.json(
+        { error: 'Too many failed login attempts. Please wait 15 minutes before trying again.' },
+        { status: 429 }
+      );
     }
 
     let frappeUrl = (process.env.FRAPPE_URL || process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://vedika-v2-0.onrender.com').replace(/\/$/, '');
@@ -56,7 +97,7 @@ export async function POST(request) {
       console.warn('[API/Auth/Login] Frappe backend unavailable, attempting direct database auth:', netErr.message);
     }
 
-    // 2. Fallback to direct TiDB database verification if Frappe is waking up or cold-starting
+    // 2. Direct TiDB database verification
     if (!frappeLoggedIn) {
       try {
         const db = getFrappeDb();
@@ -83,76 +124,28 @@ export async function POST(request) {
           }
         }
       } catch (dbErr) {
-        console.warn('[API/Auth/Login] TiDB direct auth unavailable, falling back to resilient state store:', dbErr.message);
+        console.warn('[API/Auth/Login] TiDB direct auth notice:', dbErr.message);
       }
     }
 
-    // 3. Fallback to Multi-Tenant and Resilient System Accounts
+    // 3. Super Admin Environment Variable Check (if not in TiDB or database offline)
     let role = 'Student';
     let tenantId = 'default';
     let isSuperAdmin = false;
 
-    if (!frappeLoggedIn) {
-      const lowerId = userIdentifier.toLowerCase().trim();
-      const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'superadmin@vedika.ai').toLowerCase().trim();
-      const superAdminPass = (process.env.SUPER_ADMIN_PASSWORD || 'VedikaSuperAdmin2026!').trim();
-      const adminAcceptedPasswords = ['admin', 'admin123', 'admin@123', 'Administrator', 'admin@lms.com', 'password'];
+    const lowerId = userIdentifier.toLowerCase().trim();
+    const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'superadmin@vedika.ai').toLowerCase().trim();
+    const superAdminPass = process.env.SUPER_ADMIN_PASSWORD;
 
-      // 3.1 Check Super Admin
-      if (lowerId === superAdminEmail || lowerId === 'superadmin') {
-        if (userPassword === superAdminPass) {
-          frappeLoggedIn = true;
-          loggedUser = superAdminEmail;
-          fullName = 'Platform Super Administrator';
-          role = 'super_admin';
-          isSuperAdmin = true;
-          tenantId = 'global';
-          sid = crypto.randomBytes(16).toString('hex');
-        }
-      }
-
-      // 3.2 Check Default Platform Administrator
-      if (!frappeLoggedIn && (lowerId === 'admin@lms.com' || lowerId === 'administrator' || lowerId === 'admin')) {
-        if (adminAcceptedPasswords.includes(userPassword)) {
-          frappeLoggedIn = true;
-          loggedUser = 'admin@lms.com';
-          fullName = 'Platform Administrator';
-          role = 'Administrator';
-          sid = crypto.randomBytes(16).toString('hex');
-        }
-      }
-
-      // 3.3 Check Multi-Tenant Organization Admins
-      if (!frappeLoggedIn) {
-        try {
-          const { getAllOrganizations } = await import('@/lib/organizations');
-          const orgs = await getAllOrganizations();
-          const matchedOrg = (orgs || []).find(o => 
-            (o.admin_email || '').toLowerCase() === lowerId ||
-            (o.slug || '').toLowerCase() === lowerId
-          );
-          if (matchedOrg && adminAcceptedPasswords.includes(userPassword)) {
-            frappeLoggedIn = true;
-            loggedUser = matchedOrg.admin_email;
-            fullName = `${matchedOrg.name} Administrator`;
-            role = 'Administrator';
-            tenantId = matchedOrg.id;
-            sid = crypto.randomBytes(16).toString('hex');
-          }
-        } catch (orgErr) {
-          console.warn('[API/Auth/Login] Organization lookup notice:', orgErr.message);
-        }
-      }
-
-      // 3.4 Check Demo Student
-      if (!frappeLoggedIn && (lowerId === 'student@vedika.ai' || lowerId === 'student@lms.com' || lowerId === 'student')) {
-        if (['student', 'student123', 'password'].includes(userPassword)) {
-          frappeLoggedIn = true;
-          loggedUser = lowerId.includes('@') ? lowerId : 'student@vedika.ai';
-          fullName = 'Alex Student';
-          role = 'Student';
-          sid = crypto.randomBytes(16).toString('hex');
-        }
+    if (!frappeLoggedIn && superAdminPass && (lowerId === superAdminEmail || lowerId === 'superadmin')) {
+      if (timingSafeMatch(userPassword, superAdminPass)) {
+        frappeLoggedIn = true;
+        loggedUser = superAdminEmail;
+        fullName = 'Platform Super Administrator';
+        role = 'super_admin';
+        isSuperAdmin = true;
+        tenantId = 'global';
+        sid = crypto.randomBytes(16).toString('hex');
       }
     }
 
@@ -160,15 +153,41 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
-    // Determine user role if authenticated via Frappe/TiDB
-    if (role === 'Student') {
-      const isAdminUser = loggedUser === 'Administrator' || 
-                          loggedUser === 'admin@lms.com' || 
-                          loggedUser.toLowerCase().includes('admin');
-      
-      if (isAdminUser) {
-        role = 'Administrator';
-      } else {
+    // Clear rate limit on success
+    clearRateLimit(rateKey);
+
+    // Determine user role and tenant isolation
+    if (lowerId === superAdminEmail || lowerId === 'superadmin') {
+      role = 'super_admin';
+      isSuperAdmin = true;
+      tenantId = 'global';
+    } else {
+      // Check multi-tenant organizations
+      try {
+        const { getAllOrganizations } = await import('@/lib/organizations');
+        const orgs = await getAllOrganizations();
+        const matchedOrg = (orgs || []).find(o => 
+          (o.admin_email || '').toLowerCase() === lowerId
+        );
+        if (matchedOrg) {
+          role = 'Administrator';
+          tenantId = matchedOrg.id;
+        } else {
+          // Check student organization membership by email domain or matching org
+          const studentOrg = (orgs || []).find(o => 
+            (o.domain && lowerId.endsWith('@' + o.domain)) ||
+            (o.domain && o.admin_email && lowerId.split('@')[1] === o.admin_email.split('@')[1])
+          );
+          if (studentOrg) {
+            tenantId = studentOrg.id;
+          }
+        }
+      } catch (orgErr) {
+        console.warn('[API/Auth/Login] Organization lookup notice:', orgErr.message);
+      }
+
+      // Check database roles from tabHas Role
+      if (role === 'Student') {
         try {
           const db = getFrappeDb();
           const [userRoles] = await db.query(
@@ -179,7 +198,7 @@ export async function POST(request) {
             role = 'Administrator';
           }
         } catch (roleErr) {
-          // Default to Student on error
+          // Keep current role on error
         }
       }
     }
@@ -187,7 +206,7 @@ export async function POST(request) {
     // Issue signed JWT token
     const token = signJwt({
       user_id: loggedUser,
-      email: loggedUser.includes('@') ? loggedUser : 'admin@lms.com',
+      email: loggedUser.includes('@') ? loggedUser : `${loggedUser}@vedika.ai`,
       role,
       is_super_admin: isSuperAdmin,
       organization_id: tenantId,
@@ -200,7 +219,7 @@ export async function POST(request) {
       sid,
       token,
       user: {
-        email: loggedUser.includes('@') ? loggedUser : 'admin@lms.com',
+        email: loggedUser.includes('@') ? loggedUser : `${loggedUser}@vedika.ai`,
         username: loggedUser,
         name: fullName,
         role,
@@ -250,3 +269,4 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
+

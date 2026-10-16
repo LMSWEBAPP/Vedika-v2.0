@@ -19,6 +19,7 @@ import { getSubjectArtwork } from '@/lib/artwork';
 import CategoryShowcaseCarousel from '@/components/CategoryShowcaseCarousel';
 import PacmanPagination from '@/components/PacmanPagination';
 import VedikaParticleBot from '@/components/VedikaParticleBot';
+import ReactMarkdown from 'react-markdown';
 
 export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' }) {
   const router = useRouter();
@@ -2181,17 +2182,12 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
                       const promptText = (typeof curQ === 'object' && curQ !== null)
                         ? (curQ.prompt || curQ.question || curQ.title || '')
                         : (curQ || '');
-                      const hasHtml = /<[a-z][\s\S]*>/i.test(promptText);
-
-                      return hasHtml ? (
-                        <div
-                          style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.6 }}
-                          dangerouslySetInnerHTML={{ __html: promptText }}
-                        />
-                      ) : (
-                        <p style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                          {promptText}
-                        </p>
+                      return (
+                        <div style={{ margin: 0, fontSize: 13.5, color: '#FFFFFF', lineHeight: 1.6 }}>
+                          <ReactMarkdown>
+                            {promptText}
+                          </ReactMarkdown>
+                        </div>
                       );
                     })()}
                   </div>

@@ -6,7 +6,17 @@ import crypto from 'crypto';
  * In development, generates a per-process ephemeral key to prevent hardcoded forgery.
  */
 export function getJwtSecret() {
-  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || 'vedika-lms-jwt-auth-default-salt-2026';
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[auth] JWT_SECRET or ENCRYPTION_KEY environment variable is required.');
+    }
+    // Fail-safe ephemeral fallback in dev/test only
+    if (!global.__ephemeralJwtSecret) {
+      global.__ephemeralJwtSecret = crypto.randomBytes(32).toString('hex');
+    }
+    return global.__ephemeralJwtSecret;
+  }
   return secret;
 }
 

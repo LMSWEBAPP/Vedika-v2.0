@@ -22,10 +22,42 @@ export async function POST(request) {
 
     if (action === 'save' && sessionId && messages?.length > 0) {
       await saveHistory(sessionId, messages);
+      // Track session ownership to prevent IDOR cross-student chat snooping
+      if (effectiveUserId !== 'anonymous') {
+        try {
+          const { Redis } = await import('@upstash/redis');
+          if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+            const r = new Redis({
+              url: process.env.UPSTASH_REDIS_REST_URL,
+              token: process.env.UPSTASH_REDIS_REST_TOKEN
+            });
+            await r.set(`chat_owner:${sessionId}`, effectiveUserId, { ex: 86400 });
+          }
+        } catch (e) {
+          console.warn('[Memory] Session ownership recording notice:', e.message);
+        }
+      }
       return NextResponse.json({ ok: true });
     }
 
     if (action === 'load' && sessionId) {
+      // Check session ownership
+      try {
+        const { Redis } = await import('@upstash/redis');
+        if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+          const r = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN
+          });
+          const owner = await r.get(`chat_owner:${sessionId}`);
+          if (owner && owner !== 'anonymous' && owner !== effectiveUserId && !auth.isAdmin && !auth.isSuperAdmin) {
+            return NextResponse.json({ error: 'Forbidden: Access denied to conversation history.' }, { status: 403 });
+          }
+        }
+      } catch (e) {
+        console.warn('[Memory] Session ownership check notice:', e.message);
+      }
+
       const [history, memories] = await Promise.all([
         loadHistory(sessionId),
         recall(effectiveUserId),

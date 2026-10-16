@@ -6,6 +6,7 @@ import { T } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import { getJobs } from '@/lib/frappe';
 import PacmanPagination from '@/components/PacmanPagination';
+import ReactMarkdown from 'react-markdown';
 import './jobs.css';
 
 const PAGE_SIZE = 3;
@@ -413,8 +414,11 @@ export default function StudentJobsPage() {
                     lineHeight: 1.6,
                     fontFamily: 'inherit'
                   }}
-                  dangerouslySetInnerHTML={{ __html: selectedJob.description || '<p>No description provided for this job.</p>' }}
-                />
+                >
+                  <ReactMarkdown>
+                    {selectedJob.description || 'No description provided for this job.'}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
 

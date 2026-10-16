@@ -7,7 +7,7 @@ import { T } from '@/lib/lms-data';
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('superadmin@vedika.ai');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -234,32 +234,6 @@ export default function SuperAdminLoginPage() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
-          </div>
-
-          {/* Quick Demo Credential Helper Chip */}
-          <div
-            onClick={() => {
-              setEmail('superadmin@vedika.ai');
-              setPassword('VedikaSuperAdmin2026!');
-            }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 10,
-              background: 'rgba(168, 85, 247, 0.08)',
-              border: '1px dashed rgba(168, 85, 247, 0.3)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              transition: 'all 0.15s'
-            }}
-            title="Click to fill default development credentials"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C084FC' }}>
-              <KeyRound size={13} />
-              <span>Use Default Credentials</span>
-            </div>
-            <span style={{ fontSize: 10, color: '#94A3B8' }}>VedikaSuperAdmin2026!</span>
           </div>
 
           {/* Submit Button */}

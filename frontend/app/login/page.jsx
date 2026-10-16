@@ -324,58 +324,6 @@ export default function LoginPage() {
 
           {/* ================= MODE: SIGN IN ================= */}
           {mode === 'login' && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 8, fontWeight: 500 }}>
-                Quick Test Accounts:
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('admin@lms.com');
-                    setPassword('admin');
-                    setError('');
-                  }}
-                  style={{
-                    background: 'rgba(155, 110, 248, 0.08)',
-                    border: '1px solid rgba(155, 110, 248, 0.25)',
-                    borderRadius: 8,
-                    padding: '7px 10px',
-                    color: T.purple,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                >
-                  🛡️ Admin (admin@lms.com)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('superadmin@vedika.ai');
-                    setPassword('VedikaSuperAdmin2026!');
-                    setError('');
-                  }}
-                  style={{
-                    background: 'rgba(91, 140, 248, 0.08)',
-                    border: '1px solid rgba(91, 140, 248, 0.25)',
-                    borderRadius: 8,
-                    padding: '7px 10px',
-                    color: T.accent,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                >
-                  👑 Super Admin
-                </button>
-              </div>
-            </div>
-          )}
-
-          {mode === 'login' && (
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Email / Username Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
