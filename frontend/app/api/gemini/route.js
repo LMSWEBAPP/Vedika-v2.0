@@ -31,8 +31,8 @@ function getGeminiClient() {
 // Gemini text generation models - prioritizing fast, highly-available models
 const TEXT_MODELS = [
   'gemini-3.1-flash-lite',
-  'gemini-flash-latest',
-  'gemini-3.8-flash',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
   'gemini-3.5-flash',
 ];
 
@@ -94,8 +94,8 @@ export async function POST(request) {
     let textResult = null;
     let lastError = null;
 
-    // Timeout wrapper (30 seconds max per model)
-    const withTimeout = (promise, ms = 30000) => 
+    // Timeout wrapper (8 seconds max per model for fast failover)
+    const withTimeout = (promise, ms = 8000) => 
       Promise.race([
         promise,
         new Promise((_, reject) => setTimeout(() => reject(new Error('Model timeout after ' + ms + 'ms')), ms))
@@ -116,7 +116,7 @@ export async function POST(request) {
               temperature: 0.4,
               maxOutputTokens: clampedTokens,
             },
-          }), 30000); // 30 second timeout per model
+          }), 8000); // 8 second timeout per model
 
           textResult = response.text;
           

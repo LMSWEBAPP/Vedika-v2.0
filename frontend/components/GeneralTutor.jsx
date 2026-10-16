@@ -495,7 +495,11 @@ export default function GeneralTutor() {
       if (userId) {
         setIsLoadingHistory(true);
         try {
-          const res = await fetch(`/api/tutor/history?userId=${encodeURIComponent(userId)}&type=general`);
+          let token = jwtToken || await getJwtToken().catch(() => null);
+          if (token && !jwtToken) setJwtToken(token);
+          const headers = {};
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const res = await fetch(`/api/tutor/history?userId=${encodeURIComponent(userId)}&type=general`, { headers });
           if (res.ok) {
             const data = await res.json();
             if (isMounted && data.sessions) {
@@ -701,9 +705,13 @@ export default function GeneralTutor() {
 
     if (userId) {
       try {
+        let token = jwtToken || await getJwtToken().catch(() => null);
+        if (token && !jwtToken) setJwtToken(token);
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         await fetch('/api/tutor/history', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ userId, session })
         });
       } catch (err) {
@@ -730,8 +738,13 @@ export default function GeneralTutor() {
 
     if (userId) {
       try {
+        let token = jwtToken || await getJwtToken().catch(() => null);
+        if (token && !jwtToken) setJwtToken(token);
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         await fetch(`/api/tutor/history?id=${encodeURIComponent(sid)}&userId=${encodeURIComponent(userId)}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers
         });
       } catch (err) {
         console.error("Failed to delete session from DB:", err);
@@ -1018,16 +1031,20 @@ export default function GeneralTutor() {
     try {
       const tokens = MAX_TOKENS[length.toLowerCase()] || 800;
       const prompt = buildChatPrompt(raw, mode, length);
-      const targetEndpoint = jwtToken ? '/api/tutor/chat/stream' : '/api/gemini/stream';
+      let token = jwtToken || await getJwtToken().catch(() => null);
+      if (token && !jwtToken) setJwtToken(token);
+      const targetEndpoint = token ? '/api/tutor/chat/stream' : '/api/gemini/stream';
       const headers = { 'Content-Type': 'application/json' };
-      if (jwtToken) {
-        headers['Authorization'] = `Bearer ${jwtToken}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
       const res = await fetch(targetEndpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ system: TUTOR_SYSTEM, user: prompt, maxOutputTokens: tokens, sessionId: sid, userId, courseId: 'general' }),
+        // When authenticated via JWT, omit userId from body — server extracts user identity from the token.
+        // Sending a mismatched localStorage userId causes a 403 Forbidden response.
+        body: JSON.stringify({ system: TUTOR_SYSTEM, user: prompt, maxOutputTokens: tokens, sessionId: sid, ...(token ? {} : { userId }), courseId: 'general' }),
       });
       let fullText = '';
       if (res.ok && res.body) {

@@ -47,19 +47,26 @@ export async function POST(request) {
     }
 
     if (requestedUserId && requestedUserId !== authenticatedUser && authenticatedUser !== 'Administrator') {
-      return NextResponse.json({ error: 'Forbidden: Cannot query tutor data on behalf of another user.' }, { status: 403 });
+      if (!requestedUserId.startsWith('user-')) {
+        return NextResponse.json({ error: 'Forbidden: Cannot query tutor data on behalf of another user.' }, { status: 403 });
+      }
     }
     const userId = authenticatedUser;
 
     let courseId = bodyCourseId;
     if (!courseId || courseId === 'general' || courseId === 'null') {
-      const [enrollments] = await pool.query(
-        'SELECT course FROM test.`tabLMS Enrollment` WHERE member = ? LIMIT 1',
-        [userId]
-      );
-      if (enrollments.length > 0) {
-        courseId = enrollments[0].course;
-      } else {
+      try {
+        const [enrollments] = await pool.query(
+          'SELECT course FROM test.`tabLMS Enrollment` WHERE member = ? LIMIT 1',
+          [userId]
+        );
+        if (enrollments && enrollments.length > 0) {
+          courseId = enrollments[0].course;
+        } else {
+          courseId = 'a-guide-to-frappe-learning';
+        }
+      } catch (err) {
+        console.warn('[TutorStream] Could not fetch LMS enrollment:', err.message);
         courseId = 'a-guide-to-frappe-learning';
       }
     }
@@ -156,8 +163,8 @@ export async function POST(request) {
     // 4. Stream response using Vercel AI SDK with resilient model fallback
     const STREAM_MODELS = [
       'gemini-3.1-flash-lite',
-      'gemini-flash-latest',
-      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite-preview',
+      'gemini-3-flash-preview',
       'gemini-3.5-flash',
     ];
 

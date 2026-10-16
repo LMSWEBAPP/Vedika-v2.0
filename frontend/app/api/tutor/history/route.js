@@ -34,20 +34,26 @@ async function ensureTable() {
 // GET /api/tutor/history?userId=...&type=general
 export async function GET(request) {
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    const auth = await authenticateRequest(request, { requireAuth: false });
+    if (!auth.authenticated) {
+      return NextResponse.json({ sessions: [] });
+    }
 
     await ensureTable();
     const { searchParams } = new URL(request.url);
     const requestedUserId = searchParams.get('userId');
     const type = searchParams.get('type') || 'general';
 
-    // Prevent cross-user data access unless admin
-    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: Cannot access tutor history of another user.' }, { status: 403 });
+    // Prevent cross-user data access unless admin.
+    // If requestedUserId matches or is a guest ID (user-...), map it safely to authenticated user.
+    let userId = auth.user.user_id || auth.user.email;
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email) {
+      if (auth.isAdmin) {
+        userId = requestedUserId;
+      } else if (!requestedUserId.startsWith('user-')) {
+        return NextResponse.json({ error: 'Forbidden: Cannot access tutor history of another user.' }, { status: 403 });
+      }
     }
-
-    const userId = requestedUserId || auth.user.user_id || auth.user.email;
 
     const [rows] = await pool.query(
       `SELECT id, user_id, type, label, mode, length, messages, documents, created_at, updated_at
@@ -98,8 +104,10 @@ export async function GET(request) {
 // Body: { id, userId, type, label, mode, length, messages, documents }
 export async function POST(request) {
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    const auth = await authenticateRequest(request, { requireAuth: false });
+    if (!auth.authenticated) {
+      return NextResponse.json({ ok: true, guest: true });
+    }
 
     await ensureTable();
     const body = await request.json();
@@ -117,10 +125,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 });
     }
 
-    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: Cannot save tutor history for another user.' }, { status: 403 });
+    let userId = auth.user.user_id || auth.user.email;
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email) {
+      if (auth.isAdmin) {
+        userId = requestedUserId;
+      } else if (!requestedUserId.startsWith('user-')) {
+        return NextResponse.json({ error: 'Forbidden: Cannot save tutor history for another user.' }, { status: 403 });
+      }
     }
-    const userId = auth.user.user_id || auth.user.email;
 
     const messagesJson = JSON.stringify(messages || []);
     const documentsJson = JSON.stringify(documents || []);
@@ -159,8 +171,10 @@ export async function POST(request) {
 // DELETE /api/tutor/history?id=...&userId=...
 export async function DELETE(request) {
   try {
-    const auth = await authenticateRequest(request, { requireAuth: true });
-    if (!auth.authenticated) return auth.response;
+    const auth = await authenticateRequest(request, { requireAuth: false });
+    if (!auth.authenticated) {
+      return NextResponse.json({ ok: true, guest: true });
+    }
 
     await ensureTable();
     const { searchParams } = new URL(request.url);
@@ -171,10 +185,14 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 });
     }
 
-    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email && !auth.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: Cannot delete tutor history of another user.' }, { status: 403 });
+    let userId = auth.isAdmin && requestedUserId ? requestedUserId : (auth.user.user_id || auth.user.email);
+    if (requestedUserId && requestedUserId !== auth.user.user_id && requestedUserId !== auth.user.email) {
+      if (auth.isAdmin) {
+        userId = requestedUserId;
+      } else if (!requestedUserId.startsWith('user-')) {
+        return NextResponse.json({ error: 'Forbidden: Cannot delete tutor history of another user.' }, { status: 403 });
+      }
     }
-    const userId = auth.isAdmin && requestedUserId ? requestedUserId : (auth.user.user_id || auth.user.email);
 
     let deleteSql = `DELETE FROM tab_tutor_sessions WHERE id = ?`;
     const deleteParams = [id];
