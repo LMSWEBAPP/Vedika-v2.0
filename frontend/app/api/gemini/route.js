@@ -28,12 +28,15 @@ function getGeminiClient() {
   return new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
 }
 
-// Gemini text generation models - prioritizing fast, highly-available models
+// LOCKED ARCHITECTURE: Verified active models for Gemini generateContent in Ask Vedika & Code with Vedika.
+// Do not downgrade or alter to deprecated models (e.g. gemini-2.5-flash).
 const TEXT_MODELS = [
   'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
   'gemini-3.1-flash-lite-preview',
   'gemini-3-flash-preview',
-  'gemini-3.5-flash',
 ];
 
 export async function POST(request) {

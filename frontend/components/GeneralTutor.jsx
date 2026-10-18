@@ -482,7 +482,7 @@ export default function GeneralTutor() {
       if (activeSid && localText.length > 0) {
         const active = localText.find(s => s.id === activeSid);
         if (active && active.messages && active.messages.length > 0) {
-          const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {} }));
+          const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {}, activeFeature: null }));
           setMessages(msgs);
           setMode(active.mode || 'Beginner');
           setLength(active.length || 'Short');
@@ -518,7 +518,7 @@ export default function GeneralTutor() {
               if (targetSid) {
                 const target = combined.find(s => s.id === targetSid);
                 if (target && target.messages && target.messages.length > 0) {
-                  const msgs = (target.messages || []).map(m => ({ ...m, features: m.features || {} }));
+                  const msgs = (target.messages || []).map(m => ({ ...m, features: m.features || {}, activeFeature: null }));
                   setMessages(msgs);
                   setMode(target.mode || 'Beginner');
                   setLength(target.length || 'Short');
@@ -615,6 +615,7 @@ export default function GeneralTutor() {
     const msgs = (session.messages || []).map(m => ({
       ...m,
       features: m.features || {},
+      activeFeature: null,
     }));
     setMessages(msgs);
     setMode(session.mode || 'Beginner');
@@ -684,13 +685,15 @@ export default function GeneralTutor() {
     const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user');
     const label = lastUserMsg ? lastUserMsg.content.slice(0, 45) : 'Untitled';
     const sid = overrideSid || currentSessionId || Date.now().toString(36);
+    // Sanitize activeFeature so feature drawers like Visual Summary are never persisted open across reloads
+    const sanitizedMsgs = msgs.map(m => ({ ...m, activeFeature: null }));
     const session = {
       id: sid,
       label,
       topic: label,
       mode,
       length,
-      messages: msgs,
+      messages: sanitizedMsgs,
       documents: sessionDocsRef.current || [],
       timestamp: new Date().toISOString(),
       type: 'general'
@@ -2473,51 +2476,6 @@ export default function GeneralTutor() {
               gap: 10
             }}
           >
-          {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar (Desktop Only) */}
-          {!isMobile && (
-            <button
-              type="button"
-              data-leftnav-toggle="true"
-              onClick={() => {
-                setShowLeftNav(prev => {
-                  if (!prev) setLeftNavView('menu');
-                  return !prev;
-                });
-              }}
-              title={showLeftNav ? "Close navigation (Ctrl+B)" : "Open navigation (Ctrl+B)"}
-              aria-label="Toggle Navigation Menu"
-              style={{
-                pointerEvents: 'auto',
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                background: showLeftNav ? 'rgba(168, 85, 247, 0.35)' : 'rgba(15, 23, 42, 0.85)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: showLeftNav ? '1px solid rgba(168, 85, 247, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
-                boxShadow: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: showLeftNav ? '#FFFFFF' : '#94A3B8',
-                cursor: 'pointer',
-                flexShrink: 0,
-                position: 'relative'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.borderColor = '#A855F7';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
-                e.currentTarget.style.borderColor = showLeftNav ? 'rgba(168, 85, 247, 0.7)' : 'rgba(255, 255, 255, 0.16)';
-              }}
-            >
-              <PanelLeft size={18} />
-            </button>
-          )}
-
           {/* Full Creative Omnibar - Always active by default */}
           <div
               onMouseEnter={() => setIsInputHovered(true)}
@@ -2666,7 +2624,12 @@ export default function GeneralTutor() {
                       <button
                         type="button"
                         data-leftnav-toggle="true"
-                        onClick={() => setShowLeftNav(prev => !prev)}
+                        onClick={() => {
+                          setShowLeftNav(prev => {
+                            if (!prev) setLeftNavView('menu');
+                            return !prev;
+                          });
+                        }}
                         style={{
                           background: showLeftNav ? 'rgba(168, 85, 247, 0.25)' : 'none',
                           border: 'none',
@@ -2873,7 +2836,12 @@ export default function GeneralTutor() {
                     <button
                       type="button"
                       data-leftnav-toggle="true"
-                      onClick={() => setShowLeftNav(prev => !prev)}
+                      onClick={() => {
+                        setShowLeftNav(prev => {
+                          if (!prev) setLeftNavView('menu');
+                          return !prev;
+                        });
+                      }}
                       style={{
                         background: showLeftNav ? 'rgba(168, 85, 247, 0.25)' : 'none',
                         border: 'none',

@@ -723,7 +723,7 @@ export default function CodingTutor() {
     if (activeSid && localText.length > 0) {
       const active = localText.find(s => s.id === activeSid);
       if (active && active.messages && active.messages.length > 0) {
-        const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {} }));
+        const msgs = (active.messages || []).map(m => ({ ...m, features: m.features || {}, activeFeature: null }));
         setMessages(msgs);
         setMode(active.mode || 'Beginner');
         setLength(active.length || 'Short');
@@ -832,6 +832,7 @@ export default function CodingTutor() {
     const msgs = (session.messages || []).map(m => ({
       ...m,
       features: m.features || {},
+      activeFeature: null,
     }));
     setMessages(msgs);
     setMode(session.mode || 'Beginner');
@@ -896,9 +897,11 @@ export default function CodingTutor() {
     const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user');
     const label = lastUserMsg ? lastUserMsg.content.slice(0, 40) : 'Untitled';
     const sid = overrideSid || currentSessionId || Date.now().toString(36);
+    // Sanitize activeFeature so feature drawers like Visual Summary are never persisted open across reloads
+    const sanitizedMsgs = msgs.map(m => ({ ...m, activeFeature: null }));
     const session = {
       id: sid, label, topic: label, mode, length,
-      messages: msgs,
+      messages: sanitizedMsgs,
       documents: sessionDocsRef.current || [],
       timestamp: new Date().toISOString(),
     };
@@ -2810,49 +2813,6 @@ export default function CodingTutor() {
               gap: 10
             }}
           >
-          {/* Dedicated Glassmorphic Menu Toggle Button Beside Input Bar */}
-          <button
-            type="button"
-            data-leftnav-toggle="true"
-            onClick={() => {
-              setShowLeftNav(prev => {
-                if (!prev) setLeftNavView('menu');
-                return !prev;
-              });
-            }}
-            title={showLeftNav ? "Close navigation (Ctrl+B)" : "Open navigation (Ctrl+B)"}
-            aria-label="Toggle Navigation Menu"
-            style={{
-              pointerEvents: 'auto',
-              width: isMobile ? 42 : 48,
-              height: isMobile ? 42 : 48,
-              borderRadius: isMobile ? 21 : 24,
-              background: showLeftNav ? 'rgba(6, 182, 212, 0.35)' : 'rgba(15, 23, 42, 0.85)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: showLeftNav ? '1px solid rgba(6, 182, 212, 0.7)' : '1px solid rgba(255, 255, 255, 0.16)',
-              boxShadow: 'none',
-              display: isMobile ? 'none' : 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: showLeftNav ? '#FFFFFF' : '#94A3B8',
-              cursor: 'pointer',
-              flexShrink: 0,
-              position: 'relative'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = '#FFFFFF';
-              e.currentTarget.style.borderColor = '#06B6D4';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = showLeftNav ? '#FFFFFF' : '#94A3B8';
-              e.currentTarget.style.borderColor = showLeftNav ? 'rgba(6, 182, 212, 0.7)' : 'rgba(255, 255, 255, 0.16)';
-            }}
-          >
-            <PanelLeft size={isMobile ? 16 : 18} />
-          </button>
-
           {/* Full Creative Omnibar - Always active by default */}
           <div
               onMouseEnter={() => setIsInputHovered(true)}
@@ -3247,6 +3207,31 @@ export default function CodingTutor() {
               ) : (
                 /* Desktop & Laptop 1-Row Sleek Layout (Original cff79c0) */
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                  <button
+                    type="button"
+                    data-leftnav-toggle="true"
+                    onClick={() => {
+                      setShowLeftNav(prev => {
+                        if (!prev) setLeftNavView('menu');
+                        return !prev;
+                      });
+                    }}
+                    style={{
+                      background: showLeftNav ? 'rgba(6, 182, 212, 0.25)' : 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: showLeftNav ? '#22D3EE' : '#94A3B8',
+                      padding: 6,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    title="Toggle Vedika Menu (Ctrl+B)"
+                  >
+                    <PanelLeft size={16} />
+                  </button>
                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" style={{ display: 'none' }} />
                   <button
                     type="button"

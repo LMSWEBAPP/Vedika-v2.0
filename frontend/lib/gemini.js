@@ -1,5 +1,7 @@
 import { getAllKeys, getRotatedKey } from './keys.js';
 
+// LOCKED ARCHITECTURE: Verified active models for Gemini Engine in Ask Vedika & Code with Vedika.
+// Do not downgrade or alter to deprecated models (e.g. gemini-2.5-flash).
 export const GEMINI_MODELS = [
   'gemini-3.1-flash-lite',
   'gemini-flash-latest',
