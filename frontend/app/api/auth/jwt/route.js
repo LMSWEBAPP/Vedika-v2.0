@@ -51,7 +51,8 @@ export async function GET(request) {
         headers: { 
           'Content-Type': 'application/json',
           'Cookie': `sid=${sid}`
-        }
+        },
+        signal: AbortSignal.timeout(3500)
       });
       
       if (response.ok) {
@@ -65,7 +66,8 @@ export async function GET(request) {
 
       // Authoritative fallback: verify session via get_logged_user
       const verifyRes = await fetch(`${frappeUrl}/api/method/frappe.auth.get_logged_user`, {
-        headers: { 'Cookie': `sid=${sid}` }
+        headers: { 'Cookie': `sid=${sid}` },
+        signal: AbortSignal.timeout(3500)
       });
       if (verifyRes.ok) {
         const verifyData = await verifyRes.json();

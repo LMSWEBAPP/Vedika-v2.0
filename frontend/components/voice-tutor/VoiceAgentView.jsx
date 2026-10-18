@@ -752,9 +752,11 @@ export default function VoiceAgentView({ onClose, initialSession, inline = false
         setSidebarCollapsed(localStorage.getItem('sidebar_collapsed') === 'true');
       };
       window.addEventListener('storage', handleStorageChange);
-      const interval = setInterval(handleStorageChange, 300);
+      window.addEventListener('sidebarToggle', handleStorageChange);
+      const interval = setInterval(handleStorageChange, 1500);
       return () => {
         window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('sidebarToggle', handleStorageChange);
         clearInterval(interval);
       };
     }

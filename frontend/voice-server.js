@@ -224,8 +224,18 @@ wss.on('connection', async (clientWs, request) => {
   if (memoryCtx) systemInstruction += memoryCtx;
 
   let geminiSession = null;
+  const safeSend = (payload) => {
+    if (clientWs && clientWs.readyState === 1 /* WebSocket.OPEN */) {
+      try {
+        clientWs.send(typeof payload === 'string' ? payload : JSON.stringify(payload));
+      } catch (e) {
+        // client socket disconnected during turn write
+      }
+    }
+  };
+
   try {
-    clientWs.send(JSON.stringify({ type: 'status', message: 'Establishing low-latency connection to Gemini...' }));
+    safeSend({ type: 'status', message: 'Establishing low-latency connection to Gemini...' });
     const ai = getGeminiClient();
     geminiSession = await ai.live.connect({
       model: process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview',
@@ -235,26 +245,26 @@ wss.on('connection', async (clientWs, request) => {
           if (!content) return;
           for (const part of content.modelTurn?.parts || []) {
             if (part.inlineData?.data) {
-              clientWs.send(JSON.stringify({ type: 'audio', data: part.inlineData.data }));
+              safeSend({ type: 'audio', data: part.inlineData.data });
             }
           }
           if (content.outputTranscription?.text) {
-            clientWs.send(JSON.stringify({ type: 'agent-transcription', text: content.outputTranscription.text }));
+            safeSend({ type: 'agent-transcription', text: content.outputTranscription.text });
           }
           if (content.interrupted) {
-            clientWs.send(JSON.stringify({ type: 'interrupted' }));
+            safeSend({ type: 'interrupted' });
           }
           if (content.inputTranscription?.text?.trim()) {
             const sentiment = analyzeSentiment(content.inputTranscription.text);
-            clientWs.send(JSON.stringify({ type: 'user-transcription', text: content.inputTranscription.text, sentiment }));
+            safeSend({ type: 'user-transcription', text: content.inputTranscription.text, sentiment });
           }
         },
         onclose: () => {
-          clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor connection closed.' }));
+          safeSend({ type: 'status', message: 'Tutor connection closed.' });
         },
         onerror: (error) => {
           console.error('[VoiceWS] Session error:', error);
-          clientWs.send(JSON.stringify({ type: 'error', message: 'Session error occurred.' }));
+          safeSend({ type: 'error', message: 'Session error occurred.' });
         },
       },
       config: {
@@ -266,11 +276,11 @@ wss.on('connection', async (clientWs, request) => {
       },
     });
 
-    clientWs.send(JSON.stringify({ type: 'status', message: 'Tutor is ready! Ask your academic questions.' }));
+    safeSend({ type: 'status', message: 'Tutor is ready! Ask your academic questions.' });
   } catch (err) {
     console.error('[VoiceWS] Failed:', err.message);
-    clientWs.send(JSON.stringify({ type: 'error', message: `Setup failed: ${err.message}` }));
-    clientWs.close();
+    safeSend({ type: 'error', message: `Setup failed: ${err.message}` });
+    try { clientWs.close(); } catch {}
     return;
   }
 
