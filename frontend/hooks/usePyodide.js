@@ -102,6 +102,28 @@ export function usePyodide({ onStdout, onStderr, onReady, onFinish, onError, onT
     isRunningRef.current = isRunning;
   }, [isRunning]);
 
+  const watchdogRef = useRef(null);
+
+  const clearWatchdog = useCallback(() => {
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  }, []);
+
+  const stopCode = useCallback(() => {
+    clearWatchdog();
+    if (globalWorker) {
+      globalWorker.terminate();
+      globalWorker = null;
+      globalIsReady = false;
+      setIsRunning(false);
+      setIsReady(false);
+      // Relaunch fresh worker to recover from infinite loops
+      ensureWorker();
+    }
+  }, [clearWatchdog]);
+
   useEffect(() => {
     const worker = ensureWorker();
 
@@ -132,14 +154,17 @@ export function usePyodide({ onStdout, onStderr, onReady, onFinish, onError, onT
           if (cb.onStdinRequest) cb.onStdinRequest();
           break;
         case 'TRACE_RESULT':
+          clearWatchdog();
           setIsRunning(false);
           if (cb.onTraceResult) cb.onTraceResult(content);
           break;
         case 'FINISH':
+          clearWatchdog();
           setIsRunning(false);
           if (cb.onFinish) cb.onFinish(inputs || []);
           break;
         case 'ERROR':
+          clearWatchdog();
           setIsRunning(false);
           if (cb.onError) cb.onError(message);
           break;
@@ -152,34 +177,32 @@ export function usePyodide({ onStdout, onStderr, onReady, onFinish, onError, onT
 
     return () => {
       subscribers.delete(handleMessage);
+      clearWatchdog();
       // DO NOT terminate worker on unmount! Keep warm for zero-latency reopening.
     };
-  }, []);
+  }, [clearWatchdog]);
 
   const runCode = useCallback((code) => {
     if (!globalWorker || !isReadyRef.current || isRunningRef.current) return;
     setIsRunning(true);
+    clearWatchdog();
+    // 15-second watchdog failsafe against infinite loops
+    watchdogRef.current = setTimeout(() => {
+      if (isRunningRef.current) {
+        stopCode();
+        callbacksRef.current.onStderr?.('\n⚠️ Execution timed out (15s limit). Infinite loop safely stopped.\n');
+      }
+    }, 15000);
     globalWorker.postMessage({ type: 'RUN', code });
-  }, []);
+  }, [clearWatchdog, stopCode]);
 
   const runTrace = useCallback((code, inputs) => {
     if (!globalWorker || !isReadyRef.current || isRunningRef.current) return;
     setIsRunning(true);
+    clearWatchdog();
     const replayInputs = inputs !== undefined ? inputs : globalLastRunInputs;
     globalWorker.postMessage({ type: 'TRACE', code, inputs: replayInputs });
-  }, []);
-
-  const stopCode = useCallback(() => {
-    if (globalWorker) {
-      globalWorker.terminate();
-      globalWorker = null;
-      globalIsReady = false;
-      setIsRunning(false);
-      setIsReady(false);
-      // Relaunch fresh worker to recover from infinite loops
-      ensureWorker();
-    }
-  }, []);
+  }, [clearWatchdog]);
 
   const sendStdin = useCallback((text) => {
     const buffer = globalStdinBuffer;

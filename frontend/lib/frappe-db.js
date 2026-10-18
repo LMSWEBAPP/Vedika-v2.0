@@ -9,9 +9,7 @@ export function getFrappeDb() {
     const password = process.env.DB_PASSWORD;
 
     if (!host || !user || !password) {
-      throw new Error(
-        '[frappe-db] Missing required database environment variables (DB_HOST, DB_USER, DB_PASSWORD). Hardcoded credentials have been removed for security.'
-      );
+      return null;
     }
 
     frappePool = mysql.createPool({

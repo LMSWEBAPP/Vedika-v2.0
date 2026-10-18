@@ -2606,8 +2606,15 @@ class GeminiLiveClient(QObject):
             
         self._greeting_was_sent = getattr(self, 'initial_greeting_sent', False)
         
-        # Adaptive backoff delay: 1.5s for initial attempts, 3.0s if repeatedly dropping
-        delay_ms = 1500 if self.reconnect_count <= 4 else 3000
+        # Adaptive backoff delay: 1.5s for quick blips, progressive backoff up to 12s on sustained network/quota drops
+        if self.reconnect_count <= 2:
+            delay_ms = 1500
+        elif self.reconnect_count <= 5:
+            delay_ms = 3000
+        elif self.reconnect_count <= 8:
+            delay_ms = 6000
+        else:
+            delay_ms = 12000
         self._reconnect_timer.start(delay_ms)
 
     def reconnect_session(self):

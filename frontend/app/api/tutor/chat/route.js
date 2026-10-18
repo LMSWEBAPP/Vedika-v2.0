@@ -15,7 +15,8 @@ async function fetchEmbeddings(text, apiKey) {
         model: 'models/gemini-embedding-001',
         content: { parts: [{ text }] },
         outputDimensionality: 768
-      })
+      }),
+      signal: AbortSignal.timeout(6000)
     }
   );
   if (!response.ok) {
@@ -202,6 +203,7 @@ export async function POST(request) {
               ...(fullSystem ? { systemInstruction: { parts: [{ text: fullSystem }] } } : {}),
               generationConfig: { temperature: 0.4, maxOutputTokens: maxOutputTokens || 8192 },
             }),
+            signal: AbortSignal.timeout(15000),
           }
         );
         const data = await response.json();

@@ -354,9 +354,10 @@ class CloudRelayPoller(QThread):
     tab_presence_changed = Signal(bool)
     relay_event_received = Signal(str)
 
-    def __init__(self, base_url="https://vedika-v20c.vercel.app"):
+    def __init__(self, base_url="https://vedika-v20c.vercel.app", has_local_clients_fn=None):
         super().__init__()
         self.base_url = base_url.rstrip("/")
+        self.has_local_clients_fn = has_local_clients_fn
         self._running = True
 
     def stop(self):
@@ -379,31 +380,20 @@ class CloudRelayPoller(QThread):
         except Exception:
             session = None
 
-        while self._running:
-            try:
-                if session is not None:
-                    resp = session.get(url, timeout=2.0)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        has_tab = bool(data.get("hasActiveTab", False))
-                        self.tab_presence_changed.emit(has_tab)
+        current_backoff = 2.0
 
-                        event = data.get("event")
-                        if event:
-                            event_str = json.dumps(event) if isinstance(event, dict) else str(event)
-                            self.relay_event_received.emit(event_str)
-                else:
-                    import urllib.request
-                    req = urllib.request.Request(
-                        url,
-                        headers={
-                            "User-Agent": "VedikaDesktopMascot/2.0",
-                            "Accept": "application/json"
-                        }
-                    )
-                    with urllib.request.urlopen(req, timeout=2.0) as resp:
-                        if resp.status == 200:
-                            data = json.loads(resp.read().decode('utf-8'))
+        while self._running:
+            is_local_connected = bool(self.has_local_clients_fn and self.has_local_clients_fn())
+            # If local WebSocket is active, local presence is guaranteed; idle cloud poller at 10s
+            delay = 10.0 if is_local_connected else current_backoff
+
+            try:
+                if not is_local_connected:
+                    if session is not None:
+                        resp = session.get(url, timeout=3.0)
+                        if resp.status_code == 200:
+                            current_backoff = 2.0  # Reset backoff on success
+                            data = resp.json()
                             has_tab = bool(data.get("hasActiveTab", False))
                             self.tab_presence_changed.emit(has_tab)
 
@@ -411,10 +401,42 @@ class CloudRelayPoller(QThread):
                             if event:
                                 event_str = json.dumps(event) if isinstance(event, dict) else str(event)
                                 self.relay_event_received.emit(event_str)
-            except Exception:
-                pass
+                        elif resp.status_code == 429:
+                            # Quota limit: back off exponentially up to 16s
+                            current_backoff = min(current_backoff * 2, 16.0)
+                        else:
+                            current_backoff = min(current_backoff * 1.5, 12.0)
+                    else:
+                        import urllib.request
+                        req = urllib.request.Request(
+                            url,
+                            headers={
+                                "User-Agent": "VedikaDesktopMascot/2.0",
+                                "Accept": "application/json"
+                            }
+                        )
+                        with urllib.request.urlopen(req, timeout=3.0) as resp:
+                            if resp.status == 200:
+                                current_backoff = 2.0
+                                data = json.loads(resp.read().decode('utf-8'))
+                                has_tab = bool(data.get("hasActiveTab", False))
+                                self.tab_presence_changed.emit(has_tab)
 
-            for _ in range(5):
+                                event = data.get("event")
+                                if event:
+                                    event_str = json.dumps(event) if isinstance(event, dict) else str(event)
+                                    self.relay_event_received.emit(event_str)
+                            else:
+                                current_backoff = min(current_backoff * 1.5, 12.0)
+                else:
+                    # Local WebSocket already active — notify local presence without network request
+                    self.tab_presence_changed.emit(True)
+            except Exception:
+                current_backoff = min(current_backoff * 2, 16.0)
+
+            # Sleep in responsive 100ms slices for clean thread termination on exit
+            sleep_slices = max(1, int(delay * 10))
+            for _ in range(sleep_slices):
                 if not self._running:
                     break
                 time.sleep(0.1)
@@ -566,7 +588,7 @@ class DesktopPetApp(QObject):
         # Cloud Relay Poller for Production HTTPS Single-Tab Bridge
         self.has_active_web_tab = False
         self.last_browser_launch_time = 0.0
-        self.cloud_relay_poller = CloudRelayPoller(self.get_vyomanta_base_url())
+        self.cloud_relay_poller = CloudRelayPoller(self.get_vyomanta_base_url(), has_local_clients_fn=lambda: bool(self.web_clients))
         self.cloud_relay_poller.tab_presence_changed.connect(self._on_web_tab_presence_changed)
         self.cloud_relay_poller.relay_event_received.connect(self.on_ws_bridge_message)
         self.cloud_relay_poller.start()
