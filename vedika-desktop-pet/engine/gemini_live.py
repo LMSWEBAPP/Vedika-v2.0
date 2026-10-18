@@ -359,6 +359,14 @@ class GeminiLiveWorker(QThread):
 
     def execute_add_study_note(self, note_content: str, topic: str = "", timestamp: str = "", create_new: bool = True, note_number: int = 0) -> dict:
         try:
+            # Hard guard: Never allow add_study_note to execute during an automatic "Ask Vedika" button explanation turn!
+            if getattr(self, "suppress_mic_for_prompt", False):
+                print("[GeminiLiveWorker] Blocked unprompted add_study_note during proactive Ask Vedika explanation turn.")
+                return {
+                    "status": "skipped",
+                    "message": "Note was NOT saved because the student only clicked 'Ask Vedika' for a verbal explanation and has not asked to save a note yet. Do NOT claim you saved a note; just explain the concept verbally."
+                }
+
             print(f"[GeminiLiveWorker] Tool execution: add_study_note(topic='{topic}', timestamp='{timestamp}', create_new={create_new}, note_number={note_number}, note='{note_content}')")
             webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
 
@@ -994,6 +1002,7 @@ class GeminiLiveWorker(QThread):
             "- By default, EVERY time the student asks to add a note without specifying where to add it, set create_new=True and note_number=0 so a brand new numbered note is created!\n"
             "- Set create_new=False ONLY if the student explicitly says 'add it in the same note' / 'usi note mein' (leave note_number=0), OR if the student specifies a note number like 'add this point in Note 2' (set note_number=2 and create_new=False).\n"
             "- When the student asks to check, read, or verify their saved notes, call 'get_study_notes(note_number)' instead of 'capture_user_screen'!\n"
+            "- UI LOCATION: The notes live inside the 'Personal Notes' tab on the RIGHT-HAND companion panel directly next to the video player (NEVER say 'Study Notes on the left menu').\n"
             "- After calling 'add_study_note', warmly confirm the exact Note #<number> in the student's active language!\n"
             "14. CODEBASE KNOWLEDGE GRAPH & ARCHITECTURE (GRAPHIFY):\n"
             "When the student, developer, or user asks about how any part of the project is coded, what files exist, which function handles a feature, or asks to explain the architecture (e.g. 'How does voice streaming work in code?', 'Which file handles the transparent window?', 'Show me the code for echo cancellation'):\n"
