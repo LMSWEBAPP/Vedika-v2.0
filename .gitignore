@@ -69,6 +69,7 @@ backend/frappe-bench-data/
 backend/.env
 backup.sql
 *.sql
+!frontend/database/schema.sql
 
 # Local scratch files & developer scripts
 payload.json

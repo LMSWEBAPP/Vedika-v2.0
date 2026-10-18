@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getFrappeDb } from '@/lib/frappe-db';
 import { hashPassword } from '@/lib/auth-passlib';
 import { signJwt } from '@/lib/auth';
+import { registerNativeUser } from '@/lib/native-lms';
 
 export async function POST(request) {
   try {
@@ -20,6 +21,32 @@ export async function POST(request) {
     }
     if (!password || password.length < 6) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 });
+    }
+
+    // 2. Option B: Native PostgreSQL Registration if configured
+    try {
+      const nativeCreated = await registerNativeUser(email, password, fullName, 'student');
+      if (nativeCreated) {
+        const token = signJwt({
+          user_id: nativeCreated.email,
+          email: nativeCreated.email,
+          full_name: nativeCreated.full_name,
+          role: 'Student',
+          tenant_id: 'default',
+        });
+        return NextResponse.json({
+          success: true,
+          message: 'Account created successfully.',
+          user: nativeCreated,
+          token,
+          source: 'native-pg'
+        });
+      }
+    } catch (nativeErr) {
+      if (nativeErr.code === '23505') {
+        return NextResponse.json({ error: 'An account with this email address already exists.' }, { status: 409 });
+      }
+      console.warn('[API/Auth/Signup] Native DB signup notice, falling back:', nativeErr.message);
     }
 
     const nameParts = fullName.split(' ');

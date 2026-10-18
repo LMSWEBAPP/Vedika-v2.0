@@ -32,6 +32,40 @@ export async function GET(request) {
     const courseId = searchParams.get('courseId');
     const lessonId = searchParams.get('lessonId');
 
+    // 1. Check Native PostgreSQL LMS (Option B) if configured
+    try {
+      const { nativeQuery } = await import('@/lib/native-db');
+      let queryStr = `
+        SELECT q.id, q.title, q.lesson_id AS lesson, q.course_id AS course, q.passing_score,
+               COALESCE(json_agg(
+                 json_build_object(
+                   'id', qq.id,
+                   'question', qq.question_text,
+                   'options', qq.options,
+                   'correct', qq.correct_option,
+                   'explanation', qq.explanation
+                 )
+               ) FILTER (WHERE qq.id IS NOT NULL), '[]') AS questions
+        FROM quizzes q
+        LEFT JOIN quiz_questions qq ON q.id = qq.quiz_id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (courseId && courseId !== 'all') {
+        params.push(courseId);
+        queryStr += ` AND q.course_id = $${params.length}`;
+      }
+      if (lessonId && lessonId !== 'all') {
+        params.push(lessonId);
+        queryStr += ` AND q.lesson_id = $${params.length}`;
+      }
+      queryStr += ` GROUP BY q.id`;
+      const res = await nativeQuery(queryStr, params);
+      if (res && res.rows.length > 0) {
+        return NextResponse.json(res.rows);
+      }
+    } catch (_) {}
+
     let list = await readQuizzes();
 
     if (courseId && courseId !== 'all') {

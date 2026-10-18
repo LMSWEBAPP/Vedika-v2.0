@@ -121,11 +121,25 @@ let memoryCoursesCache = null;
 let lastCoursesCacheTime = 0;
 const COURSES_CACHE_TTL_MS = 60 * 1000; // 60s in-memory cache
 
+import { getNativeCourses } from '@/lib/native-lms';
+
 // GET: Return all courses
 export async function GET() {
   const now = Date.now();
   if (memoryCoursesCache && (now - lastCoursesCacheTime < COURSES_CACHE_TTL_MS)) {
     return NextResponse.json({ success: true, courses: memoryCoursesCache, cached: true });
+  }
+
+  // 1. Try Native PostgreSQL LMS (Option B) if DATABASE_URL configured
+  try {
+    const nativeCourses = await getNativeCourses();
+    if (nativeCourses && nativeCourses.length > 0) {
+      memoryCoursesCache = nativeCourses;
+      lastCoursesCacheTime = Date.now();
+      return NextResponse.json({ success: true, courses: nativeCourses, source: 'native-pg' });
+    }
+  } catch (err) {
+    console.warn('[API/Courses] Native DB check notice, falling back:', err.message);
   }
 
   try {

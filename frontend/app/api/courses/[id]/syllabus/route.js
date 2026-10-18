@@ -60,6 +60,8 @@ function extractYoutubeId(youtube, content) {
   return '';
 }
 
+import { getNativeCourseSyllabus } from '@/lib/native-lms';
+
 // GET /api/courses/[id]/syllabus
 export async function GET(req, { params }) {
   const { id } = params;
@@ -67,6 +69,40 @@ export async function GET(req, { params }) {
   const cached = memorySyllabusCache.get(id);
   if (cached && (Date.now() - cached.timestamp < SYLLABUS_CACHE_TTL_MS)) {
     return NextResponse.json(cached.data);
+  }
+
+  // 1. Try Native PostgreSQL LMS (Option B) if DATABASE_URL configured
+  try {
+    const nativeSyllabus = await getNativeCourseSyllabus(id);
+    if (nativeSyllabus && nativeSyllabus.chapters && nativeSyllabus.chapters.length > 0) {
+      const responseData = {
+        success: true,
+        course: {
+          id: nativeSyllabus.id,
+          title: nativeSyllabus.title,
+          category: nativeSyllabus.category,
+          instructor: nativeSyllabus.instructor_name || 'Instructor',
+          description: nativeSyllabus.description,
+          image: nativeSyllabus.image_url,
+          chapters: nativeSyllabus.chapters.map(ch => ({
+            id: ch.id,
+            title: ch.title,
+            lessons: (ch.lessons || []).map(l => ({
+              id: l.id,
+              title: l.title,
+              youtube: l.youtube_url || '',
+              videoId: extractYoutubeId(l.youtube_url, l.content_body),
+              content: l.content_body || ''
+            }))
+          }))
+        },
+        source: 'native-pg'
+      };
+      memorySyllabusCache.set(id, { timestamp: Date.now(), data: responseData });
+      return NextResponse.json(responseData);
+    }
+  } catch (err) {
+    console.warn('[API/Syllabus] Native DB check notice, falling back:', err.message);
   }
 
   try {
