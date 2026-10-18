@@ -109,9 +109,25 @@ def detect_user_language(text: str) -> str:
     # Check Tamil Unicode range (0x0B80 - 0x0BFF)
     if any(0x0B80 <= ord(c) <= 0x0BFF for c in text):
         return "tamil"
+    # Check Kannada Unicode range (0x0C80 - 0x0CFF)
+    if any(0x0C80 <= ord(c) <= 0x0CFF for c in text):
+        return "kannada"
+    # Check Malayalam Unicode range (0x0D00 - 0x0D7F)
+    if any(0x0D00 <= ord(c) <= 0x0D7F for c in text):
+        return "malayalam"
     lower = text.lower()
-    teluglish_words = {"enti", "cheppandi", "cheppu", "ela", "enduku", "artham", "ardham", "kaledu", "bagundi", "avunu", "leka", "chudu", "emiti"}
-    hinglish_words = {"kya", "kaise", "kyun", "batao", "samjhao", "samajh", "aaya", "nahi", "phir", "accha", "theek", "bhai", "dekho", "hai", "mujhe"}
+    teluglish_words = {
+        "enti", "cheppandi", "cheppu", "ela", "enduku", "artham", "ardham", "kaledu",
+        "bagundi", "avunu", "leka", "chudu", "emiti", "naku", "naaku", "telugu",
+        "telugulo", "ivvu", "chey", "cheyyi", "undi", "ledu", "emi", "inka", "malli",
+        "koncham", "chala", "manchi", "nerchukovali", "sari", "baaga", "kavali"
+    }
+    hinglish_words = {
+        "kya", "kaise", "kyun", "batao", "samjhao", "samajh", "aaya", "nahi", "phir",
+        "accha", "theek", "bhai", "dekho", "hai", "mujhe", "hindi", "mein", "karo",
+        "kholo", "dikhao", "chalo", "sikhao", "padhao", "matlab", "iska", "ye", "yeh",
+        "wo", "woh", "aur", "abhi", "jaldi", "bata", "samjha", "karna"
+    }
     words = set(re.findall(r'[a-zA-Z]+', lower))
     if words & teluglish_words:
         return "teluglish"
@@ -143,16 +159,17 @@ class BlockNLMSEchoCanceller:
         ref_16k = ref[indices]
         self.ref_history = np.concatenate([self.ref_history, ref_16k])[-self.filter_len * 8:]
 
-    def process(self, mic_bytes: bytes) -> tuple[np.ndarray, float]:
+    def process(self, mic_bytes: bytes, active_speaker: bool = True) -> tuple[np.ndarray, float]:
         """
         Calculates NLMS adaptive echo cancellation on mic chunk against reference buffer.
         Returns (residual_samples, residual_rms).
+        Fast-paths when active_speaker is False to eliminate 800-iteration Python loop overhead during silence.
         """
         mic = np.frombuffer(mic_bytes, dtype=np.int16).astype(np.float32)
         if len(mic) == 0:
             return mic, 0.0
 
-        if len(self.ref_history) < self.filter_len + len(mic):
+        if not active_speaker or len(self.ref_history) < self.filter_len + len(mic):
             rms = float(np.sqrt(np.mean(mic**2))) if len(mic) > 0 else 0.0
             return mic, rms
 
@@ -200,6 +217,8 @@ class GeminiLiveWorker(QThread):
         self._stopping_audio = False
         self.is_playing_audio = False
         self.suppress_mic_for_prompt = False
+        self.awaiting_turn_response = False
+        self.awaiting_turn_since = 0.0
         self.current_turn_user_transcription = ""
         self.current_turn_model_text = ""
         self.in_session_history = []
@@ -338,9 +357,9 @@ class GeminiLiveWorker(QThread):
         await asyncio.sleep(delay)
         self.suppress_mic_for_prompt = False
 
-    def execute_add_study_note(self, note_content: str, topic: str = "", timestamp: str = "", create_new: bool = False) -> dict:
+    def execute_add_study_note(self, note_content: str, topic: str = "", timestamp: str = "", create_new: bool = True, note_number: int = 0) -> dict:
         try:
-            print(f"[GeminiLiveWorker] Tool execution: add_study_note(topic='{topic}', timestamp='{timestamp}', create_new={create_new}, note='{note_content}')")
+            print(f"[GeminiLiveWorker] Tool execution: add_study_note(topic='{topic}', timestamp='{timestamp}', create_new={create_new}, note_number={note_number}, note='{note_content}')")
             webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
 
             # Resolve timestamp: if provided explicitly by user/model use it, else fallback to active video timestamp
@@ -365,16 +384,44 @@ class GeminiLiveWorker(QThread):
                 except Exception as ex:
                     print(f"[GeminiLiveWorker] Note timestamp parse warning: {ex}")
 
-            # Check if user explicitly asked for a brand new note vs appending to the same note
-            is_same_note = any(p in note_content.lower() for p in [
-                "same note", "that note", "add a point", "another point", "append",
-                "in this note", "to my notes", "to notes", "into notes"
-            ])
-            is_explicit_new = False if is_same_note else bool(
-                create_new or any(p in note_content.lower() for p in [
-                    "in a new note", "as a new note", "start a new note", "create a new note", "separate note"
-                ])
-            )
+            # Inspect both current user speech transcript and note_content for explicit note number or "same note" intent
+            user_spoken = f"{getattr(self, 'current_turn_user_transcription', '')} {getattr(self, 'last_user_query', '')}".strip().lower()
+            combined_check = f"{user_spoken} {note_content.lower()}".strip()
+
+            resolved_note_num = int(note_number) if note_number and int(note_number) > 0 else None
+            if not resolved_note_num:
+                num_match = re.search(r'\bnote\s*(?:number|no\.?|#)?\s*(\d+)\b', combined_check)
+                if num_match:
+                    resolved_note_num = int(num_match.group(1))
+                else:
+                    ordinal_map = {
+                        "first note": 1, "1st note": 1, "pehle note": 1, "note one": 1,
+                        "second note": 2, "2nd note": 2, "doosre note": 2, "dusre note": 2, "note two": 2,
+                        "third note": 3, "3rd note": 3, "teesre note": 3, "note three": 3,
+                        "fourth note": 4, "4th note": 4, "chauthe note": 4, "note four": 4,
+                        "fifth note": 5, "5th note": 5, "panchve note": 5, "note five": 5,
+                    }
+                    for phrase, idx_num in ordinal_map.items():
+                        if phrase in combined_check:
+                            resolved_note_num = idx_num
+                            break
+
+            same_note_phrases = [
+                "same note", "same notes", "that note", "in this note", "previous note",
+                "last note", "current note", "existing note", "usi note", "ek hi note",
+                "ade note", "pichle note"
+            ]
+            is_explicit_same = any(p in combined_check for p in same_note_phrases)
+
+            if resolved_note_num is not None and resolved_note_num > 0:
+                is_new_note = False
+            elif is_explicit_same:
+                is_new_note = False
+            elif user_spoken:
+                # In live voice turns, ALWAYS create a new note unless the student explicitly asked for the same note or a note number
+                is_new_note = True
+            else:
+                is_new_note = bool(create_new)
 
             mm = MemoryManager()
             note_id, is_updated, combined_text, note_data = mm.append_or_create_notebook_note(
@@ -389,12 +436,16 @@ class GeminiLiveWorker(QThread):
                 timestamp_formatted=final_time_fmt,
                 topic=topic or webapp_ctx.get("topic", "") or webapp_ctx.get("lessonTitle", ""),
                 source="vedika_voice",
-                create_new=is_explicit_new
+                create_new=is_new_note,
+                target_note_number=resolved_note_num
             )
 
             msg_type = "STUDY_NOTE_UPDATED" if is_updated else "STUDY_NOTE_ADDED"
+            note_num_val = note_data.get("noteNumber", 1) if isinstance(note_data, dict) else 1
             if isinstance(note_data, dict):
                 note_data["id"] = str(note_id)
+                note_data["noteNumber"] = note_num_val
+
             # Safely broadcast to webapp via Qt signal to Main Thread
             if hasattr(self.client, "broadcast_webapp_requested"):
                 self.client.broadcast_webapp_requested.emit({
@@ -410,7 +461,10 @@ class GeminiLiveWorker(QThread):
                     })
 
             # Voice & visual confirmation on Desktop Pet
-            bubble_text = f"Updated note at {final_time_fmt} with new point! 📝" if is_updated else f"Added note at {final_time_fmt} to your personal notes! 📝"
+            if is_updated:
+                bubble_text = f"Added point to Note #{note_num_val} ({final_time_fmt})! 📝"
+            else:
+                bubble_text = f"Created Note #{note_num_val} at {final_time_fmt}! 📝"
             if hasattr(self.client, "say_requested"):
                 self.client.say_requested.emit(bubble_text, 3.0)
 
@@ -418,6 +472,7 @@ class GeminiLiveWorker(QThread):
                 "status": "success",
                 "is_updated": is_updated,
                 "note_id": str(note_id),
+                "note_number": note_num_val,
                 "saved_note": combined_text,
                 "timestamp": final_time_fmt,
                 "lesson": webapp_ctx.get("lessonTitle", "")
@@ -670,14 +725,30 @@ class GeminiLiveWorker(QThread):
             mins = max(1, int(duration_seconds) // 60)
             return {"status": "success", "timer_started": f"{mins} minutes for {label}"}
 
-        def add_study_note(note_content: str, topic: str = "", timestamp: str = "", create_new: bool = False) -> dict:
+        def add_study_note(note_content: str, topic: str = "", timestamp: str = "", create_new: bool = True, note_number: int = 0) -> dict:
             """Adds a key insight, formula, summary point, or takeaway to the student's personal study notebook with the exact video timestamp and course context.
             CRITICAL RULES:
-            - When noting multiple takeaways or points, format each point clearly on its own line prefixed with a bullet (e.g. '• First takeaway\n• Second takeaway').
-            - ACCUMULATE POINTS: Unless the student explicitly says 'new note', 'start a new note', or 'create another note', ALWAYS leave create_new=False so all points are compiled cleanly as bullet points into the single active note!
-            - Set create_new=True ONLY when the student explicitly demands a new or separate note.
+            - Call this ONLY when the student explicitly asks to take/save/add a note or add a point to their notes.
+            - DEFAULT NEW NOTE: Every time the student asks to add a note without specifying where to add it, leave create_new=True and note_number=0 so a brand new numbered note (e.g. Note #1, Note #2, Note #3) is created!
+            - SAME NOTE: Set create_new=False ONLY when the student explicitly says 'in the same note', 'add to the current/previous note', or 'usi note mein'.
+            - SPECIFIC NOTE NUMBER: If the student specifies a note number (e.g. 'add this point in Note 2', 'Note number 1 mein add karo'), pass note_number=2 and create_new=False.
+            - Format multiple points cleanly on separate lines prefixed with a bullet ('• Point 1\n• Point 2').
             """
-            return self.execute_add_study_note(note_content=note_content, topic=topic, timestamp=timestamp, create_new=create_new)
+            return self.execute_add_study_note(note_content=note_content, topic=topic, timestamp=timestamp, create_new=create_new, note_number=note_number)
+
+        def get_study_notes(note_number: int = 0) -> dict:
+            """Reads the student's saved personal study notes (including Note #1, Note #2, etc.) directly from the database. ALWAYS call this when the student asks to check, read, or review their study notes (instead of capturing the screen)."""
+            webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
+            mm = MemoryManager()
+            notes = mm.get_notebook_notes(
+                course_id=webapp_ctx.get("courseId") or None,
+                lesson_id=webapp_ctx.get("lessonId") or None,
+                limit=30
+            )
+            if note_number and int(note_number) > 0:
+                filtered = [n for n in notes if int(n.get("noteNumber", 0)) == int(note_number)]
+                return {"status": "success", "count": len(filtered), "notes": filtered}
+            return {"status": "success", "count": len(notes), "notes": notes}
 
         def search_code_graph(query: str) -> dict:
             """Searches the codebase Knowledge Graph (built by Graphify) using BFS semantic traversal.
@@ -790,15 +861,14 @@ class GeminiLiveWorker(QThread):
 
         # Instant Multilingual Language Mirroring Directive (Requirement 5)
         sys_inst += (
-            "\n\nMANDATORY MULTILINGUAL QUESTION MATCHING (CRITICAL RULE):\n"
-            "- You MUST ALWAYS speak the exact language of the student's question on every single turn!\n"
-            "- If the student asks in Telugu (or Teluglish, e.g., 'ఈ కాన్సెప్ట్ ఏంటి?', 'నాకు అర్థం కాలేదు', 'తెలుగులో చెప్పు', 'idi enti cheppu brother'): You MUST reply in sweet, natural conversational Telugu (or Teluglish)!\n"
-            "- If the student asks in Hindi (or Hinglish, e.g., 'यह क्या है?', 'मुझे समझ नहीं आया', 'हिंदी में बताओ', 'ye kya hai samjhao'): You MUST reply in simple, warm conversational Hindi (or Hinglish)!\n"
-            "- If the student asks in English: You MUST reply in articulate, natural English!\n"
-            "- If the student asks in Tamil, Kannada, Marathi, Spanish, etc.: Reply in that language!\n"
-            "- ZERO-DELAY LANGUAGE SWITCHING: If the student switches languages from one turn to the next, switch INSTANTLY on that exact turn without delay.\n"
-            "- NEVER reply in English when the student asked their question in Hindi, Telugu, or another language!\n"
-            "- Keep technical, coding, and scientific keywords (e.g. Python, function, titration, Newton's law) intact while speaking naturally in their chosen language.\n"
+            "\n\nMANDATORY PER-TURN MULTILINGUAL MIRRORING (HIGHEST PRIORITY RULE):\n"
+            "- EVALUATE EACH TURN INDEPENDENTLY: For EVERY single utterance from the student, detect the exact language they just spoke in THIS turn and respond 100% in THAT language!\n"
+            "- NEVER get stuck in the language of the previous turn! If Turn 1 was in English and Turn 2 is in Telugu, you MUST reply to Turn 2 in Telugu immediately. If Turn 3 switches back to English or Hindi, you MUST switch to English or Hindi immediately on Turn 3!\n"
+            "- If the student speaks in Telugu (or Teluglish, e.g., 'ఈ కాన్సెప్ట్ ఏంటి?', 'నాకు అర్థం కాలేదు', 'తెలుగులో చెప్పు', 'idi enti cheppu', 'naku artham kaledu'): Reply immediately in sweet, natural conversational Telugu (or Teluglish)!\n"
+            "- If the student speaks in Hindi (or Hinglish, e.g., 'यह क्या है?', 'मुझे समझ नहीं आया', 'हिंदी में बताओ', 'ye kya hai samjhao', 'mujhe batao'): Reply immediately in simple, warm conversational Hindi (or Hinglish)!\n"
+            "- If the student speaks in English (even a short phrase after speaking Telugu or Hindi): Reply immediately in articulate, natural English!\n"
+            "- If the student speaks in Tamil, Kannada, Malayalam, Marathi, Spanish, etc.: Reply immediately in that exact language!\n"
+            "- Keep technical, coding, and scientific keywords (e.g. Python, function, titration, Newton's law) natural while speaking fluently in the language of the student's latest sentence.\n"
         )
 
         if tutor_subj == 'math':
@@ -917,8 +987,14 @@ class GeminiLiveWorker(QThread):
             "10. RECALL PREVIOUS QUESTIONS & MEMORY SEARCH: Call 'recall_previous_questions(limit)' when the student asks what was previously asked, or 'search_learning_memory(query, category)' to search stored academic insights and past discussions.\n"
             "11. LEARNING MEMORY & PROFILE: Call 'save_student_memory(category, subject, topic, note)' to remember struggles/masteries, and 'update_student_profile' ONLY when the student explicitly tells you changes to their profile during conversation. Do not call them during regular chat.\n"
             "12. STUDY TIMER: Call 'set_study_timer(duration_seconds, label)' when the student asks to set a timer, reminder, or study countdown (e.g. 'set a 10 min timer', 'remind me in 5 minutes').\n"
-            "13. PERSONAL STUDY NOTEPAD & ADDING POINTS: Call 'add_study_note(note_content, topic, timestamp, create_new)' whenever the student asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', 'add a few points', 'add points to my notes', 'write points in my personal notes', or in any language (Hindi: 'नोट्स में पॉइंट्स जोड़ दो', Telugu: 'నోట్స్ లో పాయింట్స్ యాడ్ చేయి'). "
-            "CRITICAL NOTE-TAKING MANDATE: You have 100% active, full access to their study notebook through this tool! NEVER tell the student that this functionality is unavailable or that you cannot take notes. Always execute 'add_study_note' immediately, and warmly confirm in the student's active language that the points have been added to their personal notes!\n"
+            "13. PERSONAL STUDY NOTEPAD & NUMBERED NOTES: Call 'add_study_note(note_content, topic, timestamp, create_new, note_number)' ONLY when the student explicitly asks to 'note this down', 'take a note', 'save this point', 'add to my notebook', 'add points to my notes', or in any language (Hindi: 'नोट्स में पॉइंट्स जोड़ दो', Telugu: 'నోట్స్ లో పాయింట్స్ యాడ్ చేయి'). "
+            "Do NOT call 'add_study_note' unprompted while merely explaining a video moment until the student asks you to save it to their notes. "
+            "NUMBERED NOTE RULES:\n"
+            "- Every note has a sequential number (Note #1, Note #2, Note #3, etc.).\n"
+            "- By default, EVERY time the student asks to add a note without specifying where to add it, set create_new=True and note_number=0 so a brand new numbered note is created!\n"
+            "- Set create_new=False ONLY if the student explicitly says 'add it in the same note' / 'usi note mein' (leave note_number=0), OR if the student specifies a note number like 'add this point in Note 2' (set note_number=2 and create_new=False).\n"
+            "- When the student asks to check, read, or verify their saved notes, call 'get_study_notes(note_number)' instead of 'capture_user_screen'!\n"
+            "- After calling 'add_study_note', warmly confirm the exact Note #<number> in the student's active language!\n"
             "14. CODEBASE KNOWLEDGE GRAPH & ARCHITECTURE (GRAPHIFY):\n"
             "When the student, developer, or user asks about how any part of the project is coded, what files exist, which function handles a feature, or asks to explain the architecture (e.g. 'How does voice streaming work in code?', 'Which file handles the transparent window?', 'Show me the code for echo cancellation'):\n"
             "- IMMEDIATELY call 'search_code_graph(query)' to traverse the 3,300+ node Graphify Knowledge Graph.\n"
@@ -944,7 +1020,7 @@ class GeminiLiveWorker(QThread):
                 play_animation, open_website, play_music, stop_voice_chat, navigate_webapp, go_back_webapp,
                 trigger_puzzle_hint, trigger_pet_action, capture_user_screen, point_to_screen_location,
                 recall_previous_questions, search_learning_memory, update_student_profile,
-                save_student_memory, clear_student_memory, set_study_timer, add_study_note,
+                save_student_memory, clear_student_memory, set_study_timer, add_study_note, get_study_notes,
                 search_code_graph, get_code_snippet
             ]
         )
@@ -1108,18 +1184,35 @@ class GeminiLiveWorker(QThread):
                             self.suppress_mic_for_prompt = False
                     continue
                 elif chunk.get("end_of_turn"):
-                    print("[SEND] Dispatching end_of_turn (turn_complete=True) to Gemini Live API...")
+                    print("[SEND] Dispatching end_of_turn (audio_stream_end=True) to Gemini Live API...")
                     if self.session and self.client.is_active:
                         try:
                             self.awaiting_turn_response = True
+                            self.awaiting_turn_since = time.time()
+                            # Drain any trailing mic chunks queued after end_of_turn to prevent WebSocket 1011 race condition
+                            while not self.async_queue.empty():
+                                try:
+                                    nxt = self.async_queue.get_nowait()
+                                    if isinstance(nxt, dict) and "text" in nxt:
+                                        self.async_queue.put_nowait(nxt)
+                                        break
+                                except Exception:
+                                    break
                             if self.session_send_lock:
                                 async with self.session_send_lock:
-                                    await self.session.send_client_content(turn_complete=True)
+                                    await self.session.send_realtime_input(audio_stream_end=True)
                             else:
-                                await self.session.send_client_content(turn_complete=True)
-                            print("[SEND] end_of_turn (turn_complete=True) successfully transmitted to Gemini Live!")
+                                await self.session.send_realtime_input(audio_stream_end=True)
+                            print("[SEND] end_of_turn (audio_stream_end=True) successfully transmitted to Gemini Live!")
                         except Exception as e:
                             print(f"[GeminiLiveWorker] Error sending end_of_turn: {e}")
+                    continue
+
+            # Auto-expire awaiting_turn_response after 2.2s so the mic never stays muted if the utterance had no voice response
+            if getattr(self, "awaiting_turn_response", False):
+                if time.time() - getattr(self, "awaiting_turn_since", 0.0) > 2.2:
+                    self.awaiting_turn_response = False
+                else:
                     continue
 
             n += 1
@@ -1176,18 +1269,23 @@ class GeminiLiveWorker(QThread):
                     await asyncio.sleep(0.04)
                     continue
 
+                # Auto-expire awaiting_turn_response after 2.2s if server did not emit a response
+                if getattr(self, "awaiting_turn_response", False) and (time.time() - getattr(self, "awaiting_turn_since", 0.0) > 2.2):
+                    self.awaiting_turn_response = False
+
                 # Mute mic audio when session is paused, audio is stopping, tool is executing,
-                # proactive prompt is in flight, or tutor is actively speaking (unless barge-in is explicitly enabled)
+                # proactive prompt is in flight, awaiting turn response, or tutor is actively speaking (unless barge-in is explicitly enabled)
                 if (getattr(self.client, "is_paused", False) or 
                     getattr(self, "_stopping_audio", False) or 
                     getattr(self, "is_tool_pending", False) or
                     getattr(self.client, "tool_executing", False) or
                     getattr(self, "suppress_mic_for_prompt", False) or
+                    (getattr(self, "awaiting_turn_response", False) and not is_holding) or
                     (self.client.is_speaking and not getattr(self.client, "enable_barge_in", False))):
                     input_audio_buffer.clear()
                     consecutive_speech_chunks = 0
                     confirmed_speech_chunks = 0
-                    await asyncio.sleep(0.05)
+                    await asyncio.sleep(0.04)
                     continue
 
                 if not self.mic_stream:
@@ -1220,8 +1318,9 @@ class GeminiLiveWorker(QThread):
                             print("[AudioInputDevice] Warning: Captured audio chunk is completely silent (all zeros).")
                             self.client._logged_silence = True
                     
-                    # Process raw mic chunk through Block-NLMS Echo Canceller
-                    residual, residual_rms = self.aec.process(chunk)
+                    # Process raw mic chunk through Block-NLMS Echo Canceller (only run adaptive filter when speaker is active)
+                    active_spk = bool(self.client.is_speaking or getattr(self, "is_playing_audio", False))
+                    residual, residual_rms = self.aec.process(chunk, active_speaker=active_spk)
                     samples = np.frombuffer(chunk, dtype=np.int16)
                     raw_rms = np.sqrt(np.mean(samples.astype(np.float64)**2)) if len(samples) > 0 else 0.0
 
@@ -1273,8 +1372,8 @@ class GeminiLiveWorker(QThread):
                     
                     if raw_rms >= effective_threshold:
                         consecutive_speech_chunks += 1
-                        # Require at least 3 consecutive frames (~150ms) above threshold to eliminate transient click / noise spikes
-                        if consecutive_speech_chunks >= 3:
+                        # Require at least 2 consecutive frames (~100ms) above threshold to eliminate transient click spikes while catching fast commands
+                        if consecutive_speech_chunks >= 2:
                             if not self.vad_active:
                                 self.vad_active = True
                                 confirmed_speech_chunks = consecutive_speech_chunks
@@ -1284,7 +1383,7 @@ class GeminiLiveWorker(QThread):
                                         self.client.user_listening_state_changed.emit(True)
                             else:
                                 confirmed_speech_chunks += 1
-                            self.hangover_counter = 22  # ~1100ms natural speech hangover prevents chopping sentences during natural pauses
+                            self.hangover_counter = 9  # ~450ms natural speech hangover for snappy, instant turn completion
                     else:
                         consecutive_speech_chunks = 0
                         if self.hangover_counter > 0:
@@ -1296,26 +1395,27 @@ class GeminiLiveWorker(QThread):
                                 if hasattr(self.client, "user_listening_state_changed"):
                                     self.client.user_listening_state_changed.emit(False)
 
-                                # Noise Gating Filter: Only commit turn if user voiced >= 7 chunks (~350ms)
-                                if confirmed_speech_chunks >= 7:
+                                # Noise Gating Filter: Commit turn if user voiced >= 5 chunks (~250ms, catches crisp commands like "Open website" or "Go back")
+                                if confirmed_speech_chunks >= 5:
                                     if hasattr(self.client, "user_speech_confirmed"):
                                         self.client.user_speech_confirmed.emit()
                                     self.speech_pause_timestamp = time.time()
                                     self.awaiting_turn_response = True
+                                    self.awaiting_turn_since = time.time()
 
                                     # Continuous Mode: automatically flush silence and dispatch end_of_turn to trigger immediate Gemini Live response
                                     if is_continuous:
                                         now = time.time()
-                                        # Turn debounce: avoid spamming rapid end_of_turn within 1.0s unless substantial speech occurred
-                                        if (now - getattr(self, "last_turn_dispatched_time", 0.0) > 1.0) or confirmed_speech_chunks >= 14:
+                                        # Turn debounce: avoid spamming rapid end_of_turn within 0.6s unless substantial speech occurred
+                                        if (now - getattr(self, "last_turn_dispatched_time", 0.0) > 0.6) or confirmed_speech_chunks >= 10:
                                             self.last_turn_dispatched_time = now
                                             silence_chunk = b'\x00\x00' * 800
-                                            for _ in range(3):
+                                            for _ in range(2):
                                                 await self.async_queue.put(silence_chunk)
                                             await self.async_queue.put({"end_of_turn": True})
                                             print(f"[VAD] Continuous Mode: Speech turn completed ({confirmed_speech_chunks} frames), dispatched end_of_turn!")
                                 else:
-                                    print(f"[VAD] Filtered transient acoustic artifact ({confirmed_speech_chunks} frames < 7). Suppressed false turn.")
+                                    print(f"[VAD] Filtered transient acoustic artifact ({confirmed_speech_chunks} frames < 5). Suppressed false turn.")
                                 confirmed_speech_chunks = 0
 
                     # Continuous Mode silence gating: buffer up to 4 chunks (200ms) when quiet, flush when speech begins
@@ -1868,14 +1968,39 @@ class GeminiLiveWorker(QThread):
                                 note_content = str(args.get("note_content", "") or args.get("note", "")).strip()
                                 topic = str(args.get("topic", "")).strip()
                                 timestamp = str(args.get("timestamp", "")).strip()
-                                create_new = bool(args.get("create_new", False))
-                                print(f"[GeminiLiveWorker] Executing tool add_study_note: topic='{topic}', timestamp='{timestamp}', create_new={create_new}, note='{note_content[:60]}...'")
-                                res = self.execute_add_study_note(note_content=note_content, topic=topic, timestamp=timestamp, create_new=create_new)
+                                create_new = bool(args.get("create_new", True))
+                                try:
+                                    note_number = int(args.get("note_number", 0) or 0)
+                                except Exception:
+                                    note_number = 0
+                                print(f"[GeminiLiveWorker] Executing tool add_study_note: topic='{topic}', timestamp='{timestamp}', create_new={create_new}, note_number={note_number}, note='{note_content[:60]}...'")
+                                res = self.execute_add_study_note(note_content=note_content, topic=topic, timestamp=timestamp, create_new=create_new, note_number=note_number)
                                 function_responses.append(
                                     types.FunctionResponse(
                                         name=func_name,
                                         id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
                                         response=res
+                                    )
+                                )
+                            elif func_name == "get_study_notes":
+                                try:
+                                    note_number = int(args.get("note_number", 0) or 0)
+                                except Exception:
+                                    note_number = 0
+                                webapp_ctx = getattr(self.client, "active_webapp_context", {}) or {}
+                                mm = MemoryManager()
+                                notes = mm.get_notebook_notes(
+                                    course_id=webapp_ctx.get("courseId") or None,
+                                    lesson_id=webapp_ctx.get("lessonId") or None,
+                                    limit=30
+                                )
+                                if note_number > 0:
+                                    notes = [n for n in notes if int(n.get("noteNumber", 0)) == note_number]
+                                function_responses.append(
+                                    types.FunctionResponse(
+                                        name=func_name,
+                                        id=fc.id or f"call_{func_name}_{int(time.time()*1000)}",
+                                        response={"status": "success", "count": len(notes), "notes": notes}
                                     )
                                 )
                         
@@ -2290,10 +2415,13 @@ class GeminiLiveClient(QObject):
                 self.worker_thread = None
 
         # FAILSAFE: Only auto-heal if THIS FINISHED WORKER was the CURRENT ACTIVE worker,
-        # session is still marked active, and we are not in an intentional stop or active reconnect
+        # session is still marked active, and we are not in an intentional stop, active reconnect,
+        # or already handling a failure reported by this worker.
         if (worker and worker == self._last_active_worker and self.is_active 
                 and not getattr(self, "_is_stopping", False) 
-                and not getattr(self, "_is_reconnecting", False)):
+                and not getattr(self, "_is_reconnecting", False)
+                and not getattr(worker, "_failure_notified", False)
+                and not self._reconnect_timer.isActive()):
             print("[GeminiLiveClient] Active worker thread exited unexpectedly. Auto-healing voice session...")
             self.on_connection_failed("Worker thread exited unexpectedly")
 
@@ -2362,6 +2490,7 @@ class GeminiLiveClient(QObject):
         w = getattr(self, "worker_thread", None)
         if w:
             w.suppress_mic_for_prompt = False
+            w.awaiting_turn_response = False
             w.vad_active = True
         self.user_listening_state_changed.emit(True)
 
@@ -2390,11 +2519,11 @@ class GeminiLiveClient(QObject):
             if getattr(w, "loop", None) and not w.loop.is_closed() and getattr(w, "async_queue", None):
                 def _finish_ptt_turn():
                     try:
-                        # 1. Flush small trailing silence burst (150ms = 3 chunks of zeros) to close audio envelope
+                        # 1. Flush small trailing silence burst (100ms = 2 chunks of zeros) to close audio envelope
                         silence_chunk = b'\x00\x00' * 800  # 1600 bytes at 16kHz 16-bit mono
-                        for _ in range(3):
+                        for _ in range(2):
                             w.async_queue.put_nowait(silence_chunk)
-                        # 2. Append end_of_turn message so send_audio_loop calls session.send_client_content(turn_complete=True)
+                        # 2. Append end_of_turn message so send_audio_loop calls session.send_realtime_input(audio_stream_end=True)
                         w.async_queue.put_nowait({"end_of_turn": True})
                         print("[GeminiLiveClient] Successfully dispatched end_of_turn to worker queue!")
                     except Exception as e:

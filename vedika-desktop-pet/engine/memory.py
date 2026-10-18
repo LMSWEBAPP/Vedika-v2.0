@@ -488,6 +488,30 @@ class MemoryManager:
             ))
             return cursor.lastrowid
 
+    def _assign_note_numbers(self, conn, lesson_id: str = "", lesson_title: str = "") -> dict:
+        """Computes 1-based sequential note numbers ordered by id ASC across notebook notes."""
+        if lesson_id or lesson_title:
+            cur = conn.execute("""
+                SELECT id FROM student_notebook_notes
+                WHERE (lesson_id = ? OR lesson_id = '' OR lesson_title = ?)
+                ORDER BY id ASC
+            """, (lesson_id or "", lesson_title or lesson_id or ""))
+            rows = cur.fetchall()
+            if rows:
+                return {r["id"]: idx for idx, r in enumerate(rows, start=1)}
+
+        cur = conn.execute("SELECT id, lesson_id FROM student_notebook_notes ORDER BY id ASC")
+        rows = cur.fetchall()
+        lesson_counts = {}
+        id_to_num = {}
+        global_count = 0
+        for r in rows:
+            global_count += 1
+            lid = r["lesson_id"] or "__global__"
+            lesson_counts[lid] = lesson_counts.get(lid, 0) + 1
+            id_to_num[r["id"]] = lesson_counts[lid] if r["lesson_id"] else global_count
+        return id_to_num
+
     def append_or_create_notebook_note(
         self,
         note_text: str,
@@ -501,12 +525,13 @@ class MemoryManager:
         timestamp_formatted: str = "00:00",
         topic: str = "",
         source: str = "vedika_voice",
-        create_new: bool = False
+        create_new: bool = True,
+        target_note_number: Optional[int] = None
     ) -> tuple:
         """
-        If create_new is False: looks for the most recent note for this lesson/course.
-        If found, appends note_text as formatted bullet points to the existing note.
-        If not found or create_new is True: inserts a new note with formatted bullet points.
+        Default behavior (create_new=True): Creates a brand new numbered note every time unless:
+        - target_note_number (> 0) is specified (appends to that specific Note #N), OR
+        - create_new is explicitly False (appends to the most recent note in this lesson/notebook).
         Returns: (note_id, is_updated, combined_text, note_dict)
         """
         clean_text = scrub_pii(note_text.strip())
@@ -516,9 +541,40 @@ class MemoryManager:
         formatted_bullets = format_text_as_bullets(clean_text)
 
         with self._get_connection() as conn:
-            if not create_new:
-                row = None
-                # Check 1: Flexible match matching lesson_id, lesson_title, video_id, or course
+            row = None
+            # Case 1: User explicitly specified a Note Number (e.g., "add to note 2" -> target_note_number=2)
+            if target_note_number is not None and int(target_note_number) > 0:
+                target_num = int(target_note_number)
+                if lesson_id or lesson_title:
+                    cursor = conn.execute("""
+                        SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
+                        FROM student_notebook_notes
+                        WHERE (lesson_id = ? OR lesson_id = '' OR lesson_title = ?)
+                        ORDER BY id ASC
+                    """, (lesson_id or "", lesson_title or lesson_id or ""))
+                    lesson_rows = cursor.fetchall()
+                    if 1 <= target_num <= len(lesson_rows):
+                        row = lesson_rows[target_num - 1]
+                if not row:
+                    cursor = conn.execute("""
+                        SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
+                        FROM student_notebook_notes
+                        ORDER BY id ASC
+                    """)
+                    all_rows = cursor.fetchall()
+                    if 1 <= target_num <= len(all_rows):
+                        row = all_rows[target_num - 1]
+                    elif not row:
+                        # Fallback: check if id matches target_num directly
+                        cursor = conn.execute("""
+                            SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
+                            FROM student_notebook_notes
+                            WHERE id = ?
+                        """, (target_num,))
+                        row = cursor.fetchone()
+
+            # Case 2: User explicitly asked to append to the same / current note (create_new=False)
+            elif not create_new:
                 cursor = conn.execute("""
                     SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
                     FROM student_notebook_notes
@@ -530,9 +586,6 @@ class MemoryManager:
                 """, (lesson_id or "", lesson_title or "", video_id or "", course_id or ""))
                 row = cursor.fetchone()
 
-                # Check 2: If still not found, fallback to the most recent note in the notebook
-                # so that consecutive commands like "add a point in that same note" or "add to my notes"
-                # seamlessly append to the student's active notebook note instead of creating duplicates.
                 if not row:
                     cursor = conn.execute("""
                         SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
@@ -541,44 +594,16 @@ class MemoryManager:
                     """)
                     row = cursor.fetchone()
 
-                if row:
-                    note_id = row["id"]
-                    existing_text = row["note_text"] or ""
-                    
-                    if formatted_bullets in existing_text or clean_text in existing_text:
-                        note_dict = {
-                            "id": str(note_id),
-                            "courseId": row["course_id"] or course_id or "",
-                            "courseTitle": row["course_title"] or course_title or "",
-                            "chapterTitle": row["chapter_title"] or chapter_title or "",
-                            "lessonId": row["lesson_id"] or lesson_id or "",
-                            "lessonTitle": row["lesson_title"] or lesson_title or "",
-                            "videoId": row["video_id"] or video_id or "",
-                            "timestampSeconds": row["timestamp_seconds"],
-                            "timestampFormatted": row["timestamp_formatted"],
-                            "noteText": existing_text,
-                            "topic": row["topic"] or topic or "",
-                            "source": source,
-                            "createdAt": row["created_at"]
-                        }
-                        return (str(note_id), True, existing_text, note_dict)
+            if row:
+                note_id = row["id"]
+                existing_text = row["note_text"] or ""
+                id_to_num = self._assign_note_numbers(conn, lesson_id=row["lesson_id"] or lesson_id, lesson_title=row["lesson_title"] or lesson_title)
+                note_num = id_to_num.get(note_id, 1)
 
-                    combined = f"{existing_text}\n{formatted_bullets}" if existing_text else formatted_bullets
-
-                    conn.execute("""
-                        UPDATE student_notebook_notes
-                        SET note_text = ?, 
-                            lesson_id = CASE WHEN (lesson_id IS NULL OR lesson_id = '') THEN ? ELSE lesson_id END,
-                            course_id = CASE WHEN (course_id IS NULL OR course_id = '') THEN ? ELSE course_id END,
-                            lesson_title = CASE WHEN (lesson_title IS NULL OR lesson_title = '') THEN ? ELSE lesson_title END,
-                            course_title = CASE WHEN (course_title IS NULL OR course_title = '') THEN ? ELSE course_title END,
-                            video_id = CASE WHEN (video_id IS NULL OR video_id = '') THEN ? ELSE video_id END,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    """, (combined, lesson_id or "", course_id or "", lesson_title or "", course_title or "", video_id or "", note_id))
-
+                if formatted_bullets in existing_text or clean_text in existing_text:
                     note_dict = {
                         "id": str(note_id),
+                        "noteNumber": note_num,
                         "courseId": row["course_id"] or course_id or "",
                         "courseTitle": row["course_title"] or course_title or "",
                         "chapterTitle": row["chapter_title"] or chapter_title or "",
@@ -587,14 +612,46 @@ class MemoryManager:
                         "videoId": row["video_id"] or video_id or "",
                         "timestampSeconds": row["timestamp_seconds"],
                         "timestampFormatted": row["timestamp_formatted"],
-                        "noteText": combined,
+                        "noteText": existing_text,
                         "topic": row["topic"] or topic or "",
                         "source": source,
                         "createdAt": row["created_at"]
                     }
-                    return (str(note_id), True, combined, note_dict)
+                    return (str(note_id), True, existing_text, note_dict)
 
-            # Otherwise create a new note
+                combined = f"{existing_text}\n{formatted_bullets}" if existing_text else formatted_bullets
+
+                conn.execute("""
+                    UPDATE student_notebook_notes
+                    SET note_text = ?, 
+                        lesson_id = CASE WHEN (lesson_id IS NULL OR lesson_id = '') THEN ? ELSE lesson_id END,
+                        course_id = CASE WHEN (course_id IS NULL OR course_id = '') THEN ? ELSE course_id END,
+                        lesson_title = CASE WHEN (lesson_title IS NULL OR lesson_title = '') THEN ? ELSE lesson_title END,
+                        course_title = CASE WHEN (course_title IS NULL OR course_title = '') THEN ? ELSE course_title END,
+                        video_id = CASE WHEN (video_id IS NULL OR video_id = '') THEN ? ELSE video_id END,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (combined, lesson_id or "", course_id or "", lesson_title or "", course_title or "", video_id or "", note_id))
+
+                note_dict = {
+                    "id": str(note_id),
+                    "noteNumber": note_num,
+                    "courseId": row["course_id"] or course_id or "",
+                    "courseTitle": row["course_title"] or course_title or "",
+                    "chapterTitle": row["chapter_title"] or chapter_title or "",
+                    "lessonId": row["lesson_id"] or lesson_id or "",
+                    "lessonTitle": row["lesson_title"] or lesson_title or "",
+                    "videoId": row["video_id"] or video_id or "",
+                    "timestampSeconds": row["timestamp_seconds"],
+                    "timestampFormatted": row["timestamp_formatted"],
+                    "noteText": combined,
+                    "topic": row["topic"] or topic or "",
+                    "source": source,
+                    "createdAt": row["created_at"]
+                }
+                return (str(note_id), True, combined, note_dict)
+
+            # Default: Create a brand new note
             cursor = conn.execute("""
                 INSERT INTO student_notebook_notes (
                     course_id, course_title, chapter_title, lesson_id, lesson_title,
@@ -606,8 +663,11 @@ class MemoryManager:
                 formatted_bullets, topic or lesson_title or "", source or "vedika_voice"
             ))
             new_id = cursor.lastrowid
+            id_to_num = self._assign_note_numbers(conn, lesson_id=lesson_id, lesson_title=lesson_title)
+            note_num = id_to_num.get(new_id, 1)
             note_dict = {
                 "id": str(new_id),
+                "noteNumber": note_num,
                 "courseId": course_id,
                 "courseTitle": course_title,
                 "chapterTitle": chapter_title,
@@ -629,7 +689,7 @@ class MemoryManager:
         lesson_id: Optional[str] = None,
         limit: int = 100
     ) -> List[Dict]:
-        """Retrieves saved notebook notes, optionally filtered by course or lesson."""
+        """Retrieves saved notebook notes with 1-based sequential noteNumber."""
         query = "SELECT * FROM student_notebook_notes"
         params = []
         conditions = []
@@ -639,22 +699,24 @@ class MemoryManager:
             params.append(course_id)
             params.append(course_id)
         if lesson_id:
-            conditions.append("(lesson_id = ? OR lesson_title = ?)")
+            conditions.append("(lesson_id = ? OR lesson_id = '' OR lesson_title = ?)")
             params.append(lesson_id)
             params.append(lesson_id)
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += " ORDER BY timestamp_seconds ASC, created_at ASC LIMIT ?"
+        query += " ORDER BY id ASC LIMIT ?"
         params.append(limit)
 
         with self._get_connection() as conn:
+            id_to_num = self._assign_note_numbers(conn, lesson_id=lesson_id or "")
             cursor = conn.execute(query, tuple(params))
             results = []
-            for row in cursor.fetchall():
+            for idx, row in enumerate(cursor.fetchall(), start=1):
                 results.append({
-                    "id": row["id"],
+                    "id": str(row["id"]),
+                    "noteNumber": id_to_num.get(row["id"], idx),
                     "courseId": row["course_id"],
                     "courseTitle": row["course_title"],
                     "chapterTitle": row["chapter_title"],

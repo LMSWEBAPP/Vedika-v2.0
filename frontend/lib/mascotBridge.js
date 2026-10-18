@@ -146,7 +146,6 @@ class MascotBridge {
           }
 
           if (data && data.command) {
-            console.log('[MascotBridge] Received command via HTTP Relay:', data.command);
             this._handleMessage(data.command);
           }
 
@@ -155,7 +154,7 @@ class MascotBridge {
       } catch (e) {
         // Transient network blip
       } finally {
-        this.pollTimer = setTimeout(poll, 700);
+        this.pollTimer = setTimeout(poll, 350);
       }
     };
 
@@ -183,12 +182,11 @@ class MascotBridge {
     const type = msg.type || msg.event;
     const payload = msg.payload || {};
 
-    // 1. Deduplication and freshness check
-    const cmdId = msg.id || payload.id;
-    const cmdTime = msg.timestamp || payload.timestamp;
+    // 1. Deduplication and freshness check (strictly use message envelope id, never payload entity id)
+    const cmdId = msg.id;
+    const cmdTime = msg.timestamp;
     if (cmdId) {
       if (this.executedCommandIds.has(cmdId)) {
-        console.log('[MascotBridge] Ignored duplicate command:', cmdId);
         return;
       }
       this.executedCommandIds.add(cmdId);
@@ -197,13 +195,12 @@ class MascotBridge {
         this.executedCommandIds.delete(first);
       }
     }
-    if (cmdTime && (Date.now() - cmdTime > 6000)) {
-      console.log('[MascotBridge] Ignored stale command (>6s old):', type, cmdTime);
+    const isNavCmd = type === 'NAVIGATE_WEBAPP' || type === 'NAVIGATE_BACK';
+    if (isNavCmd && cmdTime && (Date.now() - cmdTime > 6000)) {
       return;
     }
 
     if (type === 'NAVIGATE_BACK') {
-      console.log('[MascotBridge] Received NAVIGATE_BACK command from mascot.');
       if (this.navBackListeners.size > 0) {
         this.navBackListeners.forEach((fn) => {
           try { fn(); } catch (e) { console.error('[MascotBridge] navBackListener error:', e); }

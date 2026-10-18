@@ -363,23 +363,28 @@ class CloudRelayPoller(QThread):
         self._running = False
 
     def run(self):
-        import urllib.request
         import json
         import time
 
         url = f"{self.base_url}/api/mascot/bridge?role=mascot"
+        session = None
+        try:
+            import requests
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": "VedikaDesktopMascot/2.0",
+                "Accept": "application/json",
+                "Connection": "keep-alive"
+            })
+        except Exception:
+            session = None
+
         while self._running:
             try:
-                req = urllib.request.Request(
-                    url,
-                    headers={
-                        "User-Agent": "VedikaDesktopMascot/2.0",
-                        "Accept": "application/json"
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=2.5) as resp:
-                    if resp.status == 200:
-                        data = json.loads(resp.read().decode('utf-8'))
+                if session is not None:
+                    resp = session.get(url, timeout=2.0)
+                    if resp.status_code == 200:
+                        data = resp.json()
                         has_tab = bool(data.get("hasActiveTab", False))
                         self.tab_presence_changed.emit(has_tab)
 
@@ -387,10 +392,29 @@ class CloudRelayPoller(QThread):
                         if event:
                             event_str = json.dumps(event) if isinstance(event, dict) else str(event)
                             self.relay_event_received.emit(event_str)
+                else:
+                    import urllib.request
+                    req = urllib.request.Request(
+                        url,
+                        headers={
+                            "User-Agent": "VedikaDesktopMascot/2.0",
+                            "Accept": "application/json"
+                        }
+                    )
+                    with urllib.request.urlopen(req, timeout=2.0) as resp:
+                        if resp.status == 200:
+                            data = json.loads(resp.read().decode('utf-8'))
+                            has_tab = bool(data.get("hasActiveTab", False))
+                            self.tab_presence_changed.emit(has_tab)
+
+                            event = data.get("event")
+                            if event:
+                                event_str = json.dumps(event) if isinstance(event, dict) else str(event)
+                                self.relay_event_received.emit(event_str)
             except Exception:
                 pass
 
-            for _ in range(15):
+            for _ in range(5):
                 if not self._running:
                     break
                 time.sleep(0.1)
@@ -1076,6 +1100,12 @@ class DesktopPetApp(QObject):
     @Slot(dict)
     def broadcast_to_webapp(self, message_dict) -> bool:
         """Broadcasts JSON payload to all connected active browser tabs across local WebSocket and Cloud Relay."""
+        import uuid
+        if isinstance(message_dict, dict):
+            if "id" not in message_dict:
+                message_dict["id"] = uuid.uuid4().hex[:8]
+            if "timestamp" not in message_dict:
+                message_dict["timestamp"] = int(time.time() * 1000)
         msg_str = json.dumps(message_dict)
         sent_count = 0
         if hasattr(self, 'web_clients') and self.web_clients:
@@ -1102,37 +1132,60 @@ class DesktopPetApp(QObject):
         return (time.time() - getattr(self, 'last_browser_launch_time', 0.0)) < 15.0
 
     def send_to_cloud_relay(self, message_dict: dict) -> bool:
-        """Asynchronously dispatches a command to the cloud relay for delivery to the active browser tab."""
+        """Asynchronously dispatches a command to the cloud relay using persistent TCP/TLS keep-alive for instant delivery."""
         import threading
-        import urllib.request
         import json
+        import uuid
 
         base_url = self.get_vyomanta_base_url()
         url = f"{base_url}/api/mascot/bridge"
         body = {
             "source": "mascot",
+            "id": message_dict.get("id") or uuid.uuid4().hex[:8],
             "type": message_dict.get("type", "NAVIGATE_WEBAPP"),
             "payload": message_dict.get("payload", {})
         }
-        data_bytes = json.dumps(body).encode('utf-8')
+
+        if not hasattr(self, "_relay_http_session"):
+            try:
+                import requests
+                s = requests.Session()
+                s.headers.update({
+                    "Content-Type": "application/json",
+                    "User-Agent": "VedikaDesktopMascot/2.0",
+                    "Connection": "keep-alive"
+                })
+                self._relay_http_session = s
+            except Exception:
+                self._relay_http_session = None
 
         def _async_post():
             try:
-                req = urllib.request.Request(
-                    url,
-                    data=data_bytes,
-                    headers={
-                        "Content-Type": "application/json",
-                        "User-Agent": "VedikaDesktopMascot/2.0"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=3.0) as resp:
-                    if resp.status == 200:
-                        res_data = json.loads(resp.read().decode('utf-8'))
+                sess = getattr(self, "_relay_http_session", None)
+                if sess is not None:
+                    resp = sess.post(url, json=body, timeout=2.5)
+                    if resp.status_code == 200:
+                        res_data = resp.json()
                         if res_data.get("hasActiveTab"):
                             self.has_active_web_tab = True
-            except Exception as e:
+                else:
+                    import urllib.request
+                    data_bytes = json.dumps(body).encode('utf-8')
+                    req = urllib.request.Request(
+                        url,
+                        data=data_bytes,
+                        headers={
+                            "Content-Type": "application/json",
+                            "User-Agent": "VedikaDesktopMascot/2.0"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(req, timeout=2.5) as resp:
+                        if resp.status == 200:
+                            res_data = json.loads(resp.read().decode('utf-8'))
+                            if res_data.get("hasActiveTab"):
+                                self.has_active_web_tab = True
+            except Exception:
                 pass
 
         threading.Thread(target=_async_post, daemon=True).start()
@@ -1315,7 +1368,8 @@ class DesktopPetApp(QObject):
                     f"Explain what is being taught at timestamp {time_str} in the lesson '{lesson_str}' regarding '{topic_str}'. "
                     f"Context: {context_str}. "
                     f"In 2 to 3 engaging, conversational spoken sentences (mirroring whatever language the student speaks: Telugu, Hindi, or clean English), "
-                    f"explain the core intuition simply with a relatable analogy, then warmly ask what part they'd like help with. Wave gently."
+                    f"explain the core intuition simply with a relatable analogy, then warmly ask what part they'd like help with. "
+                    f"Do NOT call 'add_study_note' right now — only explain verbally and wait until the student asks to add it to their notes. Wave gently."
                 )
                 if hasattr(self, "gemini_client") and self.gemini_client:
                     if not self.gemini_client.is_active:
@@ -1340,7 +1394,8 @@ class DesktopPetApp(QObject):
             elif msg_type == "SAVE_STUDY_NOTE":
                 note_text = payload.get("noteText", "").strip()
                 if note_text:
-                    create_new = bool(payload.get("createNew", False))
+                    create_new = bool(payload.get("createNew", True))
+                    target_note_num = payload.get("noteNumber")
                     mm = MemoryManager()
                     nid, is_updated, combined_text, saved_note = mm.append_or_create_notebook_note(
                         note_text=note_text,
@@ -1354,15 +1409,19 @@ class DesktopPetApp(QObject):
                         timestamp_formatted=payload.get("timestampFormatted", "00:00") or "00:00",
                         topic=payload.get("topic", ""),
                         source=payload.get("source", "dictated"),
-                        create_new=create_new
+                        create_new=create_new,
+                        target_note_number=int(target_note_num) if target_note_num else None
                     )
+                    if isinstance(saved_note, dict) and payload.get("clientId"):
+                        saved_note["clientId"] = str(payload.get("clientId"))
                     event_type = "STUDY_NOTE_UPDATED" if is_updated else "STUDY_NOTE_ADDED"
                     self.broadcast_to_webapp({
                         "type": event_type,
                         "payload": saved_note
                     })
                     if self.pet:
-                        msg = "Updated your note with new point! 📝" if is_updated else "Added to your personal study notebook! 📝"
+                        n_num = saved_note.get("noteNumber", 1) if isinstance(saved_note, dict) else 1
+                        msg = f"Updated Note #{n_num} with new point! 📝" if is_updated else f"Saved as Note #{n_num} in your study notebook! 📝"
                         self.pet.say(msg, duration=2.5)
 
             elif msg_type == "GET_STUDY_NOTES":
@@ -1594,7 +1653,7 @@ class DesktopPetApp(QObject):
                 print(f"[Main] Standard external website detected ({url}) -> Keeping Gemini Live Voice Chat ACTIVE.")
             self._do_open_url(url)
 
-        QTimer.singleShot(1500 if not is_media else 2500, _launch_link)
+        QTimer.singleShot(50, _launch_link)
 
     @Slot(str)
     def _on_yt_resolved_open_media(self, target_url):

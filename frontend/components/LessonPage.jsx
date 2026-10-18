@@ -183,6 +183,65 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   // 24/7 Desktop Mascot Connection State & Realtime Study Notes Sync
   const [isMascotConnected, setIsMascotConnected] = useState(false);
 
+  // Helper to ensure every note has a stable 1-based sequential noteNumber (oldest = #1, newest = #N)
+  const ensureNumberedNotes = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return [];
+    // Chronological order (oldest -> newest) for deterministic 1..N numbering
+    const chronological = [...list].sort((a, b) => {
+      const idA = Number(a?.id);
+      const idB = Number(b?.id);
+      if (!Number.isNaN(idA) && !Number.isNaN(idB) && idA !== idB) return idA - idB;
+      const tA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tA - tB;
+    });
+    const idToNum = new Map();
+    chronological.forEach((item, index) => {
+      const key = String(item?.id || index);
+      idToNum.set(key, item?.noteNumber ? Number(item.noteNumber) : index + 1);
+    });
+    // Ensure uniqueness of noteNumber across the list
+    const usedNums = new Set();
+    chronological.forEach((item, index) => {
+      const key = String(item?.id || index);
+      let num = idToNum.get(key) || index + 1;
+      if (usedNums.has(num)) {
+        num = index + 1;
+        while (usedNums.has(num)) num += 1;
+      }
+      usedNums.add(num);
+      idToNum.set(key, num);
+    });
+    return list.map((item, idx) => ({
+      ...item,
+      noteNumber: idToNum.get(String(item?.id || idx)) || item?.noteNumber || (list.length - idx)
+    }));
+  };
+
+  // Keep Desktop Mascot informed of active lesson & live video timestamp
+  const lastReportedTimeRef = useRef(-1);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !lesson?.id) return;
+    const sec = Math.floor(videoCurrentTime || 0);
+    if (lastReportedTimeRef.current !== -1 && Math.abs(sec - lastReportedTimeRef.current) < 3) return;
+    lastReportedTimeRef.current = sec;
+    try {
+      const bridge = getMascotBridge();
+      bridge.sendActivityUpdate('video_lesson', {
+        page: `/lesson/${lesson.id}`,
+        courseId: lesson?.courseId || '',
+        courseTitle: lesson?.courseTitle || COURSE?.title || '',
+        chapterTitle: mod?.title || '',
+        lessonId: lesson?.id || '',
+        lessonTitle: lesson?.title || '',
+        videoId: extractYoutubeId(lesson?.vid || lesson?.youtube),
+        timestampSeconds: sec,
+        timestampFormatted: formatTimestamp(sec),
+        topic: lesson?.title || ''
+      });
+    } catch (_) {}
+  }, [lesson?.id, lesson?.courseId, lesson?.title, lesson?.vid, videoCurrentTime]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const bridge = getMascotBridge();
@@ -211,57 +270,81 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       if (!msg) return;
       const type = msg.type || msg.event;
       if (type === 'STUDY_NOTE_ADDED' || type === 'STUDY_NOTE_UPDATED') {
-        const note = msg.payload;
-        if (!note) return;
+        const rawNote = msg.payload;
+        if (!rawNote) return;
 
-        // Check if note belongs to current lesson (or has matching videoId/lessonTitle/empty lessonId)
-        const isThisLesson = !note.lessonId ||
-          note.lessonId === lesson?.id ||
-          note.lessonId === lesson?.title ||
-          note.lessonTitle === lesson?.title ||
-          (lesson?.vid && note.videoId === lesson.vid);
+        const note = {
+          ...rawNote,
+          lessonId: rawNote.lessonId || lesson?.id || '',
+          lessonTitle: rawNote.lessonTitle || lesson?.title || '',
+          courseId: rawNote.courseId || lesson?.courseId || 'general'
+        };
 
-        if (isThisLesson) {
-          setNotes((prev) => {
-            const idx = prev.findIndex((n) =>
+        // Automatically open the Personal Notes companion panel so the user sees the note render immediately
+        setIsExpanded(true);
+        setActiveCompanionTab('notes');
+
+        setNotes((prev) => {
+          let idx = -1;
+          if (type === 'STUDY_NOTE_ADDED') {
+            // For new notes, match ONLY by exact note id or echoed clientId — never overwrite another note at the same timestamp!
+            idx = prev.findIndex((n) =>
               String(n.id) === String(note.id) ||
-              (n.timestampFormatted === note.timestampFormatted && (
-                !n.lessonId || !note.lessonId || n.lessonId === note.lessonId || n.lessonTitle === note.lessonTitle
-              )) ||
-              (n.noteText && note.noteText && (
-                note.noteText.includes(n.noteText) || n.noteText.includes(note.noteText)
-              ))
+              (note.clientId && String(n.id) === String(note.clientId))
             );
-            let updated;
-            if (idx !== -1) {
-              updated = [...prev];
-              updated[idx] = { ...updated[idx], ...note };
-            } else {
-              updated = [note, ...prev];
-            }
-            try {
-              localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
-            } catch (_) {}
-            return updated;
-          });
-        }
+          } else {
+            // For STUDY_NOTE_UPDATED (same note or target Note #N), match by id or noteNumber
+            idx = prev.findIndex((n) =>
+              String(n.id) === String(note.id) ||
+              (note.noteNumber && Number(n.noteNumber) === Number(note.noteNumber))
+            );
+          }
 
-        setAllCourseNotes((prev) => {
-          const idx = prev.findIndex((n) =>
-            String(n.id) === String(note.id) ||
-            (n.timestampFormatted === note.timestampFormatted && (
-              !n.lessonId || !note.lessonId || n.lessonId === note.lessonId || n.lessonTitle === note.lessonTitle
-            )) ||
-            (n.noteText && note.noteText && (
-              note.noteText.includes(n.noteText) || n.noteText.includes(note.noteText)
-            ))
-          );
           let updated;
           if (idx !== -1) {
-            updated = [...prev];
-            updated[idx] = { ...updated[idx], ...note };
+            const mergedNote = {
+              ...prev[idx],
+              ...note,
+              noteNumber: note.noteNumber || prev[idx].noteNumber
+            };
+            // Place updated note at the top of the visible list while preserving its permanent Note #N badge
+            const rest = prev.filter((_, i) => i !== idx);
+            updated = ensureNumberedNotes([mergedNote, ...rest]);
           } else {
-            updated = [note, ...prev];
+            const nextNum = note.noteNumber || (prev.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), prev.length) + 1);
+            updated = ensureNumberedNotes([{ ...note, noteNumber: nextNum }, ...prev]);
+          }
+          try {
+            localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+          } catch (_) {}
+          return updated;
+        });
+
+        setAllCourseNotes((prev) => {
+          let idx = -1;
+          if (type === 'STUDY_NOTE_ADDED') {
+            idx = prev.findIndex((n) =>
+              String(n.id) === String(note.id) ||
+              (note.clientId && String(n.id) === String(note.clientId))
+            );
+          } else {
+            idx = prev.findIndex((n) =>
+              String(n.id) === String(note.id) ||
+              (note.noteNumber && Number(n.noteNumber) === Number(note.noteNumber))
+            );
+          }
+          let updated;
+          if (idx !== -1) {
+            const mergedNote = {
+              ...prev[idx],
+              ...note,
+              noteNumber: note.noteNumber || prev[idx].noteNumber
+            };
+            const rest = prev.filter((_, i) => i !== idx);
+            updated = ensureNumberedNotes([mergedNote, ...rest]);
+          } else {
+            const nextNum = note.noteNumber || (prev.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), prev.length) + 1);
+            updated = ensureNumberedNotes([{ ...note, noteNumber: nextNum }, ...prev]);
           }
           try {
             localStorage.setItem(`vedika_course_notes_${lesson?.courseId || 'general'}`, JSON.stringify(updated));
@@ -269,15 +352,17 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           return updated;
         });
 
-        setRecentNoteAlert(note);
+        setRecentNoteAlert({ ...note, isUpdated: type === 'STUDY_NOTE_UPDATED' });
         setTimeout(() => {
-          setRecentNoteAlert((cur) => (cur?.id === note.id ? null : cur));
-        }, 5000);
+          setRecentNoteAlert((cur) => (String(cur?.id) === String(note.id) ? null : cur));
+        }, 6000);
       } else if (type === 'STUDY_NOTES_LIST') {
         const list = msg.payload?.notes || (Array.isArray(msg.payload) ? msg.payload : []);
         if (Array.isArray(list) && list.length > 0) {
-          setAllCourseNotes(list);
-          const lessonNotes = list.filter((n) =>
+          // Display newest notes at the top while keeping 1-based chronological noteNumber (#1 = oldest, #N = newest)
+          const numberedAll = ensureNumberedNotes([...list].reverse());
+          setAllCourseNotes(numberedAll);
+          const lessonNotes = numberedAll.filter((n) =>
             !n.lessonId ||
             n.lessonId === lesson?.id ||
             n.lessonId === lesson?.title ||
@@ -285,31 +370,24 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             (lesson?.vid && n.videoId === lesson.vid)
           );
           if (lessonNotes.length > 0) {
-            setNotes((prev) => {
-              const mergedMap = new Map();
-              prev.forEach((n) => mergedMap.set(String(n.id) || `${n.timestampFormatted}_${n.noteText}`, n));
-              lessonNotes.forEach((n) => mergedMap.set(String(n.id) || `${n.timestampFormatted}_${n.noteText}`, n));
-              const merged = Array.from(mergedMap.values()).sort(
-                (a, b) => (b.timestampSeconds || 0) - (a.timestampSeconds || 0)
-              );
-              try {
-                localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(merged));
-              } catch (_) {}
-              return merged;
-            });
+            const numberedLesson = ensureNumberedNotes(lessonNotes);
+            setNotes(numberedLesson);
+            try {
+              localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(numberedLesson));
+            } catch (_) {}
           }
         }
       } else if (type === 'STUDY_NOTE_DELETED') {
         const deletedId = msg.payload?.id;
         if (deletedId) {
           setNotes((prev) => {
-            const updated = prev.filter((n) => String(n.id) !== String(deletedId));
+            const updated = ensureNumberedNotes(prev.filter((n) => String(n.id) !== String(deletedId)));
             try {
               localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
             } catch (_) {}
             return updated;
           });
-          setAllCourseNotes((prev) => prev.filter((n) => String(n.id) !== String(deletedId)));
+          setAllCourseNotes((prev) => ensureNumberedNotes(prev.filter((n) => String(n.id) !== String(deletedId))));
         }
       }
     });
@@ -331,11 +409,11 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     try {
       const lessonKey = `vedika_notes_${lesson?.id || 'general'}`;
       const savedLessonNotes = localStorage.getItem(lessonKey);
-      if (savedLessonNotes) setNotes(JSON.parse(savedLessonNotes));
+      if (savedLessonNotes) setNotes(ensureNumberedNotes(JSON.parse(savedLessonNotes)));
 
       const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
       const savedCourseNotes = localStorage.getItem(courseKey);
-      if (savedCourseNotes) setAllCourseNotes(JSON.parse(savedCourseNotes));
+      if (savedCourseNotes) setAllCourseNotes(ensureNumberedNotes(JSON.parse(savedCourseNotes)));
     } catch (e) {
       console.warn("Could not load notes:", e);
     }
@@ -550,39 +628,30 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     const cleanText = noteText.replace(/\*\*/g, '').trim();
     const formattedTime = timeFormatted || formatTimestamp(videoCurrentTime);
     const timeSec = Math.floor(videoCurrentTime || 0);
+    const clientId = Date.now().toString();
 
     let noteObj;
     setNotes((prev) => {
-      const idx = prev.findIndex((n) => n.timestampFormatted === formattedTime);
-      let updated;
-      if (idx !== -1) {
-        const existing = prev[idx];
-        const combined = existing.noteText.includes(cleanText)
-          ? existing.noteText
-          : `${existing.noteText}\n• ${cleanText.replace(/^[•\-*]\s*/, '')}`;
-        noteObj = { ...existing, noteText: combined };
-        updated = [...prev];
-        updated[idx] = noteObj;
-      } else {
-        noteObj = {
-          id: Date.now().toString(),
-          lessonId: lesson?.id || '',
-          lessonTitle: lesson?.title || '',
-          courseId: lesson?.courseId || 'general',
-          courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
-          noteText: cleanText.startsWith('•') || cleanText.startsWith('-') ? cleanText : `• ${cleanText}`,
-          timestampSeconds: timeSec,
-          timestampFormatted: formattedTime,
-          source: 'ai_explainer',
-          createdAt: new Date().toISOString()
-        };
-        updated = [noteObj, ...prev];
-      }
+      const nextNum = prev.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), prev.length) + 1;
+      noteObj = {
+        id: clientId,
+        noteNumber: nextNum,
+        lessonId: lesson?.id || '',
+        lessonTitle: lesson?.title || '',
+        courseId: lesson?.courseId || 'general',
+        courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
+        noteText: cleanText.startsWith('•') || cleanText.startsWith('-') ? cleanText : `• ${cleanText}`,
+        timestampSeconds: timeSec,
+        timestampFormatted: formattedTime,
+        source: 'ai_explainer',
+        createdAt: new Date().toISOString()
+      };
+      const updated = ensureNumberedNotes([noteObj, ...prev]);
       try {
         localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
         const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
         const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-        const updatedCourse = [noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))];
+        const updatedCourse = ensureNumberedNotes([noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))]);
         localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
         setAllCourseNotes(updatedCourse);
       } catch (err) {}
@@ -602,6 +671,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       bridge.send({
         type: 'SAVE_STUDY_NOTE',
         payload: {
+          clientId,
+          createNew: true,
           noteText: cleanText,
           courseId: lesson?.courseId || '',
           courseTitle: lesson?.courseTitle || '',
@@ -621,26 +692,78 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
     if (e) e.preventDefault();
     if (!newNoteText.trim()) return;
 
+    const rawInput = newNoteText.trim();
+    const targetMatch = rawInput.match(/^(?:note\s*#?(\d+)|#(\d+))\s*[:\-]\s*(.+)$/i);
+    const targetNoteNumber = targetMatch ? Number(targetMatch[1] || targetMatch[2]) : null;
+    const cleanNoteBody = targetMatch ? targetMatch[3].trim() : rawInput;
+    const clientId = Date.now().toString();
+
+    if (targetNoteNumber && targetNoteNumber > 0) {
+      const existingIdx = notes.findIndex((n) => Number(n.noteNumber) === targetNoteNumber);
+      if (existingIdx !== -1) {
+        const targetNote = notes[existingIdx];
+        const bulletPoint = cleanNoteBody.startsWith('•') || cleanNoteBody.startsWith('-') ? cleanNoteBody : `• ${cleanNoteBody}`;
+        const updatedNote = {
+          ...targetNote,
+          noteText: `${targetNote.noteText}\n${bulletPoint}`
+        };
+        const rest = notes.filter((_, i) => i !== existingIdx);
+        const updated = ensureNumberedNotes([updatedNote, ...rest]);
+        setNotes(updated);
+        try {
+          localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
+        } catch (_) {}
+        setNewNoteText('');
+        setRecentNoteAlert({ ...updatedNote, isUpdated: true });
+        setTimeout(() => {
+          setRecentNoteAlert(cur => String(cur?.id) === String(updatedNote.id) ? null : cur);
+        }, 4500);
+        try {
+          const bridge = getMascotBridge();
+          bridge.send({
+            type: 'SAVE_STUDY_NOTE',
+            payload: {
+              createNew: false,
+              noteNumber: targetNoteNumber,
+              noteText: cleanNoteBody,
+              courseId: lesson?.courseId || '',
+              courseTitle: lesson?.courseTitle || COURSE?.title || '',
+              lessonId: lesson?.id || '',
+              lessonTitle: lesson?.title || '',
+              videoId: lesson?.vid || '',
+              timestampSeconds: Math.floor(videoCurrentTime || 0),
+              timestampFormatted: formatTimestamp(videoCurrentTime),
+              topic: lesson?.title || '',
+              source: isDictating ? 'dictated' : 'manual'
+            }
+          });
+        } catch (_) {}
+        return;
+      }
+    }
+
+    const nextNum = notes.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), notes.length) + 1;
     const noteObj = {
-      id: Date.now().toString(),
+      id: clientId,
+      noteNumber: nextNum,
       lessonId: lesson?.id || '',
       lessonTitle: lesson?.title || '',
       courseId: lesson?.courseId || 'general',
       courseTitle: lesson?.courseTitle || COURSE?.title || 'Course',
-      noteText: newNoteText.trim(),
+      noteText: cleanNoteBody.startsWith('•') || cleanNoteBody.startsWith('-') ? cleanNoteBody : `• ${cleanNoteBody}`,
       timestampSeconds: Math.floor(videoCurrentTime || 0),
       timestampFormatted: formatTimestamp(videoCurrentTime),
       source: isDictating ? 'dictated' : 'manual',
       createdAt: new Date().toISOString()
     };
 
-    const updated = [noteObj, ...notes];
+    const updated = ensureNumberedNotes([noteObj, ...notes]);
     setNotes(updated);
     try {
       localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
       const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
       const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-      const updatedCourse = [noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))];
+      const updatedCourse = ensureNumberedNotes([noteObj, ...curCourseNotes.filter(n => String(n.id) !== String(noteObj.id))]);
       localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
       setAllCourseNotes(updatedCourse);
     } catch (err) {}
@@ -655,6 +778,8 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       bridge.send({
         type: 'SAVE_STUDY_NOTE',
         payload: {
+          clientId,
+          createNew: true,
           noteText: noteObj.noteText,
           courseId: lesson?.courseId || '',
           courseTitle: lesson?.courseTitle || COURSE?.title || '',
@@ -671,13 +796,13 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   };
 
   const handleDeleteNoteById = (id) => {
-    const updated = notes.filter(n => String(n.id) !== String(id));
+    const updated = ensureNumberedNotes(notes.filter(n => String(n.id) !== String(id)));
     setNotes(updated);
     try {
       localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
       const courseKey = `vedika_course_notes_${lesson?.courseId || 'general'}`;
       const curCourseNotes = JSON.parse(localStorage.getItem(courseKey) || '[]');
-      const updatedCourse = curCourseNotes.filter(n => String(n.id) !== String(id));
+      const updatedCourse = ensureNumberedNotes(curCourseNotes.filter(n => String(n.id) !== String(id)));
       localStorage.setItem(courseKey, JSON.stringify(updatedCourse));
       setAllCourseNotes(updatedCourse);
     } catch (err) {}
@@ -1969,7 +2094,7 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                             type="text"
                             value={newNoteText}
                             onChange={(e) => setNewNoteText(e.target.value)}
-                            placeholder={isDictating ? "Listening... Speak note now" : `Add note at ${formatTimestamp(videoCurrentTime)}...`}
+                            placeholder={isDictating ? "Listening... Speak note now" : `Add note (or 'Note 1: ...') at ${formatTimestamp(videoCurrentTime)}...`}
                             style={{
                               flex: 1,
                               padding: '8px 12px',
@@ -2016,65 +2141,114 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                           </button>
                         </form>
 
+                        {recentNoteAlert && (
+                          <div style={{
+                            padding: '6px 10px',
+                            borderRadius: 7,
+                            background: `${panelColor}18`,
+                            border: `1px solid ${panelColor}55`,
+                            color: panelColor,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 6
+                          }}>
+                            <span>
+                              ✓ {recentNoteAlert.isUpdated ? 'Added point to' : 'Created'} Note #{recentNoteAlert.noteNumber || 1} ({recentNoteAlert.timestampFormatted || '00:00'})
+                            </span>
+                          </div>
+                        )}
+
                         {/* Notes List */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {(noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
-                              <BookMarked size={24} style={{ color: panelColor, margin: '0 auto 8px', opacity: 0.85 }} />
-                              <div>No study notes recorded yet. Type or dictate notes at any lecture timestamp!</div>
-                            </div>
-                          ) : (
-                            (noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes)).map((n) => (
-                              <div
-                                key={n.id}
-                                style={{
-                                  padding: 10,
-                                  borderRadius: 8,
-                                  background: T.s2,
-                                  border: `1px solid ${T.border}`,
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 6
-                                }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => setVideoSeekTime(n.timestampSeconds || 0)}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                      background: `${panelColor}15`,
-                                      border: `1px solid ${panelColor}40`,
-                                      color: panelColor,
-                                      fontSize: 11,
-                                      fontWeight: 700,
-                                      borderRadius: 4,
-                                      padding: '2px 6px',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    <Play size={9} style={{ fill: panelColor }} />
-                                    <span>{n.timestampFormatted || '00:00'}</span>
-                                  </button>
-                                  <div style={{ display: 'flex', gap: 4 }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDownloadNote(n)}
-                                      style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
-                                    >
-                                      <Download size={12} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteNoteById(n.id)}
-                                      style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
+                          {(() => {
+                            const displayedList = noteFilter === 'lesson' ? notes : (allCourseNotes.length > 0 ? allCourseNotes : notes);
+                            if (displayedList.length === 0) {
+                              return (
+                                <div style={{ textAlign: 'center', padding: '24px 12px', color: T.muted, fontSize: 12 }}>
+                                  <BookMarked size={24} style={{ color: panelColor, margin: '0 auto 8px', opacity: 0.85 }} />
+                                  <div>No study notes recorded yet. Type or ask Vedika to add notes at any lecture timestamp!</div>
                                 </div>
+                              );
+                            }
+                            return displayedList.map((n, idx) => {
+                              const noteNum = n.noteNumber || (displayedList.length - idx);
+                              const isHighlighted = recentNoteAlert && (
+                                String(recentNoteAlert.id) === String(n.id) ||
+                                (recentNoteAlert.noteNumber && Number(recentNoteAlert.noteNumber) === Number(noteNum))
+                              );
+                              return (
+                                <div
+                                  key={n.id || `${noteNum}_${idx}`}
+                                  style={{
+                                    padding: 10,
+                                    borderRadius: 8,
+                                    background: isHighlighted ? `${panelColor}10` : T.s2,
+                                    border: `1px solid ${isHighlighted ? panelColor : T.border}`,
+                                    boxShadow: isHighlighted ? `0 0 12px ${panelColor}25` : 'none',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 6,
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          background: panelColor,
+                                          color: '#0A0E1A',
+                                          fontSize: 10.5,
+                                          fontWeight: 800,
+                                          borderRadius: 4,
+                                          padding: '2px 7px',
+                                          letterSpacing: '0.02em'
+                                        }}
+                                      >
+                                        Note #{noteNum}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setVideoSeekTime(n.timestampSeconds || 0)}
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 4,
+                                          background: `${panelColor}15`,
+                                          border: `1px solid ${panelColor}40`,
+                                          color: panelColor,
+                                          fontSize: 11,
+                                          fontWeight: 700,
+                                          borderRadius: 4,
+                                          padding: '2px 6px',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        <Play size={9} style={{ fill: panelColor }} />
+                                        <span>{n.timestampFormatted || '00:00'}</span>
+                                      </button>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadNote(n)}
+                                        style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                                      >
+                                        <Download size={12} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteNoteById(n.id)}
+                                        style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 2 }}
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
                                 <div style={{
                                   fontSize: 12.5,
                                   color: T.text,
@@ -2100,9 +2274,10 @@ Return ONLY a pure valid JSON array with NO markdown, NO code fences, and NO ext
                                     );
                                   })}
                                 </div>
-                              </div>
-                            ))
-                          )}
+                                </div>
+                                );
+                              });
+                          })()}
                         </div>
                       </div>
                     )}

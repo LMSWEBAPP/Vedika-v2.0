@@ -29,6 +29,7 @@ function corsHeaders(request) {
   const isAllowed = !origin || 
                     origin.includes('localhost') || 
                     origin.includes('127.0.0.1') || 
+                    origin.endsWith('.vercel.app') ||
                     origin.endsWith('.vedika.ai') || 
                     origin === 'https://vedika.ai';
   return {
@@ -156,7 +157,7 @@ export async function POST(request) {
       const target = payload.route || payload.url || (typeof payload === 'string' ? payload : null);
       if (typeof target === 'string') {
         const isRelative = target.startsWith('/') && !target.startsWith('//');
-        const isLmsUrl = target.startsWith('http://localhost') || target.startsWith('http://127.0.0.1') || target.startsWith('https://vedika.ai');
+        const isLmsUrl = target.startsWith('http://localhost') || target.startsWith('http://127.0.0.1') || target.startsWith('https://vedika.ai') || target.startsWith('https://vedika-v20c.vercel.app');
         if (!isRelative && !isLmsUrl) {
           return NextResponse.json(
             { error: 'Prohibited navigation destination.' },
@@ -170,7 +171,7 @@ export async function POST(request) {
       type,
       payload: payload.payload || payload,
       timestamp: Date.now(),
-      id: Math.random().toString(36).substring(2, 9),
+      id: body.id || Math.random().toString(36).substring(2, 9),
     };
 
     let hasActiveTab = false;
