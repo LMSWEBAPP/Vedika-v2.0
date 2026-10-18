@@ -61,57 +61,59 @@ export async function POST(request) {
       frappeUrl = 'https://vedika-v2-0.onrender.com';
     }
     
-    // 1. First attempt: Call Frappe backend login endpoint server-to-server
     let frappeLoggedIn = false;
     let loggedUser = userIdentifier;
     let fullName = userIdentifier;
     let sid = null;
+    let role = 'Student';
+    let tenantId = 'default';
+    let isSuperAdmin = false;
 
+    // 1. Native PostgreSQL User Authentication (Fastest & Local)
     try {
-      const frappeRes = await fetch(`${frappeUrl}/api/method/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usr: userIdentifier, pwd: userPassword }),
-        signal: AbortSignal.timeout(5000)
-      });
-
-      const rawText = await frappeRes.text();
-      let data = null;
-      try {
-        data = JSON.parse(rawText);
-      } catch (jsonErr) {
-        // Non-JSON response, Frappe may be initializing or cold-starting
-      }
-
-      if (frappeRes.ok && data && (data.message === 'Logged In' || data.message === 'No App')) {
+      const nativeUser = await authenticateNativeUser(userIdentifier, userPassword);
+      if (nativeUser) {
         frappeLoggedIn = true;
-        loggedUser = data.user_id || userIdentifier;
-        fullName = data.full_name || loggedUser;
-        const setCookie = frappeRes.headers.get('set-cookie') || '';
-        const sidMatch = setCookie.match(/sid=([^;]+)/);
-        sid = sidMatch ? sidMatch[1] : (data.sid || null);
-      } else if (frappeRes.status === 401 && data && data.message) {
-        // Explicit 401 from live Frappe backend
-        return NextResponse.json({ error: data.message || 'Invalid email or password.' }, { status: 401 });
+        loggedUser = nativeUser.email;
+        fullName = nativeUser.full_name || nativeUser.email;
+        role = nativeUser.role === 'admin' ? 'Administrator' : nativeUser.role === 'instructor' ? 'Instructor' : 'Student';
+        sid = crypto.randomBytes(16).toString('hex');
       }
-    } catch (netErr) {
-      console.warn('[API/Auth/Login] Frappe backend unavailable, attempting direct database auth:', netErr.message);
+    } catch (err) {
+      console.warn('[API/Auth/Login] Native DB auth notice:', err.message);
     }
 
-
-    // 0. Native PostgreSQL User Authentication (Option B)
+    // 2. Fallback to Frappe backend login endpoint if not logged in
     if (!frappeLoggedIn) {
       try {
-        const nativeUser = await authenticateNativeUser(userIdentifier, userPassword);
-        if (nativeUser) {
-          frappeLoggedIn = true;
-          loggedUser = nativeUser.email;
-          fullName = nativeUser.full_name || nativeUser.email;
-          role = nativeUser.role === 'admin' ? 'Administrator' : nativeUser.role === 'instructor' ? 'Instructor' : 'Student';
-          sid = crypto.randomBytes(16).toString('hex');
+        const frappeRes = await fetch(`${frappeUrl}/api/method/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usr: userIdentifier, pwd: userPassword }),
+          signal: AbortSignal.timeout(3000)
+        });
+
+        const rawText = await frappeRes.text();
+        let data = null;
+        try {
+          data = JSON.parse(rawText);
+        } catch (jsonErr) {
+          // Non-JSON response, Frappe may be initializing or cold-starting
         }
-      } catch (err) {
-        console.warn('[API/Auth/Login] Native DB auth notice:', err.message);
+
+        if (frappeRes.ok && data && (data.message === 'Logged In' || data.message === 'No App')) {
+          frappeLoggedIn = true;
+          loggedUser = data.user_id || userIdentifier;
+          fullName = data.full_name || loggedUser;
+          const setCookie = frappeRes.headers.get('set-cookie') || '';
+          const sidMatch = setCookie.match(/sid=([^;]+)/);
+          sid = sidMatch ? sidMatch[1] : (data.sid || null);
+        } else if (frappeRes.status === 401 && data && data.message) {
+          // Explicit 401 from live Frappe backend
+          return NextResponse.json({ error: data.message || 'Invalid email or password.' }, { status: 401 });
+        }
+      } catch (netErr) {
+        console.warn('[API/Auth/Login] Frappe backend unavailable, attempting direct database auth:', netErr.message);
       }
     }
 
@@ -147,9 +149,6 @@ export async function POST(request) {
     }
 
     // 3. Super Admin Environment Variable Check (if not in TiDB or database offline)
-    let role = 'Student';
-    let tenantId = 'default';
-    let isSuperAdmin = false;
 
     const lowerId = userIdentifier.toLowerCase().trim();
     const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'superadmin@vedika.ai').toLowerCase().trim();

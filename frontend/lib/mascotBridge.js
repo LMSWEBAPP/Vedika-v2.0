@@ -154,7 +154,10 @@ class MascotBridge {
       } catch (e) {
         // Transient network blip
       } finally {
-        this.pollTimer = setTimeout(poll, 350);
+        const isWsOpen = Boolean(this.ws && this.ws.readyState === WebSocket.OPEN);
+        const isHidden = typeof document !== 'undefined' && document.hidden;
+        const delay = isWsOpen ? 10000 : (isHidden ? 10000 : 2500);
+        this.pollTimer = setTimeout(poll, delay);
       }
     };
 

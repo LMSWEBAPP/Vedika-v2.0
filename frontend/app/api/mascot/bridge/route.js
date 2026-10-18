@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
 let redisInstance = null;
+let redisCircuitBreakerUntil = 0;
+
 function getRedis() {
+  if (Date.now() < redisCircuitBreakerUntil) {
+    return null;
+  }
   if (!redisInstance && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     try {
       redisInstance = new Redis({
@@ -14,6 +19,15 @@ function getRedis() {
     }
   }
   return redisInstance;
+}
+
+function handleRedisError(err, context = 'read') {
+  if (err?.message && (err.message.includes('limit exceeded') || err.message.includes('429'))) {
+    redisCircuitBreakerUntil = Date.now() + 10 * 60 * 1000; // 10 min cooldown
+    console.warn(`[MascotBridge API] Upstash Redis request limit reached. Switched cleanly to in-memory relay for 10m.`);
+  } else {
+    console.warn(`[MascotBridge API] Redis ${context} notice:`, err?.message || err);
+  }
 }
 
 // In-memory fallback buffers for local dev or if Redis is offline
@@ -70,7 +84,7 @@ export async function GET(request) {
             nextCommand = typeof cmdRaw === 'string' ? JSON.parse(cmdRaw) : cmdRaw;
           }
         } catch (e) {
-          console.warn('[MascotBridge API] Redis read error:', e.message);
+          handleRedisError(e, 'read');
         }
       }
 
@@ -99,7 +113,7 @@ export async function GET(request) {
             nextEvent = typeof eventRaw === 'string' ? JSON.parse(eventRaw) : eventRaw;
           }
         } catch (e) {
-          console.warn('[MascotBridge API] Redis mascot read error:', e.message);
+          handleRedisError(e, 'mascot read');
         }
       }
 
@@ -185,7 +199,7 @@ export async function POST(request) {
           const tabData = await redis.get('mascot:active_tab');
           hasActiveTab = Boolean(tabData);
         } catch (e) {
-          console.warn('[MascotBridge API] Redis push error:', e.message);
+          handleRedisError(e, 'push');
         }
       }
 
@@ -218,7 +232,7 @@ export async function POST(request) {
           await redis.lpush('mascot:event:to_mascot', JSON.stringify(message));
           await redis.ltrim('mascot:event:to_mascot', 0, 10);
         } catch (e) {
-          console.warn('[MascotBridge API] Redis event push error:', e.message);
+          handleRedisError(e, 'event push');
         }
       }
 

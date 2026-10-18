@@ -4,7 +4,12 @@ import { Redis } from '@upstash/redis';
 import { signJwt } from './auth.js';
 
 let redisInstance = null;
+let redisCircuitBreakerUntil = 0;
+
 function getRedis() {
+  if (Date.now() < redisCircuitBreakerUntil) {
+    return null;
+  }
   if (!redisInstance && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     try {
       redisInstance = new Redis({
@@ -16,6 +21,15 @@ function getRedis() {
     }
   }
   return redisInstance;
+}
+
+function handleOrgRedisError(err, action = 'read') {
+  if (err?.message && (err.message.includes('limit exceeded') || err.message.includes('429'))) {
+    redisCircuitBreakerUntil = Date.now() + 10 * 60 * 1000;
+    console.warn('[Organizations] Upstash Redis quota limit reached. Using local JSON store for 10m.');
+  } else {
+    console.warn(`[Organizations] Redis ${action} error, using local fallback:`, err?.message || err);
+  }
 }
 
 const DATA_FILE = path.join(process.cwd(), 'lib', 'organizations_data.json');
@@ -60,7 +74,7 @@ async function getFullState() {
         }
       }
     } catch (e) {
-      console.warn('[Organizations] Redis read error, using local fallback:', e.message);
+      handleOrgRedisError(e, 'read');
     }
   }
 
@@ -82,7 +96,7 @@ async function saveFullState(state) {
     try {
       await r.set('vedika:multi_tenant_state', JSON.stringify(state));
     } catch (e) {
-      console.warn('[Organizations] Redis save error:', e.message);
+      handleOrgRedisError(e, 'save');
     }
   }
 }
