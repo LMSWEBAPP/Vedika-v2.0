@@ -112,6 +112,9 @@ export default function PhysicsLab() {
       mode: labMode,
       phetSim: activePhetSim
     });
+    return () => {
+      bridge.sendActivityUpdate('browsing', { page: window.location.pathname });
+    };
   }, [selectedExperiment, labMode, activePhetSim]);
   
   // --- Simulation Parameters & Variables ---

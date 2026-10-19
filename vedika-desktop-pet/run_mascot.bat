@@ -1,3 +1,7 @@
 @echo off
 cd /d "%~dp0"
-start "" pythonw.exe main.py
+if exist "Vedika-Mascot.exe" (
+    start "" "Vedika-Mascot.exe"
+) else (
+    start "" pythonw.exe main.py
+)

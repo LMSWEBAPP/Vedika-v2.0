@@ -33,21 +33,27 @@ from engine.memory import MemoryManager
 
 def load_routes_for_prompt() -> str:
     """Reads routes.json and formats instructions for Gemini Live model."""
-    routes_path = "routes.json"
-    if os.path.exists(routes_path):
-        try:
-            with open(routes_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                lines = []
-                for item in data.get("routes", []):
-                    r_id = item.get("id")
-                    label = item.get("label", "")
-                    aliases = ", ".join(item.get("aliases", []))
-                    lines.append(f"   - '{r_id}' for {label} ({aliases}).")
-                if lines:
-                    return "\n".join(lines) + "\n"
-        except Exception as e:
-            print(f"[!] Warning: Could not parse routes.json for system prompt: {e}")
+    candidate_paths = [
+        os.path.join(os.path.dirname(sys.executable), "routes.json"),
+        os.path.join(getattr(sys, '_MEIPASS', ''), "routes.json"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "routes.json"),
+        "routes.json"
+    ]
+    for routes_path in candidate_paths:
+        if os.path.exists(routes_path):
+            try:
+                with open(routes_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    lines = []
+                    for item in data.get("routes", []):
+                        r_id = item.get("id")
+                        label = item.get("label", "")
+                        aliases = ", ".join(item.get("aliases", []))
+                        lines.append(f"   - '{r_id}' for {label} ({aliases}).")
+                    if lines:
+                        return "\n".join(lines) + "\n"
+            except Exception as e:
+                print(f"[!] Warning: Could not parse routes.json for system prompt: {e}")
 
     return (
         "   - '/' for Dashboard / Main home page.\n"
@@ -2192,7 +2198,11 @@ class GeminiLiveClient(QObject):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         pet_root = os.path.abspath(os.path.join(current_dir, ".."))
         parent_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
+        exe_dir = os.path.dirname(sys.executable)
+        bundle_dir = getattr(sys, '_MEIPASS', '')
         env_paths = [
+            os.path.join(exe_dir, ".env"),
+            os.path.join(bundle_dir, ".env") if bundle_dir else "",
             ".env",
             os.path.join(pet_root, ".env"),
             os.path.join(parent_dir, ".env"),
@@ -2203,6 +2213,7 @@ class GeminiLiveClient(QObject):
             os.path.join(parent_dir, "vedika-2.0", "frontend", ".env"),
             os.path.join(parent_dir, "vedika-2.0", "vedika-desktop-pet", ".env")
         ]
+        env_paths = [p for p in env_paths if p]
         for p in env_paths:
             if os.path.exists(p):
                 try:
@@ -2324,6 +2335,15 @@ class GeminiLiveClient(QObject):
             self.is_speaking = False
             if self.mic_enable_timer.isActive():
                 self.mic_enable_timer.stop()
+
+            # Auto-heal: If worker died or connection dropped while paused, reconnect immediately on unpause!
+            worker_alive = bool(w and w.isRunning())
+            if not worker_alive or getattr(self, "_reconnect_needed_on_unpause", False):
+                print("[GeminiLiveClient] Session dropped while paused. Auto-reconnecting immediately on unpause...")
+                self._reconnect_needed_on_unpause = False
+                self.reconnect()
+                return self.is_paused
+
             if w:
                 w.suppress_mic_for_prompt = False
                 w.is_tool_pending = False
@@ -2578,6 +2598,7 @@ class GeminiLiveClient(QObject):
         # If user intentionally paused, do NOT loop reconnect or say anything aloud
         if is_paused:
             print("[GeminiLive] Connection dropped while session paused. Reconnect deferred until unpaused.")
+            self._reconnect_needed_on_unpause = True
             return
 
         if self._reconnect_timer.isActive() or getattr(self, "_is_reconnecting", False):

@@ -154,6 +154,9 @@ export default function BiologyLab() {
       mode: labMode,
       phetSim: activePhetSim
     });
+    return () => {
+      bridge.sendActivityUpdate('browsing', { page: window.location.pathname });
+    };
   }, [selectedExperiment, selectedOrganelleId, labMode, activePhetSim]);
 
   // Sync React states to ref

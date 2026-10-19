@@ -21,3 +21,8 @@ scratch/
 *.sqlite
 *.sqlite3
 
+# PyInstaller intermediate artifacts
+build/
+dist/
+*.spec
+
