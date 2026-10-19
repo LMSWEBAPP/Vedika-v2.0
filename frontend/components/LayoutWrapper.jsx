@@ -181,10 +181,13 @@ export default function LayoutWrapper({ children }) {
 
     // Notify mascot of page changes
     let activity = 'browsing';
-    if (pathname?.startsWith('/vedika-labs/math') || pathname?.startsWith('/labs/math')) activity = 'math_tutor';
+    if (pathname === '/') activity = 'homepage';
+    else if (pathname?.startsWith('/vedika-labs/math') || pathname?.startsWith('/labs/math')) activity = 'math_tutor';
     else if (pathname?.startsWith('/vedika-labs/chemistry') || pathname?.startsWith('/labs/chemistry')) activity = 'chemistry_lab';
     else if (pathname?.startsWith('/vedika-labs/physics') || pathname?.startsWith('/labs/physics')) activity = 'physics_lab';
+    else if (pathname?.startsWith('/vedika-labs/biology') || pathname?.startsWith('/labs/biology')) activity = 'biology_lab';
     else if (pathname?.startsWith('/code-puzzle') || pathname?.startsWith('/vedika-ai/puzzle')) activity = 'dsa_puzzle';
+    else if (pathname?.startsWith('/coding-tutor') || pathname?.startsWith('/code-tutor')) activity = 'coding_tutor';
     else if (pathname?.startsWith('/lesson/')) activity = 'video_lesson';
     else if (pathname?.startsWith('/courses')) activity = 'courses';
 

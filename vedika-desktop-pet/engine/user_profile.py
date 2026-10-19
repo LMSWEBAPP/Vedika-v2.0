@@ -1,9 +1,13 @@
 import os
+import sys
 import json
 import random
 import datetime
 
-PROFILE_FILE = "user_profile.json"
+if getattr(sys, 'frozen', False):
+    PROFILE_FILE = os.path.join(os.path.dirname(sys.executable), "user_profile.json")
+else:
+    PROFILE_FILE = "user_profile.json"
 
 DEFAULT_PROFILE = {
     "user": {
@@ -30,15 +34,21 @@ class UserProfileManager:
         self.profile = self.load_profile()
 
     def load_profile(self):
-        if os.path.exists(self.filepath):
+        target_path = self.filepath
+        if not os.path.exists(target_path):
+            bundle_p = os.path.join(getattr(sys, '_MEIPASS', ''), "user_profile.json")
+            if os.path.exists(bundle_p):
+                target_path = bundle_p
+
+        if os.path.exists(target_path):
             try:
-                with open(self.filepath, "r", encoding="utf-8") as f:
+                with open(target_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     merged = DEFAULT_PROFILE.copy()
                     merged.update(data)
                     return merged
             except Exception as e:
-                print(f"[UserProfileManager] Error reading {self.filepath}: {e}")
+                print(f"[UserProfileManager] Error reading {target_path}: {e}")
         
         self.save_profile(DEFAULT_PROFILE)
         return DEFAULT_PROFILE
@@ -47,6 +57,7 @@ class UserProfileManager:
         if data is None:
             data = self.profile
         try:
+            os.makedirs(os.path.dirname(os.path.abspath(self.filepath)), exist_ok=True)
             with open(self.filepath, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             self.profile = data

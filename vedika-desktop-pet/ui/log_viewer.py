@@ -265,23 +265,21 @@ class LogViewerDialog(QDialog):
         found_files.sort(key=lambda x: x[1], reverse=True)
 
         # Ensure current active session is at the very top
-        active_idx = 0
-        if self.current_session_path and os.path.exists(self.current_session_path):
-            active_norm = os.path.abspath(self.current_session_path)
-            # Find and place at index 0 if not already
-            active_tuple = next((item for item in found_files if item[0] == active_norm), None)
+        active_norm = os.path.normcase(os.path.abspath(self.current_session_path)) if self.current_session_path else None
+        if active_norm and os.path.exists(self.current_session_path):
+            active_tuple = next((item for item in found_files if os.path.normcase(item[0]) == active_norm), None)
             if active_tuple:
                 found_files.remove(active_tuple)
                 found_files.insert(0, active_tuple)
             else:
-                found_files.insert(0, (active_norm, os.path.getmtime(active_norm), os.path.getsize(active_norm)))
+                found_files.insert(0, (os.path.abspath(self.current_session_path), os.path.getmtime(self.current_session_path), os.path.getsize(self.current_session_path)))
 
         for i, (fpath, mtime, size) in enumerate(found_files):
             fname = os.path.basename(fpath)
             size_kb = size / 1024.0
             size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024.0:.2f} MB"
             
-            is_active = (fpath == self.current_session_path)
+            is_active = bool(active_norm and os.path.normcase(fpath) == active_norm)
             is_crash = "crash" in fname.lower()
 
             if is_active:
@@ -310,7 +308,9 @@ class LogViewerDialog(QDialog):
             return
 
         self.active_file_path = fpath
-        self.is_viewing_active_session = (fpath == self.current_session_path)
+        self.is_viewing_active_session = bool(
+            self.current_session_path and os.path.normcase(os.path.abspath(fpath)) == os.path.normcase(os.path.abspath(self.current_session_path))
+        )
 
         try:
             with open(fpath, "r", encoding="utf-8", errors="replace") as f:

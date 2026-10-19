@@ -1,11 +1,15 @@
 import os
+import sys
 import re
 import sqlite3
 import datetime
 from typing import List, Dict, Optional
 
 ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
-PET_ROOT = os.path.dirname(ENGINE_DIR)
+if getattr(sys, 'frozen', False):
+    PET_ROOT = os.path.dirname(sys.executable)
+else:
+    PET_ROOT = os.path.dirname(ENGINE_DIR)
 DB_DIR = os.path.join(PET_ROOT, "data")
 DB_PATH = os.path.join(DB_DIR, "memory.db")
 
@@ -493,9 +497,9 @@ class MemoryManager:
         if lesson_id or lesson_title:
             cur = conn.execute("""
                 SELECT id FROM student_notebook_notes
-                WHERE (lesson_id = ? OR lesson_id = '' OR lesson_title = ?)
+                WHERE (? != '' AND lesson_id = ?) OR (? != '' AND lesson_title = ?)
                 ORDER BY id ASC
-            """, (lesson_id or "", lesson_title or lesson_id or ""))
+            """, (lesson_id or "", lesson_id or "", lesson_title or "", lesson_title or ""))
             rows = cur.fetchall()
             if rows:
                 return {r["id"]: idx for idx, r in enumerate(rows, start=1)}
@@ -549,9 +553,9 @@ class MemoryManager:
                     cursor = conn.execute("""
                         SELECT id, note_text, timestamp_formatted, timestamp_seconds, course_id, course_title, chapter_title, lesson_id, lesson_title, video_id, topic, created_at
                         FROM student_notebook_notes
-                        WHERE (lesson_id = ? OR lesson_id = '' OR lesson_title = ?)
+                        WHERE (? != '' AND lesson_id = ?) OR (? != '' AND lesson_title = ?)
                         ORDER BY id ASC
-                    """, (lesson_id or "", lesson_title or lesson_id or ""))
+                    """, (lesson_id or "", lesson_id or "", lesson_title or "", lesson_title or ""))
                     lesson_rows = cursor.fetchall()
                     if 1 <= target_num <= len(lesson_rows):
                         row = lesson_rows[target_num - 1]

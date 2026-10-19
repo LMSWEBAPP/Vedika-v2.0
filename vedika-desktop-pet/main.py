@@ -19,8 +19,14 @@ def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
 socket.getaddrinfo = _prefer_ipv4_getaddrinfo
 
 # --- Multi-Session & Crash Logging System ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
+if getattr(sys, 'frozen', False):
+    EXE_DIR = os.path.dirname(sys.executable)
+    BUNDLE_DIR = getattr(sys, '_MEIPASS', EXE_DIR)
+else:
+    EXE_DIR = os.path.dirname(os.path.abspath(__file__))
+    BUNDLE_DIR = EXE_DIR
+BASE_DIR = EXE_DIR
+LOGS_DIR = os.path.join(EXE_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 SESSION_START_TIME = datetime.datetime.now()
@@ -254,8 +260,14 @@ VALID_PREFIXES = (
     "/users", "/login"
 )
 
+def get_routes_json_path() -> str:
+    for cand in [os.path.join(EXE_DIR, "routes.json"), os.path.join(BUNDLE_DIR, "routes.json"), "routes.json"]:
+        if os.path.exists(cand):
+            return cand
+    return "routes.json"
+
 def load_valid_routes() -> set:
-    routes_path = "routes.json"
+    routes_path = get_routes_json_path()
     if os.path.exists(routes_path):
         try:
             with open(routes_path, "r", encoding="utf-8") as f:
@@ -272,7 +284,7 @@ def resolve_route_from_alias(query: str) -> str:
     if not query or not isinstance(query, str):
         return "/"
     q = query.strip().lower()
-    routes_path = "routes.json"
+    routes_path = get_routes_json_path()
     if os.path.exists(routes_path):
         try:
             with open(routes_path, "r", encoding="utf-8") as f:
@@ -450,6 +462,7 @@ class GlobalF9HotkeyTracker(QObject):
         self.main_app = main_app
         self.is_down = False
         self.last_press_time = 0.0
+        self.debounce_seconds = 0.6  # 600ms debounce prevents mechanical bounce, jitter, and rapid toggle storms
         self.timer = QTimer(self)
         self.timer.setInterval(20)  # Check every 20ms (50Hz) for instantaneous physical key response
         self.timer.timeout.connect(self._poll_f9_key)
@@ -463,10 +476,13 @@ class GlobalF9HotkeyTracker(QObject):
             now = time.time()
             if current_down and not self.is_down:
                 self.is_down = True
-                if now - self.last_press_time > 0.25:  # 250ms debounce
+                elapsed = now - self.last_press_time
+                if elapsed >= self.debounce_seconds:
                     self.last_press_time = now
                     print("[GlobalHotKey F9] Physical F9 pressed -> Toggling Voice Chat Pause/Resume ⏯️")
                     self.main_app.toggle_gemini_pause_f9()
+                else:
+                    print(f"[GlobalHotKey F9] Ignored rapid press: debounce active ({elapsed:.2f}s < {self.debounce_seconds}s)")
             elif not current_down and self.is_down:
                 self.is_down = False
         except Exception:
@@ -483,12 +499,22 @@ class DesktopPetApp(QObject):
         self.yt_resolved_signal.connect(self._on_yt_resolved_open_media)
         self.app = QApplication(sys.argv)
         
+        # Set application icon for Windows taskbar and system tray
+        for ico_cand in [os.path.join(EXE_DIR, "assets", "vedika.ico"), os.path.join(BUNDLE_DIR, "assets", "vedika.ico"), "assets/vedika.ico"]:
+            if os.path.exists(ico_cand):
+                try:
+                    from PySide6.QtGui import QIcon
+                    self.app.setWindowIcon(QIcon(ico_cand))
+                except Exception:
+                    pass
+                break
+
         # Scan for companion plugins in assets/
         self.pets_metadata = {}
         self.scan_assets()
         
         # Load user configurations
-        self.settings_path = "settings.json"
+        self.settings_path = os.path.join(EXE_DIR, "settings.json")
         self.current_pet_id = "eve"
         self.scale_factor = 0.8  # Default compact scale for modern displays
         self.always_on_top = True
@@ -637,28 +663,50 @@ class DesktopPetApp(QObject):
 
     def scan_assets(self):
         """Scans assets/ subdirectories for plugin pets containing pet.json."""
-        assets_dir = "assets"
-        if not os.path.exists(assets_dir):
-            os.makedirs(assets_dir, exist_ok=True)
-            return
+        candidate_dirs = []
+        for d in [os.path.join(EXE_DIR, "assets"), os.path.join(BUNDLE_DIR, "assets"), "assets"]:
+            if os.path.isdir(d) and d not in candidate_dirs:
+                candidate_dirs.append(d)
 
-        for entry in os.scandir(assets_dir):
-            if entry.is_dir():
-                config_file = os.path.join(entry.path, "pet.json")
-                if os.path.exists(config_file):
-                    try:
-                        with open(config_file, "r") as f:
-                            data = json.load(f)
-                            pet_id = data.get("id", entry.name)
-                            display_name = data.get("displayName", entry.name.upper())
-                            self.pets_metadata[pet_id] = {
-                                "name": display_name,
-                                "dir": entry.path,
-                                "config_path": config_file
+        for assets_dir in candidate_dirs:
+            try:
+                for entry in os.scandir(assets_dir):
+                    if entry.is_dir():
+                        config_file = os.path.join(entry.path, "pet.json")
+                        if os.path.exists(config_file):
+                            try:
+                                with open(config_file, "r", encoding="utf-8") as f:
+                                    data = json.load(f)
+                                    pet_id = data.get("id", entry.name)
+                                    if pet_id not in self.pets_metadata:
+                                        display_name = data.get("displayName", entry.name.upper())
+                                        self.pets_metadata[pet_id] = {
+                                            "name": display_name,
+                                            "dir": entry.path,
+                                            "config_path": config_file
+                                        }
+                                        print(f"[Engine] Registered companion plugin: {display_name} ({pet_id})")
+                            except Exception as e:
+                                print(f"[!] Error parsing plugin config in {entry.path}: {e}")
+            except Exception as e:
+                print(f"[!] Error scanning assets directory {assets_dir}: {e}")
+
+        # Also check root pet.json if available
+        for root_cand in [EXE_DIR, BUNDLE_DIR]:
+            root_config = os.path.join(root_cand, "pet.json")
+            if os.path.exists(root_config):
+                try:
+                    with open(root_config, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        p_id = data.get("id", "vedika_companion")
+                        if p_id not in self.pets_metadata:
+                            self.pets_metadata[p_id] = {
+                                "name": data.get("displayName", "Vedika AI Companion"),
+                                "dir": root_cand,
+                                "config_path": root_config
                             }
-                            print(f"[Engine] Registered companion plugin: {display_name} ({pet_id})")
-                    except Exception as e:
-                        print(f"[!] Error parsing plugin config in {entry.path}: {e}")
+                except Exception:
+                    pass
 
     def load_pet_instance(self, pet_id):
         """Loads and returns an instance of the chosen pet."""
@@ -667,7 +715,7 @@ class DesktopPetApp(QObject):
         asset_dir = meta["dir"]
 
         try:
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
         except Exception as e:
             print(f"[!] Critical: Cannot load config {config_path}: {e}")
@@ -675,6 +723,11 @@ class DesktopPetApp(QObject):
 
         sheet_name = config.get("spritesheetPath", "spritesheet.webp")
         spritesheet_path = os.path.join(asset_dir, sheet_name)
+        if not os.path.exists(spritesheet_path):
+            for cand in [os.path.join(BUNDLE_DIR, sheet_name), os.path.join(EXE_DIR, sheet_name), os.path.join(BUNDLE_DIR, "assets", pet_id, sheet_name)]:
+                if os.path.exists(cand):
+                    spritesheet_path = cand
+                    break
 
         sprite_cfg = config.get("sprite", {})
         width = sprite_cfg.get("width", 128)
@@ -811,7 +864,14 @@ class DesktopPetApp(QObject):
             self.window.update()
 
     def toggle_gemini_pause_f9(self):
-        """F9 Hotkey Handler: Toggles Pause / Resume (Mute / Unmute) with 0ms delay."""
+        """F9 Hotkey Handler: Toggles Pause / Resume (Mute / Unmute) with transition guard."""
+        now = time.time()
+        last_toggle = getattr(self, "_last_pause_toggle_time", 0.0)
+        if (now - last_toggle) < 0.6:
+            print("[F9 Hotkey] Ignored toggle request: transition cooldown active (600ms).")
+            return
+        self._last_pause_toggle_time = now
+
         client = self.gemini_client
         if not client.is_active:
             print("[F9 Hotkey] Starting Gemini Live Voice Chat...")
@@ -1237,7 +1297,7 @@ class DesktopPetApp(QObject):
                 if activity and self.pet:
                     is_speaking = hasattr(self, 'gemini_client') and self.gemini_client and self.gemini_client.is_speaking
                     if not is_speaking:
-                        if activity == "homepage":
+                        if activity in ("homepage", "idle", "default"):
                             self.set_active_animation("idle")
                         elif activity == "dsa_puzzle":
                             self.set_active_animation("typing")
@@ -1245,10 +1305,16 @@ class DesktopPetApp(QObject):
                             self.set_active_animation("chemistry")
                         elif activity == "math_tutor":
                             self.set_active_animation("maths")
-                        elif activity == "reading":
+                        elif activity in ("physics_lab", "biology_lab"):
+                            science_anim = "science" if "science" in self.pet.sprite.animations else "reading"
+                            self.set_active_animation(science_anim)
+                        elif activity in ("reading", "courses", "browsing", "video_lesson"):
                             self.set_active_animation("reading")
-                        elif activity == "coding_tutor":
+                        elif activity in ("coding_tutor", "code_editor"):
                             self.set_active_animation("working")
+                        else:
+                            # Safe fallback: when leaving specialized labs, never stay stuck in chemistry/maths
+                            self.set_active_animation("idle")
 
             elif msg_type == "HOMEPAGE_KID_VOICE_STARTED":
                 print("[WS Bridge] Homepage kid voice started -> silencing desktop pet")
@@ -1762,12 +1828,18 @@ class DesktopPetApp(QObject):
     
     def load_settings(self):
         """Loads user preferences from settings.json."""
-        if os.path.exists(self.settings_path):
+        target_path = self.settings_path
+        if not os.path.exists(target_path):
+            bundle_p = os.path.join(BUNDLE_DIR, "settings.json")
+            if os.path.exists(bundle_p):
+                target_path = bundle_p
+
+        if os.path.exists(target_path):
             try:
-                with open(self.settings_path, "r") as f:
+                with open(target_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    self.current_pet_id = data.get("current_pet_id", "eve")
-                    self.scale_factor = data.get("scale", 1.5)
+                    self.current_pet_id = data.get("current_pet_id", "vedika")
+                    self.scale_factor = data.get("scale", 1.0)
                     self.always_on_top = data.get("always_on_top", True)
                     self.sound_enabled = data.get("sound_enabled", True)
                     self.static_mode = data.get("static_mode", True)
@@ -1799,7 +1871,8 @@ class DesktopPetApp(QObject):
         }
         
         try:
-            with open(self.settings_path, "w") as f:
+            os.makedirs(os.path.dirname(os.path.abspath(self.settings_path)), exist_ok=True)
+            with open(self.settings_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"[!] Warning: Cannot save settings.json: {e}")

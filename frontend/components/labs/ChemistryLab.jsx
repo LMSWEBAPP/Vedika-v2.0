@@ -109,6 +109,9 @@ export default function ChemistryLab() {
       mode: labMode,
       phetSim: activePhetSim
     });
+    return () => {
+      bridge.sendActivityUpdate('browsing', { page: window.location.pathname });
+    };
   }, [selectedExperiment, labMode, activePhetSim]);
 
   // --- 1. Bohr Model Builder States ---

@@ -141,7 +141,8 @@ def test_numbered_study_notes_creation_and_targeting():
     from engine.gemini_live import GeminiLiveClient, GeminiLiveWorker
 
     mm = MemoryManager()
-    test_lesson = f"test_lesson_{int(time.time())}"
+    test_lesson = f"test_lesson_{int(time.time()*1000)}"
+    test_title = f"Cell Organelles {test_lesson}"
 
     mock_pet = MagicMock()
     mock_app = MagicMock()
@@ -150,7 +151,7 @@ def test_numbered_study_notes_creation_and_targeting():
         "courseId": "bio_test",
         "courseTitle": "Biology Test",
         "lessonId": test_lesson,
-        "lessonTitle": "Cell Organelles",
+        "lessonTitle": test_title,
         "timestampSeconds": 310,
         "timestampFormatted": "05:10"
     }

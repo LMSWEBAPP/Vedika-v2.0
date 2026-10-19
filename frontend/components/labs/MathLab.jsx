@@ -443,6 +443,9 @@ export default function MathLab() {
       visualizerSubTab: visualizerSubTab,
       plotMode: plotMode
     });
+    return () => {
+      bridge.sendActivityUpdate('browsing', { page: window.location.pathname });
+    };
   }, [activeTab, visualizerSubTab, plotMode]);
 
   // ----------------------------------------------------
