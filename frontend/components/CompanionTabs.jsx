@@ -86,27 +86,14 @@ export default function CompanionTabs({
                 background: isActive ? (isMerged ? T.s1 : `${tab.color}18`) : 'transparent',
                 boxShadow: isActive && !isMerged ? `0 0 16px ${tab.color}25` : 'none',
                 color: isActive ? '#FFFFFF' : (T.muted || '#94A3B8'),
+                outline: 'none',
                 cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 width: isMerged ? 'calc(100% + 2px)' : '100%',
                 marginLeft: isMerged ? -2 : 0,
                 boxSizing: 'border-box',
                 position: 'relative',
                 zIndex: isActive ? 20 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = `${tab.color}15`;
-                  e.currentTarget.style.borderColor = `${tab.color}40`;
-                  e.currentTarget.style.color = '#FFFFFF';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.borderColor = 'transparent';
-                  e.currentTarget.style.color = T.muted || '#94A3B8';
-                }
               }}
             >
               {isMerged && (
@@ -253,19 +240,10 @@ export default function CompanionTabs({
                 background: isActive ? `${tab.color}15` : 'transparent',
                 boxShadow: 'none',
                 color: isActive ? (T.text || '#FFF') : (T.muted || '#94A3B8'),
+                outline: 'none',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'color 0.15s ease',
                 position: 'relative'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                }
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

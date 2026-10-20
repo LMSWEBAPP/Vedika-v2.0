@@ -3,6 +3,7 @@
 import { useReducer, useState, useRef, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  ArrowLeft,
   ArrowRight,
   Compass,
   Layers,
@@ -487,6 +488,44 @@ export default function VedikaLabsHub() {
 
       {/* Top Transition Progress Bar */}
       {isNavigating && <div className="vedika-labs-top-progress" />}
+
+      {/* Floating Back Button to Dashboard */}
+      <button
+        type="button"
+        onClick={() => router.push('/')}
+        style={{
+          position: 'absolute',
+          top: isMobile ? 12 : 16,
+          left: isMobile ? 12 : 24,
+          zIndex: 60,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: isMobile ? '6px 12px' : '7px 14px',
+          borderRadius: 9999,
+          background: 'rgba(11, 15, 25, 0.78)',
+          backdropFilter: 'blur(12px)',
+          border: `1px solid ${activeLab.color}55`,
+          color: '#F8FAFC',
+          fontSize: isMobile ? 11.5 : 12.5,
+          fontWeight: 600,
+          cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+          transition: 'all 0.15s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = activeLab.color;
+          e.currentTarget.style.background = `${activeLab.color}22`;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = `${activeLab.color}55`;
+          e.currentTarget.style.background = 'rgba(11, 15, 25, 0.78)';
+        }}
+        title="Back to Dashboard"
+      >
+        <ArrowLeft size={14} color={activeLab.color} />
+        <span>Back</span>
+      </button>
 
       {/* ── CONDITIONAL RENDER: DESKTOP/LAPTOP VS MOBILE ── */}
       {!isMobile ? (

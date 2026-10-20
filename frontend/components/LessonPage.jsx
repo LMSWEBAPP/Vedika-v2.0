@@ -183,38 +183,38 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
   // 24/7 Desktop Mascot Connection State & Realtime Study Notes Sync
   const [isMascotConnected, setIsMascotConnected] = useState(false);
 
-  // Helper to ensure every note has a stable 1-based sequential noteNumber (oldest = #1, newest = #N)
+  // Helper to ensure every note has a strict 1-based sequential noteNumber (oldest = #1, ..., newest = #N, zero gaps)
   const ensureNumberedNotes = (list) => {
     if (!Array.isArray(list) || list.length === 0) return [];
-    // Chronological order (oldest -> newest) for deterministic 1..N numbering
-    const chronological = [...list].sort((a, b) => {
+    // Deduplicate by note id or clientId while preserving display order
+    const seenIds = new Set();
+    const uniqueList = [];
+    for (const item of list) {
+      if (!item) continue;
+      const key = String(item.id || item.clientId || `${item.createdAt}_${item.noteText}`);
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        uniqueList.push(item);
+      }
+    }
+    // Chronological order (oldest -> newest) for deterministic 1..N sequential numbering
+    const chronological = [...uniqueList].sort((a, b) => {
+      const tA = a?.createdAt ? new Date(a.createdAt).getTime() : NaN;
+      const tB = b?.createdAt ? new Date(b.createdAt).getTime() : NaN;
+      if (!Number.isNaN(tA) && !Number.isNaN(tB) && tA !== tB) return tA - tB;
       const idA = Number(a?.id);
       const idB = Number(b?.id);
       if (!Number.isNaN(idA) && !Number.isNaN(idB) && idA !== idB) return idA - idB;
-      const tA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const tB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return tA - tB;
+      return 0;
     });
     const idToNum = new Map();
     chronological.forEach((item, index) => {
-      const key = String(item?.id || index);
-      idToNum.set(key, item?.noteNumber ? Number(item.noteNumber) : index + 1);
+      const key = String(item?.id || item?.clientId || index);
+      idToNum.set(key, index + 1);
     });
-    // Ensure uniqueness of noteNumber across the list
-    const usedNums = new Set();
-    chronological.forEach((item, index) => {
-      const key = String(item?.id || index);
-      let num = idToNum.get(key) || index + 1;
-      if (usedNums.has(num)) {
-        num = index + 1;
-        while (usedNums.has(num)) num += 1;
-      }
-      usedNums.add(num);
-      idToNum.set(key, num);
-    });
-    return list.map((item, idx) => ({
+    return uniqueList.map((item, idx) => ({
       ...item,
-      noteNumber: idToNum.get(String(item?.id || idx)) || item?.noteNumber || (list.length - idx)
+      noteNumber: idToNum.get(String(item?.id || item?.clientId || idx)) || (uniqueList.length - idx)
     }));
   };
 
@@ -305,14 +305,18 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
             const mergedNote = {
               ...prev[idx],
               ...note,
-              noteNumber: note.noteNumber || prev[idx].noteNumber
+              noteNumber: prev[idx].noteNumber || (prev.length - idx)
             };
             // Place updated note at the top of the visible list while preserving its permanent Note #N badge
             const rest = prev.filter((_, i) => i !== idx);
             updated = ensureNumberedNotes([mergedNote, ...rest]);
           } else {
-            const nextNum = note.noteNumber || (prev.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), prev.length) + 1);
+            const nextNum = prev.length + 1;
             updated = ensureNumberedNotes([{ ...note, noteNumber: nextNum }, ...prev]);
+          }
+          const matchedInUpdated = updated.find((n) => String(n.id) === String(note.id) || (note.clientId && String(n.id) === String(note.clientId))) || updated[0];
+          if (matchedInUpdated) {
+            setRecentNoteAlert({ ...matchedInUpdated, isUpdated: type === 'STUDY_NOTE_UPDATED' });
           }
           try {
             localStorage.setItem(`vedika_notes_${lesson?.id || 'general'}`, JSON.stringify(updated));
@@ -352,7 +356,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
           return updated;
         });
 
-        setRecentNoteAlert({ ...note, isUpdated: type === 'STUDY_NOTE_UPDATED' });
+        // recentNoteAlert is already set with sequential noteNumber inside setNotes above
         setTimeout(() => {
           setRecentNoteAlert((cur) => (String(cur?.id) === String(note.id) ? null : cur));
         }, 6000);
@@ -632,7 +636,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
 
     let noteObj;
     setNotes((prev) => {
-      const nextNum = prev.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), prev.length) + 1;
+      const nextNum = prev.length + 1;
       noteObj = {
         id: clientId,
         noteNumber: nextNum,
@@ -742,7 +746,7 @@ export default function LessonPage({ lesson, completed = {}, onComplete }) {
       }
     }
 
-    const nextNum = notes.reduce((max, n) => Math.max(max, Number(n.noteNumber) || 0), notes.length) + 1;
+    const nextNum = notes.length + 1;
     const noteObj = {
       id: clientId,
       noteNumber: nextNum,

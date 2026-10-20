@@ -1010,6 +1010,25 @@ export default function CodePuzzle() {
 
   // ── Mode & Selector States ─────────────────────────────────────────────────
   const [category, setCategory] = useState('programming'); // 'programming' (Python) | 'html' (Web)
+
+  // Support direct language/sandbox selection via URL query param (?lang=html | python) and live mascot navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const applyLang = (langStr) => {
+      const l = (langStr || '').toLowerCase();
+      if (l === 'html' || l === 'web' || l === 'css') {
+        setCategory('html');
+      } else if (l === 'python' || l === 'py' || l === 'programming') {
+        setCategory('programming');
+      }
+    };
+    const params = new URLSearchParams(window.location.search);
+    applyLang(params.get('lang') || params.get('category'));
+
+    const onLangEvent = (e) => applyLang(e?.detail?.lang);
+    window.addEventListener('code_puzzle_lang_change', onLangEvent);
+    return () => window.removeEventListener('code_puzzle_lang_change', onLangEvent);
+  }, []);
   const [puzzleSource, setPuzzleSource] = useState('faculty'); // 'faculty' | 'ai'
   const [facultyPuzzleIndex, setFacultyPuzzleIndex] = useState(0);
   const [webPuzzleIndex, setWebPuzzleIndex] = useState(0);

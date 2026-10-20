@@ -493,7 +493,7 @@ class MemoryManager:
             return cursor.lastrowid
 
     def _assign_note_numbers(self, conn, lesson_id: str = "", lesson_title: str = "") -> dict:
-        """Computes 1-based sequential note numbers ordered by id ASC across notebook notes."""
+        """Computes strict 1-based sequential note numbers (1..N) ordered by id ASC within each lesson scope."""
         if lesson_id or lesson_title:
             cur = conn.execute("""
                 SELECT id FROM student_notebook_notes
@@ -504,16 +504,14 @@ class MemoryManager:
             if rows:
                 return {r["id"]: idx for idx, r in enumerate(rows, start=1)}
 
-        cur = conn.execute("SELECT id, lesson_id FROM student_notebook_notes ORDER BY id ASC")
+        cur = conn.execute("SELECT id, lesson_id, lesson_title FROM student_notebook_notes ORDER BY id ASC")
         rows = cur.fetchall()
         lesson_counts = {}
         id_to_num = {}
-        global_count = 0
         for r in rows:
-            global_count += 1
-            lid = r["lesson_id"] or "__global__"
+            lid = (r["lesson_id"] or r["lesson_title"] or "__unassigned__").strip()
             lesson_counts[lid] = lesson_counts.get(lid, 0) + 1
-            id_to_num[r["id"]] = lesson_counts[lid] if r["lesson_id"] else global_count
+            id_to_num[r["id"]] = lesson_counts[lid]
         return id_to_num
 
     def append_or_create_notebook_note(
@@ -545,6 +543,22 @@ class MemoryManager:
         formatted_bullets = format_text_as_bullets(clean_text)
 
         with self._get_connection() as conn:
+            # If lesson_id is missing (e.g. voice note taken right after a generic page update), inherit active lesson context from latest note
+            if not lesson_id and not lesson_title:
+                latest_cur = conn.execute("""
+                    SELECT course_id, course_title, chapter_title, lesson_id, lesson_title, video_id
+                    FROM student_notebook_notes
+                    WHERE lesson_id != '' OR lesson_title != ''
+                    ORDER BY id DESC LIMIT 1
+                """)
+                latest_ctx = latest_cur.fetchone()
+                if latest_ctx:
+                    lesson_id = lesson_id or latest_ctx["lesson_id"] or ""
+                    lesson_title = lesson_title or latest_ctx["lesson_title"] or ""
+                    course_id = course_id or latest_ctx["course_id"] or ""
+                    course_title = course_title or latest_ctx["course_title"] or ""
+                    chapter_title = chapter_title or latest_ctx["chapter_title"] or ""
+                    video_id = video_id or latest_ctx["video_id"] or ""
             row = None
             # Case 1: User explicitly specified a Note Number (e.g., "add to note 2" -> target_note_number=2)
             if target_note_number is not None and int(target_note_number) > 0:
@@ -698,12 +712,12 @@ class MemoryManager:
         params = []
         conditions = []
 
-        if course_id:
-            conditions.append("(course_id = ? OR course_id = '' OR course_title = ?)")
+        if course_id and not lesson_id:
+            conditions.append("(course_id = ? OR course_title = ?)")
             params.append(course_id)
             params.append(course_id)
         if lesson_id:
-            conditions.append("(lesson_id = ? OR lesson_id = '' OR lesson_title = ?)")
+            conditions.append("(lesson_id = ? OR lesson_title = ?)")
             params.append(lesson_id)
             params.append(lesson_id)
 

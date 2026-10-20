@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
   Dna, Sliders, Info, Zap,
-  RotateCcw, Play, Pause, Activity, Eye, Info as InfoIcon, Maximize2
+  RotateCcw, Play, Pause, Activity, Eye, Info as InfoIcon, Maximize2, ArrowLeft
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
@@ -23,6 +24,7 @@ const ORGANELLES = [
 ];
 
 export default function BiologyLab() {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
   const isStacked = isMobile;
@@ -623,6 +625,27 @@ export default function BiologyLab() {
         {/* Lab Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => router.push('/vedika-labs')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '5px 10px',
+                borderRadius: 8,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#CBD5E1',
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+              title="Back to Vedika Labs"
+            >
+              <ArrowLeft size={13} />
+              <span>Back</span>
+            </button>
             <Dna size={20} color="#9B6EF8" />
             <div>
               <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#F8FAFC' }}>Biology Lab</h2>

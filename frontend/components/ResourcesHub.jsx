@@ -1,10 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Code, FileText } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Code, FileText } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 
 export default function ResourcesHub({ navigateTo }) {
+  const router = useRouter();
   const cards = [
     {
       id: 'library',
@@ -34,6 +36,30 @@ export default function ResourcesHub({ navigateTo }) {
 
   return (
     <div className="resources-hub-container">
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', marginBottom: 8 }}>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '7px 14px',
+            borderRadius: 10,
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: T.text || '#F8FAFC',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+          title="Back to Dashboard"
+        >
+          <ArrowLeft size={15} />
+          <span>Back</span>
+        </button>
+      </div>
       {/* Title Header */}
       <div className="resources-hub-header">
         <h1 className="resources-hub-title">

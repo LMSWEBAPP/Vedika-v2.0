@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, Component } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,7 +13,7 @@ import {
   Sliders, Activity, HelpCircle, Compass, Zap, Lightbulb, ChevronRight, ChevronDown, X,
   TrendingUp, Circle, Triangle, Layers, ZoomIn, ZoomOut, RefreshCw, Send, Image as ImageIcon,
   Crop, Mic, MicOff, Square, CheckCircle2, Award, Box, Volume2,
-  Maximize2, Minimize2, PenLine, LineChart
+  Maximize2, Minimize2, PenLine, LineChart, ArrowLeft
 } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { getMascotBridge } from '@/lib/mascotBridge';
@@ -271,6 +272,7 @@ function CustomMathMarkdown({ content }) {
 // MAIN MATH LAB COMPONENT
 // ----------------------------------------------------
 export default function MathLab() {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
   const isStacked = isMobile;
@@ -1101,8 +1103,40 @@ Example:
 
         {/* TOP ROW: Header on Left, Tab Switcher on Right (Desktop) / Stacked (Mobile) */}
         <div className="math-lab-top-row">
-          {/* 1. HEADER (matching image: Badge + Title + Subtitle) */}
+          {/* 1. HEADER (matching image: Back + Badge + Title + Subtitle) */}
           <header className="math-lab-header">
+            <button
+              type="button"
+              onClick={() => router.push('/vedika-labs')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 13px',
+                borderRadius: 10,
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                color: '#F8FAFC',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginRight: 6,
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)';
+                e.currentTarget.style.borderColor = '#A855F7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+              }}
+              title="Back to Vedika Labs"
+            >
+              <ArrowLeft size={14} color="#C084FC" />
+              <span>Back</span>
+            </button>
             <div className="math-lab-badge">
               <Calculator size={26} color="#FFF" />
             </div>

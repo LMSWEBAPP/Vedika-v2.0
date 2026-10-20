@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  BookOpen, CheckCircle, Circle, Clock, Trophy, Award, FileText, ClipboardList
+  ArrowLeft, BookOpen, CheckCircle, Circle, Clock, Trophy, Award, FileText, ClipboardList
 } from 'lucide-react';
 import { T, getCourseDetails } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
@@ -17,6 +18,7 @@ import {
 } from '@/lib/frappe';
 
 export default function ProgressPage({ completed = {} }) {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
   const statCols = isMobile ? 'repeat(2,1fr)' : isTablet ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
@@ -170,9 +172,32 @@ export default function ProgressPage({ completed = {} }) {
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 32px' : '32px 36px', maxWidth: 860, fontFamily: 'var(--font-outfit), sans-serif', margin: '0 auto', boxSizing: 'border-box' }}>
-      <h2 style={{ color: T.text, fontSize: isMobile ? 20 : 22, fontWeight: 700, margin: '0 0 4px', letterSpacing: '-0.03em' }}>
-        Progress Dashboard
-      </h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 8,
+            background: T.s2,
+            border: `1px solid ${T.border}`,
+            color: T.text,
+            fontSize: 12.5,
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+          title="Back to Dashboard"
+        >
+          <ArrowLeft size={14} />
+          <span>Back</span>
+        </button>
+        <h2 style={{ color: T.text, fontSize: isMobile ? 20 : 22, fontWeight: 700, margin: 0, letterSpacing: '-0.03em' }}>
+          Progress Dashboard
+        </h2>
+      </div>
       <p style={{ color: T.muted, margin: '0 0 18px', fontSize: isMobile ? 13 : 14 }}>
         Your progress in <span style={{ color: T.accent, fontWeight: 600 }}>{selectedCourseSyllabus?.title || "selected course"}</span> at a glance.
       </p>

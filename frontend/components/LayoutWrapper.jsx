@@ -146,11 +146,31 @@ export default function LayoutWrapper({ children }) {
         }
       }
 
-      if (targetRoute.includes('/courses') && targetRoute.includes('category=')) {
-        const match = targetRoute.match(/category=([^&]+)/);
+      if (targetRoute.includes('/courses')) {
+        if (targetRoute.includes('category=')) {
+          const match = targetRoute.match(/category=([^&]+)/);
+          if (match && match[1]) {
+            const cat = decodeURIComponent(match[1].replace(/\+/g, ' '));
+            window.dispatchEvent(new CustomEvent('change_course_category', { detail: { category: cat } }));
+          }
+        } else if (targetRoute.includes('course=') || targetRoute.includes('courseId=')) {
+          const match = targetRoute.match(/(?:course|courseId)=([^&]+)/);
+          if (match && match[1]) {
+            const cId = decodeURIComponent(match[1]);
+            window.dispatchEvent(new CustomEvent('select_course_by_id', { detail: { courseId: cId } }));
+          }
+        } else {
+          window.dispatchEvent(new CustomEvent('reset_courses_view'));
+        }
+      } else if (targetRoute.includes('/viva-interview') && targetRoute.includes('mode=')) {
+        const match = targetRoute.match(/mode=([^&]+)/);
         if (match && match[1]) {
-          const cat = decodeURIComponent(match[1]);
-          window.dispatchEvent(new CustomEvent('change_course_category', { detail: { category: cat } }));
+          window.dispatchEvent(new CustomEvent('viva_mode_change', { detail: { mode: decodeURIComponent(match[1]) } }));
+        }
+      } else if (targetRoute.includes('/code-puzzle') && targetRoute.includes('lang=')) {
+        const match = targetRoute.match(/lang=([^&]+)/);
+        if (match && match[1]) {
+          window.dispatchEvent(new CustomEvent('code_puzzle_lang_change', { detail: { lang: decodeURIComponent(match[1]) } }));
         }
       }
     });
@@ -170,6 +190,35 @@ export default function LayoutWrapper({ children }) {
         }
       } else if (pathname === '/courses') {
         window.dispatchEvent(new CustomEvent('courses_navigate_back_step'));
+      } else if (pathname?.startsWith('/vedika-labs/') || pathname?.startsWith('/labs/')) {
+        router.push('/vedika-labs');
+      } else if (pathname === '/resources') {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view');
+        if (view && view.startsWith('dsa/')) {
+          router.push('/resources?view=dsa');
+        } else if (view && view !== 'home') {
+          router.push('/resources');
+        } else {
+          router.push('/');
+        }
+      } else if (
+        pathname === '/general-tutor' ||
+        pathname === '/coding-tutor' ||
+        pathname?.startsWith('/vedika-ai/') ||
+        pathname?.startsWith('/code-puzzle') ||
+        pathname?.startsWith('/viva-interview')
+      ) {
+        router.push('/vedika-ai');
+      } else if (
+        pathname === '/vedika-labs' ||
+        pathname === '/vedika-ai' ||
+        pathname === '/quizzes' ||
+        pathname === '/assignments' ||
+        pathname === '/jobs' ||
+        pathname === '/progress'
+      ) {
+        router.push('/');
       } else {
         try {
           router.back();

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle, Circle, Clock, Play, GraduationCap, ChevronRight, ChevronLeft, ArrowLeft, Users, Tag, BookOpen, Terminal, X, Award, Search, Grid, Layers
 } from 'lucide-react';
@@ -134,6 +135,7 @@ function CourseDeckWidget({
 }
 
 export default function CoursePage() {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const isTabletOrSmallDesktop = useMediaQuery('(max-width: 1150px)');
   const rPad = isMobile ? 16 : 36;
@@ -272,6 +274,7 @@ export default function CoursePage() {
       matched = allCategories.find(c => c.toLowerCase().includes(target) || target.includes(c.toLowerCase()));
     }
     const finalCat = matched || catName;
+    setSelectedCourse(null);
     setSelectedCategory(finalCat);
     setActiveDrilldownCategory(finalCat);
     if (typeof window !== 'undefined') {
@@ -310,6 +313,18 @@ export default function CoursePage() {
     };
     window.addEventListener('change_course_category', handleCustomCatEvent);
 
+    const handleSelectCourseById = (e) => {
+      const cId = e?.detail?.courseId;
+      if (!cId) return;
+      const targetCourse = courses.find(c =>
+        String(c.id).toLowerCase() === String(cId).toLowerCase() ||
+        String(c.name).toLowerCase() === String(cId).toLowerCase() ||
+        (c.title && c.title.toLowerCase().includes(String(cId).toLowerCase()))
+      );
+      if (targetCourse) handleSelectCourse(targetCourse);
+    };
+    window.addEventListener('select_course_by_id', handleSelectCourseById);
+
     let unsubBridge = () => {};
     try {
       const bridge = getMascotBridge();
@@ -330,6 +345,7 @@ export default function CoursePage() {
 
     return () => {
       window.removeEventListener('change_course_category', handleCustomCatEvent);
+      window.removeEventListener('select_course_by_id', handleSelectCourseById);
       unsubBridge();
     };
   }, [handleCategorySelection, courses]);
@@ -940,7 +956,7 @@ export default function CoursePage() {
         height: isMobile ? 'auto' : '100%',
         justifyContent: 'flex-start'
       }} className="no-scrollbar">
-        {/* Compact Top Action Toolbar: Search & Practice Playground */}
+        {/* Compact Top Action Toolbar: Back, Search & Practice Playground */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -949,8 +965,44 @@ export default function CoursePage() {
           flexWrap: 'wrap',
           marginBottom: 8
         }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isMobile ? '100%' : 'auto', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeDrilldownCategory) {
+                  setActiveDrilldownCategory(null);
+                  setSelectedCategory('All');
+                  if (typeof window !== 'undefined') window.history.pushState({}, '', '/courses');
+                } else {
+                  router.push('/');
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 13px',
+                borderRadius: 10,
+                background: T.s2,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
+              title={activeDrilldownCategory ? "Back to all categories" : "Back to Dashboard"}
+            >
+              <ArrowLeft size={14} />
+              <span>Back</span>
+            </button>
+
           {/* Real-Time Course Search Bar */}
-          <div style={{ position: 'relative', width: isMobile ? '100%' : 300, flexShrink: 0 }}>
+          <div style={{ position: 'relative', width: isMobile ? '100%' : 300, flex: isMobile ? 1 : 'none', flexShrink: 0 }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
             <input
               type="text"
@@ -983,6 +1035,7 @@ export default function CoursePage() {
                 <X size={13} />
               </button>
             )}
+          </div>
           </div>
 
           {/* Practice Playground Launch Button */}

@@ -1915,8 +1915,34 @@ export default function GeneralTutor() {
               {/* ── CHAT AREA (z-index: 1 sits cleanly over watermark) ── */}
               <div ref={chatRef} onScroll={handleChatScroll} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px 110px' : '24px 24px 125px' }}>
 
-                {/* Centered Date Capsule matching reference image */}
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                {/* Top Bar: Back Button + Centered Date Capsule */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/vedika-ai')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '5px 12px',
+                      borderRadius: 12,
+                      background: 'rgba(15, 23, 42, 0.68)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(168, 85, 247, 0.35)',
+                      color: '#E2E8F0',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      zIndex: 5,
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.color = '#FFFFFF'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)'; e.currentTarget.style.color = '#E2E8F0'; }}
+                    title="Back to Assistant Hub"
+                  >
+                    <ChevronLeft size={14} color="#C084FC" />
+                    <span>Back</span>
+                  </button>
                   <div style={{
                     background: 'rgba(15, 23, 42, 0.55)',
                     backdropFilter: 'blur(12px)',
@@ -1930,6 +1956,7 @@ export default function GeneralTutor() {
                   }}>
                     Today, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
+                  <div style={{ width: 68 }} />
                 </div>
 
                 {/* Welcome AI message */}

@@ -96,7 +96,7 @@ export default function VivaInterviewPage() {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
     } else {
-      router.push('/dashboard');
+      router.push('/vedika-ai');
     }
   };
 
@@ -118,16 +118,28 @@ export default function VivaInterviewPage() {
   const [activeSessionTopic, setActiveSessionTopic] = useState('');
   const [isMobileInfoExpanded, setIsMobileInfoExpanded] = useState(false);
 
-  // Support direct mode selection via URL query param (?mode=interview)
+  // Support direct mode selection via URL query param (?mode=interview | viva | aptitude) and live mascot navigation
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const mode = params.get('mode');
-      if (mode === 'interview' || mode === 'technical') {
+    if (typeof window === 'undefined') return;
+    const applyMode = (modeStr) => {
+      const m = (modeStr || '').toLowerCase();
+      if (m === 'interview' || m === 'technical') {
         setIsRightOpen(true);
         setSessionMode('interview');
+      } else if (m === 'aptitude') {
+        setIsRightOpen(false);
+        setSessionMode('aptitude');
+      } else if (m === 'viva' || m === 'oral') {
+        setIsRightOpen(false);
+        setSessionMode('viva');
       }
-    }
+    };
+    const params = new URLSearchParams(window.location.search);
+    applyMode(params.get('mode'));
+
+    const onModeEvent = (e) => applyMode(e?.detail?.mode);
+    window.addEventListener('viva_mode_change', onModeEvent);
+    return () => window.removeEventListener('viva_mode_change', onModeEvent);
   }, []);
 
   // Aptitude Mode States

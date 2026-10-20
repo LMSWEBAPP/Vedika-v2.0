@@ -879,8 +879,33 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
               justifyContent: 'center',
               width: '100%',
               minHeight: '100%',
-              textAlign: 'center'
+              textAlign: 'center',
+              position: 'relative'
             }}>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', marginBottom: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 9,
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: '#FDE68A',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Back to Dashboard"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back</span>
+                </button>
+              </div>
               <div style={{ marginBottom: isMobile ? 8 : 16 }}>
                 <h1 style={{
                   color: '#FFFFFF',
@@ -1408,8 +1433,33 @@ export default function QuizzesAssignmentsWorkspace({ initialMode = 'quizzes' })
               justifyContent: 'center',
               width: '100%',
               minHeight: '100%',
-              textAlign: 'center'
+              textAlign: 'center',
+              position: 'relative'
             }}>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', marginBottom: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 9,
+                    background: 'rgba(168, 85, 247, 0.12)',
+                    border: '1px solid rgba(168, 85, 247, 0.35)',
+                    color: '#E9D5FF',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Back to Dashboard"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back</span>
+                </button>
+              </div>
               <div style={{ marginBottom: isMobile ? 8 : 16 }}>
                 <h1 style={{
                   color: '#FFFFFF',

@@ -545,37 +545,31 @@ class GeminiLiveWorker(QThread):
             return {"status": "success", "playing_music": query or "trending music"}
 
         def navigate_webapp(route: str = "/") -> dict:
-            """Navigates the Vedika LMS WebApp to a specific route, page, or inner lab experiment:
-            - Labs Hub: '/vedika-labs'
-            - Chemistry Experiments:
-              * '/vedika-labs/chemistry?experiment=titration' (Acid-Base Titration)
-              * '/vedika-labs/chemistry?experiment=bohr' (Bohr Model Builder)
-              * '/vedika-labs/chemistry?experiment=gas' (Ideal Gas Laws & Kinetic Simulator)
-              * '/vedika-labs/chemistry?experiment=diffusion' (Molecular Gas Diffusion)
-              * '/vedika-labs/chemistry?experiment=trends' (Periodic Trends & Atomic Orbitals)
-              * '/vedika-labs/chemistry?mode=phet' (Chemistry PhET Simulations)
-            - Physics Experiments:
-              * '/vedika-labs/physics?experiment=pendulum' (Simple Harmonic Motion Pendulum)
-              * '/vedika-labs/physics?experiment=projectile' (Projectile Motion & Kinematics)
-              * '/vedika-labs/physics?experiment=refraction' (Optics, Snell's Law & Refraction)
-              * '/vedika-labs/physics?experiment=spring' (Spring-Mass Hooke's Law Oscillations)
-              * '/vedika-labs/physics?experiment=circuit' (Ohm's Law & DC Electrical Circuit)
-              * '/vedika-labs/physics?mode=phet' (Physics PhET Simulations)
-            - Biology Experiments:
-              * '/vedika-labs/biology?experiment=cell' (3D Animal Cell Organelles)
-              * '/vedika-labs/biology?experiment=ecosystem' (Food Web & Predator-Prey)
-              * '/vedika-labs/biology?experiment=dna' (DNA Double Helix & Genetics)
-              * '/vedika-labs/biology?mode=phet' (Biology PhET Simulations)
-            - Math Visualizers & Graphing:
-              * '/vedika-labs/math?tab=visualizer&subtab=calculus' (Calculus Tangents & Derivatives)
-              * '/vedika-labs/math?tab=visualizer&subtab=pythagoras' (Pythagoras Theorem Proof)
-              * '/vedika-labs/math?tab=visualizer&subtab=sector' (Circle Sector & Clock Wiper)
-              * '/vedika-labs/math?tab=visualizer&subtab=solid' (3D Solid Surface Area)
-              * '/vedika-labs/math?tab=visualizer&subtab=trig' (Unit Circle & Trigonometry)
-              * '/vedika-labs/math?tab=graph&mode=linear' (Linear Equations & Slope)
-              * '/vedika-labs/math?tab=graph&mode=quadratic' (Quadratic Parabolas)
-              * '/vedika-labs/math?tab=whiteboard' (Math AI Canvas)
-            - Other Pages: '/courses', '/code-puzzle', '/viva-interview', '/resources', '/quizzes', '/assignments', '/jobs', '/progress'."""
+            """Navigates the Vedika LMS WebApp to any surface page OR deep inner page, course, lesson, lab experiment, resource view, or exam mode:
+            - Dashboard & Surface Hubs: '/', '/courses', '/vedika-ai', '/vedika-ai/ask', '/vedika-ai/code', '/code-puzzle', '/viva-interview', '/vedika-labs', '/resources', '/quizzes', '/assignments', '/jobs', '/progress'
+            - Course Categories: '/courses?category=Physics', '/courses?category=Maths', '/courses?category=Chemistry', '/courses?category=Biology', '/courses?category=Python', '/courses?category=Web+Development', '/courses?category=DSA'
+            - Specific Course Syllabuses:
+              * '/courses?course=physics-mechanics-fundamentals' (Physics: Mechanics & Energy)
+              * '/courses?course=calculus-advanced-mathematics' (Mathematics: Calculus & Analysis)
+              * '/courses?course=general-physical-chemistry' (Chemistry: Atoms, Bonds & Reactions)
+              * '/courses?course=cellular-biology-genetics' (Biology: Cells & Molecular Genetics)
+              * '/courses?course=python-programming-essentials' (Python Programming Essentials)
+              * '/courses?course=modern-web-development-html-css' (Web Development: HTML & CSS)
+            - Specific Video Lessons:
+              * Physics: '/lesson/phys_l1' (Kinematics & 1D Motion), '/lesson/phys_l2' (Newton's Laws), '/lesson/phys_l3' (Work, Energy & Power), '/lesson/phys_l4' (Universal Gravitation)
+              * Math: '/lesson/math_l1' (Limits & Continuity), '/lesson/math_l2' (Derivatives & Rates of Change), '/lesson/math_l3' (Antiderivatives & FTC), '/lesson/math_l4' (Integration: Area & Volume)
+              * Chemistry: '/lesson/chem_l1' (Electronic Structure & Orbitals), '/lesson/chem_l2' (Ionic & Covalent Bonds), '/lesson/chem_l3' (Balancing Reactions & Stoichiometry), '/lesson/chem_l4' (Acids, Bases & Titration)
+              * Biology: '/lesson/bio_l1' (Cell Organelles & Membrane Transport), '/lesson/bio_l2' (Cellular Respiration & ATP), '/lesson/bio_l3' (DNA Replication & Protein Synthesis), '/lesson/bio_l4' (Mendelian Genetics)
+              * Python: '/lesson/py_l1' (Syntax & Variables), '/lesson/py_l2' (Lists, Dicts & Sets), '/lesson/py_l3' (Conditionals & Loops), '/lesson/py_l4' (Functions & Scope), plus '/lesson/l1'..'l15'
+              * Web Dev: '/lesson/web_l1' (HTML Semantic Tags), '/lesson/web_l2' (HTML Forms & Media), '/lesson/web_l3' (CSS Selectors & Box Model), '/lesson/web_l4' (CSS Flexbox & Responsive Design)
+            - Resources Sub-Views: '/resources?view=library' (PDF Library), '/resources?view=cheatsheets' (Cheat Sheets), '/resources?view=dsa' (DSA Hub), '/resources?view=dsa/company' (Company-Wise DSA Questions), '/resources?view=dsa/resources' (DSA Study Guide)
+            - Viva & Interview Modes: '/viva-interview?mode=viva' (Oral Viva Exam), '/viva-interview?mode=interview' (Technical Mock Interview), '/viva-interview?mode=aptitude' (Aptitude Test)
+            - Code Puzzle Modes: '/code-puzzle?lang=python' (Python Sandbox), '/code-puzzle?lang=html' (HTML/CSS Web Sandbox)
+            - 3D Science & Math Labs:
+              * Chemistry: '/vedika-labs/chemistry?experiment=titration', 'bohr', 'gas', 'diffusion', 'trends', or '?mode=phet'
+              * Physics: '/vedika-labs/physics?experiment=pendulum', 'projectile', 'refraction', 'spring', 'circuit', or '?mode=phet'
+              * Biology: '/vedika-labs/biology?experiment=cell', 'ecosystem', 'dna', or '?mode=phet'
+              * Math: '/vedika-labs/math?tab=visualizer&subtab=calculus', 'pythagoras', 'sector', 'solid', 'trig', '/vedika-labs/math?tab=graph&mode=linear', 'quadratic', '/vedika-labs/math?tab=whiteboard'."""
             route_str = str(route).strip()
             if route_str.lower() in ("back", "previous", "go_back", "/back", "return"):
                 print("[GeminiLiveWorker] Tool call: navigate_webapp(route='back') -> emitting navigate_back_requested")

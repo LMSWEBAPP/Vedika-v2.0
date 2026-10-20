@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Maximize2, RotateCcw, BookOpen, HelpCircle, 
   ExternalLink, Layers, CheckCircle2, ChevronDown, ChevronUp, Award, Send, Bot, RefreshCw,
-  Sparkles, Smartphone, X, Check, Compass
+  Sparkles, Smartphone, X, Check, Compass, ArrowLeft
 } from 'lucide-react';
 import { PHET_SIMULATIONS, LAB_SUBJECT_METADATA } from '@/lib/phet-simulations';
 import { T } from '@/lib/lms-data';
@@ -50,6 +51,7 @@ export const LAB_FEATURE_OPTIONS = [
 ];
 
 export default function PhetSimViewer({ subject = 'physics', activeSimId, onSelectSim, onViewModeChange, currentViewMode = 'phet' }) {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const sims = PHET_SIMULATIONS[subject] || [];
   const activeSim = sims.find(s => s.id === activeSimId) || sims[0];
@@ -269,15 +271,47 @@ export default function PhetSimViewer({ subject = 'physics', activeSimId, onSele
           gap: 10,
           flexWrap: isMobile ? 'wrap' : 'nowrap'
         }}>
-          {/* Left: Experiment Selector & Subject Badge */}
+          {/* Left: Back to Labs + Experiment Selector & Subject Badge */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             flex: isMobile ? 1 : 'none',
             minWidth: 0,
-            maxWidth: isMobile ? '100%' : '400px'
+            maxWidth: isMobile ? '100%' : '460px'
           }}>
+            <button
+              type="button"
+              onClick={() => router.push('/vedika-labs')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 11px',
+                borderRadius: 8,
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                color: '#E2E8F0',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                e.currentTarget.style.color = '#E2E8F0';
+              }}
+              title="Back to Vedika Labs"
+            >
+              <ArrowLeft size={13} />
+              <span>Back</span>
+            </button>
             <span style={{
               background: subjectMeta.gradient,
               color: '#fff',

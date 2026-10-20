@@ -280,38 +280,57 @@ def load_valid_routes() -> set:
 VALID_ROUTES = load_valid_routes()
 
 def resolve_route_from_alias(query: str) -> str:
-    """Resolves human natural aliases (e.g. 'titration', 'math lab', 'chemistry') to canonical route IDs."""
+    """Resolves human natural aliases (e.g. 'titration', 'physics lesson 2', 'company wise questions') to canonical route IDs."""
     if not query or not isinstance(query, str):
         return "/"
-    q = query.strip().lower()
+    raw_q = query.strip()
+    q = raw_q.lower()
     routes_path = get_routes_json_path()
     if os.path.exists(routes_path):
         try:
             with open(routes_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                # First pass: look for exact alias or id match
-                for item in data.get("routes", []):
+                routes_list = data.get("routes", [])
+                # Pass 1: exact match on id, label, or alias
+                for item in routes_list:
                     r_id = item.get("id", "")
-                    if q == r_id.lower() or q == r_id.lstrip("/").lower():
+                    label = item.get("label", "")
+                    if q == r_id.lower() or q == r_id.lstrip("/").lower() or (label and q == label.lower()):
                         return r_id
                     for alias in item.get("aliases", []):
                         if q == alias.lower():
                             return r_id
-                # Second pass: look for substring match, preferring longer alias matches
+                # If raw_q is already a valid slash route (e.g. /lesson/phys_l1), keep it as-is
+                if raw_q.startswith("/") and ("?" in raw_q or "/" in raw_q[1:]):
+                    return raw_q
+                # Pass 2: alias is contained inside the spoken query (e.g. "open physics lesson 2"), prefer longest alias match
                 best_match = None
                 best_len = 0
-                for item in data.get("routes", []):
+                for item in routes_list:
                     r_id = item.get("id", "")
                     for alias in item.get("aliases", []):
                         a_low = alias.lower()
-                        if (a_low in q or q in a_low) and len(a_low) > best_len:
+                        if a_low in q and len(a_low) > best_len:
                             best_match = r_id
                             best_len = len(a_low)
                 if best_match:
                     return best_match
+                # Pass 3: spoken query is contained inside an alias (prefer shortest containing alias for specificity)
+                if len(q) >= 4:
+                    shortest_match = None
+                    shortest_len = 999999
+                    for item in routes_list:
+                        r_id = item.get("id", "")
+                        for alias in item.get("aliases", []):
+                            a_low = alias.lower()
+                            if q in a_low and len(a_low) < shortest_len:
+                                shortest_match = r_id
+                                shortest_len = len(a_low)
+                    if shortest_match:
+                        return shortest_match
         except Exception:
             pass
-    return query
+    return raw_q
 
 def sanitize_and_validate_route(route: str) -> str:
     if not route or not isinstance(route, str):
@@ -1289,8 +1308,30 @@ class DesktopPetApp(QObject):
                 if hasattr(self, 'gemini_client') and self.gemini_client:
                     if not isinstance(payload, dict):
                         payload = {}
+                    prev_ctx = getattr(self.gemini_client, 'active_webapp_context', {}) or {}
+                    new_page = payload.get("page") or payload.get("route") or payload.get("activeRoute") or ""
+                    prev_page = prev_ctx.get("page") or prev_ctx.get("route") or prev_ctx.get("activeRoute") or ""
+
+                    # Auto-extract lessonId from /lesson/<id> route if not explicitly provided
+                    if new_page.startswith("/lesson/"):
+                        extracted_lid = new_page.split("/lesson/", 1)[1].split("?")[0].split("#")[0].strip("/")
+                        if extracted_lid and not payload.get("lessonId"):
+                            payload["lessonId"] = extracted_lid
+
+                    # If staying on the same lesson or page, preserve rich lesson/course metadata from previous context
+                    same_lesson = (
+                        (new_page and prev_page and new_page.split("?")[0] == prev_page.split("?")[0])
+                        or (payload.get("lessonId") and payload.get("lessonId") == prev_ctx.get("lessonId"))
+                    )
+                    if same_lesson and isinstance(prev_ctx, dict):
+                        merged_ctx = dict(prev_ctx)
+                        for k, v in payload.items():
+                            if v not in (None, ""):
+                                merged_ctx[k] = v
+                        payload = merged_ctx
+
                     if not payload.get("activeRoute"):
-                        payload["activeRoute"] = payload.get("page") or payload.get("route", "")
+                        payload["activeRoute"] = new_page or payload.get("page") or payload.get("route", "")
                     self.gemini_client.active_webapp_context = payload
                 
                 activity = payload.get("activity") if isinstance(payload, dict) else ""

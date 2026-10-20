@@ -1,24 +1,87 @@
 {
   "routes": [
-    { "id": "/", "label": "Dashboard", "aliases": ["home", "dashboard", "main", "portal", "home page"] },
-    { "id": "/courses", "label": "Courses", "aliases": ["courses", "lessons", "classes", "subjects", "course catalog", "open courses", "my courses"] },
-    { "id": "/courses?category=Physics", "label": "Physics Courses", "aliases": ["physics courses", "physics course", "move to physics courses", "move into physics courses", "physics lessons", "open physics courses", "physics classes"] },
-    { "id": "/courses?category=Maths", "label": "Mathematics Courses", "aliases": ["math courses", "maths courses", "mathematics courses", "move to math courses", "move into math courses", "open math courses", "math lessons"] },
-    { "id": "/courses?category=Chemistry", "label": "Chemistry Courses", "aliases": ["chemistry courses", "chemistry course", "move to chemistry courses", "move into chemistry courses", "open chemistry courses", "chem courses"] },
-    { "id": "/courses?category=Biology", "label": "Biology Courses", "aliases": ["biology courses", "biology course", "move to biology courses", "move into biology courses", "open biology courses", "bio courses"] },
-    { "id": "/courses?category=Python", "label": "Python Courses", "aliases": ["python courses", "python course", "python programming courses", "move to python courses", "move into python courses", "open python courses", "python lessons"] },
-    { "id": "/courses?category=Web+Development", "label": "Web Development Courses", "aliases": ["web development courses", "web dev courses", "frontend courses", "move to web dev courses"] },
-    { "id": "/courses?category=DSA", "label": "Data Structures & Algorithms Courses", "aliases": ["dsa courses", "data structures courses", "algorithms courses", "move to dsa courses"] },
-    { "id": "/vedika-ai", "label": "Vedika AI Assistant Hub", "aliases": ["vedika ai", "ai tutor", "ai hub", "ai companion", "ai assistant"] },
+    { "id": "/", "label": "Dashboard", "aliases": ["home", "dashboard", "main", "portal", "home page", "main page", "landing page"] },
+    { "id": "/courses", "label": "Courses Catalog", "aliases": ["courses", "lessons", "classes", "subjects", "course catalog", "open courses", "my courses", "all courses"] },
+
+    { "id": "/courses?category=Physics", "label": "Physics Courses Category", "aliases": ["physics courses", "physics category", "move to physics courses", "move into physics courses", "physics classes"] },
+    { "id": "/courses?category=Maths", "label": "Mathematics Courses Category", "aliases": ["math courses", "maths courses", "mathematics courses", "move to math courses", "move into math courses", "open math courses"] },
+    { "id": "/courses?category=Chemistry", "label": "Chemistry Courses Category", "aliases": ["chemistry courses", "chemistry category", "move to chemistry courses", "move into chemistry courses", "open chemistry courses", "chem courses"] },
+    { "id": "/courses?category=Biology", "label": "Biology Courses Category", "aliases": ["biology courses", "biology category", "move to biology courses", "move into biology courses", "open biology courses", "bio courses"] },
+    { "id": "/courses?category=Python", "label": "Python Courses Category", "aliases": ["python courses", "python category", "python programming courses", "move to python courses", "move into python courses", "open python courses"] },
+    { "id": "/courses?category=Web+Development", "label": "Web Development Courses Category", "aliases": ["web development courses", "web dev courses", "frontend courses", "move to web dev courses", "html css courses"] },
+    { "id": "/courses?category=DSA", "label": "Data Structures & Algorithms Courses Category", "aliases": ["dsa courses", "data structures courses", "algorithms courses", "move to dsa courses"] },
+
+    { "id": "/courses?course=physics-mechanics-fundamentals", "label": "Physics: Mechanics & Energy Course Syllabus", "aliases": ["physics course", "open physics course", "physics mechanics", "mechanics and energy", "physics syllabus", "physics mechanics fundamentals"] },
+    { "id": "/courses?course=calculus-advanced-mathematics", "label": "Mathematics: Calculus & Analysis Course Syllabus", "aliases": ["math course", "maths course", "mathematics course", "calculus course", "open calculus course", "calculus and analysis", "math syllabus"] },
+    { "id": "/courses?course=general-physical-chemistry", "label": "Chemistry: Atoms, Bonds & Reactions Course Syllabus", "aliases": ["chemistry course", "open chemistry course", "atoms bonds and reactions", "physical chemistry course", "chemistry syllabus"] },
+    { "id": "/courses?course=cellular-biology-genetics", "label": "Biology: Cells & Molecular Genetics Course Syllabus", "aliases": ["biology course", "open biology course", "cells and molecular genetics", "cellular biology course", "biology syllabus"] },
+    { "id": "/courses?course=python-programming-essentials", "label": "Python Programming Essentials Course Syllabus", "aliases": ["python course", "open python course", "python programming essentials", "python essentials", "python syllabus"] },
+    { "id": "/courses?course=modern-web-development-html-css", "label": "Web Development: HTML & CSS Course Syllabus", "aliases": ["web development course", "web dev course", "html and css course", "open web development course", "web dev syllabus"] },
+
+    { "id": "/lesson/phys_l1", "label": "Physics Lesson 1: Introduction to Kinematics & 1D Motion", "aliases": ["physics lesson 1", "phys_l1", "kinematics lesson", "1d motion", "introduction to kinematics", "open kinematics lesson", "first physics lesson"] },
+    { "id": "/lesson/phys_l2", "label": "Physics Lesson 2: Newton's Laws of Motion & Forces", "aliases": ["physics lesson 2", "phys_l2", "newton's laws", "newtons laws lesson", "forces lesson", "newton laws of motion", "second physics lesson"] },
+    { "id": "/lesson/phys_l3", "label": "Physics Lesson 3: Work, Energy & Power", "aliases": ["physics lesson 3", "phys_l3", "work energy and power", "work and energy lesson", "kinetic energy lesson", "third physics lesson"] },
+    { "id": "/lesson/phys_l4", "label": "Physics Lesson 4: Universal Gravitation & Orbital Motion", "aliases": ["physics lesson 4", "phys_l4", "universal gravitation", "gravitation lesson", "orbital motion", "fourth physics lesson"] },
+
+    { "id": "/lesson/math_l1", "label": "Math Lesson 1: Limits & Continuity Fundamentals", "aliases": ["math lesson 1", "maths lesson 1", "math_l1", "limits and continuity", "limits lesson", "continuity lesson", "first math lesson"] },
+    { "id": "/lesson/math_l2", "label": "Math Lesson 2: The Derivative & Rates of Change", "aliases": ["math lesson 2", "maths lesson 2", "math_l2", "derivatives lesson", "the derivative", "rates of change lesson", "second math lesson"] },
+    { "id": "/lesson/math_l3", "label": "Math Lesson 3: Antiderivatives & Fundamental Theorem of Calculus", "aliases": ["math lesson 3", "maths lesson 3", "math_l3", "antiderivatives", "fundamental theorem of calculus", "integrals lesson", "third math lesson"] },
+    { "id": "/lesson/math_l4", "label": "Math Lesson 4: Applications of Integration: Area & Volume", "aliases": ["math lesson 4", "maths lesson 4", "math_l4", "applications of integration", "area and volume", "fourth math lesson"] },
+
+    { "id": "/lesson/chem_l1", "label": "Chemistry Lesson 1: Electronic Structure & Atomic Orbitals", "aliases": ["chemistry lesson 1", "chem_l1", "electronic structure", "atomic orbitals lesson", "electron configuration lesson", "first chemistry lesson"] },
+    { "id": "/lesson/chem_l2", "label": "Chemistry Lesson 2: Ionic & Covalent Chemical Bonds", "aliases": ["chemistry lesson 2", "chem_l2", "ionic and covalent bonds", "chemical bonds lesson", "covalent bonding", "second chemistry lesson"] },
+    { "id": "/lesson/chem_l3", "label": "Chemistry Lesson 3: Balancing Reactions & Stoichiometry", "aliases": ["chemistry lesson 3", "chem_l3", "balancing reactions", "stoichiometry lesson", "limiting reactants", "third chemistry lesson"] },
+    { "id": "/lesson/chem_l4", "label": "Chemistry Lesson 4: Acids, Bases & Titration Equilibrium", "aliases": ["chemistry lesson 4", "chem_l4", "acids and bases lesson", "titration equilibrium lesson", "ph scale lesson", "fourth chemistry lesson"] },
+
+    { "id": "/lesson/bio_l1", "label": "Biology Lesson 1: Cell Organelles & Membrane Transport", "aliases": ["biology lesson 1", "bio_l1", "cell organelles lesson", "membrane transport", "first biology lesson"] },
+    { "id": "/lesson/bio_l2", "label": "Biology Lesson 2: Cellular Respiration & ATP Synthesis", "aliases": ["biology lesson 2", "bio_l2", "cellular respiration", "atp synthesis", "krebs cycle lesson", "second biology lesson"] },
+    { "id": "/lesson/bio_l3", "label": "Biology Lesson 3: DNA Structure, Replication & Protein Synthesis", "aliases": ["biology lesson 3", "bio_l3", "dna replication lesson", "protein synthesis", "central dogma lesson", "third biology lesson"] },
+    { "id": "/lesson/bio_l4", "label": "Biology Lesson 4: Mendelian Genetics & Heredity", "aliases": ["biology lesson 4", "bio_l4", "mendelian genetics", "heredity lesson", "punnett square lesson", "fourth biology lesson"] },
+
+    { "id": "/lesson/py_l1", "label": "Python Lesson 1: Python Syntax, Variables & Types", "aliases": ["python lesson 1", "py_l1", "python syntax lesson", "first python lesson"] },
+    { "id": "/lesson/py_l2", "label": "Python Lesson 2: Lists, Dictionaries & Sets", "aliases": ["python lesson 2", "py_l2", "lists dictionaries and sets", "second python lesson"] },
+    { "id": "/lesson/py_l3", "label": "Python Lesson 3: Conditional Statements & Loops", "aliases": ["python lesson 3", "py_l3", "conditionals and loops", "third python lesson"] },
+    { "id": "/lesson/py_l4", "label": "Python Lesson 4: Defining Functions & Scope", "aliases": ["python lesson 4", "py_l4", "functions and scope", "fourth python lesson"] },
+
+    { "id": "/lesson/l1", "label": "Lesson: What is Python?", "aliases": ["what is python", "lesson l1", "lesson 1 python"] },
+    { "id": "/lesson/l2", "label": "Lesson: Variables & Data Types", "aliases": ["variables and data types", "lesson l2", "data types lesson"] },
+    { "id": "/lesson/l3", "label": "Lesson: Strings in Python", "aliases": ["strings lesson", "python strings", "lesson l3"] },
+    { "id": "/lesson/l4", "label": "Lesson: If / Elif / Else", "aliases": ["if elif else", "if else lesson", "lesson l4"] },
+    { "id": "/lesson/l5", "label": "Lesson: For Loops", "aliases": ["for loops lesson", "python for loop", "lesson l5"] },
+    { "id": "/lesson/l6", "label": "Lesson: While Loops", "aliases": ["while loops lesson", "python while loop", "lesson l6"] },
+    { "id": "/lesson/l7", "label": "Lesson: Defining Functions", "aliases": ["defining functions", "python functions lesson", "lesson l7"] },
+    { "id": "/lesson/l8", "label": "Lesson: *args & **kwargs", "aliases": ["args and kwargs", "lesson l8"] },
+    { "id": "/lesson/l9", "label": "Lesson: Lambda & map/filter", "aliases": ["lambda functions", "map and filter", "lesson l9"] },
+    { "id": "/lesson/l10", "label": "Lesson: Lists in Python", "aliases": ["python lists lesson", "lesson l10"] },
+    { "id": "/lesson/l11", "label": "Lesson: Dictionaries in Python", "aliases": ["python dictionaries", "dictionaries lesson", "lesson l11"] },
+    { "id": "/lesson/l12", "label": "Lesson: Tuples & Sets", "aliases": ["tuples and sets", "lesson l12"] },
+    { "id": "/lesson/l13", "label": "Lesson: Classes & Objects (OOP)", "aliases": ["classes and objects", "oop lesson", "object oriented programming lesson", "lesson l13"] },
+    { "id": "/lesson/l14", "label": "Lesson: Inheritance in Python", "aliases": ["inheritance lesson", "python inheritance", "lesson l14"] },
+    { "id": "/lesson/l15", "label": "Lesson: Dunder Methods", "aliases": ["dunder methods", "magic methods", "lesson l15"] },
+
+    { "id": "/lesson/web_l1", "label": "Web Dev Lesson 1: HTML Document Anatomy & Semantic Tags", "aliases": ["web lesson 1", "html lesson 1", "web_l1", "html semantic tags", "html anatomy", "first web lesson"] },
+    { "id": "/lesson/web_l2", "label": "Web Dev Lesson 2: HTML Forms, Inputs & Media", "aliases": ["web lesson 2", "html lesson 2", "web_l2", "html forms", "html inputs", "second web lesson"] },
+    { "id": "/lesson/web_l3", "label": "Web Dev Lesson 3: CSS Selectors & The Box Model", "aliases": ["web lesson 3", "css lesson 1", "web_l3", "css selectors", "css box model", "box model lesson", "third web lesson"] },
+    { "id": "/lesson/web_l4", "label": "Web Dev Lesson 4: CSS Flexbox & Responsive Design", "aliases": ["web lesson 4", "css lesson 2", "web_l4", "css flexbox", "flexbox lesson", "responsive design lesson", "fourth web lesson"] },
+
+    { "id": "/vedika-ai", "label": "Vedika AI Assistant Hub", "aliases": ["vedika ai", "ai tutor", "ai hub", "ai companion", "ai assistant", "vedika hub"] },
     { "id": "/vedika-ai/ask", "label": "Ask Vedika (General Tutor)", "aliases": ["start chatting", "ask vedika", "general tutor", "chatting", "ask vedika tutor", "general ai tutor", "chat with vedika"] },
     { "id": "/general-tutor", "label": "General Tutor", "aliases": ["general-tutor", "open general tutor"] },
     { "id": "/vedika-ai/code", "label": "Code with Vedika (Coding Tutor)", "aliases": ["start coding", "code with vedika", "coding tutor", "code tutor", "programming tutor", "open coding tutor"] },
     { "id": "/coding-tutor", "label": "Coding Tutor", "aliases": ["coding-tutor", "open code with vedika"] },
-    { "id": "/code-puzzle", "label": "Code Puzzles (DSA Challenge)", "aliases": ["play puzzles", "code puzzles", "code puzzle", "dsa", "puzzles", "dsa puzzles", "open code puzzle", "coding problems", "dsa challenge"] },
+
+    { "id": "/code-puzzle", "label": "Code Puzzles (DSA Challenge & Guided Coding)", "aliases": ["play puzzles", "code puzzles", "code puzzle", "puzzles", "dsa puzzles", "open code puzzle", "coding problems", "dsa challenge", "guided coding"] },
+    { "id": "/code-puzzle?lang=python", "label": "Python Code Puzzles & Sandbox", "aliases": ["python puzzle", "python code puzzle", "python sandbox", "open python sandbox", "python coding puzzle"] },
+    { "id": "/code-puzzle?lang=html", "label": "HTML/CSS Web Sandbox & Puzzles", "aliases": ["html sandbox", "web sandbox", "html css sandbox", "html puzzle", "web puzzle", "open html sandbox", "open web sandbox"] },
     { "id": "/vedika-ai/puzzle", "label": "Code Puzzles", "aliases": ["vedika puzzle", "puzzle"] },
-    { "id": "/viva-interview", "label": "Viva & Interview Prep", "aliases": ["viva", "interview", "viva interview", "mock interview", "academic viva", "technical interview", "open viva", "exam prep"] },
-    { "id": "/vedika-labs", "label": "Vedika 3D Science Simulator Labs Hub", "aliases": ["labs", "virtual labs", "science labs", "simulations", "open labs", "labs hub", "science simulators"] },
-    { "id": "/labs", "label": "Labs Hub", "aliases": ["labs hub", "virtual lab", "simulators"] },
+
+    { "id": "/viva-interview", "label": "Viva & Interview Prep Hub", "aliases": ["viva", "interview", "viva interview", "open viva", "exam prep", "viva and interview"] },
+    { "id": "/viva-interview?mode=viva", "label": "Academic Oral Viva Voce Exam", "aliases": ["oral viva", "academic viva", "viva exam", "start viva", "viva voce"] },
+    { "id": "/viva-interview?mode=interview", "label": "Technical Mock Interview", "aliases": ["mock interview", "technical interview", "job interview prep", "coding interview", "open mock interview"] },
+    { "id": "/viva-interview?mode=aptitude", "label": "Quantitative & Logical Aptitude Test", "aliases": ["aptitude", "aptitude test", "quantitative aptitude", "logical reasoning test", "open aptitude", "aptitude prep"] },
+
+    { "id": "/vedika-labs", "label": "Vedika 3D Science Simulator Labs Hub", "aliases": ["labs", "virtual labs", "science labs", "simulations", "open labs", "labs hub", "science simulators", "3d labs"] },
+    { "id": "/labs", "label": "Labs Hub", "aliases": ["virtual lab", "simulators"] },
 
     { "id": "/vedika-labs/chemistry", "label": "Chemistry Lab Overview", "aliases": ["chemistry lab", "chemistry", "enter chemistry", "chem lab", "open chemistry lab"] },
     { "id": "/vedika-labs/chemistry?experiment=titration", "label": "Acid-Base Titration Experiment", "aliases": ["titration", "titration experiment", "acid base titration", "open titration", "ph titration", "buret titration", "neutralization experiment"] },
@@ -30,7 +93,7 @@
 
     { "id": "/vedika-labs/physics", "label": "Physics Lab Overview", "aliases": ["physics lab", "physics", "enter physics", "open physics lab", "physics simulator"] },
     { "id": "/vedika-labs/physics?experiment=pendulum", "label": "Simple Harmonic Motion Pendulum Experiment", "aliases": ["pendulum", "simple harmonic motion", "pendulum wave", "pendulum experiment", "oscillation", "pendulum physics"] },
-    { "id": "/vedika-labs/physics?experiment=projectile", "label": "Projectile Motion & Kinematics", "aliases": ["projectile motion", "projectile", "kinematics", "projectile experiment", "cannon trajectory", "trajectory", "projectile simulator"] },
+    { "id": "/vedika-labs/physics?experiment=projectile", "label": "Projectile Motion & Kinematics", "aliases": ["projectile motion", "projectile", "kinematics simulator", "projectile experiment", "cannon trajectory", "trajectory", "projectile simulator"] },
     { "id": "/vedika-labs/physics?experiment=refraction", "label": "Optics, Snell's Law & Refraction", "aliases": ["refraction", "optics", "snell's law", "light refraction", "total internal reflection", "prism experiment", "refraction experiment"] },
     { "id": "/vedika-labs/physics?experiment=spring", "label": "Spring-Mass Hooke's Law Oscillations", "aliases": ["spring mass", "hooke's law", "spring oscillation", "spring experiment", "harmonic oscillator", "spring physics"] },
     { "id": "/vedika-labs/physics?experiment=circuit", "label": "Ohm's Law & DC Electrical Circuit", "aliases": ["circuit", "ohm's law", "electrical circuit", "circuit experiment", "voltage resistance current", "dc circuit"] },
@@ -52,12 +115,18 @@
     { "id": "/vedika-labs/math?tab=visualizer&subtab=trig", "label": "Unit Circle & Trigonometry Visualizer", "aliases": ["unit circle", "trigonometry", "sine cosine", "trig circle"] },
     { "id": "/vedika-labs/math?tab=whiteboard", "label": "Math AI Whiteboard & Canvas", "aliases": ["math whiteboard", "math canvas", "solve math problem", "math handwriting"] },
 
-    { "id": "/resources", "label": "Study Resources & PDF Library", "aliases": ["resources", "materials", "cheat sheets", "notes", "documents", "study materials", "open resources", "pdf library"] },
+    { "id": "/resources", "label": "Study Resources Hub", "aliases": ["resources", "materials", "study materials", "open resources", "resources hub"] },
+    { "id": "/resources?view=library", "label": "PDF Library & Books", "aliases": ["pdf library", "library", "books", "study books", "open pdf library", "pdfs", "documents"] },
+    { "id": "/resources?view=cheatsheets", "label": "Programming & Science Cheat Sheets", "aliases": ["cheat sheets", "cheatsheets", "open cheat sheets", "quick reference", "revision sheets"] },
+    { "id": "/resources?view=dsa", "label": "Data Structures & Algorithms Resources Hub", "aliases": ["dsa resources hub", "dsa hub", "data structures and algorithms", "open dsa"] },
+    { "id": "/resources?view=dsa/company", "label": "Company-Wise DSA Coding Questions", "aliases": ["company wise questions", "company questions", "company dsa", "leetcode questions", "top company questions", "interview questions by company"] },
+    { "id": "/resources?view=dsa/resources", "label": "DSA Learning Resources & Study Guide", "aliases": ["dsa learning resources", "dsa study guide", "dsa notes", "dsa guide"] },
+
     { "id": "/quizzes", "label": "Interactive Quizzes", "aliases": ["quizzes", "quiz", "tests", "examinations", "open quizzes", "take quiz"] },
     { "id": "/assignments", "label": "Homework & Assignments", "aliases": ["assignments", "homework", "submissions", "tasks", "open assignments", "submit assignment"] },
     { "id": "/jobs", "label": "Jobs & Placements Portal", "aliases": ["jobs", "careers", "placements", "opportunities", "open jobs", "internships"] },
     { "id": "/progress", "label": "Learning Analytics & Progress", "aliases": ["progress", "analytics", "stats", "performance", "my progress", "learning progress", "open progress", "learning dashboard"] },
     { "id": "/super-admin", "label": "Super Admin Console", "aliases": ["super admin", "admin console", "super admin portal"] },
-    { "id": "/admin", "label": "Admin Dashboard", "aliases": ["admin", "admin panel"] }
+    { "id": "/admin", "label": "Admin Dashboard", "aliases": ["admin", "admin panel", "faculty dashboard"] }
   ]
 }

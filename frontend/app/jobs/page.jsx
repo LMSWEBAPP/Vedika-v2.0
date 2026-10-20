@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Briefcase, MapPin, Clock, Calendar, Globe, Search, ArrowRight, ExternalLink, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Briefcase, MapPin, Clock, Calendar, Globe, Search, ArrowLeft, ArrowRight, ExternalLink, X } from 'lucide-react';
 import { T } from '@/lib/lms-data';
 import { useMediaQuery, isMobileMQ, isTabletMQ } from '@/lib/useMediaQuery';
 import { getJobs } from '@/lib/frappe';
@@ -12,6 +13,7 @@ import './jobs.css';
 const PAGE_SIZE = 3;
 
 export default function StudentJobsPage() {
+  const router = useRouter();
   const isMobile = useMediaQuery(isMobileMQ);
   const isTablet = useMediaQuery(isTabletMQ);
 
@@ -87,9 +89,35 @@ export default function StudentJobsPage() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: isMobile ? 10 : 14, flexShrink: 0 }}>
-        <h1 style={{ color: T.text, fontSize: isMobile ? 19 : 25, fontWeight: 700, margin: 0, letterSpacing: '-0.03em' }}>
-          Career Opportunities
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              borderRadius: 8,
+              background: T.s1,
+              border: `1px solid ${T.border}`,
+              color: T.text,
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
+            title="Back to Dashboard"
+          >
+            <ArrowLeft size={14} />
+            <span>Back</span>
+          </button>
+          <h1 style={{ color: T.text, fontSize: isMobile ? 19 : 25, fontWeight: 700, margin: 0, letterSpacing: '-0.03em' }}>
+            Career Opportunities
+          </h1>
+        </div>
         <p style={{ color: T.muted, fontSize: isMobile ? 12 : 13, margin: '2px 0 0' }}>
           Explore full-time, part-time, and remote jobs posted by partner organizations.
         </p>

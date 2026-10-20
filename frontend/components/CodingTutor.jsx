@@ -2170,6 +2170,39 @@ export default function CodingTutor() {
                 <GlacierBackground variant={bgTheme} opacity={1.0} />
 
 
+                {/* Floating Top-Left Back Button */}
+                <button
+                  type="button"
+                  onClick={() => router.push('/vedika-ai')}
+                  style={{
+                    position: 'absolute',
+                    top: 14,
+                    left: isMobile ? 12 : 20,
+                    zIndex: 20,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '6px 12px',
+                    borderRadius: 12,
+                    background: 'rgba(15, 23, 42, 0.68)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                    color: '#E2E8F0',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#06B6D4'; e.currentTarget.style.color = '#FFFFFF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.35)'; e.currentTarget.style.color = '#E2E8F0'; }}
+                  title="Back to Assistant Hub"
+                >
+                  <ChevronLeft size={14} color="#38BDF8" />
+                  <span>Back</span>
+                </button>
+
                 {/* Floating Top-Right Controls: Python Sandbox Toggle & Mode Pill */}
                 <div style={{
                   position: 'absolute',

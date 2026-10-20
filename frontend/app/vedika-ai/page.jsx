@@ -233,7 +233,7 @@ export default function VedikaAIHub() {
               <button
                 type="button"
                 className="vedika-ai-back-btn"
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/')}
                 aria-label="Back"
               >
                 <ArrowLeft size={15} />
