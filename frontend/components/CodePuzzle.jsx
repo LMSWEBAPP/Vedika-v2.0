@@ -7,7 +7,7 @@ import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { usePyodide } from '@/hooks/usePyodide';
 import {
-  Play, RotateCcw, Save, Check, Copy, ChevronLeft, ChevronRight,
+  Play, RotateCcw, Save, Download, Check, Copy, ChevronLeft, ChevronRight,
   ChevronDown, ChevronUp, X, Plus, Terminal as TerminalIcon, CheckSquare,
   Eye, FileText, Code, Settings, Sparkles, Loader2, Target,
   FileCode, FolderTree, RefreshCw, ExternalLink, Monitor, Tablet,
@@ -34,32 +34,43 @@ class ErrorWidget extends WidgetType {
     this.message = message;
   }
   toDOM() {
-    const div = document.createElement("div");
-    div.className = "cm-error-line-widget";
-    div.style.color = "#F55B6B";
-    div.style.background = "rgba(245, 91, 107, 0.08)";
-    div.style.borderLeft = "3px solid #F55B6B";
-    div.style.padding = "6px 12px";
-    div.style.fontSize = "11.5px";
-    div.style.fontFamily = "monospace";
-    div.style.marginTop = "4px";
-    div.style.marginBottom = "4px";
-    div.style.borderRadius = "0 4px 4px 0";
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.gap = "6px";
-    div.style.userSelect = "none";
-    
+    const badge = document.createElement("span");
+    badge.className = "cm-error-eol-tooltip";
+    badge.title = this.message;
+    badge.style.cssText = [
+      "display: inline-flex",
+      "align-items: center",
+      "gap: 5px",
+      "margin-left: 14px",
+      "padding: 1px 9px",
+      "font-size: 11px",
+      "line-height: 1.35",
+      "font-family: 'Plus Jakarta Sans', -apple-system, sans-serif",
+      "color: #FDA4AF",
+      "background: rgba(244, 63, 94, 0.14)",
+      "border: 1px solid rgba(244, 63, 94, 0.42)",
+      "border-radius: 999px",
+      "vertical-align: middle",
+      "white-space: nowrap",
+      "max-width: 440px",
+      "overflow: hidden",
+      "text-overflow: ellipsis",
+      "user-select: none",
+      "pointer-events: auto",
+      "cursor: help",
+      "box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35)"
+    ].join(";");
+
     const icon = document.createElement("span");
-    icon.textContent = "⚡";
-    icon.style.fontWeight = "bold";
-    div.appendChild(icon);
+    icon.textContent = "💡";
+    icon.style.fontSize = "10.5px";
+    badge.appendChild(icon);
 
     const text = document.createElement("span");
-    text.textContent = `Hint: ${this.message}`;
-    div.appendChild(text);
+    text.textContent = this.message;
+    badge.appendChild(text);
 
-    return div;
+    return badge;
   }
 }
 
@@ -213,7 +224,7 @@ const FACULTY_PUZZLES = [
     id: "find_max",
     title: "Find Largest Number in Array",
     difficulty: "Easy",
-    description: "Write a function `find_max(arr)` that takes an array/list of numbers `arr` and returns the largest number in it.",
+    description: "Write a function `find_max(arr)` that takes an array/list of numbers and returns the largest number in it.",
     sampleInput: "arr = [12, 3, 45, 7, 23, 19]",
     sampleOutput: "45",
     constraints: [
@@ -231,28 +242,33 @@ const FACULTY_PUZZLES = [
     steps: [
       {
         id: "step1",
-        description: "Define a function named `find_max` that accepts a parameter `arr`.",
-        shortTitle: "Define Function"
+        shortTitle: "Define Function Signature",
+        description: "Start by defining the function `def find_max(arr):` (you can name the input list parameter anything clear, such as `arr` or `numbers`). End the line with a colon `:`."
       },
       {
         id: "step2",
-        description: "Initialize a variable named `max_val` (or `max_value`) to the first element of `arr` (`arr[0]`).",
-        shortTitle: "Initialize max_val"
+        shortTitle: "Initialize Tracking Variable",
+        description: "Indented 4 spaces inside the function, create a variable to store the largest value seen so far and set it to the first element (e.g., `max_val = arr[0]`). Any valid variable name is accepted!"
       },
       {
         id: "step3",
-        description: "Create a `for` loop to iterate through each `num` in `arr`.",
-        shortTitle: "Loop Through Array"
+        shortTitle: "Loop Through Elements",
+        description: "On the next line (4 spaces indent), write a `for` loop to inspect each number in your list (e.g., `for num in arr:`)."
       },
       {
         id: "step4",
-        description: "Inside the loop, write an `if` condition: if `num > max_val` (or `max_value`), update `max_val = num`.",
-        shortTitle: "Update Max Condition"
+        shortTitle: "Compare Current Element",
+        description: "Inside the loop (indented 8 spaces), write an `if` condition to check whether the current loop element is greater than your tracking variable (e.g., `if num > max_val:`)."
       },
       {
         id: "step5",
-        description: "Return `max_val` (or `max_value`) after the loop finishes.",
-        shortTitle: "Return Result"
+        shortTitle: "Update Tracking Variable",
+        description: "Inside the `if` block (indented 12 spaces), update your tracking variable to the new larger element (e.g., `max_val = num`)."
+      },
+      {
+        id: "step6",
+        shortTitle: "Return Final Largest Value",
+        description: "Outside the loop (back at 4 spaces indent), return your tracking variable using `return max_val`."
       }
     ]
   },
@@ -260,7 +276,7 @@ const FACULTY_PUZZLES = [
     id: "reverse_str",
     title: "Reverse a String",
     difficulty: "Easy",
-    description: "Write a function `reverse_string(s)` that takes a string `s` and returns it reversed without using slicing `[::-1]`.",
+    description: "Write a function `reverse_string(s)` that takes a string `s` and returns it reversed using a loop (without `[::-1]`).",
     sampleInput: "s = 'vedika'",
     sampleOutput: "'akidev'",
     constraints: [
@@ -277,28 +293,28 @@ const FACULTY_PUZZLES = [
     steps: [
       {
         id: "step1",
-        description: "Define a function named `reverse_string` that accepts a parameter `s`.",
-        shortTitle: "Define Function"
+        shortTitle: "Define Function Signature",
+        description: "Define the function `def reverse_string(s):` (you may use any parameter name for the input string)."
       },
       {
         id: "step2",
-        description: "Initialize an empty string variable named `reversed_str = ''`.",
-        shortTitle: "Initialize String"
+        shortTitle: "Initialize Empty Result String",
+        description: "Indented 4 spaces inside the function, initialize a variable to an empty string `''` or `\"\"` (e.g., `reversed_str = ''`)."
       },
       {
         id: "step3",
-        description: "Loop over each character `char` in `s`.",
-        shortTitle: "Iterate Characters"
+        shortTitle: "Loop Over Characters",
+        description: "Write a `for` loop (4 spaces indent) to iterate through every character in the input string (e.g., `for ch in s:`)."
       },
       {
         id: "step4",
-        description: "Prepend `char` to `reversed_str` (`reversed_str = char + reversed_str`).",
-        shortTitle: "Prepend Character"
+        shortTitle: "Prepend Current Character",
+        description: "Inside the loop (indented 8 spaces), place the current character in front of your accumulator string (e.g., `reversed_str = ch + reversed_str`)."
       },
       {
         id: "step5",
-        description: "Return `reversed_str` after the loop.",
-        shortTitle: "Return Reversed"
+        shortTitle: "Return Reversed String",
+        description: "Outside the loop (at 4 spaces indent), return your reversed string variable (e.g., `return reversed_str`)."
       }
     ]
   },
@@ -306,7 +322,7 @@ const FACULTY_PUZZLES = [
     id: "count_evens",
     title: "Count Even Numbers",
     difficulty: "Easy",
-    description: "Write a function `count_evens(arr)` that returns the count of even numbers present in the array `arr`.",
+    description: "Write a function `count_evens(arr)` that returns the total count of even numbers present in the list.",
     sampleInput: "arr = [4, 2, 7, 9, 10, 5, 8]",
     sampleOutput: "4",
     constraints: [
@@ -323,28 +339,33 @@ const FACULTY_PUZZLES = [
     steps: [
       {
         id: "step1",
-        description: "Define a function named `count_evens` that accepts a parameter `arr`.",
-        shortTitle: "Define Function"
+        shortTitle: "Define Function Signature",
+        description: "Define the function `def count_evens(arr):` with a parameter for the input list."
       },
       {
         id: "step2",
-        description: "Initialize a counter variable named `count` to `0`.",
-        shortTitle: "Initialize Count"
+        shortTitle: "Initialize Counter to Zero",
+        description: "Indented 4 spaces inside the function, initialize a counter variable to `0` (e.g., `even_count = 0` or `count = 0`)."
       },
       {
         id: "step3",
-        description: "Create a loop to iterate through every element `num` inside `arr`.",
-        shortTitle: "Iterate List"
+        shortTitle: "Iterate Through List",
+        description: "Write a `for` loop (4 spaces indent) to go through each number in the list (e.g., `for num in arr:`)."
       },
       {
         id: "step4",
-        description: "Inside the loop, write a condition to check if the number is even (`num % 2 == 0`). If it is, increment `count` by 1.",
-        shortTitle: "Check Even Condition"
+        shortTitle: "Check if Number is Even",
+        description: "Inside the loop (indented 8 spaces), check if the current number is divisible by 2 using `%` (e.g., `if num % 2 == 0:`)."
       },
       {
         id: "step5",
-        description: "Return the final value of the `count` variable after the loop terminates.",
-        shortTitle: "Return Count"
+        shortTitle: "Increment Counter",
+        description: "Inside the `if` block (indented 12 spaces), add 1 to your counter variable (e.g., `count += 1` or `count = count + 1`)."
+      },
+      {
+        id: "step6",
+        shortTitle: "Return Final Count",
+        description: "Outside the loop (at 4 spaces indent), return your counter variable (e.g., `return count`)."
       }
     ]
   }
@@ -737,179 +758,198 @@ li button {
   }
 ];
 
-// ── Local Python Step & Indentation Validator ────────────────────────────────
+// ── Helper: Check if active line is still being typed (incomplete statement) ──
+function isLineIncompleteInProgress(code) {
+  if (!code) return true;
+  const activeLines = code
+    .split('\n')
+    .map(l => l.split('#')[0].trimEnd())
+    .filter(l => l.trim().length > 0 && l.trim() !== 'pass');
+  if (activeLines.length === 0) return true;
+  const last = activeLines[activeLines.length - 1].trim();
+  // Incomplete keyword prefixes or trailing operators while student is mid-thought
+  if (/^(def|for|if|elif|else|while|return)\s*$/.test(last)) return true;
+  if (/^(def|for|if|elif|while)\b/.test(last) && !last.endsWith(':')) return true;
+  if (/[=+\-*/%><,\(\[\{]$/.test(last)) return true;
+  if (/in\s*$/.test(last)) return true;
+  return false;
+}
+
+// ── Helper: Generate non-blocking best-practice naming suggestion ────────────
+function getVariableBestPracticeTip(varName, recommendedExamples) {
+  if (!varName) return '';
+  const clean = varName.trim();
+  if (clean.length <= 1 || /^[a-z][0-9]*$/i.test(clean)) {
+    return `Nice logic! Best-practice tip: Using a descriptive variable name like ${recommendedExamples} instead of '${clean}' makes your code much easier to read in real-world projects.`;
+  }
+  return '';
+}
+
+// ── Local Python Step & Indentation Validator (Accepts ANY valid user variable name) ──
 function validatePythonStepLocally(code, puzzleId, stepIndex) {
   if (!code || typeof code !== 'string') {
-    return { passed: false, line: 1, message: 'Please write your Python solution code.' };
+    return { passed: false, line: 1, message: 'Write your Python code in the editor to begin.' };
   }
 
   const rawLines = code.split('\n');
   const lines = rawLines.map((line, idx) => {
-    const raw = line;
     const trimmed = line.trim();
     const noComment = trimmed.split('#')[0].trim();
     const indentMatch = line.match(/^(\s*)/);
     const indent = indentMatch ? indentMatch[1].length : 0;
-    return {
-      raw,
-      trimmed,
-      noComment,
-      indent,
-      lineNum: idx + 1
-    };
+    return { raw: line, trimmed, noComment, indent, lineNum: idx + 1 };
   });
 
-  // Balanced parenthesis and bracket sanity checks
+  // Balanced parenthesis, brackets, and quotes check
   for (const l of lines) {
     if (!l.noComment) continue;
     const openParen = (l.noComment.match(/\(/g) || []).length;
     const closeParen = (l.noComment.match(/\)/g) || []).length;
     const openSquare = (l.noComment.match(/\[/g) || []).length;
     const closeSquare = (l.noComment.match(/\]/g) || []).length;
-    if (openParen > closeParen && !l.noComment.endsWith(':')) {
-      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unclosed parenthesis () on this line.' };
+    if (openParen !== closeParen) {
+      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unbalanced parentheses () on this line.' };
     }
-    if (openSquare > closeSquare) {
-      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unclosed square bracket [] on this line.' };
+    if (openSquare !== closeSquare) {
+      return { passed: false, line: l.lineNum, message: 'SyntaxError: Unbalanced square brackets [] on this line.' };
     }
   }
 
-  // 1. Find Max Puzzle
+  // Extract user's parameter name from def line if present
+  const defLineAny = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(([a-zA-Z_]\w*)?\)\s*:?/.test(l.noComment));
+  const paramMatch = defLineAny ? defLineAny.noComment.match(/^def\s+([a-zA-Z_]\w*)\s*\(\s*([a-zA-Z_]\w*)?\s*\)/) : null;
+  const userParam = paramMatch?.[2] || '';
+
+  // 1. Find Max Puzzle (6 clear steps)
   if (puzzleId === 'find_max') {
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+find_max\s*\(/.test(l.noComment));
-      if (!defLine) {
-        return { passed: false, line: 1, message: 'Define function: def find_max(arr):' };
-      }
-      if (!defLine.noComment.endsWith(':')) {
-        return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def find_max(arr):' };
-      }
-      return { passed: true, line: 0, message: '' };
+      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
+      if (!defLine) return { passed: false, line: 1, message: 'Define the function signature, e.g. def find_max(arr):' };
+      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Add a colon ":" at the end of your def line.' };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`arr` or `numbers`') };
     }
 
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*arr\s*\[\s*0\s*\]/.test(l.noComment));
-      if (!initLine) {
-        const anyInit = lines.find(l => /arr\s*\[\s*0\s*\]/.test(l.noComment));
-        if (anyInit) {
-          return { passed: false, line: anyInit.lineNum, message: 'Assign arr[0] to a variable, e.g. max_value = arr[0] or max_val = arr[0].' };
-        }
-        return { passed: false, line: 2, message: 'Initialize variable: max_value = arr[0] (or max_val = arr[0]).' };
-      }
-      if (initLine.indent === 0) {
-        return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent this line with 4 spaces inside find_max.' };
-      }
-      return { passed: true, line: 0, message: '' };
+      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*[a-zA-Z_]\w*\s*\[\s*0\s*\]$/.test(l.noComment));
+      if (!initLine) return { passed: false, line: 2, message: 'Initialize your tracking variable to the first item, e.g. max_val = arr[0]' };
+      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent this line by 4 spaces inside the function.' };
+      const varName = initLine.noComment.split('=')[0].trim();
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`max_val` or `largest`') };
     }
 
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+arr\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
-      if (!loopLine) {
-        return { passed: false, line: 3, message: 'Create a loop: for num in arr:' };
-      }
-      if (loopLine.indent === 0) {
-        return { passed: false, line: loopLine.lineNum, message: 'IndentationError: The for loop must be indented inside find_max (4 spaces).' };
-      }
-      return { passed: true, line: 0, message: '' };
+      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+      if (!loopLine) return { passed: false, line: 3, message: 'Write a for loop over the list, e.g. for num in arr:' };
+      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop (4 spaces) inside the function.' };
+      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`num` or `item`') };
     }
 
     if (stepIndex === 3) {
-      const ifLine = lines.find(l => /^if\s+.*>.*:/.test(l.noComment) || /^if\s+.*<.*:/.test(l.noComment));
-      const assignLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*$/.test(l.noComment) && !l.noComment.includes('arr[0]'));
-      const oneLiner = lines.find(l => /^if\s+.*[:]\s*[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*/.test(l.noComment));
-      if (!ifLine && !oneLiner) {
-        return { passed: false, line: 4, message: 'Inside the loop, write an if condition: if num > max_value:' };
-      }
-      if (!assignLine && !oneLiner) {
-        return { passed: false, line: (ifLine ? ifLine.lineNum + 1 : 4), message: 'Update max when greater: max_value = num' };
-      }
+      const ifLine = lines.find(l => /^if\s+.+[><].*:$/.test(l.noComment));
+      if (!ifLine) return { passed: false, line: 4, message: 'Inside the loop, compare the current element with your max variable, e.g. if num > max_val:' };
+      if (ifLine.indent <= 4) return { passed: false, line: ifLine.lineNum, message: 'IndentationError: Indent the if statement inside the for loop (8 spaces).' };
       return { passed: true, line: 0, message: '' };
     }
 
     if (stepIndex === 4) {
+      const updateLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*(\[.*\])?$/.test(l.noComment) && !/\[\s*0\s*\]/.test(l.noComment));
+      const oneLiner = lines.find(l => /^if\s+.+[><].*:\s*[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*/.test(l.noComment));
+      if (!updateLine && !oneLiner) return { passed: false, line: 5, message: 'Inside the if block, update your tracking variable, e.g. max_val = num' };
+      if (updateLine && updateLine.indent <= 8) return { passed: false, line: updateLine.lineNum, message: 'IndentationError: Indent the assignment inside the if block (12 spaces).' };
+      return { passed: true, line: 0, message: '' };
+    }
+
+    if (stepIndex === 5) {
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) {
-        return { passed: false, line: lines.length, message: 'Return the result: return max_value (or max_val).' };
-      }
-      if (retLine.indent > 4) {
-        return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
-      }
+      if (!retLine) return { passed: false, line: lines.length, message: 'Return your tracking variable outside the loop, e.g. return max_val' };
+      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: Place return at 4 spaces indent (outside the for loop) so the loop finishes first.' };
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // 2. Reverse String Puzzle
+  // 2. Reverse String Puzzle (5 clear steps)
   if (puzzleId === 'reverse_str') {
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+(reverse_string|reverse_str)\s*\(/.test(l.noComment));
-      if (!defLine) return { passed: false, line: 1, message: 'Define function: def reverse_string(s):' };
-      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def reverse_string(s):' };
-      return { passed: true, line: 0, message: '' };
+      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
+      if (!defLine) return { passed: false, line: 1, message: 'Define function signature, e.g. def reverse_string(s):' };
+      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def line.' };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`text` or `input_str`') };
     }
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*['"]['"]/.test(l.noComment));
-      if (!initLine) return { passed: false, line: 2, message: 'Initialize empty string: reversed_str = ""' };
-      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside reverse_string.' };
-      return { passed: true, line: 0, message: '' };
+      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*(['"]{2}|str\(\))$/.test(l.noComment));
+      if (!initLine) return { passed: false, line: 2, message: 'Initialize an empty string variable, e.g. reversed_str = ""' };
+      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside the function.' };
+      const varName = initLine.noComment.split('=')[0].trim();
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`reversed_str` or `result`') };
     }
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+s\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
-      if (!loopLine) return { passed: false, line: 3, message: 'Iterate characters: for char in s:' };
-      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside reverse_string.' };
-      return { passed: true, line: 0, message: '' };
+      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+      if (!loopLine) return { passed: false, line: 3, message: 'Loop over each character, e.g. for char in s:' };
+      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside the function.' };
+      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`char` or `ch`') };
     }
     if (stepIndex === 3) {
-      const appendLine = lines.find(l => /\+\s*[a-zA-Z_]\w*/.test(l.noComment) && /=/.test(l.noComment));
-      if (!appendLine) return { passed: false, line: 4, message: 'Prepend character: reversed_str = char + reversed_str' };
+      const appendLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*\s*\+\s*[a-zA-Z_]\w*/.test(l.noComment));
+      if (!appendLine) return { passed: false, line: 4, message: 'Prepend the character inside the loop, e.g. reversed_str = char + reversed_str' };
+      if (appendLine.indent <= 4) return { passed: false, line: appendLine.lineNum, message: 'IndentationError: Indent this line inside the for loop (8 spaces).' };
       return { passed: true, line: 0, message: '' };
     }
     if (stepIndex === 4) {
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) return { passed: false, line: lines.length, message: 'Return result: return reversed_str' };
-      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
+      if (!retLine) return { passed: false, line: lines.length, message: 'Return your reversed string variable outside the loop.' };
+      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return should be outside the for loop (4 spaces indent).' };
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // 3. Count Evens Puzzle
+  // 3. Count Evens Puzzle (6 clear steps)
   if (puzzleId === 'count_evens') {
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+count_evens\s*\(/.test(l.noComment));
-      if (!defLine) return { passed: false, line: 1, message: 'Define function: def count_evens(arr):' };
-      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def count_evens(arr):' };
-      return { passed: true, line: 0, message: '' };
+      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
+      if (!defLine) return { passed: false, line: 1, message: 'Define function signature, e.g. def count_evens(arr):' };
+      if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def line.' };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`arr` or `numbers`') };
     }
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*0\b/.test(l.noComment));
-      if (!initLine) return { passed: false, line: 2, message: 'Initialize counter: count = 0' };
-      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside count_evens.' };
-      return { passed: true, line: 0, message: '' };
+      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*0\b/.test(l.noComment));
+      if (!initLine) return { passed: false, line: 2, message: 'Initialize a counter variable to 0, e.g. count = 0' };
+      if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside the function.' };
+      const varName = initLine.noComment.split('=')[0].trim();
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`count` or `even_count`') };
     }
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+[a-zA-Z_]\w*\s+in\s+(arr|nums|my_list)\s*:/.test(l.noComment) || /^for\s+[a-zA-Z_]\w*\s+in\s+range/.test(l.noComment));
-      if (!loopLine) return { passed: false, line: 3, message: 'Iterate list: for num in arr:' };
-      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside count_evens.' };
-      return { passed: true, line: 0, message: '' };
+      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+      if (!loopLine) return { passed: false, line: 3, message: 'Loop through the list, e.g. for num in arr:' };
+      if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop (4 spaces) inside the function.' };
+      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`num` or `item`') };
     }
     if (stepIndex === 3) {
-      const modLine = lines.find(l => /%\s*2\s*==\s*0/.test(l.noComment));
-      const incLine = lines.find(l => /(\+=\s*1|=\s*[a-zA-Z_]\w*\s*\+\s*1)/.test(l.noComment));
-      if (!modLine) return { passed: false, line: 4, message: 'Check even condition: if num % 2 == 0:' };
-      if (!incLine) return { passed: false, line: (modLine ? modLine.lineNum + 1 : 4), message: 'Increment counter: count += 1' };
+      const modLine = lines.find(l => /^if\s+.+%\s*2\s*==\s*0\s*:$/.test(l.noComment));
+      if (!modLine) return { passed: false, line: 4, message: 'Check if the element is divisible by 2, e.g. if num % 2 == 0:' };
+      if (modLine.indent <= 4) return { passed: false, line: modLine.lineNum, message: 'IndentationError: Indent the if condition inside the for loop (8 spaces).' };
       return { passed: true, line: 0, message: '' };
     }
     if (stepIndex === 4) {
+      const incLine = lines.find(l => /^[a-zA-Z_]\w*\s*(\+=\s*1|=\s*[a-zA-Z_]\w*\s*\+\s*1)\b/.test(l.noComment));
+      if (!incLine) return { passed: false, line: 5, message: 'Increment your counter variable by 1, e.g. count += 1' };
+      if (incLine.indent <= 8) return { passed: false, line: incLine.lineNum, message: 'IndentationError: Indent the increment inside the if block (12 spaces).' };
+      return { passed: true, line: 0, message: '' };
+    }
+    if (stepIndex === 5) {
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) return { passed: false, line: lines.length, message: 'Return result: return count' };
-      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return statement should be outside the loop (4 spaces).' };
+      if (!retLine) return { passed: false, line: lines.length, message: 'Return your counter variable outside the loop, e.g. return count' };
+      if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: Place return at 4 spaces indent (outside the for loop).' };
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // Generic heuristic for other puzzles:
+  // Generic heuristic for custom faculty or AI puzzles:
   if (stepIndex === 0) {
-    const hasDef = lines.some(l => /^def\s+[a-zA-Z_]\w*\s*\(/.test(l.noComment));
-    if (!hasDef) return { passed: false, line: 1, message: 'Define your function signature with def function_name(...):' };
+    const hasDef = lines.some(l => /^def\s+[a-zA-Z_]\w*\s*\(.*\)\s*:$/.test(l.noComment));
+    if (!hasDef) return { passed: false, line: 1, message: 'Define your function signature ending with a colon, e.g. def solve(...):' };
   }
 
   return { passed: true, line: 0, message: '' };
@@ -941,13 +981,32 @@ export default function CodePuzzle() {
     return () => document.removeEventListener('mousedown', handleClickOutsideAiTabs);
   }, []);
 
-  const handleBackToVedikaAI = useCallback(() => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
+  // Deterministic navigation helper so exiting CodePuzzle never stalls on iframe/worker history traps
+  const navigateOut = useCallback((targetPath = '/vedika-ai') => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    if (typeof window !== 'undefined') {
+      window.location.assign(targetPath);
     } else {
-      router.push('/vedika-ai');
+      router.push(targetPath);
     }
   }, [router]);
+
+  const handleBackToVedikaAI = useCallback(() => {
+    navigateOut('/vedika-ai');
+  }, [navigateOut]);
+
+  // Intercept browser hardware Back button (popstate) when trapped by sandbox iframe entries
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPopState = () => {
+      if (window.location.pathname.includes('puzzle')) {
+        window.location.replace('/vedika-ai');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // ── Mode & Selector States ─────────────────────────────────────────────────
   const [category, setCategory] = useState('programming'); // 'programming' (Python) | 'html' (Web)
@@ -955,13 +1014,41 @@ export default function CodePuzzle() {
   const [facultyPuzzleIndex, setFacultyPuzzleIndex] = useState(0);
   const [webPuzzleIndex, setWebPuzzleIndex] = useState(0);
   const [aiDifficulty, setAiDifficulty] = useState('beginner');
+  const [customFacultyPuzzles, setCustomFacultyPuzzles] = useState([]);
+
+  // Load faculty-created exercises from Admin side (/api/code-puzzle/faculty + localStorage cache)
+  useEffect(() => {
+    let active = true;
+    async function loadFacultyAssigned() {
+      try {
+        const res = await fetch('/api/code-puzzle/faculty');
+        const data = await res.json();
+        if (active && Array.isArray(data.puzzles)) {
+          setCustomFacultyPuzzles(data.puzzles);
+          localStorage.setItem('vedika_faculty_puzzles', JSON.stringify(data.puzzles));
+          return;
+        }
+      } catch (_) {}
+      try {
+        const cached = JSON.parse(localStorage.getItem('vedika_faculty_puzzles') || '[]');
+        if (active && Array.isArray(cached)) setCustomFacultyPuzzles(cached);
+      } catch (_) {}
+    }
+    loadFacultyAssigned();
+    return () => { active = false; };
+  }, []);
+
+  const allFacultyPuzzles = useMemo(
+    () => [...FACULTY_PUZZLES, ...customFacultyPuzzles],
+    [customFacultyPuzzles]
+  );
 
   // AI Generated Puzzle State
   const [aiGeneratedPuzzle, setAiGeneratedPuzzle] = useState(null);
   const [isGeneratingPuzzle, setIsGeneratingPuzzle] = useState(false);
 
   // Active Puzzles Resolvers
-  const activePuzzle = puzzleSource === 'ai' ? aiGeneratedPuzzle : FACULTY_PUZZLES[facultyPuzzleIndex];
+  const activePuzzle = puzzleSource === 'ai' ? aiGeneratedPuzzle : (allFacultyPuzzles[facultyPuzzleIndex] || allFacultyPuzzles[0]);
   const activeWebPuzzle = WEB_PUZZLES[webPuzzleIndex];
 
   // ── Multi-File Management (Isolated for Python vs Web) ──────────────────────
@@ -1004,6 +1091,27 @@ export default function CodePuzzle() {
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState(null);
   const [stepPassed, setStepPassed] = useState(false);
+  const [stepSuggestion, setStepSuggestion] = useState('');
+
+  // Restore auto-saved code when switching puzzles or mounting
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (category === 'html') {
+        const saved = localStorage.getItem(`saved_web_puzzle_${webPuzzleIndex}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setWebFiles(parsed);
+        }
+      } else if (activePuzzle?.id) {
+        const saved = localStorage.getItem(`saved_py_puzzle_${activePuzzle.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setPythonFiles(parsed);
+        }
+      }
+    } catch (_) {}
+  }, [category, webPuzzleIndex, activePuzzle?.id]);
 
   // Multi-tab Panel States
   const [activeRightTab, setActiveRightTab] = useState('guide'); // 'guide' | 'visualizer' | 'preview'
@@ -1104,29 +1212,38 @@ export default function CodePuzzle() {
     } catch (_) {}
   }, [activePuzzle?.title, activeFile?.content, validationError, traceError, cursorPos]);
 
-  // ── Code Change Handler (Updates Active File) ───────────────────────────────
+  // ── Code Change Handler (Auto-Saves Every Change + Smart Validation Debounce) ──
   const handleCodeChange = useCallback((val) => {
-    // Normalize hard tabs to 4 spaces for Python files to avoid Python TabError
     const normalizedVal = (category !== 'html' && activePythonFile.endsWith('.py'))
       ? val.replace(/\t/g, '    ')
       : val;
 
     if (category === 'html') {
-      setWebFiles(prev => prev.map(f => f.name === activeWebFile ? { ...f, content: val } : f));
+      setWebFiles(prev => {
+        const updated = prev.map(f => f.name === activeWebFile ? { ...f, content: val } : f);
+        try { localStorage.setItem(`saved_web_puzzle_${webPuzzleIndex}`, JSON.stringify(updated)); } catch (_) {}
+        return updated;
+      });
     } else {
-      setPythonFiles(prev => prev.map(f => f.name === activePythonFile ? { ...f, content: normalizedVal } : f));
+      setPythonFiles(prev => {
+        const updated = prev.map(f => f.name === activePythonFile ? { ...f, content: normalizedVal } : f);
+        try { localStorage.setItem(`saved_py_puzzle_${activePuzzle?.id || 'curr'}`, JSON.stringify(updated)); } catch (_) {}
+        return updated;
+      });
       setStepPassed(false);
       setValidationError(null);
 
-      // Debounced background check after user pauses typing
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      // Wait 2.3s after user stops typing AND skip auto-error if the active statement is still incomplete
       debounceTimerRef.current = setTimeout(() => {
-        if (validateStepRef.current) validateStepRef.current(currentStepIndex, normalizedVal);
-      }, 700);
+        if (!isLineIncompleteInProgress(normalizedVal) && validateStepRef.current) {
+          validateStepRef.current(currentStepIndex, normalizedVal);
+        }
+      }, 2300);
     }
-  }, [category, activeWebFile, activePythonFile, currentStepIndex]);
+  }, [category, activeWebFile, activePythonFile, currentStepIndex, webPuzzleIndex, activePuzzle?.id]);
 
   // ── File Selection Handler ─────────────────────────────────────────────────
   const handleSelectFile = useCallback((fileName) => {
@@ -1414,6 +1531,7 @@ export default function CodePuzzle() {
     });
     if (terminalElRef.current) {
       resizeObserver.observe(terminalElRef.current);
+      terminalElRef.current._ro = resizeObserver;
     }
   };
 
@@ -1421,7 +1539,16 @@ export default function CodePuzzle() {
     const timer = setTimeout(() => {
       initTerminal();
     }, 150);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+      try { terminalElRef.current?._ro?.disconnect(); } catch (_) {}
+      try {
+        terminalInstanceRef.current?.dispose();
+        terminalInstanceRef.current = null;
+      } catch (_) {}
+    };
   }, []);
 
   const waitingForInputRef = useRef(false);
@@ -1543,13 +1670,14 @@ export default function CodePuzzle() {
     if (!activePuzzle || !activePuzzle.steps || !activePuzzle.steps[targetIndex]) return;
     const pyCode = codeOverride !== null ? codeOverride : (pythonFiles.find(f => f.name === 'main.py')?.content || '');
 
-    // 1. Instant local validation for faculty puzzles
+    // 1. Instant local validation for built-in faculty puzzles
     if (['find_max', 'reverse_str', 'count_evens'].includes(activePuzzle.id)) {
       setIsValidating(true);
       const localResult = validatePythonStepLocally(pyCode, activePuzzle.id, targetIndex);
       if (localResult.passed) {
         setValidationError(null);
         setStepPassed(true);
+        setStepSuggestion(localResult.suggestion || '');
         setIsValidating(false);
         return;
       } else {
@@ -1558,6 +1686,7 @@ export default function CodePuzzle() {
           message: localResult.message
         });
         setStepPassed(false);
+        setStepSuggestion('');
         setIsValidating(false);
         return;
       }
@@ -1585,12 +1714,14 @@ export default function CodePuzzle() {
       if (result.passed) {
         setValidationError(null);
         setStepPassed(true);
+        setStepSuggestion(result.suggestion || '');
       } else {
         setValidationError({
           line: result.line || 1,
           message: result.message || "Check syntax or logic for this step."
         });
         setStepPassed(false);
+        setStepSuggestion('');
       }
     } catch (e) {
       console.warn("[Validation API Fallback]", e);
@@ -1623,6 +1754,7 @@ export default function CodePuzzle() {
       const nextIdx = currentStepIndex + 1;
       setCurrentStepIndex(nextIdx);
       setStepPassed(false);
+      setStepSuggestion('');
       setValidationError(null);
       const pyCode = pythonFiles.find(f => f.name === 'main.py')?.content || '';
       validateStep(nextIdx, pyCode);
@@ -1775,37 +1907,56 @@ export default function CodePuzzle() {
     if (category === 'html') {
       if (confirm("Reset HTML, CSS, and JS to starter code?")) {
         const wp = WEB_PUZZLES[webPuzzleIndex];
-        setWebFiles([
+        const fresh = [
           { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
           { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
           { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
-        ]);
+        ];
+        setWebFiles(fresh);
+        try { localStorage.removeItem(`saved_web_puzzle_${webPuzzleIndex}`); } catch (_) {}
         setCompiledWebTime(Date.now());
         setStepPassed(false);
+        setStepSuggestion('');
         setValidationError(null);
       }
     } else {
       if (confirm("Reset Python code to starter template?")) {
         const starter = activePuzzle ? activePuzzle.starterCode : '';
         setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: starter } : f));
+        try { localStorage.removeItem(`saved_py_puzzle_${activePuzzle?.id || 'curr'}`); } catch (_) {}
         setStepPassed(false);
+        setStepSuggestion('');
         setValidationError(null);
       }
     }
   };
 
-  // ── Save Action ────────────────────────────────────────────────────────────
-  const handleSaveCode = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (category === 'html') {
-          localStorage.setItem(`saved_web_puzzle_${webPuzzleIndex}`, JSON.stringify(webFiles));
-        } else {
-          localStorage.setItem(`saved_py_puzzle_${activePuzzle?.id || 'curr'}`, JSON.stringify(pythonFiles));
-        }
-        setSaveToast(true);
-        setTimeout(() => setSaveToast(false), 2000);
-      } catch (e) {}
+  // ── Download Active Editor File (Files auto-save on every edit) ────────────
+  const handleDownloadCode = () => {
+    if (typeof window === 'undefined' || !activeFile) return;
+    try {
+      const fileName = activeFile.name || (category === 'html' ? 'index.html' : 'main.py');
+      const mimeMap = {
+        '.py': 'text/x-python;charset=utf-8',
+        '.html': 'text/html;charset=utf-8',
+        '.css': 'text/css;charset=utf-8',
+        '.js': 'application/javascript;charset=utf-8',
+        '.json': 'application/json;charset=utf-8'
+      };
+      const ext = Object.keys(mimeMap).find(k => fileName.endsWith(k)) || '.txt';
+      const blob = new Blob([activeFile.content || ''], { type: mimeMap[ext] || 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSaveToast(true);
+      setTimeout(() => setSaveToast(false), 2000);
+    } catch (e) {
+      console.error('Failed to download file:', e);
     }
   };
 
@@ -2308,34 +2459,36 @@ export default function CodePuzzle() {
         flexShrink: 0,
         zIndex: 20
       }}>
-        {/* Left: Back Button & Tabs Switcher / Breadcrumbs / Puzzle Selector */}
+        {/* Left: < Back Button & Tabs Switcher / Sandbox & Puzzle Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, minWidth: 0, overflow: 'visible' }}>
-          {/* Back Button -> Navigates Back to Vedika AI Hub */}
+          {/* < Back Button -> Clearly labeled "< Back" */}
           <button
+            type="button"
             onClick={handleBackToVedikaAI}
-            title="Back to Vedika AI"
-            aria-label="Back to Vedika AI"
+            title="Back to Vedika AI Hub"
+            aria-label="Back to Vedika AI Hub"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: isMobile ? 28 : 30,
+              gap: 4,
               height: isMobile ? 28 : 30,
+              padding: isMobile ? '0 8px' : '0 11px',
               borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#94A3B8',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#E2E8F0',
+              fontSize: 12,
+              fontWeight: 600,
               cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s ease'
+              flexShrink: 0
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
           >
-            <ChevronLeft size={isMobile ? 15 : 16} />
+            <ChevronLeft size={isMobile ? 14 : 15} />
+            <span>Back</span>
           </button>
 
-          {/* AI Tabs Quick Switcher Dropdown (Mobile & Desktop) */}
+          {/* AI Tabs Quick Switcher Dropdown */}
           <div ref={aiTabsRef} style={{ position: 'relative', display: 'inline-block' }}>
             <button
               type="button"
@@ -2355,13 +2508,12 @@ export default function CodePuzzle() {
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.15s ease'
+                flexShrink: 0
               }}
             >
               <Sparkles size={13} color="#F59E0B" />
               <span>{isMobile ? 'Tabs' : 'Vedika AI'}</span>
-              <ChevronDown size={11} color="#94A3B8" style={{ transform: isAiTabsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+              <ChevronDown size={11} color="#94A3B8" style={{ transform: isAiTabsOpen ? 'rotate(180deg)' : 'none' }} />
             </button>
 
             {isAiTabsOpen && (
@@ -2377,7 +2529,7 @@ export default function CodePuzzle() {
                   border: '1px solid rgba(56, 189, 248, 0.3)',
                   borderRadius: 12,
                   padding: '6px',
-                  boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.12)',
+                  boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85)',
                   zIndex: 2000,
                   display: 'flex',
                   flexDirection: 'column',
@@ -2409,9 +2561,7 @@ export default function CodePuzzle() {
                       type="button"
                       onClick={() => {
                         setIsAiTabsOpen(false);
-                        if (!isCurrent) {
-                          router.push(tab.url);
-                        }
+                        if (!isCurrent) navigateOut(tab.url);
                       }}
                       style={{
                         display: 'flex',
@@ -2424,22 +2574,12 @@ export default function CodePuzzle() {
                         color: isCurrent ? tab.color : '#E2E8F0',
                         cursor: isCurrent ? 'default' : 'pointer',
                         textAlign: 'left',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.15s ease'
+                        width: '100%'
                       }}
-                      onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-                      onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.background = 'transparent'; }}
                     >
                       <div style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 6,
-                        background: `${tab.color}15`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
+                        width: 26, height: 26, borderRadius: 6, background: `${tab.color}15`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                       }}>
                         <Icon size={14} color={tab.color} />
                       </div>
@@ -2462,32 +2602,17 @@ export default function CodePuzzle() {
 
                 <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.06)', margin: '3px 0' }} />
 
-                {/* Return to Courses Option */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsAiTabsOpen(false);
-                    router.push('/courses');
+                    navigateOut('/courses');
                   }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '7px 10px',
-                    borderRadius: 8,
-                    background: 'transparent',
-                    border: '1px solid transparent',
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    transition: 'all 0.15s ease'
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px',
+                    borderRadius: 8, background: 'transparent', border: 'none', color: '#94A3B8',
+                    cursor: 'pointer', textAlign: 'left', width: '100%', fontSize: 12, fontWeight: 500
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#FFFFFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; }}
                 >
                   <BookOpen size={14} color="#38BDF8" />
                   <span>Browse Courses</span>
@@ -2496,158 +2621,80 @@ export default function CodePuzzle() {
             )}
           </div>
 
-          {isMobile ? (
-            /* Mobile Compact Header: Category + Puzzle Dropdown directly */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0, overflow: 'hidden' }}>
-              <CustomDropdown
-                value={category}
-                onChange={handleCategoryChange}
-                color={category === 'html' ? '#38BDF8' : '#A855F7'}
-                minWidth={74}
-                maxWidth={90}
-                options={[
-                  { value: 'programming', label: 'Python' },
-                  { value: 'html', label: 'Web' }
-                ]}
-              />
+          {/* Sandbox & Exercise Selector (No redundant Courses > Vedika AI Hub breadcrumbs) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 6, minWidth: 0 }}>
+            <CustomDropdown
+              value={category}
+              onChange={handleCategoryChange}
+              color={category === 'html' ? '#38BDF8' : '#A855F7'}
+              minWidth={isMobile ? 74 : 125}
+              maxWidth={isMobile ? 90 : 160}
+              options={[
+                { value: 'programming', label: isMobile ? 'Python' : 'Python 3.11' },
+                { value: 'html', label: isMobile ? 'Web' : 'HTML / Web' }
+              ]}
+            />
 
-              {category === 'html' ? (
-                <CustomDropdown
-                  value={webPuzzleIndex}
-                  onChange={idx => {
-                    setWebPuzzleIndex(idx);
-                    const wp = WEB_PUZZLES[idx];
-                    setWebFiles([
-                      { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
-                      { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
-                      { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
-                    ]);
-                    setActiveWebFile('index.html');
-                    setOpenWebTabs(['index.html', 'style.css', 'script.js']);
-                    setCurrentStepIndex(0);
-                    setStepPassed(false);
-                    setValidationError(null);
-                    setCompiledWebTime(Date.now());
-                  }}
-                  color="#38BDF8"
-                  minWidth={110}
-                  maxWidth={140}
-                  options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
-                />
-              ) : (
-                <CustomDropdown
-                  value={facultyPuzzleIndex}
-                  onChange={idx => {
-                    setPuzzleSource('faculty');
-                    setFacultyPuzzleIndex(idx);
-                    const p = FACULTY_PUZZLES[idx];
-                    setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
-                    setCurrentStepIndex(0);
-                    setStepPassed(false);
-                    setValidationError(null);
-                  }}
-                  color="#A855F7"
-                  minWidth={110}
-                  maxWidth={140}
-                  options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
-                />
-              )}
-            </div>
-          ) : (
-            /* Desktop Full Breadcrumb Path */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: '#94A3B8' }}>
-              <button
-                onClick={() => router.push('/courses')}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
-                onMouseEnter={e => e.currentTarget.style.color = '#38BDF8'}
-                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
-                title="Navigate to Courses"
-              >
-                Courses
-              </button>
-              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-              <button
-                onClick={() => router.push('/vedika-ai')}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 0, fontSize: 12.5, fontWeight: 600 }}
-                onMouseEnter={e => e.currentTarget.style.color = '#A855F7'}
-                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
-                title="Navigate to Vedika AI Hub"
-              >
-                Vedika AI Hub
-              </button>
-              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-              
-              {/* Category Selector (Python vs HTML / Web) */}
-              <CustomDropdown
-                value={category}
-                onChange={handleCategoryChange}
-                color={category === 'html' ? '#38BDF8' : '#A855F7'}
-                minWidth={125}
-                options={[
-                  { value: 'programming', label: 'Python 3.11' },
-                  { value: 'html', label: 'HTML / Web' }
-                ]}
-              />
+            {!isMobile && <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />}
 
-              <ChevronRight size={13} color="#64748B" style={{ flexShrink: 0 }} />
-              
-              {/* Puzzle Selector Dropdown */}
-              {category === 'html' ? (
-                <CustomDropdown
-                  value={webPuzzleIndex}
-                  onChange={idx => {
-                    setWebPuzzleIndex(idx);
-                    const wp = WEB_PUZZLES[idx];
-                    setWebFiles([
-                      { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
-                      { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
-                      { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
-                    ]);
-                    setActiveWebFile('index.html');
-                    setOpenWebTabs(['index.html', 'style.css', 'script.js']);
-                    setCurrentStepIndex(0);
-                    setStepPassed(false);
-                    setValidationError(null);
-                    setCompiledWebTime(Date.now());
-                  }}
-                  color="#38BDF8"
-                  minWidth={180}
-                  maxWidth={360}
-                  options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
-                />
-              ) : (
-                <CustomDropdown
-                  value={facultyPuzzleIndex}
-                  onChange={idx => {
-                    setPuzzleSource('faculty');
-                    setFacultyPuzzleIndex(idx);
-                    const p = FACULTY_PUZZLES[idx];
-                    setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
-                    setCurrentStepIndex(0);
-                    setStepPassed(false);
-                    setValidationError(null);
-                  }}
-                  color="#A855F7"
-                  minWidth={180}
-                  maxWidth={360}
-                  options={FACULTY_PUZZLES.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
-                />
-              )}
-            </div>
-          )}
+            {category === 'html' ? (
+              <CustomDropdown
+                value={webPuzzleIndex}
+                onChange={idx => {
+                  setWebPuzzleIndex(idx);
+                  const wp = WEB_PUZZLES[idx];
+                  setWebFiles([
+                    { name: 'index.html', language: 'html', content: wp.html, isDefault: true },
+                    { name: 'style.css', language: 'css', content: wp.css, isDefault: true },
+                    { name: 'script.js', language: 'javascript', content: wp.js, isDefault: true }
+                  ]);
+                  setActiveWebFile('index.html');
+                  setOpenWebTabs(['index.html', 'style.css', 'script.js']);
+                  setCurrentStepIndex(0);
+                  setStepPassed(false);
+                  setStepSuggestion('');
+                  setValidationError(null);
+                  setCompiledWebTime(Date.now());
+                }}
+                color="#38BDF8"
+                minWidth={isMobile ? 110 : 180}
+                maxWidth={isMobile ? 140 : 360}
+                options={WEB_PUZZLES.map((wp, idx) => ({ value: idx, label: `${idx + 1}. ${wp.title}` }))}
+              />
+            ) : (
+              <CustomDropdown
+                value={facultyPuzzleIndex}
+                onChange={idx => {
+                  setPuzzleSource('faculty');
+                  setFacultyPuzzleIndex(idx);
+                  const p = allFacultyPuzzles[idx] || allFacultyPuzzles[0];
+                  setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
+                  setCurrentStepIndex(0);
+                  setStepPassed(false);
+                  setStepSuggestion('');
+                  setValidationError(null);
+                }}
+                color="#A855F7"
+                minWidth={isMobile ? 110 : 180}
+                maxWidth={isMobile ? 140 : 360}
+                options={allFacultyPuzzles.map((p, idx) => ({ value: idx, label: `${idx + 1}. ${p.title}` }))}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Right: Actions (Save, Reset, Ask AI, Run Code) */}
+        {/* Right: Actions (Courses, Download [Auto-saved], Reset, Ask Vedika) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, flexShrink: 0 }}>
-          {/* Courses Quick Navigation Button (Desktop only) */}
+          {/* Courses Quick Navigation Button */}
           {!isMobile && (
             <button
+              type="button"
               onClick={() => {
                 if (typeof window !== 'undefined') {
                   localStorage.removeItem('selected_course_id');
                   window.dispatchEvent(new CustomEvent('reset_courses_view'));
                 }
-                router.push('/courses');
+                navigateOut('/courses');
               }}
               style={{
                 display: 'flex',
@@ -2660,43 +2707,41 @@ export default function CodePuzzle() {
                 color: '#CBD5E1',
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                cursor: 'pointer'
               }}
-              title="Browse all courses"
+              title="Navigate to Courses"
             >
               <BookOpen size={14} color="#38BDF8" />
               <span>Courses</span>
             </button>
           )}
 
-          {/* Save Button (Desktop only) */}
-          {!isMobile && (
-            <button
-              onClick={handleSaveCode}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: saveToast ? '#34D399' : '#CBD5E1',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              title="Save code to local storage"
-            >
-              {saveToast ? <Check size={14} color="#34D399" /> : <Save size={14} />}
-              <span>{saveToast ? 'Saved' : 'Save'}</span>
-            </button>
-          )}
+          {/* Download Active File Button (Changes auto-saved automatically) */}
+          <button
+            type="button"
+            onClick={handleDownloadCode}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: isMobile ? '5px 8px' : '6px 12px',
+              borderRadius: 8,
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: saveToast ? '#34D399' : '#CBD5E1',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            title={`Auto-saved • Download ${activeFile?.name || 'current file'}`}
+          >
+            {saveToast ? <Check size={14} color="#34D399" /> : <Download size={14} color="#38BDF8" />}
+            {!isMobile && <span>{saveToast ? `Downloaded ${activeFile?.name}` : `Download (${activeFile?.name || 'file'})`}</span>}
+          </button>
 
           {/* Reset Button */}
           <button
+            type="button"
             onClick={handleResetCode}
             style={{
               display: 'flex',
@@ -2712,8 +2757,7 @@ export default function CodePuzzle() {
               color: '#CBD5E1',
               fontSize: 12,
               fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              cursor: 'pointer'
             }}
             title="Reset code to starter template"
           >
@@ -2723,6 +2767,7 @@ export default function CodePuzzle() {
 
           {/* Ask Vedika Code Help Button */}
           <button
+            type="button"
             onClick={handleAskVedikaCodeCheck}
             style={{
               display: 'flex',
@@ -2738,42 +2783,12 @@ export default function CodePuzzle() {
               color: '#FBBF24',
               fontSize: 12,
               fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
-              transition: 'all 0.15s ease'
+              cursor: 'pointer'
             }}
             title="Ask Vedika AI Tutor to inspect your code, explain errors, and guide your fix"
           >
             <Sparkles size={13} color="#FBBF24" />
             {!isMobile && <span>Ask Vedika</span>}
-          </button>
-
-          {/* Run Code Button */}
-          <button
-            onClick={handleRunCode}
-            disabled={category === 'programming' && (!isReady || isRunning)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: isMobile ? '5px 10px' : '6px 16px',
-              borderRadius: 8,
-              background: (category === 'programming' && isRunning) ? '#6B21A8' : 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-              border: 'none',
-              color: '#fff',
-              fontSize: 11.5,
-              fontWeight: 700,
-              cursor: (category === 'programming' && (!isReady || isRunning)) ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 16px rgba(168, 85, 247, 0.35)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {category === 'programming' && isRunning ? (
-              <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <Play size={11} fill="#fff" />
-            )}
-            <span>{category === 'html' ? (webCompileSuccess ? (isMobile ? 'Updated' : 'Live Updated!') : (isMobile ? 'Preview' : 'Run Web Preview')) : (isRunning ? '...' : (isMobile ? 'Run' : 'Run Code'))}</span>
           </button>
         </div>
       </div>
@@ -3039,7 +3054,7 @@ export default function CodePuzzle() {
                         </div>
                       ))
                     ) : (
-                      FACULTY_PUZZLES.map((p, idx) => (
+                      allFacultyPuzzles.map((p, idx) => (
                         <div
                           key={p.id}
                           onClick={() => {
@@ -3187,6 +3202,21 @@ export default function CodePuzzle() {
                 .cm-editor, .cm-editor .cm-scroller, .cm-editor .cm-content {
                   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Monaco, Consolas, monospace !important;
                   font-feature-settings: "calt" 1, "liga" 1;
+                }
+                /* Subtle 4-space indentation guide markings for students */
+                .cm-editor .cm-line {
+                  background-image: repeating-linear-gradient(
+                    to right,
+                    transparent 0,
+                    transparent calc(4ch - 1px),
+                    rgba(148, 163, 184, 0.14) calc(4ch - 1px),
+                    rgba(148, 163, 184, 0.14) 4ch
+                  );
+                  background-size: 16ch 100%;
+                  background-repeat: no-repeat;
+                }
+                .cm-editor .cm-activeLine {
+                  background-color: rgba(168, 85, 247, 0.07) !important;
                 }
                 .guide-wizard-panel {
                   font-family: 'Plus Jakarta Sans', var(--font-outfit), 'Inter', -apple-system, sans-serif !important;
@@ -3643,7 +3673,7 @@ export default function CodePuzzle() {
                       setValidationError(null);
                       setStepPassed(false);
                       if (src === 'faculty') {
-                        const p = FACULTY_PUZZLES[facultyPuzzleIndex];
+                        const p = allFacultyPuzzles[facultyPuzzleIndex] || allFacultyPuzzles[0];
                         setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: p.starterCode } : f));
                       } else if (aiGeneratedPuzzle) {
                         setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: aiGeneratedPuzzle.starterCode } : f));
@@ -4031,6 +4061,25 @@ export default function CodePuzzle() {
                                 <AlertCircle size={12} color="#F55B6B" style={{ marginTop: 2, flexShrink: 0 }} />
                                 <span style={{ fontSize: 11, color: '#F55B6B', lineHeight: 1.3 }}>
                                   Line {validationError.line}: {validationError.message}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Best-Practice Variable Naming Tip (Non-blocking) */}
+                            {isActive && stepPassed && stepSuggestion && (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 6,
+                                padding: '6px 10px',
+                                background: 'rgba(245, 158, 11, 0.09)',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                borderRadius: 6,
+                                marginTop: 4
+                              }}>
+                                <Lightbulb size={12} color="#FBBF24" style={{ marginTop: 2, flexShrink: 0 }} />
+                                <span style={{ fontSize: 11, color: '#FDE68A', lineHeight: 1.35 }}>
+                                  {stepSuggestion}
                                 </span>
                               </div>
                             )}
