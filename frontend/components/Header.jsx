@@ -23,6 +23,16 @@ export default function Header() {
   const profileRef = useRef(null);
 
   const isAskVedika = pathname === '/general-tutor' || pathname === '/vedika-ai/ask' || pathname === '/coding-tutor' || pathname === '/vedika-ai/code';
+  const isCodePuzzle = pathname === '/code-puzzle' || pathname?.startsWith('/vedika-ai/puzzle');
+
+  const navigateSafely = useCallback((targetPath) => {
+    if (!targetPath) return;
+    if (isCodePuzzle && typeof window !== 'undefined') {
+      window.location.assign(targetPath);
+      return;
+    }
+    router.push(targetPath);
+  }, [isCodePuzzle, router]);
   const [isTopNavVisible, setIsTopNavVisible] = useState(false);
   const hideTimerRef = useRef(null);
 
@@ -110,7 +120,7 @@ export default function Header() {
       localStorage.removeItem('frappe_sid');
       setUser(null);
       setMobileMenuOpen(false);
-      router.push('/login');
+      navigateSafely('/login');
     }
   };
 
@@ -136,7 +146,7 @@ export default function Header() {
         <button
           type="button"
           className={styles.logoWrap}
-          onClick={() => { setMobileMenuOpen(false); router.push('/'); }}
+          onClick={() => { setMobileMenuOpen(false); navigateSafely('/'); }}
           aria-label="Vedika AI Tutor Home"
         >
           <div className={styles.starIcon}>
@@ -183,7 +193,7 @@ export default function Header() {
                   localStorage.removeItem('selected_course_id');
                   window.dispatchEvent(new CustomEvent('reset_courses_view'));
                 }
-                router.push('/courses');
+                navigateSafely('/courses');
               }}
             >
               <span>Courses</span>
@@ -204,7 +214,7 @@ export default function Header() {
                         localStorage.removeItem('selected_course_id');
                         window.dispatchEvent(new CustomEvent('reset_courses_view'));
                       }
-                      router.push(item.path);
+                      navigateSafely(item.path);
                     }}
                   >
                     <item.Icon size={16} color={item.color} />
@@ -222,7 +232,7 @@ export default function Header() {
           <button
             type="button"
             className={`${styles.navLink} ${isAiActive ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/vedika-ai')}
+            onClick={() => navigateSafely('/vedika-ai')}
           >
             <span>Vedika AI</span>
           </button>
@@ -231,7 +241,7 @@ export default function Header() {
           <button
             type="button"
             className={`${styles.navLink} ${isLabsActive ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/vedika-labs')}
+            onClick={() => navigateSafely('/vedika-labs')}
           >
             <span>Vedika Labs</span>
           </button>
@@ -240,7 +250,7 @@ export default function Header() {
           <button
             type="button"
             className={`${styles.navLink} ${pathname.startsWith('/jobs') ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/jobs')}
+            onClick={() => navigateSafely('/jobs')}
           >
             <span>Jobs</span>
           </button>
@@ -249,7 +259,7 @@ export default function Header() {
           <button
             type="button"
             className={`${styles.navLink} ${pathname.startsWith('/progress') ? styles.activeNavLink : ''}`}
-            onClick={() => router.push('/progress')}
+            onClick={() => navigateSafely('/progress')}
           >
             <span>Progress</span>
           </button>
@@ -288,7 +298,7 @@ export default function Header() {
                     className={styles.dropdownItem}
                     onClick={() => {
                       setProfileDropdownOpen(false);
-                      router.push('/profile');
+                      navigateSafely('/profile');
                     }}
                   >
                     <UserIcon size={15} color="#818cf8" />
@@ -301,7 +311,7 @@ export default function Header() {
                       className={styles.dropdownItem}
                       onClick={() => {
                         setProfileDropdownOpen(false);
-                        router.push('/admin');
+                        navigateSafely('/admin');
                       }}
                     >
                       <LayoutDashboard size={15} color="#38bdf8" />
@@ -315,7 +325,7 @@ export default function Header() {
                       className={styles.dropdownItem}
                       onClick={() => {
                         setProfileDropdownOpen(false);
-                        router.push('/super-admin');
+                        navigateSafely('/super-admin');
                       }}
                     >
                       <ShieldCheck size={15} color="#a855f7" />
@@ -338,7 +348,7 @@ export default function Header() {
             <button
               type="button"
               className={styles.getStartedBtn}
-              onClick={() => router.push('/login')}
+              onClick={() => navigateSafely('/login')}
             >
               <span>Get Started</span>
               <ArrowRight size={15} />
@@ -422,7 +432,7 @@ export default function Header() {
                       localStorage.removeItem('selected_course_id');
                       window.dispatchEvent(new CustomEvent('reset_courses_view'));
                     }
-                    router.push(item.path);
+                    navigateSafely(item.path);
                   }}
                   style={{
                     display: 'flex',
@@ -455,7 +465,7 @@ export default function Header() {
         <button
           type="button"
           className={`${styles.mobileNavLink} ${isAiActive ? styles.mobileNavActive : ''}`}
-          onClick={() => { setMobileMenuOpen(false); router.push('/vedika-ai'); }}
+          onClick={() => { setMobileMenuOpen(false); navigateSafely('/vedika-ai'); }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Brain size={16} color="#c084fc" />
@@ -467,7 +477,7 @@ export default function Header() {
         <button
           type="button"
           className={`${styles.mobileNavLink} ${isLabsActive ? styles.mobileNavActive : ''}`}
-          onClick={() => { setMobileMenuOpen(false); router.push('/vedika-labs'); }}
+          onClick={() => { setMobileMenuOpen(false); navigateSafely('/vedika-labs'); }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <FlaskConical size={16} color="#38bdf8" />
@@ -479,7 +489,7 @@ export default function Header() {
         <button
           type="button"
           className={`${styles.mobileNavLink} ${pathname.startsWith('/jobs') ? styles.mobileNavActive : ''}`}
-          onClick={() => { setMobileMenuOpen(false); router.push('/jobs'); }}
+          onClick={() => { setMobileMenuOpen(false); navigateSafely('/jobs'); }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Briefcase size={16} color="#34d399" />
@@ -491,7 +501,7 @@ export default function Header() {
         <button
           type="button"
           className={`${styles.mobileNavLink} ${pathname.startsWith('/progress') ? styles.mobileNavActive : ''}`}
-          onClick={() => { setMobileMenuOpen(false); router.push('/progress'); }}
+          onClick={() => { setMobileMenuOpen(false); navigateSafely('/progress'); }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <BarChart3 size={16} color="#f59e0b" />
@@ -509,7 +519,7 @@ export default function Header() {
             <button
               type="button"
               className={styles.mobileNavLink}
-              onClick={() => { setMobileMenuOpen(false); router.push('/profile'); }}
+              onClick={() => { setMobileMenuOpen(false); navigateSafely('/profile'); }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <UserIcon size={15} color="#818cf8" />
@@ -520,7 +530,7 @@ export default function Header() {
               <button
                 type="button"
                 className={styles.mobileNavLink}
-                onClick={() => { setMobileMenuOpen(false); router.push('/admin'); }}
+                onClick={() => { setMobileMenuOpen(false); navigateSafely('/admin'); }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <LayoutDashboard size={15} color="#38bdf8" />
@@ -532,7 +542,7 @@ export default function Header() {
               <button
                 type="button"
                 className={styles.mobileNavLink}
-                onClick={() => { setMobileMenuOpen(false); router.push('/super-admin'); }}
+                onClick={() => { setMobileMenuOpen(false); navigateSafely('/super-admin'); }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <ShieldCheck size={15} color="#a855f7" />
@@ -557,7 +567,7 @@ export default function Header() {
             type="button"
             className={styles.getStartedBtn}
             style={{ justifyContent: 'center', width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '13px' }}
-            onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
+            onClick={() => { setMobileMenuOpen(false); navigateSafely('/login'); }}
           >
             <span>Get Started / Log In</span>
             <ArrowRight size={14} />

@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { id: '/admin/statistics',  Icon: BarChart3,    label: 'Statistics' },
   { id: '/admin/quizzes',     Icon: CheckSquare,  label: 'Quizzes' },
   { id: '/admin/assignments', Icon: FileText,    label: 'Assignments' },
-  { id: '/admin/code-ex',     Icon: Code2,        label: 'Programming Exercises', disabled: true },
+  { id: '/admin/code-ex',     Icon: Code2,        label: 'Programming Exercises' },
 ];
 
 export default function AdminSidebar({ isCollapsed = false, onToggleCollapse }) {
