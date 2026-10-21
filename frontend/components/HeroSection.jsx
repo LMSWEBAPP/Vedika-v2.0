@@ -512,6 +512,7 @@ export default function HeroSection() {
                   alt="Vedika AI Bot Companion"
                   fill
                   priority
+                  sizes="(max-width: 768px) 85vw, 420px"
                   className={styles.botImage}
                 />
               </div>
@@ -523,6 +524,7 @@ export default function HeroSection() {
                   alt="Vedika Student"
                   fill
                   priority
+                  sizes="(max-width: 768px) 85vw, 420px"
                   className={styles.humanFallbackImg}
                 />
               </div>

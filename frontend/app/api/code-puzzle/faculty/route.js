@@ -47,7 +47,7 @@ function buildLocalFallbackPuzzle(title, difficulty = 'Easy') {
     sampleInput: `data = [10, 20, 30, 40]`,
     sampleOutput: `100`,
     constraints: ['Input size 1 <= n <= 10^5', 'Optimize for clean readability and descriptive variable names'],
-    starterCode: `def ${fnName}(data):\n    # Follow Vedika AI's step-by-step instructions to complete this program\n    pass\n`,
+    starterCode: `def ${fnName}(data):\n    pass\n`,
     defaultCall: `\n# Test call for visualizer\nsample_data = [10, 20, 30, 40]\nresult = ${fnName}(sample_data)\nprint('Input:', sample_data)\nprint('Result:', result)\n`,
     testCases: [
       { id: 1, name: 'Standard Case', input: '[10, 20, 30, 40]', expected: '100' },

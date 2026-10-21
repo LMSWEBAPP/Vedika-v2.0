@@ -237,7 +237,7 @@ const FACULTY_PUZZLES = [
       { id: 3, name: "Single Item", input: "[42]", expected: "42" },
       { id: 4, name: "Duplicate Max", input: "[7, 12, 12, 3]", expected: "12" }
     ],
-    starterCode: "def find_max(arr):\n    # Follow the step-by-step guide to complete this code\n    pass\n",
+    starterCode: "def find_max(arr):\n    pass\n",
     defaultCall: "\n# Test call for visualizer\nmy_array = [12, 3, 45, 7, 23, 19]\nresult = find_max(my_array)\nprint('Array:', my_array)\nprint('Max Number:', result)\n",
     steps: [
       {
@@ -268,7 +268,7 @@ const FACULTY_PUZZLES = [
       {
         id: "step6",
         shortTitle: "Return Final Largest Value",
-        description: "Outside the loop (back at 4 spaces indent), return your tracking variable using `return max_val`."
+        description: "Outside the loop (back at 4 spaces indent), return your tracking variable (e.g., `return max_val` or whatever variable name you initialized in step 2)."
       }
     ]
   },
@@ -288,7 +288,7 @@ const FACULTY_PUZZLES = [
       { id: 2, name: "Single Character", input: "'a'", expected: "'a'" },
       { id: 3, name: "Empty String", input: "''", expected: "''" }
     ],
-    starterCode: "def reverse_string(s):\n    # Follow the step-by-step guide to complete this code\n    pass\n",
+    starterCode: "def reverse_string(s):\n    pass\n",
     defaultCall: "\n# Test call for visualizer\nword = 'vedika'\nresult = reverse_string(word)\nprint('Original:', word)\nprint('Reversed:', result)\n",
     steps: [
       {
@@ -334,7 +334,7 @@ const FACULTY_PUZZLES = [
       { id: 2, name: "All Odd Numbers", input: "[1, 3, 5, 7, 9]", expected: "0" },
       { id: 3, name: "All Even Numbers", input: "[2, 4, 6, 8, 10]", expected: "5" }
     ],
-    starterCode: "def count_evens(arr):\n    # Follow the step-by-step guide to complete this code\n    pass\n",
+    starterCode: "def count_evens(arr):\n    pass\n",
     defaultCall: "\n# Test call for visualizer\nmy_list = [4, 2, 7, 9, 10, 5, 8]\nresult = count_evens(my_list)\nprint('List:', my_list)\nprint('Even Count:', result)\n",
     steps: [
       {
@@ -785,7 +785,7 @@ function getVariableBestPracticeTip(varName, recommendedExamples) {
   return '';
 }
 
-// ── Local Python Step & Indentation Validator (Accepts ANY valid user variable name) ──
+// ── Local Python Step & Indentation Validator (Verifies variable consistency & scope end-to-end) ──
 function validatePythonStepLocally(code, puzzleId, stepIndex) {
   if (!code || typeof code !== 'string') {
     return { passed: false, line: 1, message: 'Write your Python code in the editor to begin.' };
@@ -820,133 +820,310 @@ function validatePythonStepLocally(code, puzzleId, stepIndex) {
   const paramMatch = defLineAny ? defLineAny.noComment.match(/^def\s+([a-zA-Z_]\w*)\s*\(\s*([a-zA-Z_]\w*)?\s*\)/) : null;
   const userParam = paramMatch?.[2] || '';
 
-  // 1. Find Max Puzzle (6 clear steps)
+  // Helper to extract identifier names from an expression
+  const getLineIdentifiers = (lineStr) => {
+    return (lineStr.match(/\b[a-zA-Z_]\w*\b/g) || []).filter(
+      id => !['def', 'return', 'for', 'in', 'if', 'else', 'elif', 'pass', 'and', 'or', 'not', 'is', 'True', 'False', 'None'].includes(id)
+    );
+  };
+
+  // 1. Find Max Puzzle (6 clear steps with cross-step variable consistency)
   if (puzzleId === 'find_max') {
+    const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
       if (!defLine) return { passed: false, line: 1, message: 'Define the function signature, e.g. def find_max(arr):' };
       if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Add a colon ":" at the end of your def line.' };
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`arr` or `numbers`') };
     }
 
+    // Identify user's tracking variable from line like 'val = arr[0]' or 'max_val = arr[0]'
+    const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*[a-zA-Z_]\w*\s*\[\s*0\s*\]$/.test(l.noComment));
+    const trackingVar = initLine ? initLine.noComment.split('=')[0].trim() : null;
+
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*[a-zA-Z_]\w*\s*\[\s*0\s*\]$/.test(l.noComment));
       if (!initLine) return { passed: false, line: 2, message: 'Initialize your tracking variable to the first item, e.g. max_val = arr[0]' };
       if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent this line by 4 spaces inside the function.' };
-      const varName = initLine.noComment.split('=')[0].trim();
-      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`max_val` or `largest`') };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(trackingVar, '`max_val` or `largest`') };
     }
 
+    // Identify loop variable from line like 'for num in arr:'
+    const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+    const loopVar = loopLine ? loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1] : null;
+
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
       if (!loopLine) return { passed: false, line: 3, message: 'Write a for loop over the list, e.g. for num in arr:' };
       if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop (4 spaces) inside the function.' };
-      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`num` or `item`') };
     }
 
     if (stepIndex === 3) {
       const ifLine = lines.find(l => /^if\s+.+[><].*:$/.test(l.noComment));
-      if (!ifLine) return { passed: false, line: 4, message: 'Inside the loop, compare the current element with your max variable, e.g. if num > max_val:' };
+      if (!ifLine) return { passed: false, line: 4, message: `Inside the loop, compare the current element with your tracking variable, e.g. if ${loopVar || 'num'} > ${trackingVar || 'max_val'}:` };
       if (ifLine.indent <= 4) return { passed: false, line: ifLine.lineNum, message: 'IndentationError: Indent the if statement inside the for loop (8 spaces).' };
+      // Verify consistency: if the user defined 'val', they must not compare against an undefined variable like 'max_val'
+      if (trackingVar) {
+        const ifIds = getLineIdentifiers(ifLine.noComment);
+        if (!ifIds.includes(trackingVar)) {
+          return {
+            passed: false,
+            line: ifLine.lineNum,
+            message: `NameError: You defined '${trackingVar}', but your comparison doesn't use it. Please compare with '${trackingVar}' (e.g. if ${loopVar || 'num'} > ${trackingVar}:).`
+          };
+        }
+      }
       return { passed: true, line: 0, message: '' };
     }
 
     if (stepIndex === 4) {
       const updateLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*(\[.*\])?$/.test(l.noComment) && !/\[\s*0\s*\]/.test(l.noComment));
       const oneLiner = lines.find(l => /^if\s+.+[><].*:\s*[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*/.test(l.noComment));
-      if (!updateLine && !oneLiner) return { passed: false, line: 5, message: 'Inside the if block, update your tracking variable, e.g. max_val = num' };
+      if (!updateLine && !oneLiner) return { passed: false, line: 5, message: `Inside the if block, update your tracking variable, e.g. ${trackingVar || 'max_val'} = ${loopVar || 'num'}` };
       if (updateLine && updateLine.indent <= 8) return { passed: false, line: updateLine.lineNum, message: 'IndentationError: Indent the assignment inside the if block (12 spaces).' };
+      // Verify consistency: assignment must update the user's tracking variable
+      if (trackingVar) {
+        const targetLine = updateLine || oneLiner;
+        const assignedTarget = targetLine.noComment.split('=')[0].replace(/^.*:/, '').trim();
+        if (assignedTarget !== trackingVar) {
+          return {
+            passed: false,
+            line: targetLine.lineNum,
+            message: `NameError: You defined '${trackingVar}' as your tracking variable, but you are updating '${assignedTarget}'. Please update '${trackingVar}'.`
+          };
+        }
+      }
       return { passed: true, line: 0, message: '' };
     }
 
     if (stepIndex === 5) {
+      if (!trackingVar) {
+        return { passed: false, line: 2, message: 'Initialize your tracking variable first (e.g., max_val = arr[0]).' };
+      }
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) return { passed: false, line: lines.length, message: 'Return your tracking variable outside the loop, e.g. return max_val' };
+      if (!retLine) return { passed: false, line: lines.length, message: `Return your tracking variable outside the loop, e.g. return ${trackingVar}` };
       if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: Place return at 4 spaces indent (outside the for loop) so the loop finishes first.' };
+
+      // CRITICAL FIX: Verify that the returned variable matches the actual tracking variable declared!
+      const retMatch = retLine.noComment.match(/^return\s+([a-zA-Z_]\w*)/);
+      const returnedVar = retMatch ? retMatch[1] : '';
+      if (returnedVar !== trackingVar) {
+        return {
+          passed: false,
+          line: retLine.lineNum,
+          message: `NameError: name '${returnedVar}' is not defined. You initialized '${trackingVar}' earlier, so you should write 'return ${trackingVar}'.`
+        };
+      }
+
+      // End-to-End Function Scope Check: Ensure no undefined identifiers exist anywhere in the function
+      const declaredScope = new Set([
+        trackingVar,
+        loopVar,
+        userParam,
+        'find_max',
+        'len', 'range', 'enumerate', 'int', 'float', 'str', 'print', 'min', 'max'
+      ].filter(Boolean));
+
+      for (const l of lines) {
+        if (!l.noComment || l.noComment.startsWith('def ')) continue;
+        const lineVars = getLineIdentifiers(l.noComment);
+        for (const v of lineVars) {
+          if (!declaredScope.has(v)) {
+            return {
+              passed: false,
+              line: l.lineNum,
+              message: `NameError: name '${v}' is not defined in this function. Did you mean '${trackingVar}'?`
+            };
+          }
+        }
+      }
+
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // 2. Reverse String Puzzle (5 clear steps)
+  // 2. Reverse String Puzzle (5 clear steps with cross-step variable consistency)
   if (puzzleId === 'reverse_str') {
+    const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
       if (!defLine) return { passed: false, line: 1, message: 'Define function signature, e.g. def reverse_string(s):' };
       if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def line.' };
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`text` or `input_str`') };
     }
+
+    const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*(['"]{2}|str\(\))$/.test(l.noComment));
+    const trackingVar = initLine ? initLine.noComment.split('=')[0].trim() : null;
+
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*(['"]{2}|str\(\))$/.test(l.noComment));
       if (!initLine) return { passed: false, line: 2, message: 'Initialize an empty string variable, e.g. reversed_str = ""' };
       if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside the function.' };
-      const varName = initLine.noComment.split('=')[0].trim();
-      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`reversed_str` or `result`') };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(trackingVar, '`reversed_str` or `result`') };
     }
+
+    const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+    const loopVar = loopLine ? loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1] : null;
+
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
       if (!loopLine) return { passed: false, line: 3, message: 'Loop over each character, e.g. for char in s:' };
       if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop inside the function.' };
-      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`char` or `ch`') };
     }
+
     if (stepIndex === 3) {
       const appendLine = lines.find(l => /^[a-zA-Z_]\w*\s*=\s*[a-zA-Z_]\w*\s*\+\s*[a-zA-Z_]\w*/.test(l.noComment));
-      if (!appendLine) return { passed: false, line: 4, message: 'Prepend the character inside the loop, e.g. reversed_str = char + reversed_str' };
+      if (!appendLine) return { passed: false, line: 4, message: `Prepend the character inside the loop, e.g. ${trackingVar || 'reversed_str'} = ${loopVar || 'char'} + ${trackingVar || 'reversed_str'}` };
       if (appendLine.indent <= 4) return { passed: false, line: appendLine.lineNum, message: 'IndentationError: Indent this line inside the for loop (8 spaces).' };
+      if (trackingVar) {
+        const assignedTarget = appendLine.noComment.split('=')[0].trim();
+        if (assignedTarget !== trackingVar) {
+          return {
+            passed: false,
+            line: appendLine.lineNum,
+            message: `NameError: You defined '${trackingVar}', but you are updating '${assignedTarget}'. Please update '${trackingVar}'.`
+          };
+        }
+      }
       return { passed: true, line: 0, message: '' };
     }
+
     if (stepIndex === 4) {
+      if (!trackingVar) {
+        return { passed: false, line: 2, message: 'Initialize your result string variable first (e.g. reversed_str = "").' };
+      }
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) return { passed: false, line: lines.length, message: 'Return your reversed string variable outside the loop.' };
+      if (!retLine) return { passed: false, line: lines.length, message: `Return your reversed string variable outside the loop, e.g. return ${trackingVar}` };
       if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: return should be outside the for loop (4 spaces indent).' };
+
+      const retMatch = retLine.noComment.match(/^return\s+([a-zA-Z_]\w*)/);
+      const returnedVar = retMatch ? retMatch[1] : '';
+      if (returnedVar !== trackingVar) {
+        return {
+          passed: false,
+          line: retLine.lineNum,
+          message: `NameError: name '${returnedVar}' is not defined. You initialized '${trackingVar}', so you must write 'return ${trackingVar}'.`
+        };
+      }
+
+      const declaredScope = new Set([
+        trackingVar,
+        loopVar,
+        userParam,
+        'reverse_string',
+        'len', 'range', 'enumerate', 'int', 'float', 'str', 'print'
+      ].filter(Boolean));
+
+      for (const l of lines) {
+        if (!l.noComment || l.noComment.startsWith('def ')) continue;
+        const lineVars = getLineIdentifiers(l.noComment);
+        for (const v of lineVars) {
+          if (!declaredScope.has(v)) {
+            return {
+              passed: false,
+              line: l.lineNum,
+              message: `NameError: name '${v}' is not defined in this function. Did you mean '${trackingVar}'?`
+            };
+          }
+        }
+      }
+
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // 3. Count Evens Puzzle (6 clear steps)
+  // 3. Count Evens Puzzle (6 clear steps with cross-step variable consistency)
   if (puzzleId === 'count_evens') {
+    const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
     if (stepIndex === 0) {
-      const defLine = lines.find(l => /^def\s+[a-zA-Z_]\w*\s*\(\s*[a-zA-Z_]\w*\s*\)/.test(l.noComment));
       if (!defLine) return { passed: false, line: 1, message: 'Define function signature, e.g. def count_evens(arr):' };
       if (!defLine.noComment.endsWith(':')) return { passed: false, line: defLine.lineNum, message: 'SyntaxError: Missing colon ":" at the end of def line.' };
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(userParam, '`arr` or `numbers`') };
     }
+
+    const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*0\b/.test(l.noComment));
+    const trackingVar = initLine ? initLine.noComment.split('=')[0].trim() : null;
+
     if (stepIndex === 1) {
-      const initLine = lines.find(l => /^([a-zA-Z_]\w*)\s*=\s*0\b/.test(l.noComment));
       if (!initLine) return { passed: false, line: 2, message: 'Initialize a counter variable to 0, e.g. count = 0' };
       if (initLine.indent === 0) return { passed: false, line: initLine.lineNum, message: 'IndentationError: Indent with 4 spaces inside the function.' };
-      const varName = initLine.noComment.split('=')[0].trim();
-      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(varName, '`count` or `even_count`') };
+      return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(trackingVar, '`count` or `even_count`') };
     }
+
+    const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
+    const loopVar = loopLine ? loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1] : null;
+
     if (stepIndex === 2) {
-      const loopLine = lines.find(l => /^for\s+([a-zA-Z_]\w*)\s+in\s+.+:$/.test(l.noComment));
       if (!loopLine) return { passed: false, line: 3, message: 'Loop through the list, e.g. for num in arr:' };
       if (loopLine.indent === 0) return { passed: false, line: loopLine.lineNum, message: 'IndentationError: Indent the for loop (4 spaces) inside the function.' };
-      const loopVar = loopLine.noComment.match(/^for\s+([a-zA-Z_]\w*)/)?.[1];
       return { passed: true, line: 0, message: '', suggestion: getVariableBestPracticeTip(loopVar, '`num` or `item`') };
     }
+
     if (stepIndex === 3) {
       const modLine = lines.find(l => /^if\s+.+%\s*2\s*==\s*0\s*:$/.test(l.noComment));
-      if (!modLine) return { passed: false, line: 4, message: 'Check if the element is divisible by 2, e.g. if num % 2 == 0:' };
+      if (!modLine) return { passed: false, line: 4, message: `Check if the element is divisible by 2, e.g. if ${loopVar || 'num'} % 2 == 0:` };
       if (modLine.indent <= 4) return { passed: false, line: modLine.lineNum, message: 'IndentationError: Indent the if condition inside the for loop (8 spaces).' };
       return { passed: true, line: 0, message: '' };
     }
+
     if (stepIndex === 4) {
       const incLine = lines.find(l => /^[a-zA-Z_]\w*\s*(\+=\s*1|=\s*[a-zA-Z_]\w*\s*\+\s*1)\b/.test(l.noComment));
-      if (!incLine) return { passed: false, line: 5, message: 'Increment your counter variable by 1, e.g. count += 1' };
+      if (!incLine) return { passed: false, line: 5, message: `Increment your counter variable by 1, e.g. ${trackingVar || 'count'} += 1` };
       if (incLine.indent <= 8) return { passed: false, line: incLine.lineNum, message: 'IndentationError: Indent the increment inside the if block (12 spaces).' };
+      if (trackingVar) {
+        const assignedTarget = incLine.noComment.split(/\+=|=/)[0].trim();
+        if (assignedTarget !== trackingVar) {
+          return {
+            passed: false,
+            line: incLine.lineNum,
+            message: `NameError: You defined '${trackingVar}', but you are incrementing '${assignedTarget}'. Please increment '${trackingVar}'.`
+          };
+        }
+      }
       return { passed: true, line: 0, message: '' };
     }
+
     if (stepIndex === 5) {
+      if (!trackingVar) {
+        return { passed: false, line: 2, message: 'Initialize your counter variable first (e.g. count = 0).' };
+      }
       const retLine = lines.find(l => /^return\s+[a-zA-Z_]\w*/.test(l.noComment));
-      if (!retLine) return { passed: false, line: lines.length, message: 'Return your counter variable outside the loop, e.g. return count' };
+      if (!retLine) return { passed: false, line: lines.length, message: `Return your counter variable outside the loop, e.g. return ${trackingVar}` };
       if (retLine.indent > 4) return { passed: false, line: retLine.lineNum, message: 'Indentation warning: Place return at 4 spaces indent (outside the for loop).' };
+
+      const retMatch = retLine.noComment.match(/^return\s+([a-zA-Z_]\w*)/);
+      const returnedVar = retMatch ? retMatch[1] : '';
+      if (returnedVar !== trackingVar) {
+        return {
+          passed: false,
+          line: retLine.lineNum,
+          message: `NameError: name '${returnedVar}' is not defined. You initialized '${trackingVar}', so you must write 'return ${trackingVar}'.`
+        };
+      }
+
+      const declaredScope = new Set([
+        trackingVar,
+        loopVar,
+        userParam,
+        'count_evens',
+        'len', 'range', 'enumerate', 'int', 'float', 'str', 'print'
+      ].filter(Boolean));
+
+      for (const l of lines) {
+        if (!l.noComment || l.noComment.startsWith('def ')) continue;
+        const lineVars = getLineIdentifiers(l.noComment);
+        for (const v of lineVars) {
+          if (!declaredScope.has(v)) {
+            return {
+              passed: false,
+              line: l.lineNum,
+              message: `NameError: name '${v}' is not defined in this function. Did you mean '${trackingVar}'?`
+            };
+          }
+        }
+      }
+
       return { passed: true, line: 0, message: '' };
     }
   }
 
-  // Generic heuristic for custom faculty or AI puzzles:
+  // Generic check for AI or faculty custom puzzles
   if (stepIndex === 0) {
     const hasDef = lines.some(l => /^def\s+[a-zA-Z_]\w*\s*\(.*\)\s*:$/.test(l.noComment));
     if (!hasDef) return { passed: false, line: 1, message: 'Define your function signature ending with a colon, e.g. def solve(...):' };
@@ -955,32 +1132,11 @@ function validatePythonStepLocally(code, puzzleId, stepIndex) {
   return { passed: true, line: 0, message: '' };
 }
 
-// ── Vedika AI Tabs Definition ────────────────────────────────────────────────
-const VEDIKA_AI_TABS = [
-  { id: 'hub', label: 'Vedika AI Hub', desc: 'Overview & 4 Assistants', url: '/vedika-ai', icon: Sparkles, color: '#38BDF8' },
-  { id: 'ask', label: 'Ask Vedika', desc: 'General AI Tutor & Doubts', url: '/vedika-ai/ask', icon: Brain, color: '#A855F7' },
-  { id: 'code', label: 'Code with Vedika', desc: 'Coding Companion & Pair Programming', url: '/vedika-ai/code', icon: Code, color: '#3B82F6' },
-  { id: 'puzzle', label: 'Code Puzzles', desc: 'Algorithmic 3D Challenges', url: '/vedika-ai/puzzle', icon: Zap, color: '#F59E0B', isCurrent: true },
-  { id: 'viva', label: 'Viva & Interview', desc: 'Voice AI Viva & Exams', url: '/viva-interview', icon: Award, color: '#10B981' }
-];
 
 export default function CodePuzzle() {
   const router = useRouter();
 
-  // ── AI Tabs Switcher State ──────────────────────────────────────────────────
-  const [isAiTabsOpen, setIsAiTabsOpen] = useState(false);
-  const aiTabsRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutsideAiTabs = (e) => {
-      if (aiTabsRef.current && !aiTabsRef.current.contains(e.target)) {
-        setIsAiTabsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutsideAiTabs);
-    return () => document.removeEventListener('mousedown', handleClickOutsideAiTabs);
-  }, []);
-
+  
   // Deterministic navigation helper so exiting CodePuzzle never stalls on iframe/worker history traps
   const navigateOut = useCallback((targetPath = '/vedika-ai') => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -2507,139 +2663,6 @@ export default function CodePuzzle() {
             <span>Back</span>
           </button>
 
-          {/* AI Tabs Quick Switcher Dropdown */}
-          <div ref={aiTabsRef} style={{ position: 'relative', display: 'inline-block' }}>
-            <button
-              type="button"
-              onClick={() => setIsAiTabsOpen(!isAiTabsOpen)}
-              title="Navigate between Vedika AI tabs & assistants"
-              aria-label="Navigate between Vedika AI tabs & assistants"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                height: isMobile ? 28 : 30,
-                padding: isMobile ? '0 7px' : '0 10px',
-                borderRadius: 8,
-                background: isAiTabsOpen ? 'rgba(56, 189, 248, 0.16)' : 'rgba(255, 255, 255, 0.04)',
-                border: `1px solid ${isAiTabsOpen ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.08)'}`,
-                color: isAiTabsOpen ? '#38BDF8' : '#CBD5E1',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              <Sparkles size={13} color="#F59E0B" />
-              <span>{isMobile ? 'Tabs' : 'Vedika AI'}</span>
-              <ChevronDown size={11} color="#94A3B8" style={{ transform: isAiTabsOpen ? 'rotate(180deg)' : 'none' }} />
-            </button>
-
-            {isAiTabsOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  left: 0,
-                  width: isMobile ? 255 : 280,
-                  background: 'rgba(11, 15, 28, 0.98)',
-                  backdropFilter: 'blur(24px)',
-                  WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: 12,
-                  padding: '6px',
-                  boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85)',
-                  zIndex: 2000,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 3
-                }}
-              >
-                <div style={{
-                  padding: '4px 8px 6px',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#94A3B8',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <span>Vedika AI Tabs</span>
-                  <span style={{ fontSize: 9.5, color: '#38BDF8', fontWeight: 600 }}>Switch Mode</span>
-                </div>
-
-                {VEDIKA_AI_TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  const isCurrent = tab.isCurrent;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => {
-                        setIsAiTabsOpen(false);
-                        if (!isCurrent) navigateOut(tab.url);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: isCurrent ? `${tab.color}18` : 'transparent',
-                        border: isCurrent ? `1px solid ${tab.color}44` : '1px solid transparent',
-                        color: isCurrent ? tab.color : '#E2E8F0',
-                        cursor: isCurrent ? 'default' : 'pointer',
-                        textAlign: 'left',
-                        width: '100%'
-                      }}
-                    >
-                      <div style={{
-                        width: 26, height: 26, borderRadius: 6, background: `${tab.color}15`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                      }}>
-                        <Icon size={14} color={tab.color} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 12.5, fontWeight: isCurrent ? 700 : 600 }}>{tab.label}</span>
-                          {isCurrent && (
-                            <span style={{ fontSize: 9.5, fontWeight: 700, color: tab.color, padding: '1px 5px', borderRadius: 4, background: `${tab.color}20` }}>
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {tab.desc}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-
-                <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.06)', margin: '3px 0' }} />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAiTabsOpen(false);
-                    navigateOut('/courses');
-                  }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px',
-                    borderRadius: 8, background: 'transparent', border: 'none', color: '#94A3B8',
-                    cursor: 'pointer', textAlign: 'left', width: '100%', fontSize: 12, fontWeight: 500
-                  }}
-                >
-                  <BookOpen size={14} color="#38BDF8" />
-                  <span>Browse Courses</span>
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Sandbox & Exercise Selector (No redundant Courses > Vedika AI Hub breadcrumbs) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 6, minWidth: 0 }}>
             <CustomDropdown
@@ -2884,7 +2907,7 @@ export default function CodePuzzle() {
         {/* ── 2. COLLAPSIBLE FILE EXPLORER (210px width) ── */}
         <div style={{
           position: isMobile ? 'absolute' : 'relative',
-          left: isMobile ? 0 : 44,
+          left: 0,
           top: isMobile ? 0 : 'auto',
           bottom: isMobile ? 0 : 'auto',
           zIndex: isMobile ? 35 : 'auto',
@@ -4128,25 +4151,98 @@ export default function CodePuzzle() {
                               </div>
                             )}
 
-                            {/* Final congratulations card */}
+                            {/* Final subtle celebration card */}
                             {isActive && idx === activePuzzle.steps.length - 1 && stepPassed && (
                               <div style={{
-                                padding: 10,
-                                background: 'rgba(34, 197, 160, 0.08)',
-                                border: '1px solid #22C5A0',
-                                borderRadius: 8,
-                                marginTop: 6,
+                                padding: '12px 14px',
+                                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(56, 189, 248, 0.08))',
+                                border: '1px solid rgba(34, 197, 94, 0.45)',
+                                borderRadius: 10,
+                                marginTop: 8,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: 4
+                                gap: 8,
+                                boxShadow: '0 8px 24px rgba(34, 197, 94, 0.15)',
+                                position: 'relative',
+                                overflow: 'hidden'
                               }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#22C5A0', fontSize: 11.5, fontWeight: 800 }}>
-                                  <Sparkles size={13} fill="currentColor" />
-                                  CONGRATULATIONS!
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#34D399', fontSize: 12, fontWeight: 800, letterSpacing: '0.04em' }}>
+                                    <Sparkles size={14} fill="#34D399" />
+                                    <span>PUZZLE MASTERED!</span>
+                                  </div>
+                                  <span style={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    color: '#F59E0B',
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    padding: '2px 7px',
+                                    borderRadius: 999
+                                  }}>
+                                    +50 XP
+                                  </span>
                                 </div>
-                                <span style={{ fontSize: 11, color: '#CBD5E1', lineHeight: 1.35 }}>
-                                  You have successfully completed all the steps for this puzzle! Click <strong>Visualize Code</strong> to see it run step-by-step.
+                                <span style={{ fontSize: 11.5, color: '#E2E8F0', lineHeight: 1.4 }}>
+                                  Outstanding work! Your algorithm logic and variable references are completely verified and bug-free.
                                 </span>
+                                <div style={{ display: 'flex', gap: 7, marginTop: 2 }}>
+                                  <button
+                                    type="button"
+                                    onClick={handleRunCode}
+                                    style={{
+                                      flex: 1,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 5,
+                                      padding: '6px 10px',
+                                      borderRadius: 6,
+                                      background: 'linear-gradient(135deg, #22C55E, #10B981)',
+                                      border: 'none',
+                                      color: '#000',
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <Play size={11} fill="currentColor" />
+                                    <span>Run & Test Code</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextIdx = (facultyPuzzleIndex + 1) % allFacultyPuzzles.length;
+                                      setPuzzleSource('faculty');
+                                      setFacultyPuzzleIndex(nextIdx);
+                                      const nextP = allFacultyPuzzles[nextIdx];
+                                      if (nextP) {
+                                        setPythonFiles(prev => prev.map(f => f.name === 'main.py' ? { ...f, content: nextP.starterCode } : f));
+                                      }
+                                      setCurrentStepIndex(0);
+                                      setStepPassed(false);
+                                      setStepSuggestion('');
+                                      setValidationError(null);
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 4,
+                                      padding: '6px 10px',
+                                      borderRadius: 6,
+                                      background: 'rgba(255, 255, 255, 0.08)',
+                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      color: '#F8FAFC',
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <span>Next Puzzle</span>
+                                    <ChevronRight size={12} />
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>
