@@ -173,7 +173,7 @@
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  pointer-events: auto;
+  pointer-events: auto !important;
   filter: blur(0px) brightness(1);
 }
 
@@ -238,7 +238,7 @@
   justify-content: space-between;
   color: #1e293b;
   position: relative;
-  z-index: 2;
+  z-index: 5;
 }
 
 .card-title {
@@ -294,6 +294,13 @@
   box-sizing: border-box;
 }
 
+/* Ensure Form sits above SVG path */
+.card-right-pane form {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
 /* Alert Boxes */
 .card-alert-error {
   background: rgba(239, 68, 68, 0.18);
@@ -307,6 +314,8 @@
   align-items: center;
   gap: 8px;
   line-height: 1.4;
+  position: relative;
+  z-index: 15;
 }
 
 .card-alert-success {
@@ -321,12 +330,15 @@
   align-items: center;
   gap: 8px;
   line-height: 1.4;
+  position: relative;
+  z-index: 15;
 }
 
 /* Minimalist Form Elements (Codepen 2 style) */
 .input-group {
   margin-bottom: 16px;
   position: relative;
+  z-index: 12;
 }
 
 .input-label-row {
@@ -343,6 +355,7 @@
   display: block;
   letter-spacing: 0.3px;
   transition: color 0.2s ease;
+  cursor: pointer;
 }
 
 .input-group.is-focused .input-label {
@@ -355,6 +368,8 @@
   justify-content: flex-end;
   margin-top: 5px;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 15;
 }
 
 .forgot-btn-below {
@@ -377,6 +392,9 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  z-index: 15;
+  cursor: text;
 }
 
 .card-input {
@@ -384,12 +402,16 @@
   border: 0 !important;
   color: #f2f2f2 !important;
   font-size: 15px !important;
-  height: 32px !important;
-  line-height: 32px !important;
+  height: 34px !important;
+  line-height: 34px !important;
   outline: none !important;
   width: 100% !important;
   padding: 0 !important;
   font-family: inherit;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto !important;
+  cursor: text !important;
 }
 
 .card-input::placeholder {
@@ -407,7 +429,8 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
-  z-index: 6;
+  z-index: 25;
+  pointer-events: auto !important;
 }
 
 .pwd-toggle-btn:hover {
@@ -423,6 +446,7 @@
   height: 1.5px;
   background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
+  z-index: 1;
 }
 
 /* Side-by-side Action Buttons Row */
@@ -432,6 +456,8 @@
   gap: 12px;
   margin-top: 22px;
   width: 100%;
+  position: relative;
+  z-index: 15;
 }
 
 .auth-buttons-row .side-btn {
@@ -448,6 +474,9 @@
   font-family: inherit;
   transition: all 0.22s ease;
   white-space: nowrap;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto !important;
 }
 
 /* Primary Action Button (Sign In / Create Account) */
@@ -496,9 +525,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  z-index: 10;
+  pointer-events: none !important;
+  z-index: 5;
   overflow: visible;
+}
+
+.snake-svg-layer * {
+  pointer-events: none !important;
 }
 
 .snake-path {
@@ -508,6 +541,7 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 8px rgba(255, 0, 128, 0.85));
+  pointer-events: none !important;
   transition: stroke-dashoffset 0.65s cubic-bezier(0.16, 1, 0.3, 1),
               stroke-dasharray 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
