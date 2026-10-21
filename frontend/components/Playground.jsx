@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { usePyodide } from '@/hooks/usePyodide';
-import { Play, Square, Trash2, CheckCircle, Loader2, ChevronLeft, ChevronRight, Pause, BookOpen, AlertCircle, X, GitFork, Layers, Columns } from 'lucide-react';
+import { Play, Square, Trash2, CheckCircle, Loader2, ChevronLeft, ChevronRight, Pause, BookOpen, AlertCircle, X, GitFork, Layers, Columns, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import CodeFlowchartVisualizer from '@/components/CodeFlowchartVisualizer';
+import CodeExplanationFab from './CodeExplanationFab';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -22,7 +23,14 @@ export default function Playground({
   onTraceComplete = null,
   onCodeChange = null,
   codingExercise = null,
-  onVerifySuccess = null
+  onVerifySuccess = null,
+  sourceMsg = null,
+  activeMsgIdx = null,
+  onGenerateFeature = null,
+  onQuizAnswer = null,
+  onQuizNav = null,
+  onFlashcardFlip = null,
+  onFlashcardNav = null
 }) {
   const getInitialCode = () => {
     if (codingExercise?.hasExercise && codingExercise.starterCode) {
@@ -40,6 +48,7 @@ export default function Playground({
   const [verifyState, setVerifyState] = useState('idle'); // 'idle' | 'verifying' | 'success' | 'failed'
   const [traceError, setTraceError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
 
   useEffect(() => {
     if (codingExercise?.hasExercise && codingExercise.starterCode) {
@@ -564,6 +573,7 @@ export default function Playground({
 
   const handleRun = () => {
     if (!isReady || isRunning) return;
+    setIsTerminalExpanded(true);
     setVerifyState('idle');
     setAssertionResults([]);
     setActiveTab('console');
@@ -1231,22 +1241,349 @@ except Exception as e:
       </div>
 
       {/* Main Split Area */}
-      <div ref={containerRef} style={{ display: 'flex', flex: 1, minHeight: 0, height: isMobile ? 'calc(100% - 42px)' : 'calc(100% - 48px)', overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row', WebkitOverflowScrolling: 'touch' }}>
+      <div ref={containerRef} style={{ display: 'flex', flex: 1, minHeight: 0, height: isMobile ? 'calc(100% - 42px)' : 'calc(100% - 48px)', overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
         
-        {/* LEFT COLUMN: Code Editor & Console Terminal */}
+        {/* LEFT COLUMN: Visualizer (Flowchart, Auto-Play, Live Variables) */}
         <div style={{
           width: isMobile ? '100%' : `${mainSplitPercent}%`,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          background: '#06080C',
+          background: '#040508',
+          borderRight: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
           overflow: 'hidden'
         }}>
+          {/* Visualizer header controls */}
+          <div style={{
+            padding: '10px 14px',
+            background: '#080A0E',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+            flexWrap: 'wrap',
+            gap: 8
+          }}>
+            {traceData ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    style={{
+                      background: '#38BDF8',
+                      color: '#040711',
+                      border: 'none',
+                      padding: '5px 12px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    {isPlaying ? <Pause size={11} fill="#040711" /> : <Play size={11} fill="#040711" />}
+                    <span>{isPlaying ? 'Pause' : 'Auto Play'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPlaySpeed(prev => {
+                        if (prev === 1500) return 1000;
+                        if (prev === 1000) return 500;
+                        return 1500;
+                      });
+                    }}
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#8892B0',
+                      padding: '5px 8px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    {playSpeed === 1500 ? '1.0x' : playSpeed === 1000 ? '1.5x' : '2.0x'}
+                  </button>
+
+                  {/* Zoom controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: 2 }}>
+                    <button
+                      onClick={() => setVizZoom(z => Math.min(z + 0.15, 2.5))}
+                      style={{ background: 'transparent', border: 'none', color: '#8892B0', cursor: 'pointer', padding: '2px 7px', borderRadius: 3, fontSize: 14, fontWeight: 700, lineHeight: 1 }}
+                      title="Zoom In"
+                    >+</button>
+                    <span style={{ fontSize: 9.5, color: '#647298', fontFamily: 'monospace', minWidth: 32, textAlign: 'center', userSelect: 'none' }}>{Math.round(vizZoom * 100)}%</span>
+                    <button
+                      onClick={() => setVizZoom(z => Math.max(z - 0.15, 0.4))}
+                      style={{ background: 'transparent', border: 'none', color: '#8892B0', cursor: 'pointer', padding: '2px 7px', borderRadius: 3, fontSize: 14, fontWeight: 700, lineHeight: 1 }}
+                      title="Zoom Out"
+                    >−</button>
+                    <button
+                      onClick={() => setVizZoom(1)}
+                      style={{ background: 'transparent', border: 'none', color: '#4A5568', cursor: 'pointer', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}
+                      title="Reset Zoom"
+                    >↺</button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      disabled={currentStep === 0}
+                      onClick={() => { setIsPlaying(false); setCurrentStep(prev => prev - 1); }}
+                      style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: currentStep === 0 ? '#4A5568' : '#F8FAFC',
+                        padding: 5,
+                        borderRadius: 4,
+                        cursor: currentStep === 0 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <ChevronLeft size={12} />
+                    </button>
+                    <button
+                      disabled={currentStep === traceData.length - 1}
+                      onClick={() => { setIsPlaying(false); setCurrentStep(prev => prev + 1); }}
+                      style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: currentStep === traceData.length - 1 ? '#4A5568' : '#F8FAFC',
+                        padding: 5,
+                        borderRadius: 4,
+                        cursor: currentStep === traceData.length - 1 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <ChevronRight size={12} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+                  <div className="viz-mode-toggle">
+                    <button
+                      type="button"
+                      className={`viz-mode-btn ${vizViewMode === 'flowchart' ? 'active' : ''}`}
+                      onClick={() => setVizViewMode('flowchart')}
+                      title="Flowchart Control Flow Graph (Mermaid.js)"
+                    >
+                      <GitFork size={11} />
+                      <span>Flowchart</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`viz-mode-btn ${vizViewMode === 'memory' ? 'active' : ''}`}
+                      onClick={() => setVizViewMode('memory')}
+                      title="Variables & Array Memory View"
+                    >
+                      <Layers size={11} />
+                      <span>Variables</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`viz-mode-btn ${vizViewMode === 'both' ? 'active' : ''}`}
+                      onClick={() => setVizViewMode('both')}
+                      title="Split View: Flowchart + Memory"
+                    >
+                      <Columns size={11} />
+                      <span>Split</span>
+                    </button>
+                  </div>
+                  <span style={{ fontSize: 11, color: '#38BDF8', fontWeight: 600, fontFamily: 'monospace' }}>
+                    Step {currentStep + 1} of {traceData.length}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 10.5, color: '#38BDF8', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Execution Flowchart
+                </span>
+                <span style={{ fontSize: 10.5, color: '#64748B' }}>
+                  (Click Run on the right to start live trace)
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline Scrubber (if trace exists) */}
+          {traceData && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 14px', background: '#090A0F', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: '#647298', fontFamily: 'monospace', userSelect: 'none' }}>01</span>
+              <input 
+                type="range"
+                min={0}
+                max={traceData.length - 1}
+                value={currentStep}
+                onChange={(e) => {
+                  setIsPlaying(false);
+                  setCurrentStep(parseInt(e.target.value));
+                }}
+                style={{
+                  flex: 1,
+                  height: 4,
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: 2,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  accentColor: '#38BDF8'
+                }}
+              />
+              <span style={{ fontSize: 10, color: '#647298', fontFamily: 'monospace', userSelect: 'none' }}>
+                {String(traceData.length).padStart(2, '0')}
+              </span>
+            </div>
+          )}
+
+          {/* Main Visualizer Area */}
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+            {traceError && (
+              <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', textAlign: 'center', gap: 12 }}>
+                <div style={{ fontSize: 32 }}>⚠️</div>
+                <h3 style={{ color: '#F8FAFC', fontSize: 16, fontWeight: 700, margin: 0 }}>Visualizer Notice</h3>
+                <p style={{ color: '#8892B0', fontSize: 13, maxWidth: 360, margin: 0, lineHeight: 1.6 }}>{traceError}</p>
+              </div>
+            )}
+            {isTracing && (
+              <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#8892B0' }}>
+                <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} color="#38BDF8" />
+                <span style={{ fontSize: 13 }}>Generating step-by-step trace timeline...</span>
+              </div>
+            )}
+            {!isTracing && !traceData && !traceError && (
+              <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                {/* Render clean flowchart immediately based on code! */}
+                <CodeFlowchartVisualizer
+                  code={code}
+                  currentStep={0}
+                  traceData={null}
+                />
+              </div>
+            )}
+            {traceData && (
+              <div style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: 'column', overflow: 'hidden' }}>
+                {vizViewMode === 'flowchart' && (
+                  <CodeFlowchartVisualizer
+                    code={code}
+                    currentStep={currentStep}
+                    traceData={traceData}
+                  />
+                )}
+                {vizViewMode === 'memory' && (
+                  <div style={{ flex: 1, overflowY: 'auto', padding: 16 }} className="sandbox-scroll">
+                    {renderVisualizerMemoryView()}
+                  </div>
+                )}
+                {vizViewMode === 'both' && (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: 'column' }}>
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      <CodeFlowchartVisualizer
+                        code={code}
+                        currentStep={currentStep}
+                        traceData={traceData}
+                      />
+                    </div>
+                    <div style={{ height: '35%', borderTop: '1px solid rgba(255,255,255,0.08)', overflowY: 'auto', padding: 12 }} className="sandbox-scroll">
+                      {renderVisualizerMemoryView()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Resizer Handle between Left & Right */}
+        {!isMobile && (
+          <div
+            onMouseDown={handleMainMouseDown}
+            style={{
+              width: 6,
+              cursor: 'col-resize',
+              background: isDraggingMainRef.current ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.08)',
+              zIndex: 10,
+              alignSelf: 'stretch',
+              transition: 'background 0.2s',
+              flexShrink: 0
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)'}
+            onMouseLeave={e => {
+              if (!isDraggingMainRef.current) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+          />
+        )}
+
+        {/* RIGHT COLUMN: Source Code Editor (Top) & Terminal (Bottom, Collapsible) */}
+        <div style={{
+          width: isMobile ? '100%' : `${100 - mainSplitPercent}%`,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#06080C',
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
           {/* Top Half: Code Editor */}
-          <div style={{ height: isMobile ? '55%' : `${leftSplitPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', background: '#080A0E', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 10.5, color: '#8892B0', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Source Code Editor</span>
-              <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{
+            height: isTerminalExpanded ? `${leftSplitPercent}%` : 'calc(100% - 38px)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            transition: 'height 0.25s ease'
+          }}>
+            <div style={{
+              padding: '8px 14px',
+              background: '#080A0E',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 10.5, color: '#8892B0', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Source Code Editor</span>
+                {activeStepData?.line && (
+                  <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                    Line {activeStepData.line}
+                  </span>
+                )}
+              </div>
+
+              {/* Right Side: Run Button & Verify */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={handleRun}
+                  disabled={!isReady || isRunning || isTracing}
+                  style={{
+                    background: (!isReady || isRunning || isTracing) ? 'rgba(255, 255, 255, 0.08)' : '#22C5A0',
+                    color: '#000',
+                    border: 'none',
+                    padding: '5px 14px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: (!isReady || isRunning || isTracing) ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    boxShadow: isReady && !isRunning ? '0 0 12px rgba(34, 197, 160, 0.35)' : 'none',
+                    transition: 'all 0.15s',
+                    fontFamily: 'inherit'
+                  }}
+                  title="Run code and step through flowchart"
+                >
+                  {isRunning ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={13} fill="#000" />}
+                  <span>{isRunning ? 'Running...' : 'Run'}</span>
+                </button>
+
                 {codingExercise?.hasExercise && (
                   <button
                     onClick={handleVerify}
@@ -1255,18 +1592,19 @@ except Exception as e:
                       background: 'rgba(155, 110, 248, 0.15)',
                       border: '1px solid #9B6EF8',
                       color: '#9B6EF8',
-                      padding: '3px 8px',
-                      borderRadius: 4,
-                      fontSize: 10.5,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      fontSize: 11,
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    {verifyState === 'verifying' ? 'Verifying...' : 'Verify Code'}
+                    {verifyState === 'verifying' ? 'Verifying...' : 'Verify'}
                   </button>
                 )}
               </div>
             </div>
+
             <div style={{ flex: 1, overflowY: 'auto' }}>
               <CodeMirror
                 value={code}
@@ -1281,20 +1619,20 @@ except Exception as e:
             </div>
           </div>
 
-          {/* Left Column Vertical Resizer Handle */}
-          {!isMobile && (
+          {/* Right Column Vertical Resizer Handle (visible when terminal is expanded) */}
+          {!isMobile && isTerminalExpanded && (
             <div
               onMouseDown={handleLeftMouseDown}
               style={{
                 height: 6,
                 cursor: 'row-resize',
-                background: isDraggingLeftRef.current ? 'rgba(91, 140, 248, 0.4)' : 'rgba(255, 255, 255, 0.08)',
+                background: isDraggingLeftRef.current ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.08)',
                 zIndex: 10,
                 width: '100%',
                 flexShrink: 0,
                 transition: 'background 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(91, 140, 248, 0.3)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)'}
               onMouseLeave={e => {
                 if (!isDraggingLeftRef.current) {
                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
@@ -1303,573 +1641,100 @@ except Exception as e:
             />
           )}
 
-          {/* Bottom Half: Console Terminal */}
-          <div style={{ height: isMobile ? '45%' : `${100 - leftSplitPercent}%`, display: 'flex', flexDirection: 'column', background: '#040508', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', background: '#080A0E', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 10.5, color: '#8892B0', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Output Console</span>
-              <button
-                onClick={handleClear}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#647298',
-                  cursor: 'pointer',
-                  padding: 2,
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title="Clear Console"
-              >
-                <Trash2 size={11} />
-              </button>
+          {/* Bottom Half: Console Terminal (Collapsed until Run is clicked) */}
+          <div style={{
+            height: isTerminalExpanded ? `${100 - leftSplitPercent}%` : '38px',
+            display: 'flex',
+            flexDirection: 'column',
+            background: '#040508',
+            overflow: 'hidden',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            transition: 'height 0.25s ease'
+          }}>
+            <div
+              onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
+              style={{
+                padding: '8px 14px',
+                background: '#080A0E',
+                borderBottom: isTerminalExpanded ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexShrink: 0,
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 10.5, color: isTerminalExpanded ? '#38BDF8' : '#8892B0', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Output Console
+                </span>
+                {!isTerminalExpanded && (
+                  <span style={{ fontSize: 10.5, color: '#64748B' }}>
+                    (Click Run to execute or click to expand)
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={e => e.stopPropagation()}>
+                {isTerminalExpanded && (
+                  <button
+                    onClick={handleClear}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#647298',
+                      cursor: 'pointer',
+                      padding: 2,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Clear Console"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#8892B0',
+                    cursor: 'pointer',
+                    padding: 2,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title={isTerminalExpanded ? "Collapse Console" : "Expand Console"}
+                >
+                  {isTerminalExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                </button>
+              </div>
             </div>
+
             <div
               ref={terminalElRef}
               style={{
                 flex: 1,
                 padding: '8px 12px',
                 overflow: 'hidden',
-                background: '#040508'
+                background: '#040508',
+                display: isTerminalExpanded ? 'block' : 'none'
               }}
             />
           </div>
-        </div>
 
-        {/* Main Horizontal Split Resizer Handle */}
-        {!isMobile && (
-          <div
-            onMouseDown={handleMainMouseDown}
-            style={{
-              width: 6,
-              cursor: 'col-resize',
-              background: isDraggingMainRef.current ? 'rgba(91, 140, 248, 0.4)' : 'rgba(255, 255, 255, 0.08)',
-              zIndex: 10,
-              alignSelf: 'stretch',
-              transition: 'background 0.2s',
-              flexShrink: 0
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(91, 140, 248, 0.3)'}
-            onMouseLeave={e => {
-              if (!isDraggingMainRef.current) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
+          {/* Floating Expandable Code Explanation FAB (Bottom-Right) */}
+          <CodeExplanationFab
+            code={code}
+            sourceMsg={sourceMsg}
+            activeMsgIdx={activeMsgIdx}
+            onGenerateFeature={onGenerateFeature}
+            onQuizAnswer={onQuizAnswer}
+            onQuizNav={onQuizNav}
+            onFlashcardFlip={onFlashcardFlip}
+            onFlashcardNav={onFlashcardNav}
           />
-        )}
-
-        {/* RIGHT COLUMN: Visualizer & Explanation Pane */}
-        <div style={{
-          width: isMobile ? '100%' : `${100 - mainSplitPercent}%`,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#040508',
-          overflow: 'hidden'
-        }}>
-          {/* Top Half: Visualizer panel */}
-          <div style={{
-            height: rightSplitPercent === 100 ? 'calc(100% - 36px)' : `${rightSplitPercent}%`,
-            display: 'flex',
-            flexDirection: 'column',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}>
-            {/* Visualizer header controls */}
-            <div style={{
-              padding: '10px 14px',
-              background: '#080A0E',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexShrink: 0
-            }}>
-              {traceData ? (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      style={{
-                        background: '#F5A95B',
-                        color: '#000',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                    >
-                      {isPlaying ? <Pause size={10} fill="#000" /> : <Play size={10} fill="#000" />}
-                      {isPlaying ? 'Pause' : 'Auto Play'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setPlaySpeed(prev => {
-                          if (prev === 1500) return 1000;
-                          if (prev === 1000) return 500;
-                          return 1500;
-                        });
-                      }}
-                      style={{
-                        background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#8892B0',
-                        padding: '5px 8px',
-                        borderRadius: 4,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        fontFamily: 'monospace'
-                      }}
-                    >
-                      {playSpeed === 1500 ? '1.0x' : playSpeed === 1000 ? '1.5x' : '2.0x'}
-                    </button>
-
-                    {/* Zoom controls */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: 2 }}>
-                      <button
-                        onClick={() => setVizZoom(z => Math.min(z + 0.15, 2.5))}
-                        style={{ background: 'transparent', border: 'none', color: '#8892B0', cursor: 'pointer', padding: '2px 7px', borderRadius: 3, fontSize: 14, fontWeight: 700, lineHeight: 1 }}
-                        title="Zoom In"
-                      >+</button>
-                      <span style={{ fontSize: 9.5, color: '#647298', fontFamily: 'monospace', minWidth: 32, textAlign: 'center', userSelect: 'none' }}>{Math.round(vizZoom * 100)}%</span>
-                      <button
-                        onClick={() => setVizZoom(z => Math.max(z - 0.15, 0.4))}
-                        style={{ background: 'transparent', border: 'none', color: '#8892B0', cursor: 'pointer', padding: '2px 7px', borderRadius: 3, fontSize: 14, fontWeight: 700, lineHeight: 1 }}
-                        title="Zoom Out"
-                      >−</button>
-                      <button
-                        onClick={() => setVizZoom(1)}
-                        style={{ background: 'transparent', border: 'none', color: '#4A5568', cursor: 'pointer', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}
-                        title="Reset Zoom"
-                      >↺</button>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button
-                        disabled={currentStep === 0}
-                        onClick={() => { setIsPlaying(false); setCurrentStep(prev => prev - 1); }}
-                        style={{
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          color: currentStep === 0 ? '#4A5568' : '#F8FAFC',
-                          padding: 5,
-                          borderRadius: 4,
-                          cursor: currentStep === 0 ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <ChevronLeft size={12} />
-                      </button>
-                      <button
-                        disabled={currentStep === traceData.length - 1}
-                        onClick={() => { setIsPlaying(false); setCurrentStep(prev => prev + 1); }}
-                        style={{
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          color: currentStep === traceData.length - 1 ? '#4A5568' : '#F8FAFC',
-                          padding: 5,
-                          borderRadius: 4,
-                          cursor: currentStep === 0 ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <ChevronRight size={12} />
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-                    <div className="viz-mode-toggle">
-                      <button
-                        type="button"
-                        className={`viz-mode-btn ${vizViewMode === 'flowchart' ? 'active' : ''}`}
-                        onClick={() => setVizViewMode('flowchart')}
-                        title="Flowchart Control Flow Graph (Mermaid.js)"
-                      >
-                        <GitFork size={11} />
-                        <span>Flowchart</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`viz-mode-btn ${vizViewMode === 'memory' ? 'active' : ''}`}
-                        onClick={() => setVizViewMode('memory')}
-                        title="Variables & Array Memory View"
-                      >
-                        <Layers size={11} />
-                        <span>Variables</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`viz-mode-btn ${vizViewMode === 'both' ? 'active' : ''}`}
-                        onClick={() => setVizViewMode('both')}
-                        title="Split View: Flowchart + Memory"
-                      >
-                        <Columns size={11} />
-                        <span>Split</span>
-                      </button>
-                    </div>
-                    <span style={{ fontSize: 11, color: '#8892B0', fontWeight: 600, fontFamily: 'monospace' }}>
-                      Step {currentStep + 1} of {traceData.length}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <span style={{ fontSize: 10.5, color: '#8892B0', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  Execution Visualizer
-                </span>
-              )}
-            </div>
-
-            {/* Timeline Scrubber (if trace exists) */}
-            {traceData && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 14px', background: '#090A0F', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', flexShrink: 0 }}>
-                <span style={{ fontSize: 10, color: '#647298', fontFamily: 'monospace', userSelect: 'none' }}>01</span>
-                <input 
-                  type="range"
-                  min={0}
-                  max={traceData.length - 1}
-                  value={currentStep}
-                  onChange={(e) => {
-                    setIsPlaying(false);
-                    setCurrentStep(parseInt(e.target.value));
-                  }}
-                  style={{
-                    flex: 1,
-                    height: 4,
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    outline: 'none',
-                    cursor: 'pointer',
-                    accentColor: '#F5A95B'
-                  }}
-                />
-                <span style={{ fontSize: 10, color: '#647298', fontFamily: 'monospace', userSelect: 'none' }}>
-                  {String(traceData.length).padStart(2, '0')}
-                </span>
-              </div>
-            )}
-
-            {/* Variable memory values scrolling track */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              overflowX: 'auto',
-              background: 'transparent',
-              position: 'relative'
-            }} className="sandbox-scroll">
-              {traceError && (
-                <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', textAlign: 'center', gap: 12 }}>
-                  <div style={{ fontSize: 32 }}>⚠️</div>
-                  <h3 style={{ color: '#F8FAFC', fontSize: 16, fontWeight: 700, margin: 0 }}>Visualizer Blocked</h3>
-                  <p style={{ color: '#8892B0', fontSize: 13, maxWidth: 360, margin: 0, lineHeight: 1.6 }}>{traceError}</p>
-                </div>
-              )}
-              {isTracing && (
-                <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#8892B0' }}>
-                  <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: 13 }}>Generating step-by-step trace timeline...</span>
-                </div>
-              )}
-              {!isTracing && !traceData && !traceError && (
-                <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', textAlign: 'center', color: '#8892B0', gap: 8 }}>
-                  <Play size={24} color="#F5A95B" />
-                  <span style={{ fontSize: 13, maxWidth: 360 }}>
-                    Run your code first to generate a trace timeline and inspect Python execution step-by-step.
-                  </span>
-                </div>
-              )}
-              {traceData && (
-                <div style={{
-                  padding: 14,
-                  transformOrigin: 'top left',
-                  transform: `scale(${vizZoom})`,
-                  width: `${100 / vizZoom}%`,
-                  minHeight: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14
-                }}>
-                  {vizViewMode === 'flowchart' && (
-                    <CodeFlowchartVisualizer
-                      code={code}
-                      currentStep={currentStep}
-                      traceData={traceData}
-                    />
-                  )}
-                  {vizViewMode === 'memory' && (
-                    renderVariables()
-                  )}
-                  {vizViewMode === 'both' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 0.9fr', gap: 14, alignItems: 'start' }}>
-                      <CodeFlowchartVisualizer
-                        code={code}
-                        currentStep={currentStep}
-                        traceData={traceData}
-                      />
-                      <div>
-                        {renderVariables()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column Vertical Resizer Handle */}
-          {!isMobile && (
-            <div
-              onMouseDown={handleRightMouseDown}
-              style={{
-                height: 6,
-                cursor: 'row-resize',
-                background: isDraggingRightRef.current ? 'rgba(245, 169, 91, 0.4)' : 'rgba(255, 255, 255, 0.08)',
-                zIndex: 10,
-                width: '100%',
-                flexShrink: 0,
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(245, 169, 91, 0.3)'}
-              onMouseLeave={e => {
-                if (!isDraggingRightRef.current) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                }
-              }}
-            />
-          )}
-
-          {/* Bottom Half: Explanation and Tutor features */}
-          <div style={{
-            height: rightSplitPercent === 100 ? '36px' : `${100 - rightSplitPercent}%`,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            background: '#040508',
-            flexShrink: 0
-          }}>
-            {/* Tab Selection Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: '#080A0E',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              height: 36,
-              flexShrink: 0,
-              padding: '0 10px',
-              width: '100%'
-            }}>
-              <button
-                onClick={() => handleTabClick('explanation')}
-                style={{
-                  background: activeTab === 'explanation' && rightSplitPercent < 100 ? 'rgba(34, 197, 160, 0.08)' : 'transparent',
-                  border: 'none',
-                  borderBottom: activeTab === 'explanation' && rightSplitPercent < 100 ? `2px solid #22C5A0` : 'none',
-                  color: activeTab === 'explanation' && rightSplitPercent < 100 ? '#22C5A0' : '#8892B0',
-                  padding: '6px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  transition: 'all 0.15s'
-                }}
-              >
-                Tutor Explanation
-              </button>
-              {codingExercise?.hasExercise && (
-                <button
-                  onClick={() => handleTabClick('instructions')}
-                  style={{
-                    background: activeTab === 'instructions' && rightSplitPercent < 100 ? 'rgba(155, 110, 248, 0.08)' : 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'instructions' && rightSplitPercent < 100 ? `2px solid #9B6EF8` : 'none',
-                    color: activeTab === 'instructions' && rightSplitPercent < 100 ? '#9B6EF8' : '#8892B0',
-                    padding: '6px 16px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  Instructions & Test Cases
-                </button>
-              )}
-              
-              {/* Collapse Button */}
-              {rightSplitPercent < 100 && (
-                <button
-                  onClick={() => setRightSplitPercent(100)}
-                  title="Collapse Explanation Pane"
-                  style={{
-                    marginLeft: 'auto',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#647298',
-                    cursor: 'pointer',
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 10.5,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    transition: 'color 0.15s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#F55B6B'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#647298'}
-                >
-                  ✕ Collapse
-                </button>
-              )}
-            </div>
-
-            {/* Content scroll area */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: rightSplitPercent === 100 ? 'none' : 'block' }} className="sandbox-scroll tab-pane">
-              {/* Tab 1: Explanation tab */}
-              {(!codingExercise?.hasExercise || activeTab === 'explanation') && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {/* Tutor Command Options Dropdown */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    padding: '8px 12px',
-                    background: '#090A0F',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: 8,
-                    flexShrink: 0
-                  }}>
-                    <span style={{ fontSize: 11, color: '#8892B0', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Tutor Action:</span>
-                    <select
-                      value={selectedTutorAction}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedTutorAction(val);
-                        generateExplanationForCode(code, val);
-                      }}
-                      style={{
-                        background: '#131824',
-                        color: '#F8FAFC',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: 6,
-                        padding: '4px 8px',
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        outline: 'none',
-                        flex: 1,
-                        maxWidth: 220
-                      }}
-                    >
-                      <option value="default">📖 Standard Code Explanation</option>
-                      <option value="analyze">🔍 Code Analysis & Complexity</option>
-                      <option value="tips">💡 Bug Correction Tips</option>
-                      <option value="fix">🛠️ Bug Fixing Methods</option>
-                      <option value="explain">📖 Why It Works</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    {!explanation && !isGeneratingExplanation ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 0', textAlign: 'center', color: '#8892B0', gap: 6 }}>
-                        <BookOpen size={20} color="#22C5A0" />
-                        <span style={{ fontSize: 12.5 }}>
-                          Select an action from the dropdown or click Run to trigger explanations.
-                        </span>
-                      </div>
-                    ) : isGeneratingExplanation && !explanation ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#8892B0', padding: '20px 0' }}>
-                        <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} color="#22C5A0" />
-                        <span style={{ fontSize: 12.5 }}>Generating tutor response...</span>
-                      </div>
-                    ) : (
-                      <div className="md-content" style={{ fontSize: 13.5, lineHeight: 1.65 }}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {explanation}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 2: Instructions and Test cases (only if exercise is active) */}
-              {codingExercise?.hasExercise && activeTab === 'instructions' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div>
-                    <h5 style={{ color: '#9B6EF8', fontSize: 12, fontWeight: 700, margin: '0 0 6px 0', textTransform: 'uppercase' }}>
-                      Instructions
-                    </h5>
-                    <div style={{ color: '#C4CFE5', fontSize: 13, lineHeight: 1.6 }} className="md-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {codingExercise.instruction || "*No instructions provided.*"}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 12 }}>
-                    <h5 style={{ color: '#22C5A0', fontSize: 12, fontWeight: 700, margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-                      Test Cases & Assertions
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {verifyState === 'success' && (
-                        <div style={{ background: 'rgba(34, 197, 160, 0.1)', border: '1px solid rgba(34, 197, 160, 0.25)', borderRadius: 6, padding: 10, display: 'flex', alignItems: 'center', gap: 8, color: '#22C5A0', fontSize: 12, fontWeight: 600 }}>
-                          <CheckCircle size={14} />
-                          <span>All test cases passed! 🎉</span>
-                        </div>
-                      )}
-                      {verifyState === 'failed' && (
-                        <div style={{ background: 'rgba(245, 91, 107, 0.1)', border: '1px solid rgba(245, 91, 107, 0.25)', borderRadius: 6, padding: 10, display: 'flex', alignItems: 'center', gap: 8, color: '#F55B6B', fontSize: 12, fontWeight: 600 }}>
-                          <AlertCircle size={14} />
-                          <span>Some assertions failed.</span>
-                        </div>
-                      )}
-                      {(codingExercise.testCases || []).map((tc, tcIdx) => {
-                        const tcResult = assertionResults.find(r => r.expr === tc);
-                        let status = 'idle';
-                        if (verifyState === 'verifying') status = 'verifying';
-                        else if (tcResult) status = tcResult.passed ? 'passed' : 'failed';
-
-                        return (
-                          <div key={tcIdx} style={{ display: 'flex', flexDirection: 'column', gap: 4, background: '#0D111A', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 6, padding: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {status === 'verifying' && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: '#9B6EF8' }} />}
-                              {status === 'passed' && <CheckCircle size={12} color="#22C5A0" />}
-                              {status === 'failed' && <X size={12} color="#F55B6B" />}
-                              {status === 'idle' && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#8892B0' }} />}
-                              <span style={{ fontFamily: 'monospace', fontSize: 11, color: status === 'failed' ? '#F55B6B' : status === 'passed' ? '#22C5A0' : '#8892B0', wordBreak: 'break-all' }}>
-                                {tc}
-                              </span>
-                            </div>
-                            {tcResult && !tcResult.passed && tcResult.msg && (
-                              <span style={{ fontSize: 10, color: '#F55B6B', marginLeft: 18, fontFamily: 'monospace' }}>
-                                Error: {tcResult.msg}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
       </div>
