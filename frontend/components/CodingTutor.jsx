@@ -3655,7 +3655,6 @@ export default function CodingTutor() {
               </motion.div>
             )}
           </AnimatePresence>
-          )}
 
         </div>
 
