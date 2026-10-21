@@ -167,46 +167,65 @@
   top: 0;
 }
 
-/* Card Active / Inactive states (Codepen 1 layered physics) */
+/* Card Active / Inactive states (Codepen 1 layered physics with blurred depth) */
 .split-card.active-card {
   z-index: 20;
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
   pointer-events: auto;
-  filter: brightness(1);
+  filter: blur(0px) brightness(1);
 }
 
-/* When Login is active, Sign Up is tucked behind to the right */
+.split-card.active-card .card-left-pane > *,
+.split-card.active-card .card-right-pane > * {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.35s ease;
+}
+
+/* When Login is active, Sign Up is tucked behind to the right and blurred */
 .split-card.inactive-signup {
   z-index: 10;
-  opacity: 0.82;
-  transform: translate3d(48px, 18px, 0) scale(0.95);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+  opacity: 0.55;
+  transform: translate3d(36px, 16px, 0) scale(0.96);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  filter: brightness(0.92);
+  filter: blur(12px) brightness(0.75);
+  user-select: none;
 }
 
 .split-card.inactive-signup:hover {
-  transform: translate3d(54px, 14px, 0) scale(0.96);
-  opacity: 0.95;
-  filter: brightness(0.98);
+  transform: translate3d(40px, 14px, 0) scale(0.97);
+  opacity: 0.72;
+  filter: blur(8px) brightness(0.85);
 }
 
-/* When Sign Up is active, Login is tucked behind to the left */
+/* When Sign Up is active, Login is tucked behind to the left and blurred */
 .split-card.inactive-login {
   z-index: 10;
-  opacity: 0.82;
-  transform: translate3d(-48px, 18px, 0) scale(0.95);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+  opacity: 0.55;
+  transform: translate3d(-36px, 16px, 0) scale(0.96);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  filter: brightness(0.92);
+  filter: blur(12px) brightness(0.75);
+  user-select: none;
 }
 
 .split-card.inactive-login:hover {
-  transform: translate3d(-54px, 14px, 0) scale(0.96);
-  opacity: 0.95;
-  filter: brightness(0.98);
+  transform: translate3d(-40px, 14px, 0) scale(0.97);
+  opacity: 0.72;
+  filter: blur(8px) brightness(0.85);
+}
+
+/* Hide clumsy text, inputs, and buttons in behind card so only clean blurred card silhouette is perceived */
+.split-card.inactive-signup .card-left-pane > *,
+.split-card.inactive-signup .card-right-pane > *,
+.split-card.inactive-login .card-left-pane > *,
+.split-card.inactive-login .card-right-pane > * {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 /* Left Pane: Crisp High-Contrast Pane */
