@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, GraduationCap, ArrowLeft, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 import { login } from '@/lib/frappe';
@@ -26,7 +26,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   // Active focused input for glowing gradient animation
-  const [focusedField, setFocusedField] = useState('');
+  const [focusedField, setFocusedField] = useState('login-email');
+
+  // DOM Refs for dynamic snake line path calculation
+  const loginPaneRef = useRef(null);
+  const loginEmailRef = useRef(null);
+  const loginPwdRef = useRef(null);
+  const loginSubmitRef = useRef(null);
+  const loginGoogleRef = useRef(null);
+
+  const signupPaneRef = useRef(null);
+  const signupNameRef = useRef(null);
+  const signupEmailRef = useRef(null);
+  const signupPwdRef = useRef(null);
+  const signupConfirmRef = useRef(null);
+  const signupSubmitRef = useRef(null);
+  const signupGoogleRef = useRef(null);
+
+  // Snake Path States
+  const [loginSnake, setLoginSnake] = useState({ d: '', styles: {}, total: 1000 });
+  const [signupSnake, setSignupSnake] = useState({ d: '', styles: {}, total: 1000 });
 
   // Clear any existing session on mount and parse query errors
   useEffect(() => {
@@ -46,11 +65,193 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Compute dynamic Snake path coordinates for Login
+  const recalculateLoginSnake = useCallback(() => {
+    if (!loginPaneRef.current || !loginEmailRef.current || !loginPwdRef.current || !loginSubmitRef.current || !loginGoogleRef.current) return;
+    const c = loginPaneRef.current.getBoundingClientRect();
+    const e = loginEmailRef.current.getBoundingClientRect();
+    const p = loginPwdRef.current.getBoundingClientRect();
+    const s = loginSubmitRef.current.getBoundingClientRect();
+    const g = loginGoogleRef.current.getBoundingClientRect();
+
+    if (c.width === 0) return;
+
+    const eL = e.left - c.left;
+    const eR = e.right - c.left;
+    const eY = e.bottom - c.top;
+    const L0 = eR - eL;
+
+    const pL = p.left - c.left;
+    const pR = p.right - c.left;
+    const pY = p.bottom - c.top;
+    const L1 = pR - pL;
+
+    const sL = s.left - c.left;
+    const sR = s.right - c.left;
+    const sY = s.bottom - c.top;
+    const L2 = sR - sL;
+
+    const gL = g.left - c.left;
+    const gR = g.right - c.left;
+    const gY = g.bottom - c.top;
+    const L3 = gR - gL;
+    const gap = gL - sR;
+
+    const c01 = Math.PI * Math.abs(pY - eY) / 2 + 16;
+    const c12 = Math.PI * Math.abs(sY - pY) / 2 + 16;
+
+    const pathD = `M ${eL} ${eY} L ${eR} ${eY} ` +
+      `C ${eR + 24} ${eY}, ${pR + 24} ${pY}, ${pR} ${pY} ` +
+      `L ${pL} ${pY} ` +
+      `C ${pL - 24} ${pY}, ${sL - 24} ${sY}, ${sL} ${sY} ` +
+      `L ${sR} ${sY} ` +
+      `L ${gL} ${gY} ` +
+      `L ${gR} ${gY}`;
+
+    const total = L0 + c01 + L1 + c12 + L2 + gap + L3;
+
+    const stylesMap = {
+      'login-email': {
+        strokeDasharray: `${L0} ${total + 200}`,
+        strokeDashoffset: '0'
+      },
+      'login-password': {
+        strokeDasharray: `${L1} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01}`
+      },
+      'login-submit': {
+        strokeDasharray: `${L2} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12}`
+      },
+      'login-google': {
+        strokeDasharray: `${L3} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + gap}`
+      }
+    };
+
+    setLoginSnake({ d: pathD, styles: stylesMap, total });
+  }, []);
+
+  // Compute dynamic Snake path coordinates for Sign Up
+  const recalculateSignupSnake = useCallback(() => {
+    if (!signupPaneRef.current || !signupNameRef.current || !signupEmailRef.current || !signupPwdRef.current || !signupConfirmRef.current || !signupSubmitRef.current || !signupGoogleRef.current) return;
+    const c = signupPaneRef.current.getBoundingClientRect();
+    const n = signupNameRef.current.getBoundingClientRect();
+    const e = signupEmailRef.current.getBoundingClientRect();
+    const p = signupPwdRef.current.getBoundingClientRect();
+    const cf = signupConfirmRef.current.getBoundingClientRect();
+    const s = signupSubmitRef.current.getBoundingClientRect();
+    const g = signupGoogleRef.current.getBoundingClientRect();
+
+    if (c.width === 0) return;
+
+    // Field 0: Name (LTR)
+    const nL = n.left - c.left;
+    const nR = n.right - c.left;
+    const nY = n.bottom - c.top;
+    const L0 = nR - nL;
+
+    // Field 1: Email (RTL)
+    const eL = e.left - c.left;
+    const eR = e.right - c.left;
+    const eY = e.bottom - c.top;
+    const L1 = eR - eL;
+
+    // Field 2: Password (LTR)
+    const pL = p.left - c.left;
+    const pR = p.right - c.left;
+    const pY = p.bottom - c.top;
+    const L2 = pR - pL;
+
+    // Field 3: Confirm (RTL)
+    const cfL = cf.left - c.left;
+    const cfR = cf.right - c.left;
+    const cfY = cf.bottom - c.top;
+    const L3 = cfR - cfL;
+
+    // Buttons
+    const sL = s.left - c.left;
+    const sR = s.right - c.left;
+    const sY = s.bottom - c.top;
+    const L4 = sR - sL;
+
+    const gL = g.left - c.left;
+    const gR = g.right - c.left;
+    const gY = g.bottom - c.top;
+    const L5 = gR - gL;
+    const gap = gL - sR;
+
+    const c01 = Math.PI * Math.abs(eY - nY) / 2 + 16;
+    const c12 = Math.PI * Math.abs(pY - eY) / 2 + 16;
+    const c23 = Math.PI * Math.abs(cfY - pY) / 2 + 16;
+    const c34 = Math.PI * Math.abs(sY - cfY) / 2 + 16;
+
+    const pathD = `M ${nL} ${nY} L ${nR} ${nY} ` +
+      `C ${nR + 24} ${nY}, ${eR + 24} ${eY}, ${eR} ${eY} ` +
+      `L ${eL} ${eY} ` +
+      `C ${eL - 24} ${eY}, ${pL - 24} ${pY}, ${pL} ${pY} ` +
+      `L ${pR} ${pY} ` +
+      `C ${pR + 24} ${pY}, ${cfR + 24} ${cfY}, ${cfR} ${cfY} ` +
+      `L ${cfL} ${cfY} ` +
+      `C ${cfL - 24} ${cfY}, ${sL - 24} ${sY}, ${sL} ${sY} ` +
+      `L ${sR} ${sY} ` +
+      `L ${gL} ${gY} ` +
+      `L ${gR} ${gY}`;
+
+    const total = L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34 + L4 + gap + L5;
+
+    const stylesMap = {
+      'signup-name': {
+        strokeDasharray: `${L0} ${total + 200}`,
+        strokeDashoffset: '0'
+      },
+      'signup-email': {
+        strokeDasharray: `${L1} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01}`
+      },
+      'signup-password': {
+        strokeDasharray: `${L2} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12}`
+      },
+      'signup-confirm': {
+        strokeDasharray: `${L3} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23}`
+      },
+      'signup-submit': {
+        strokeDasharray: `${L4} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34}`
+      },
+      'signup-google': {
+        strokeDasharray: `${L5} ${total + 200}`,
+        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34 + L4 + gap}`
+      }
+    };
+
+    setSignupSnake({ d: pathD, styles: stylesMap, total });
+  }, []);
+
+  // Update geometry on mount, resize, and mode switch
+  useEffect(() => {
+    const handleRecalc = () => {
+      recalculateLoginSnake();
+      recalculateSignupSnake();
+    };
+
+    // Delay slightly to let browser finish laying out elements
+    const timer = setTimeout(handleRecalc, 60);
+    window.addEventListener('resize', handleRecalc);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleRecalc);
+    };
+  }, [mode, recalculateLoginSnake, recalculateSignupSnake]);
+
   const switchMode = (newMode) => {
     setMode(newMode);
     setError('');
     setSuccessMsg('');
-    setFocusedField('');
+    setFocusedField(newMode === 'login' ? 'login-email' : 'signup-name');
   };
 
   const handleGoogleLogin = async () => {
@@ -183,6 +384,9 @@ export default function LoginPage() {
     }, 600);
   };
 
+  const activeLoginStyle = loginSnake.styles[focusedField] || loginSnake.styles['login-email'] || { strokeDasharray: '240 1000', strokeDashoffset: '0' };
+  const activeSignupStyle = signupSnake.styles[focusedField] || signupSnake.styles['signup-name'] || { strokeDasharray: '240 1000', strokeDashoffset: '0' };
+
   return (
     <div className="login-page-root">
       {/* Background ambient lighting */}
@@ -224,7 +428,7 @@ export default function LoginPage() {
       <main className="cards-deck-container">
         {mode !== 'forgot' ? (
           <>
-            {/* LOGIN CARD */}
+            {/* ================= LOGIN CARD ================= */}
             <article
               className={`split-card ${mode === 'login' ? 'active-card' : 'inactive-login'}`}
               onClick={() => {
@@ -254,8 +458,26 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Right Pane (Codepen 2 dark slate block with neon line animations) */}
-              <div className="card-right-pane">
+              {/* Right Pane (Codepen 2 dark slate block with snake line animation) */}
+              <div className="card-right-pane" ref={loginPaneRef}>
+                {/* Continuous Glowing Snake SVG Track */}
+                <svg className="snake-svg-layer">
+                  <defs>
+                    <linearGradient id="snakeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#ff00ff" />
+                      <stop offset="50%" stopColor="#ff0055" />
+                      <stop offset="100%" stopColor="#ff0000" />
+                    </linearGradient>
+                  </defs>
+                  {loginSnake.d && (
+                    <path
+                      className="snake-path"
+                      d={loginSnake.d}
+                      style={activeLoginStyle}
+                    />
+                  )}
+                </svg>
+
                 {mode === 'login' && error && (
                   <div className="card-alert-error" role="alert">
                     <AlertCircle size={16} />
@@ -275,7 +497,7 @@ export default function LoginPage() {
                     <div className="input-label-row">
                       <label htmlFor="login-email" className="input-label">Email or Username</label>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={loginEmailRef}>
                       <input
                         id="login-email"
                         name="email"
@@ -287,12 +509,10 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedField('login-email')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'login'}
                       />
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
                     </div>
                   </div>
 
@@ -300,18 +520,8 @@ export default function LoginPage() {
                   <div className={`input-group ${focusedField === 'login-password' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
                       <label htmlFor="login-password" className="input-label">Password</label>
-                      <button
-                        type="button"
-                        className="forgot-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          switchMode('forgot');
-                        }}
-                      >
-                        Forgot password?
-                      </button>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={loginPwdRef}>
                       <input
                         id="login-password"
                         name="password"
@@ -321,7 +531,6 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedField('login-password')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'login'}
                       />
@@ -337,58 +546,71 @@ export default function LoginPage() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
+                    </div>
+
+                    {/* Forgot password positioned cleanly below the password field */}
+                    <div className="forgot-password-row">
+                      <button
+                        type="button"
+                        className="forgot-btn-below"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          switchMode('forgot');
+                        }}
+                      >
+                        Forgot password?
+                      </button>
                     </div>
                   </div>
 
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="btn-submit-action"
-                    disabled={loading || mode !== 'login'}
-                  >
-                    {loading && mode === 'login' ? (
-                      <>
-                        <div style={{
-                          width: 16, height: 16, borderRadius: '50%',
-                          border: '2px solid rgba(255,255,255,0.3)',
-                          borderTopColor: '#fff', animation: 'spin 1s linear infinite'
-                        }} />
-                        Signing In...
-                      </>
-                    ) : 'Sign In'}
-                  </button>
+                  {/* Side-by-Side Action Buttons: Sign In & Continue with Google */}
+                  <div className="auth-buttons-row">
+                    <button
+                      ref={loginSubmitRef}
+                      type="submit"
+                      className="btn-submit-action side-btn"
+                      disabled={loading || mode !== 'login'}
+                      onFocus={() => setFocusedField('login-submit')}
+                      onMouseEnter={() => setFocusedField('login-submit')}
+                    >
+                      {loading && mode === 'login' ? (
+                        <>
+                          <div style={{
+                            width: 15, height: 15, borderRadius: '50%',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTopColor: '#fff', animation: 'spin 1s linear infinite'
+                          }} />
+                          Signing In...
+                        </>
+                      ) : 'Sign In'}
+                    </button>
 
-                  {/* Divider */}
-                  <div className="auth-divider">
-                    <span className="divider-line" />
-                    <span className="divider-text">or</span>
-                    <span className="divider-line" />
+                    <button
+                      ref={loginGoogleRef}
+                      type="button"
+                      className="btn-google-auth side-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGoogleLogin();
+                      }}
+                      onFocus={() => setFocusedField('login-google')}
+                      onMouseEnter={() => setFocusedField('login-google')}
+                      disabled={mode !== 'login'}
+                    >
+                      <svg width="17" height="17" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </button>
                   </div>
-
-                  {/* Google Login */}
-                  <button
-                    type="button"
-                    className="btn-google-auth"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGoogleLogin();
-                    }}
-                    disabled={mode !== 'login'}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>Continue with Google</span>
-                  </button>
                 </form>
               </div>
             </article>
 
-            {/* SIGN UP CARD */}
+            {/* ================= SIGN UP CARD ================= */}
             <article
               className={`split-card ${mode === 'signup' ? 'active-card' : 'inactive-signup'}`}
               onClick={() => {
@@ -418,8 +640,19 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Right Pane (Codepen 2 dark slate block with neon line animations) */}
-              <div className="card-right-pane">
+              {/* Right Pane (Codepen 2 dark slate block with snake line animation) */}
+              <div className="card-right-pane" ref={signupPaneRef}>
+                {/* Continuous Glowing Snake SVG Track */}
+                <svg className="snake-svg-layer">
+                  {signupSnake.d && (
+                    <path
+                      className="snake-path"
+                      d={signupSnake.d}
+                      style={activeSignupStyle}
+                    />
+                  )}
+                </svg>
+
                 {mode === 'signup' && error && (
                   <div className="card-alert-error" role="alert">
                     <AlertCircle size={16} />
@@ -439,7 +672,7 @@ export default function LoginPage() {
                     <div className="input-label-row">
                       <label htmlFor="signup-name" className="input-label">Full Name</label>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={signupNameRef}>
                       <input
                         id="signup-name"
                         name="name"
@@ -449,12 +682,10 @@ export default function LoginPage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         onFocus={() => setFocusedField('signup-name')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'signup'}
                       />
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
                     </div>
                   </div>
 
@@ -463,7 +694,7 @@ export default function LoginPage() {
                     <div className="input-label-row">
                       <label htmlFor="signup-email" className="input-label">Email Address</label>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={signupEmailRef}>
                       <input
                         id="signup-email"
                         name="email"
@@ -474,12 +705,10 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedField('signup-email')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'signup'}
                       />
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
                     </div>
                   </div>
 
@@ -488,7 +717,7 @@ export default function LoginPage() {
                     <div className="input-label-row">
                       <label htmlFor="signup-password" className="input-label">Create Password</label>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={signupPwdRef}>
                       <input
                         id="signup-password"
                         name="password"
@@ -498,7 +727,6 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedField('signup-password')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'signup'}
                       />
@@ -514,7 +742,6 @@ export default function LoginPage() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
                     </div>
                   </div>
 
@@ -523,7 +750,7 @@ export default function LoginPage() {
                     <div className="input-label-row">
                       <label htmlFor="signup-confirm" className="input-label">Confirm Password</label>
                     </div>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" ref={signupConfirmRef}>
                       <input
                         id="signup-confirm"
                         name="confirmPassword"
@@ -533,7 +760,6 @@ export default function LoginPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         onFocus={() => setFocusedField('signup-confirm')}
-                        onBlur={() => setFocusedField('')}
                         required
                         disabled={mode !== 'signup'}
                       />
@@ -549,70 +775,69 @@ export default function LoginPage() {
                         {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                       <span className="input-base-line" />
-                      <span className="input-focus-line" />
                     </div>
                   </div>
 
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="btn-submit-action"
-                    disabled={loading || mode !== 'signup'}
-                  >
-                    {loading && mode === 'signup' ? (
-                      <>
-                        <div style={{
-                          width: 16, height: 16, borderRadius: '50%',
-                          border: '2px solid rgba(255,255,255,0.3)',
-                          borderTopColor: '#fff', animation: 'spin 1s linear infinite'
-                        }} />
-                        Creating Account...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} />
-                        Create Account
-                      </>
-                    )}
-                  </button>
+                  {/* Side-by-Side Action Buttons: Create Account & Sign up with Google */}
+                  <div className="auth-buttons-row">
+                    <button
+                      ref={signupSubmitRef}
+                      type="submit"
+                      className="btn-submit-action side-btn"
+                      disabled={loading || mode !== 'signup'}
+                      onFocus={() => setFocusedField('signup-submit')}
+                      onMouseEnter={() => setFocusedField('signup-submit')}
+                    >
+                      {loading && mode === 'signup' ? (
+                        <>
+                          <div style={{
+                            width: 15, height: 15, borderRadius: '50%',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTopColor: '#fff', animation: 'spin 1s linear infinite'
+                          }} />
+                          Creating Account...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={15} />
+                          Create Account
+                        </>
+                      )}
+                    </button>
 
-                  {/* Divider */}
-                  <div className="auth-divider">
-                    <span className="divider-line" />
-                    <span className="divider-text">or</span>
-                    <span className="divider-line" />
+                    <button
+                      ref={signupGoogleRef}
+                      type="button"
+                      className="btn-google-auth side-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGoogleLogin();
+                      }}
+                      onFocus={() => setFocusedField('signup-google')}
+                      onMouseEnter={() => setFocusedField('signup-google')}
+                      disabled={mode !== 'signup'}
+                    >
+                      <svg width="17" height="17" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>Sign up with Google</span>
+                    </button>
                   </div>
-
-                  {/* Google Sign Up */}
-                  <button
-                    type="button"
-                    className="btn-google-auth"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGoogleLogin();
-                    }}
-                    disabled={mode !== 'signup'}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>Sign up with Google</span>
-                  </button>
                 </form>
               </div>
             </article>
           </>
         ) : (
-          /* FORGOT PASSWORD CARD */
+          /* ================= FORGOT PASSWORD CARD ================= */
           <article className="split-card active-card">
             <div className="card-left-pane">
               <div>
                 <h1 className="card-title">Reset Password</h1>
                 <p className="card-eula">
-                  Enter your registered email address and we'll send you recovery instructions to regain access to your student account.
+                  Enter your registered email address below and we'll send you recovery instructions to regain access to your student account.
                 </p>
               </div>
               <div className="card-left-footer">
@@ -657,31 +882,30 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setFocusedField('forgot-email')}
-                      onBlur={() => setFocusedField('')}
                       required
                     />
                     <span className="input-base-line" />
-                    <span className="input-focus-line" />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn-submit-action"
-                  disabled={loading}
-                >
-                  {loading ? 'Sending...' : 'Send Reset Instructions'}
-                </button>
+                <div className="auth-buttons-row">
+                  <button
+                    type="submit"
+                    className="btn-submit-action side-btn"
+                    disabled={loading}
+                  >
+                    {loading ? 'Sending...' : 'Send Reset Instructions'}
+                  </button>
 
-                <button
-                  type="button"
-                  className="btn-google-auth"
-                  style={{ marginTop: 14 }}
-                  onClick={() => switchMode('login')}
-                >
-                  <ArrowLeft size={15} />
-                  <span>Return to Sign In</span>
-                </button>
+                  <button
+                    type="button"
+                    className="btn-google-auth side-btn"
+                    onClick={() => switchMode('login')}
+                  >
+                    <ArrowLeft size={15} />
+                    <span>Back to Sign In</span>
+                  </button>
+                </div>
               </form>
             </div>
           </article>

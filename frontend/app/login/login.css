@@ -143,7 +143,7 @@
 .cards-deck-container {
   position: relative;
   width: 100%;
-  max-width: 860px;
+  max-width: 880px;
   min-height: 540px;
   display: flex;
   justify-content: center;
@@ -153,7 +153,7 @@
 /* Individual Card (Split Layout: Codepen 2 style) */
 .split-card {
   width: 100%;
-  max-width: 820px;
+  max-width: 840px;
   border-radius: 16px;
   overflow: hidden;
   display: flex;
@@ -230,9 +230,9 @@
 
 /* Left Pane: Crisp High-Contrast Pane */
 .card-left-pane {
-  flex: 0 0 42%;
+  flex: 0 0 40%;
   background: #ffffff;
-  padding: 42px 36px;
+  padding: 42px 34px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -242,7 +242,7 @@
 }
 
 .card-title {
-  font-size: 46px;
+  font-size: 44px;
   font-weight: 900;
   line-height: 1.08;
   letter-spacing: -0.035em;
@@ -283,7 +283,7 @@
 
 /* Right Pane: Dark Slate Pane (Codepen 2 style) */
 .card-right-pane {
-  flex: 0 0 58%;
+  flex: 0 0 60%;
   background: #424759;
   padding: 38px 36px;
   display: flex;
@@ -325,7 +325,7 @@
 
 /* Minimalist Form Elements (Codepen 2 style) */
 .input-group {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   position: relative;
 }
 
@@ -333,7 +333,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .input-label {
@@ -349,7 +349,15 @@
   color: #ffffff;
 }
 
-.forgot-btn {
+/* Forgot password placed cleanly below password field */
+.forgot-password-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+  margin-bottom: 8px;
+}
+
+.forgot-btn-below {
   background: none;
   border: none;
   padding: 0;
@@ -360,7 +368,7 @@
   transition: color 0.2s;
 }
 
-.forgot-btn:hover {
+.forgot-btn-below:hover {
   color: #ff00ff;
   text-decoration: underline;
 }
@@ -375,9 +383,9 @@
   background: transparent !important;
   border: 0 !important;
   color: #f2f2f2 !important;
-  font-size: 15.5px !important;
-  height: 34px !important;
-  line-height: 34px !important;
+  font-size: 15px !important;
+  height: 32px !important;
+  line-height: 32px !important;
   outline: none !important;
   width: 100% !important;
   padding: 0 !important;
@@ -385,8 +393,8 @@
 }
 
 .card-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
-  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 13px;
 }
 
 .pwd-toggle-btn {
@@ -399,6 +407,7 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  z-index: 6;
 }
 
 .pwd-toggle-btn:hover {
@@ -416,42 +425,41 @@
   pointer-events: none;
 }
 
-/* Glowing animated gradient line (Codepen 2 style) */
-.input-focus-line {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0%;
-  height: 3px;
-  background: linear-gradient(90deg, #ff00ff 0%, #ff0055 50%, #ff0000 100%);
-  box-shadow: 0 0 12px rgba(255, 0, 128, 0.75);
-  pointer-events: none;
-  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.input-group.is-focused .input-focus-line {
+/* Side-by-side Action Buttons Row */
+.auth-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
   width: 100%;
 }
 
-/* Submit Button */
-.btn-submit-action {
-  width: 100%;
+.auth-buttons-row .side-btn {
+  flex: 1 1 0;
+  min-width: 0;
   height: 44px;
   border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, #ff007f 0%, #e11d48 50%, #ff3300 100%);
-  color: #ffffff;
-  font-size: 14.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(255, 0, 85, 0.35);
-  transition: all 0.25s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 18px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+
+/* Primary Action Button (Sign In / Create Account) */
+.btn-submit-action {
+  border: none;
+  background: linear-gradient(135deg, #ff007f 0%, #e11d48 50%, #ff3300 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 0, 85, 0.35);
 }
 
 .btn-submit-action:hover:not(:disabled) {
@@ -465,49 +473,43 @@
   cursor: not-allowed;
 }
 
-/* Divider */
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 14px 0 12px;
-}
-
-.divider-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.divider-text {
-  font-size: 11.5px;
-  color: #94a3b8;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Google Button */
+/* Google Action Button (Side by side) */
 .btn-google-auth {
-  width: 100%;
-  height: 42px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.05);
   color: #f8fafc;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.2s ease;
 }
 
 .btn-google-auth:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
+}
+
+/* Continuous Snake SVG Animation (Codepen 2 style) */
+.snake-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+
+.snake-path {
+  fill: none;
+  stroke: url(#snakeGradient);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(255, 0, 128, 0.85));
+  transition: stroke-dashoffset 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              stroke-dasharray 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Responsive Handling */
@@ -564,5 +566,14 @@
   .card-left-pane,
   .card-right-pane {
     padding: 20px 18px;
+  }
+
+  .auth-buttons-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .auth-buttons-row .side-btn {
+    width: 100%;
   }
 }
