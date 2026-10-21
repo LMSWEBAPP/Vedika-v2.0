@@ -6,6 +6,18 @@ import { Eye, EyeOff, GraduationCap, ArrowLeft, CheckCircle2, Sparkles, AlertCir
 import { login } from '@/lib/frappe';
 import './login.css';
 
+// Exact SVG segment measurement via browser's native SVG engine
+function getSvgPathLength(d) {
+  if (typeof document === 'undefined') return 0;
+  try {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    return path.getTotalLength() || 0;
+  } catch (err) {
+    return 0;
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'forgot'
@@ -28,7 +40,7 @@ export default function LoginPage() {
   // Active focused input for glowing gradient animation
   const [focusedField, setFocusedField] = useState('login-email');
 
-  // DOM Refs for dynamic snake line path calculation
+  // DOM Container & Wrapper Refs
   const loginPaneRef = useRef(null);
   const loginEmailRef = useRef(null);
   const loginPwdRef = useRef(null);
@@ -42,6 +54,14 @@ export default function LoginPage() {
   const signupConfirmRef = useRef(null);
   const signupSubmitRef = useRef(null);
   const signupGoogleRef = useRef(null);
+
+  // Direct Input Focus Refs
+  const loginEmailInputRef = useRef(null);
+  const loginPwdInputRef = useRef(null);
+  const signupNameInputRef = useRef(null);
+  const signupEmailInputRef = useRef(null);
+  const signupPwdInputRef = useRef(null);
+  const signupConfirmInputRef = useRef(null);
 
   // Snake Path States
   const [loginSnake, setLoginSnake] = useState({ d: '', styles: {}, total: 1000 });
@@ -65,7 +85,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Compute dynamic Snake path coordinates for Login
+  // Compute exact Snake path coordinates and native measurements for Login
   const recalculateLoginSnake = useCallback(() => {
     if (!loginPaneRef.current || !loginEmailRef.current || !loginPwdRef.current || !loginSubmitRef.current || !loginGoogleRef.current) return;
     const c = loginPaneRef.current.getBoundingClientRect();
@@ -79,60 +99,73 @@ export default function LoginPage() {
     const eL = e.left - c.left;
     const eR = e.right - c.left;
     const eY = e.bottom - c.top;
-    const L0 = eR - eL;
 
     const pL = p.left - c.left;
     const pR = p.right - c.left;
     const pY = p.bottom - c.top;
-    const L1 = pR - pL;
 
     const sL = s.left - c.left;
     const sR = s.right - c.left;
     const sY = s.bottom - c.top;
-    const L2 = sR - sL;
 
     const gL = g.left - c.left;
     const gR = g.right - c.left;
     const gY = g.bottom - c.top;
-    const L3 = gR - gL;
-    const gap = gL - sR;
 
-    const c01 = Math.PI * Math.abs(pY - eY) / 2 + 16;
-    const c12 = Math.PI * Math.abs(sY - pY) / 2 + 16;
+    // Build subpaths for exact browser-native measurement
+    const d0_email = `M ${eL} ${eY} L ${eR} ${eY}`;
+    const len0_email = getSvgPathLength(d0_email);
 
-    const pathD = `M ${eL} ${eY} L ${eR} ${eY} ` +
-      `C ${eR + 24} ${eY}, ${pR + 24} ${pY}, ${pR} ${pY} ` +
-      `L ${pL} ${pY} ` +
-      `C ${pL - 24} ${pY}, ${sL - 24} ${sY}, ${sL} ${sY} ` +
-      `L ${sR} ${sY} ` +
-      `L ${gL} ${gY} ` +
-      `L ${gR} ${gY}`;
+    // Loop 01 down right margin to password start
+    const d_to_p_start = `${d0_email} C ${eR + 24} ${eY}, ${pR + 24} ${pY}, ${pR} ${pY}`;
+    const len_to_p_start = getSvgPathLength(d_to_p_start);
 
-    const total = L0 + c01 + L1 + c12 + L2 + gap + L3;
+    // Straight password line (RTL)
+    const d_to_p_end = `${d_to_p_start} L ${pL} ${pY}`;
+    const len_to_p_end = getSvgPathLength(d_to_p_end);
+    const len_p = Math.max(0, len_to_p_end - len_to_p_start);
+
+    // Loop 12 down left margin to sign in button
+    const d_to_s_start = `${d_to_p_end} C ${pL - 24} ${pY}, ${sL - 24} ${sY}, ${sL} ${sY}`;
+    const len_to_s_start = getSvgPathLength(d_to_s_start);
+
+    // Straight button line (LTR)
+    const d_to_s_end = `${d_to_s_start} L ${sR} ${sY}`;
+    const len_to_s_end = getSvgPathLength(d_to_s_end);
+    const len_s = Math.max(0, len_to_s_end - len_to_s_start);
+
+    // Bridge to Google button
+    const d_to_g_start = `${d_to_s_end} L ${gL} ${gY}`;
+    const len_to_g_start = getSvgPathLength(d_to_g_start);
+
+    // Google button line (LTR)
+    const d_full = `${d_to_g_start} L ${gR} ${gY}`;
+    const total = getSvgPathLength(d_full);
+    const len_g = Math.max(0, total - len_to_g_start);
 
     const stylesMap = {
       'login-email': {
-        strokeDasharray: `${L0} ${total + 200}`,
+        strokeDasharray: `${len0_email} ${total + 400}`,
         strokeDashoffset: '0'
       },
       'login-password': {
-        strokeDasharray: `${L1} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01}`
+        strokeDasharray: `${len_p} ${total + 400}`,
+        strokeDashoffset: `-${len_to_p_start}`
       },
       'login-submit': {
-        strokeDasharray: `${L2} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12}`
+        strokeDasharray: `${len_s} ${total + 400}`,
+        strokeDashoffset: `-${len_to_s_start}`
       },
       'login-google': {
-        strokeDasharray: `${L3} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + gap}`
+        strokeDasharray: `${len_g} ${total + 400}`,
+        strokeDashoffset: `-${len_to_g_start}`
       }
     };
 
-    setLoginSnake({ d: pathD, styles: stylesMap, total });
+    setLoginSnake({ d: d_full, styles: stylesMap, total });
   }, []);
 
-  // Compute dynamic Snake path coordinates for Sign Up
+  // Compute exact Snake path coordinates and native measurements for Sign Up
   const recalculateSignupSnake = useCallback(() => {
     if (!signupPaneRef.current || !signupNameRef.current || !signupEmailRef.current || !signupPwdRef.current || !signupConfirmRef.current || !signupSubmitRef.current || !signupGoogleRef.current) return;
     const c = signupPaneRef.current.getBoundingClientRect();
@@ -145,89 +178,103 @@ export default function LoginPage() {
 
     if (c.width === 0) return;
 
-    // Field 0: Name (LTR)
     const nL = n.left - c.left;
     const nR = n.right - c.left;
     const nY = n.bottom - c.top;
-    const L0 = nR - nL;
 
-    // Field 1: Email (RTL)
     const eL = e.left - c.left;
     const eR = e.right - c.left;
     const eY = e.bottom - c.top;
-    const L1 = eR - eL;
 
-    // Field 2: Password (LTR)
     const pL = p.left - c.left;
     const pR = p.right - c.left;
     const pY = p.bottom - c.top;
-    const L2 = pR - pL;
 
-    // Field 3: Confirm (RTL)
     const cfL = cf.left - c.left;
     const cfR = cf.right - c.left;
     const cfY = cf.bottom - c.top;
-    const L3 = cfR - cfL;
 
-    // Buttons
     const sL = s.left - c.left;
     const sR = s.right - c.left;
     const sY = s.bottom - c.top;
-    const L4 = sR - sL;
 
     const gL = g.left - c.left;
     const gR = g.right - c.left;
     const gY = g.bottom - c.top;
-    const L5 = gR - gL;
-    const gap = gL - sR;
 
-    const c01 = Math.PI * Math.abs(eY - nY) / 2 + 16;
-    const c12 = Math.PI * Math.abs(pY - eY) / 2 + 16;
-    const c23 = Math.PI * Math.abs(cfY - pY) / 2 + 16;
-    const c34 = Math.PI * Math.abs(sY - cfY) / 2 + 16;
+    // Field 0: Full Name (LTR)
+    const d0_name = `M ${nL} ${nY} L ${nR} ${nY}`;
+    const len0_name = getSvgPathLength(d0_name);
 
-    const pathD = `M ${nL} ${nY} L ${nR} ${nY} ` +
-      `C ${nR + 24} ${nY}, ${eR + 24} ${eY}, ${eR} ${eY} ` +
-      `L ${eL} ${eY} ` +
-      `C ${eL - 24} ${eY}, ${pL - 24} ${pY}, ${pL} ${pY} ` +
-      `L ${pR} ${pY} ` +
-      `C ${pR + 24} ${pY}, ${cfR + 24} ${cfY}, ${cfR} ${cfY} ` +
-      `L ${cfL} ${cfY} ` +
-      `C ${cfL - 24} ${cfY}, ${sL - 24} ${sY}, ${sL} ${sY} ` +
-      `L ${sR} ${sY} ` +
-      `L ${gL} ${gY} ` +
-      `L ${gR} ${gY}`;
+    // Loop 01 to Email (RTL)
+    const d_to_e_start = `${d0_name} C ${nR + 24} ${nY}, ${eR + 24} ${eY}, ${eR} ${eY}`;
+    const len_to_e_start = getSvgPathLength(d_to_e_start);
 
-    const total = L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34 + L4 + gap + L5;
+    const d_to_e_end = `${d_to_e_start} L ${eL} ${eY}`;
+    const len_to_e_end = getSvgPathLength(d_to_e_end);
+    const len_e = Math.max(0, len_to_e_end - len_to_e_start);
+
+    // Loop 12 to Password (LTR)
+    const d_to_p_start = `${d_to_e_end} C ${eL - 24} ${eY}, ${pL - 24} ${pY}, ${pL} ${pY}`;
+    const len_to_p_start = getSvgPathLength(d_to_p_start);
+
+    const d_to_p_end = `${d_to_p_start} L ${pR} ${pY}`;
+    const len_to_p_end = getSvgPathLength(d_to_p_end);
+    const len_p = Math.max(0, len_to_p_end - len_to_p_start);
+
+    // Loop 23 to Confirm (RTL)
+    const d_to_cf_start = `${d_to_p_end} C ${pR + 24} ${pY}, ${cfR + 24} ${cfY}, ${cfR} ${cfY}`;
+    const len_to_cf_start = getSvgPathLength(d_to_cf_start);
+
+    const d_to_cf_end = `${d_to_cf_start} L ${cfL} ${cfY}`;
+    const len_to_cf_end = getSvgPathLength(d_to_cf_end);
+    const len_cf = Math.max(0, len_to_cf_end - len_to_cf_start);
+
+    // Loop 34 to Buttons (LTR)
+    const d_to_s_start = `${d_to_cf_end} C ${cfL - 24} ${cfY}, ${sL - 24} ${sY}, ${sL} ${sY}`;
+    const len_to_s_start = getSvgPathLength(d_to_s_start);
+
+    const d_to_s_end = `${d_to_s_start} L ${sR} ${sY}`;
+    const len_to_s_end = getSvgPathLength(d_to_s_end);
+    const len_s = Math.max(0, len_to_s_end - len_to_s_start);
+
+    // Bridge to Google button
+    const d_to_g_start = `${d_to_s_end} L ${gL} ${gY}`;
+    const len_to_g_start = getSvgPathLength(d_to_g_start);
+
+    // Google button line (LTR)
+    const d_full = `${d_to_g_start} L ${gR} ${gY}`;
+    const total = getSvgPathLength(d_full);
+    const len_g = Math.max(0, total - len_to_g_start);
 
     const stylesMap = {
       'signup-name': {
-        strokeDasharray: `${L0} ${total + 200}`,
+        strokeDasharray: `${len0_name} ${total + 400}`,
         strokeDashoffset: '0'
       },
       'signup-email': {
-        strokeDasharray: `${L1} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01}`
+        strokeDasharray: `${len_e} ${total + 400}`,
+        strokeDashoffset: `-${len_to_e_start}`
       },
       'signup-password': {
-        strokeDasharray: `${L2} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12}`
+        strokeDasharray: `${len_p} ${total + 400}`,
+        strokeDashoffset: `-${len_to_p_start}`
       },
       'signup-confirm': {
-        strokeDasharray: `${L3} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23}`
+        strokeDasharray: `${len_cf} ${total + 400}`,
+        strokeDashoffset: `-${len_to_cf_start}`
       },
       'signup-submit': {
-        strokeDasharray: `${L4} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34}`
+        strokeDasharray: `${len_s} ${total + 400}`,
+        strokeDashoffset: `-${len_to_s_start}`
       },
       'signup-google': {
-        strokeDasharray: `${L5} ${total + 200}`,
-        strokeDashoffset: `-${L0 + c01 + L1 + c12 + L2 + c23 + L3 + c34 + L4 + gap}`
+        strokeDasharray: `${len_g} ${total + 400}`,
+        strokeDashoffset: `-${len_to_g_start}`
       }
     };
 
-    setSignupSnake({ d: pathD, styles: stylesMap, total });
+    setSignupSnake({ d: d_full, styles: stylesMap, total });
   }, []);
 
   // Update geometry on mount, resize, and mode switch
@@ -237,12 +284,14 @@ export default function LoginPage() {
       recalculateSignupSnake();
     };
 
-    // Delay slightly to let browser finish laying out elements
-    const timer = setTimeout(handleRecalc, 60);
+    // Trigger on slight delay to let layout settle
+    const timer1 = setTimeout(handleRecalc, 50);
+    const timer2 = setTimeout(handleRecalc, 250);
     window.addEventListener('resize', handleRecalc);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       window.removeEventListener('resize', handleRecalc);
     };
   }, [mode, recalculateLoginSnake, recalculateSignupSnake]);
@@ -251,7 +300,17 @@ export default function LoginPage() {
     setMode(newMode);
     setError('');
     setSuccessMsg('');
-    setFocusedField(newMode === 'login' ? 'login-email' : 'signup-name');
+    const defaultFocus = newMode === 'login' ? 'login-email' : 'signup-name';
+    setFocusedField(defaultFocus);
+    
+    // Auto focus the target first field on mode switch
+    setTimeout(() => {
+      if (newMode === 'login') {
+        loginEmailInputRef.current?.focus();
+      } else if (newMode === 'signup') {
+        signupNameInputRef.current?.focus();
+      }
+    }, 100);
   };
 
   const handleGoogleLogin = async () => {
@@ -461,7 +520,7 @@ export default function LoginPage() {
               {/* Right Pane (Codepen 2 dark slate block with snake line animation) */}
               <div className="card-right-pane" ref={loginPaneRef}>
                 {/* Continuous Glowing Snake SVG Track */}
-                <svg className="snake-svg-layer">
+                <svg className="snake-svg-layer" aria-hidden="true">
                   <defs>
                     <linearGradient id="snakeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#ff00ff" />
@@ -495,10 +554,21 @@ export default function LoginPage() {
                   {/* Email or Username */}
                   <div className={`input-group ${focusedField === 'login-email' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="login-email" className="input-label">Email or Username</label>
+                      <label
+                        htmlFor="login-email"
+                        className="input-label"
+                        onClick={() => loginEmailInputRef.current?.focus()}
+                      >
+                        Email or Username
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={loginEmailRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={loginEmailRef}
+                      onClick={() => loginEmailInputRef.current?.focus()}
+                    >
                       <input
+                        ref={loginEmailInputRef}
                         id="login-email"
                         name="email"
                         type="text"
@@ -510,7 +580,8 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedField('login-email')}
                         required
-                        disabled={mode !== 'login'}
+                        tabIndex={mode === 'login' ? 0 : -1}
+                        readOnly={mode !== 'login'}
                       />
                       <span className="input-base-line" />
                     </div>
@@ -519,10 +590,21 @@ export default function LoginPage() {
                   {/* Password */}
                   <div className={`input-group ${focusedField === 'login-password' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="login-password" className="input-label">Password</label>
+                      <label
+                        htmlFor="login-password"
+                        className="input-label"
+                        onClick={() => loginPwdInputRef.current?.focus()}
+                      >
+                        Password
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={loginPwdRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={loginPwdRef}
+                      onClick={() => loginPwdInputRef.current?.focus()}
+                    >
                       <input
+                        ref={loginPwdInputRef}
                         id="login-password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
@@ -532,7 +614,8 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedField('login-password')}
                         required
-                        disabled={mode !== 'login'}
+                        tabIndex={mode === 'login' ? 0 : -1}
+                        readOnly={mode !== 'login'}
                       />
                       <button
                         type="button"
@@ -643,7 +726,7 @@ export default function LoginPage() {
               {/* Right Pane (Codepen 2 dark slate block with snake line animation) */}
               <div className="card-right-pane" ref={signupPaneRef}>
                 {/* Continuous Glowing Snake SVG Track */}
-                <svg className="snake-svg-layer">
+                <svg className="snake-svg-layer" aria-hidden="true">
                   {signupSnake.d && (
                     <path
                       className="snake-path"
@@ -670,10 +753,21 @@ export default function LoginPage() {
                   {/* Full Name */}
                   <div className={`input-group ${focusedField === 'signup-name' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="signup-name" className="input-label">Full Name</label>
+                      <label
+                        htmlFor="signup-name"
+                        className="input-label"
+                        onClick={() => signupNameInputRef.current?.focus()}
+                      >
+                        Full Name
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={signupNameRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={signupNameRef}
+                      onClick={() => signupNameInputRef.current?.focus()}
+                    >
                       <input
+                        ref={signupNameInputRef}
                         id="signup-name"
                         name="name"
                         type="text"
@@ -683,7 +777,8 @@ export default function LoginPage() {
                         onChange={(e) => setFullName(e.target.value)}
                         onFocus={() => setFocusedField('signup-name')}
                         required
-                        disabled={mode !== 'signup'}
+                        tabIndex={mode === 'signup' ? 0 : -1}
+                        readOnly={mode !== 'signup'}
                       />
                       <span className="input-base-line" />
                     </div>
@@ -692,10 +787,21 @@ export default function LoginPage() {
                   {/* Email Address */}
                   <div className={`input-group ${focusedField === 'signup-email' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="signup-email" className="input-label">Email Address</label>
+                      <label
+                        htmlFor="signup-email"
+                        className="input-label"
+                        onClick={() => signupEmailInputRef.current?.focus()}
+                      >
+                        Email Address
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={signupEmailRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={signupEmailRef}
+                      onClick={() => signupEmailInputRef.current?.focus()}
+                    >
                       <input
+                        ref={signupEmailInputRef}
                         id="signup-email"
                         name="email"
                         type="email"
@@ -706,7 +812,8 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedField('signup-email')}
                         required
-                        disabled={mode !== 'signup'}
+                        tabIndex={mode === 'signup' ? 0 : -1}
+                        readOnly={mode !== 'signup'}
                       />
                       <span className="input-base-line" />
                     </div>
@@ -715,10 +822,21 @@ export default function LoginPage() {
                   {/* Create Password */}
                   <div className={`input-group ${focusedField === 'signup-password' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="signup-password" className="input-label">Create Password</label>
+                      <label
+                        htmlFor="signup-password"
+                        className="input-label"
+                        onClick={() => signupPwdInputRef.current?.focus()}
+                      >
+                        Create Password
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={signupPwdRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={signupPwdRef}
+                      onClick={() => signupPwdInputRef.current?.focus()}
+                    >
                       <input
+                        ref={signupPwdInputRef}
                         id="signup-password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
@@ -728,7 +846,8 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedField('signup-password')}
                         required
-                        disabled={mode !== 'signup'}
+                        tabIndex={mode === 'signup' ? 0 : -1}
+                        readOnly={mode !== 'signup'}
                       />
                       <button
                         type="button"
@@ -748,10 +867,21 @@ export default function LoginPage() {
                   {/* Confirm Password */}
                   <div className={`input-group ${focusedField === 'signup-confirm' ? 'is-focused' : ''}`}>
                     <div className="input-label-row">
-                      <label htmlFor="signup-confirm" className="input-label">Confirm Password</label>
+                      <label
+                        htmlFor="signup-confirm"
+                        className="input-label"
+                        onClick={() => signupConfirmInputRef.current?.focus()}
+                      >
+                        Confirm Password
+                      </label>
                     </div>
-                    <div className="input-wrapper" ref={signupConfirmRef}>
+                    <div
+                      className="input-wrapper"
+                      ref={signupConfirmRef}
+                      onClick={() => signupConfirmInputRef.current?.focus()}
+                    >
                       <input
+                        ref={signupConfirmInputRef}
                         id="signup-confirm"
                         name="confirmPassword"
                         type={showConfirmPassword ? 'text' : 'password'}
@@ -761,7 +891,8 @@ export default function LoginPage() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         onFocus={() => setFocusedField('signup-confirm')}
                         required
-                        disabled={mode !== 'signup'}
+                        tabIndex={mode === 'signup' ? 0 : -1}
+                        readOnly={mode !== 'signup'}
                       />
                       <button
                         type="button"
