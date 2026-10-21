@@ -1,0 +1,549 @@
+/* Login & Sign Up Split-Card Animated Deck (Codepen 1 + Codepen 2) */
+
+.login-page-root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 50% 30%, #3a4261 0%, #252b41 60%, #171b2b 100%);
+  padding: 30px 16px;
+  box-sizing: border-box;
+  font-family: var(--font-outfit), 'Inter UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Background Ambient Orbs */
+.login-bg-glow-1 {
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(114, 157, 248, 0.15) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.login-bg-glow-2 {
+  position: absolute;
+  bottom: 10%;
+  right: 15%;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 0, 128, 0.12) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+/* Header & Switchers */
+.login-header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 26px;
+  z-index: 30;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  backdrop-filter: blur(10px);
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.brand-icon-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #729DF8 0%, #A782F8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* Switcher Buttons (Codepen 1 style) */
+.switchers-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  position: relative;
+}
+
+.switcher-btn {
+  position: relative;
+  cursor: pointer;
+  padding: 8px 12px;
+  text-transform: uppercase;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.switcher-btn:hover {
+  color: #e2e8f0;
+}
+
+.switcher-btn.is-active {
+  color: #ffffff;
+}
+
+.switcher-underline {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.switcher-underline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff00ff 0%, #ff0055 50%, #ff0000 100%);
+  box-shadow: 0 0 8px rgba(255, 0, 128, 0.7);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-101%);
+}
+
+.switcher-btn.is-active .switcher-underline::before {
+  transform: translateX(0);
+}
+
+/* Cards Stack Deck */
+.cards-deck-container {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  min-height: 540px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Individual Card (Split Layout: Codepen 2 style) */
+.split-card {
+  width: 100%;
+  max-width: 820px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  background: #3e445b;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.4s ease,
+              box-shadow 0.4s ease,
+              filter 0.4s ease;
+  position: absolute;
+  top: 0;
+}
+
+/* Card Active / Inactive states (Codepen 1 layered physics) */
+.split-card.active-card {
+  z-index: 20;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
+  filter: brightness(1);
+}
+
+/* When Login is active, Sign Up is tucked behind to the right */
+.split-card.inactive-signup {
+  z-index: 10;
+  opacity: 0.82;
+  transform: translate3d(48px, 18px, 0) scale(0.95);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  filter: brightness(0.92);
+}
+
+.split-card.inactive-signup:hover {
+  transform: translate3d(54px, 14px, 0) scale(0.96);
+  opacity: 0.95;
+  filter: brightness(0.98);
+}
+
+/* When Sign Up is active, Login is tucked behind to the left */
+.split-card.inactive-login {
+  z-index: 10;
+  opacity: 0.82;
+  transform: translate3d(-48px, 18px, 0) scale(0.95);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  filter: brightness(0.92);
+}
+
+.split-card.inactive-login:hover {
+  transform: translate3d(-54px, 14px, 0) scale(0.96);
+  opacity: 0.95;
+  filter: brightness(0.98);
+}
+
+/* Left Pane: Crisp High-Contrast Pane */
+.card-left-pane {
+  flex: 0 0 42%;
+  background: #ffffff;
+  padding: 42px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #1e293b;
+  position: relative;
+  z-index: 2;
+}
+
+.card-title {
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.card-eula {
+  color: #64748b;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.card-left-footer {
+  margin-top: 36px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.card-left-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff0055;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+
+.card-left-link:hover {
+  color: #ff00ff;
+  text-decoration: underline;
+}
+
+/* Right Pane: Dark Slate Pane (Codepen 2 style) */
+.card-right-pane {
+  flex: 0 0 58%;
+  background: #424759;
+  padding: 38px 36px;
+  display: flex;
+  flex-direction: column;
+  color: #f1f1f2;
+  position: relative;
+  box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+/* Alert Boxes */
+.card-alert-error {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.card-alert-success {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #86efac;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+/* Minimalist Form Elements (Codepen 2 style) */
+.input-group {
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.input-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.input-label {
+  color: #c2c2c5;
+  font-size: 12.5px;
+  font-weight: 500;
+  display: block;
+  letter-spacing: 0.3px;
+  transition: color 0.2s ease;
+}
+
+.input-group.is-focused .input-label {
+  color: #ffffff;
+}
+
+.forgot-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #ff3377;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.forgot-btn:hover {
+  color: #ff00ff;
+  text-decoration: underline;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.card-input {
+  background: transparent !important;
+  border: 0 !important;
+  color: #f2f2f2 !important;
+  font-size: 15.5px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  outline: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  font-family: inherit;
+}
+
+.card-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 13.5px;
+}
+
+.pwd-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.pwd-toggle-btn:hover {
+  color: #ffffff;
+}
+
+/* Base line under inputs */
+.input-base-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+/* Glowing animated gradient line (Codepen 2 style) */
+.input-focus-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff00ff 0%, #ff0055 50%, #ff0000 100%);
+  box-shadow: 0 0 12px rgba(255, 0, 128, 0.75);
+  pointer-events: none;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.input-group.is-focused .input-focus-line {
+  width: 100%;
+}
+
+/* Submit Button */
+.btn-submit-action {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #ff007f 0%, #e11d48 50%, #ff3300 100%);
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 0, 85, 0.35);
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.btn-submit-action:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(255, 0, 85, 0.55);
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn-submit-action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 12px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.divider-text {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Google Button */
+.btn-google-auth {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-google-auth:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Handling */
+@media (max-width: 820px) {
+  .cards-deck-container {
+    max-width: 580px;
+    min-height: auto;
+  }
+  
+  .split-card {
+    position: relative;
+    max-width: 100%;
+    flex-direction: column;
+  }
+
+  .split-card.inactive-signup,
+  .split-card.inactive-login {
+    display: none;
+  }
+
+  .split-card.active-card {
+    transform: none;
+  }
+
+  .card-left-pane {
+    flex: auto;
+    padding: 30px 24px 20px;
+  }
+
+  .card-title {
+    font-size: 34px;
+    margin-bottom: 10px;
+  }
+
+  .card-right-pane {
+    flex: auto;
+    padding: 24px 24px 30px;
+  }
+
+  .card-left-footer {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .switchers-container {
+    gap: 20px;
+  }
+  
+  .card-title {
+    font-size: 28px;
+  }
+  
+  .card-left-pane,
+  .card-right-pane {
+    padding: 20px 18px;
+  }
+}
