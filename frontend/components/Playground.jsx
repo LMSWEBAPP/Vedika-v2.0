@@ -1130,6 +1130,8 @@ except Exception as e:
     );
   };
 
+  const activeStepData = traceData && traceData[currentStep] ? traceData[currentStep] : null;
+
   return (
     <div style={{
       display: 'flex',
