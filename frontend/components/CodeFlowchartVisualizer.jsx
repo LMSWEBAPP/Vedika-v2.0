@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, GitFork, ArrowDownUp, ArrowLeftRight, Code, Sparkles, AlertCircle, Maximize2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, GitFork, ArrowDownUp, ArrowLeftRight, Code, Sparkles, AlertCircle } from 'lucide-react';
 import './CodeFlowchartVisualizer.css';
 
 /**
@@ -31,18 +31,18 @@ function generatePythonCFG(code, activeLine, orientation = 'TD') {
   }
 
   let chart = `flowchart ${orientation}\n`;
-  chart += '  Start(["● Start"]):::startNode\n';
+  chart += '  Start(["● Start Execution"]):::startNode\n';
 
   const classDefs = [
-    'classDef default fill:#0F172A,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC,font-family:monospace,font-size:11px;',
-    'classDef loopNode fill:#1E1B4B,stroke:#A855F7,stroke-width:1.5px,color:#F3E8FF,font-family:monospace,font-size:11px;',
-    'classDef decisionNode fill:#1E293B,stroke:#F59E0B,stroke-width:1.5px,color:#FEF3C7,font-family:monospace,font-size:11px;',
-    'classDef ioNode fill:#082F49,stroke:#0EA5E9,stroke-width:1.5px,color:#E0F2FE,font-family:monospace,font-size:11px;',
-    'classDef returnNode fill:#064E3B,stroke:#10B981,stroke-width:1.5px,color:#D1FAE5,font-family:monospace,font-size:11px;',
-    'classDef startNode fill:#18181B,stroke:#71717A,stroke-width:1.5px,color:#A1A1AA,font-size:10px;',
-    'classDef endNode fill:#18181B,stroke:#71717A,stroke-width:1.5px,color:#A1A1AA,font-size:10px;',
-    'classDef activeNode fill:#1E40AF,stroke:#60A5FA,stroke-width:2.5px,color:#FFFFFF,font-weight:bold,font-family:monospace,font-size:11px;',
-    'classDef activeDecision fill:#92400E,stroke:#FDE68A,stroke-width:2.5px,color:#FFFFFF,font-weight:bold,font-family:monospace,font-size:11px;'
+    'classDef default fill:#111827,stroke:#3B82F6,stroke-width:1.5px,color:#F3F4F6,font-family:monospace,font-size:12px;',
+    'classDef loopNode fill:#1E1B4B,stroke:#8B5CF6,stroke-width:1.8px,color:#DDD6FE,font-family:monospace,font-size:12px;',
+    'classDef decisionNode fill:#1E293B,stroke:#F59E0B,stroke-width:1.8px,color:#FEF3C7,font-family:monospace,font-size:12px;',
+    'classDef ioNode fill:#0F2942,stroke:#0EA5E9,stroke-width:1.5px,color:#BAE6FD,font-family:monospace,font-size:12px;',
+    'classDef returnNode fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#A7F3D0,font-family:monospace,font-size:12px;',
+    'classDef startNode fill:#1F2937,stroke:#6B7280,stroke-width:1.5px,color:#9CA3AF,font-size:11px;',
+    'classDef endNode fill:#1F2937,stroke:#6B7280,stroke-width:1.5px,color:#9CA3AF,font-size:11px;',
+    'classDef activeNode fill:#1D4ED8,stroke:#60A5FA,stroke-width:3px,color:#FFFFFF,font-weight:bold,font-family:monospace,font-size:12px;',
+    'classDef activeDecision fill:#B45309,stroke:#FDE68A,stroke-width:3px,color:#FFFFFF,font-weight:bold,font-family:monospace,font-size:12px;'
   ];
 
   const nodeTypes = {};
@@ -50,12 +50,8 @@ function generatePythonCFG(code, activeLine, orientation = 'TD') {
   // Build node declarations
   parsedLines.forEach((item) => {
     const id = `L_${item.lineNum}`;
-    let label = item.text
-      .replace(/"/g, "'")
-      .replace(/[\{\}]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (label.length > 32) label = label.substring(0, 30) + '...';
+    let label = item.text.replace(/["\(\)\[\]\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (label.length > 38) label = label.substring(0, 35) + '...';
     label = `L${item.lineNum}: ${label}`;
 
     if (item.text.startsWith('for ') || item.text.startsWith('while ')) {
@@ -107,7 +103,7 @@ function generatePythonCFG(code, activeLine, orientation = 'TD') {
         chart += `  ${currId} -- False --> L_${falseTarget.lineNum}\n`;
       }
     } else if (curr.text.startsWith('for ') || curr.text.startsWith('while ')) {
-      chart += `  ${currId} -- Next --> ${nextId}\n`;
+      chart += `  ${currId} -- Iterates --> ${nextId}\n`;
 
       let lastInLoop = null;
       let exitLoopTarget = null;
@@ -120,7 +116,7 @@ function generatePythonCFG(code, activeLine, orientation = 'TD') {
         }
       }
       if (lastInLoop && !lastInLoop.text.startsWith('return')) {
-        chart += `  L_${lastInLoop.lineNum} -. Loop .-> ${currId}\n`;
+        chart += `  L_${lastInLoop.lineNum} -. Loop Next .-> ${currId}\n`;
       }
       if (exitLoopTarget) {
         chart += `  ${currId} -- Done --> L_${exitLoopTarget.lineNum}\n`;
@@ -167,7 +163,6 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
   const [renderError, setRenderError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(1);
-  const [autoFit, setAutoFit] = useState(true);
   const [orientation, setOrientation] = useState('TD'); // 'TD' | 'LR'
   const [showCode, setShowCode] = useState(false);
 
@@ -209,23 +204,20 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
           themeVariables: {
             darkMode: true,
             background: 'transparent',
-            primaryColor: '#0F172A',
-            primaryTextColor: '#F8FAFC',
-            primaryBorderColor: '#38BDF8',
+            primaryColor: '#111827',
+            primaryTextColor: '#F3F4F6',
+            primaryBorderColor: '#3B82F6',
             lineColor: '#60A5FA',
             secondaryColor: '#1E1B4B',
             tertiaryColor: '#0F172A',
-            edgeLabelBackground: '#0B0F19',
+            edgeLabelBackground: '#111827',
             fontFamily: 'var(--font-code), monospace',
-            fontSize: '11px'
+            fontSize: '12px'
           },
           securityLevel: 'loose',
           flowchart: {
             htmlLabels: true,
-            curve: 'basis',
-            nodeSpacing: 20,
-            rankSpacing: 25,
-            padding: 6
+            curve: 'basis'
           }
         });
 
@@ -251,20 +243,9 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
     };
   }, [chartCode, currentStep, orientation]);
 
-  const handleZoomIn = () => {
-    setAutoFit(false);
-    setZoom(z => Math.min(z + 0.15, 2.2));
-  };
-
-  const handleZoomOut = () => {
-    setAutoFit(false);
-    setZoom(z => Math.max(z - 0.15, 0.4));
-  };
-
-  const handleZoomReset = () => {
-    setAutoFit(true);
-    setZoom(1);
-  };
+  const handleZoomIn = () => setZoom(z => Math.min(z + 0.15, 2.2));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 0.15, 0.4));
+  const handleZoomReset = () => setZoom(1);
 
   const toggleOrientation = () => {
     setOrientation(prev => prev === 'TD' ? 'LR' : 'TD');
@@ -275,34 +256,16 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
       {/* Header Toolbar */}
       <div className="code-flowchart-toolbar">
         <div className="code-flowchart-title">
-          <span className="code-flowchart-badge">Logic Flowchart</span>
+          <span className="code-flowchart-badge">CFG Flowchart</span>
           {activeLineText && (
             <div className="code-flowchart-active-tag">
               <span>Line {activeLine}:</span>
-              <code>{activeLineText.length > 28 ? activeLineText.substring(0, 26) + '...' : activeLineText}</code>
+              <code>{activeLineText.length > 32 ? activeLineText.substring(0, 30) + '...' : activeLineText}</code>
             </div>
           )}
         </div>
 
         <div className="code-flowchart-actions">
-          {/* Fit Toggle */}
-          <button
-            type="button"
-            className={`code-flowchart-btn ${autoFit ? 'active' : ''}`}
-            onClick={() => {
-              if (autoFit) {
-                setAutoFit(false);
-              } else {
-                setAutoFit(true);
-                setZoom(1);
-              }
-            }}
-            title={autoFit ? 'Auto-Fit Enabled (Fits viewport without scrolling)' : 'Enable Auto-Fit'}
-          >
-            <Maximize2 size={12} />
-            <span>{autoFit ? 'Fit' : 'Manual'}</span>
-          </button>
-
           {/* Orientation Toggle (TD vs LR) */}
           <button
             type="button"
@@ -335,7 +298,7 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
             type="button"
             className="code-flowchart-btn"
             onClick={handleZoomReset}
-            title="Reset to 100%"
+            title="Reset Zoom"
           >
             <RotateCcw size={11} />
             <span>{Math.round(zoom * 100)}%</span>
@@ -357,11 +320,11 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
       {showCode ? (
         <pre className="mermaid-raw-code">{chartCode}</pre>
       ) : (
-        <div className={`code-flowchart-viewport ${autoFit ? 'is-autofit' : ''}`} ref={containerRef}>
+        <div className="code-flowchart-viewport" ref={containerRef}>
           {loading && (
             <div className="code-flowchart-loading">
-              <Sparkles size={20} className="animate-spin" color="#38BDF8" />
-              <span>Rendering Flowchart...</span>
+              <Sparkles size={20} className="animate-spin" color="#3B82F6" />
+              <span>Rendering Control Flow Graph...</span>
             </div>
           )}
 
@@ -383,7 +346,7 @@ export default function CodeFlowchartVisualizer({ code, currentStep = 0, traceDa
           {!loading && !renderError && svgHtml && (
             <div
               className="code-flowchart-svg-wrapper"
-              style={autoFit ? {} : { transform: `scale(${zoom})` }}
+              style={{ transform: `scale(${zoom})` }}
               dangerouslySetInnerHTML={{ __html: svgHtml }}
             />
           )}

@@ -10,7 +10,7 @@ import {
   Code2, Loader2, ChevronRight, ChevronDown, Lock, FlipHorizontal,
   Paperclip, Mic, Image, HelpCircle, Send, AlignLeft, Sparkles, ChevronLeft,
   BookOpen, BarChart3, Home, Zap, Brain, Award, FileText, FolderOpen, Briefcase,
-  Trash, X, History, Plus, Search, PanelLeft, Type, Waves, ArrowLeft
+  Trash, X, History, Plus, Search, PanelLeft, Type, Waves
 } from 'lucide-react';
 import {
   T, geminiCall,
@@ -33,7 +33,6 @@ import { useMediaQuery, isMobileMQ } from '@/lib/useMediaQuery';
 import GlacierBackground from '@/components/GlacierBackground';
 import UserBlobAvatar from '@/components/UserBlobAvatar';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const Playground = dynamic(() => import('./Playground'), { ssr: false });
 
@@ -203,16 +202,6 @@ const cleanMarkdown = (text) => {
     .replace(/\*\*\s+([^*]+?)\*\*/g, '**$1**')
     .replace(/\*\*([^*]+?)\s+\*\*/g, '**$1**');
 };
-
-function stripPythonComments(code) {
-  if (!code) return '';
-  return code
-    .split('\n')
-    .filter(line => !line.trim().startsWith('#'))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 
 export default function CodingTutor() {
   const router = useRouter();
@@ -414,7 +403,6 @@ export default function CodingTutor() {
   const [explanationOverride, setExplanationOverride] = useState(null);
 
   const [currentSandboxCode, setCurrentSandboxCode] = useState('');
-  const [currentVisualizedMsgIdx, setCurrentVisualizedMsgIdx] = useState(null);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
@@ -540,15 +528,13 @@ export default function CodingTutor() {
     }
   };
 
-  const handleVisualizeCode = (codeText, explanationText, msgIdx = null) => {
-    const cleanedCode = stripPythonComments(codeText);
+  const handleVisualizeCode = (codeText, explanationText) => {
     setIsPlaygroundOpen(true);
-    setCodeOverride(cleanedCode);
+    setCodeOverride(codeText);
     setExplanationOverride(explanationText || '');
-    setCurrentVisualizedMsgIdx(msgIdx);
   };
 
-  const renderMarkdown = (content, explanation = '', msgIdx = null) => {
+  const renderMarkdown = (content, explanation = '') => {
     const cleaned = cleanMarkdown(content);
     return (
       <ReactMarkdown
@@ -586,7 +572,7 @@ export default function CodingTutor() {
                     </pre>
                   )}
                   <button
-                    onClick={() => handleVisualizeCode(codeVal, explanation, msgIdx)}
+                    onClick={() => handleVisualizeCode(codeVal, explanation)}
                     style={{
                       position: 'absolute',
                       top: 8,
@@ -2454,7 +2440,7 @@ export default function CodingTutor() {
                             boxShadow: '0 10px 32px -4px rgba(0, 0, 0, 0.65), 0 0 20px rgba(12, 80, 95, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
                           }}>
                             <div className="md-content">
-                              {renderMarkdown(chatContent, explanation, mi)}
+                              {renderMarkdown(chatContent, explanation)}
                             </div>
                           </div>
 
@@ -3521,140 +3507,96 @@ export default function CodingTutor() {
   )}
       </div>
 
-          {/* Immersive Blurred Visualizer Runtime */}
-          <AnimatePresence>
-            {isPlaygroundOpen && (
-              <motion.div
-                initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-                animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
-                exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-                transition={{ duration: 0.25 }}
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100vw',
-                  height: '100vh',
-                  background: 'rgba(3, 7, 18, 0.88)',
-                  zIndex: 1000,
+          {/* Floating Sandbox Modal Overlay */}
+          {isPlaygroundOpen && (
+            <div
+              onClick={(e) => { if (e.target === e.currentTarget) setIsPlaygroundOpen(false); }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(4, 5, 8, 0.75)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: isMobile ? '8px' : '40px'
+              }}
+            >
+              {/* Floating Window Container */}
+              <div style={{
+                width: '100%',
+                maxWidth: '1440px',
+                height: '100%',
+                background: '#06080C',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.5)'
+              }}>
+                {/* Header */}
+                <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: isMobile ? '8px' : '24px'
-                }}
-              >
-                {/* Floating Animated Runtime Container */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96, y: 15 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: 15 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  style={{
-                    width: '100%',
-                    maxWidth: '1540px',
-                    height: '100%',
-                    background: '#06080C',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: 16,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    boxShadow: '0 32px 64px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(56, 189, 248, 0.18)'
-                  }}
-                >
-                  {/* Top Bar with 'Back to Chat' Button */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: isMobile ? '8px 12px' : '10px 18px',
-                    background: '#080A0E',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                    flexShrink: 0
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <button
-                        onClick={() => setIsPlaygroundOpen(false)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
-                          border: '1px solid rgba(255, 255, 255, 0.12)',
-                          color: '#F8FAFC',
-                          borderRadius: 8,
-                          padding: '5px 12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)'; e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; }}
-                        title="Return to Chat"
-                      >
-                        <ArrowLeft size={14} />
-                        <span>Back to Chat</span>
-                      </button>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 10px #38BDF8' }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                          Vedika Visual Runtime
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => setIsPlaygroundOpen(false)}
-                      style={{
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        border: '1px solid rgba(239, 68, 68, 0.35)',
-                        color: '#F87171',
-                        borderRadius: 8,
-                        padding: '5px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s'
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = '#F87171'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
-                      title="Close Sandbox"
-                      aria-label="Close Sandbox"
-                    >
-                      <X size={14} />
-                      <span>Close</span>
-                    </button>
+                  justifyContent: 'space-between',
+                  padding: isMobile ? '10px 14px' : '12px 18px',
+                  background: '#080A0E',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  flexShrink: 0
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 10px #38BDF8' }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+                      Python Coding Sandbox
+                    </span>
                   </div>
-                  
-                  {/* Playground Canvas Body */}
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <Playground 
-                      initialCode={`# Python Coding Sandbox\n# Write python code here and run it!\n\ndef greet(name):\n    print(f"Hello, {name}!")\n\ngreet("Seshu")\n`} 
-                      codeOverride={codeOverride}
-                      explanationOverride={explanationOverride}
-                      sourceMsg={currentVisualizedMsgIdx !== null ? messages[currentVisualizedMsgIdx] : null}
-                      activeMsgIdx={currentVisualizedMsgIdx}
-                      onGenerateFeature={handleGenerateFeature}
-                      onQuizAnswer={handleQuizAnswer}
-                      onQuizNav={handleQuizNav}
-                      onFlashcardFlip={handleFlashcardFlip}
-                      onFlashcardNav={handleFlashcardNav}
-                      onTraceComplete={() => {
-                        setCodeOverride(null);
-                        setExplanationOverride(null);
-                      }}
-                      onCodeChange={setCurrentSandboxCode}
-                    />
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <button
+                    onClick={() => setIsPlaygroundOpen(false)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      color: '#F87171',
+                      borderRadius: 10,
+                      padding: '5px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#F87171'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                    title="Close Python Sandbox"
+                    aria-label="Close Python Sandbox"
+                  >
+                    <X size={15} />
+                    <span>Close Sandbox</span>
+                  </button>
+                </div>
+                
+                {/* Playground Canvas Body */}
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <Playground 
+                    initialCode={`# Python Coding Sandbox\n# Write python code here and run it!\n\ndef greet(name):\n    print(f"Hello, {name}!")\n\ngreet("Seshu")\n`} 
+                    codeOverride={codeOverride}
+                    explanationOverride={explanationOverride}
+                    onTraceComplete={() => {
+                      setCodeOverride(null);
+                      setExplanationOverride(null);
+                    }}
+                    onCodeChange={setCurrentSandboxCode}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 
