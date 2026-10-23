@@ -6,7 +6,7 @@ import styles from './Header.module.css';
 import {
   ArrowRight, ChevronDown, BookOpen, Award, FileText,
   FolderOpen, Menu, X, Brain, FlaskConical, Briefcase, BarChart3,
-  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles, ShieldCheck
+  Home as HomeIcon, LayoutDashboard, LogOut, User as UserIcon, Sparkles, ShieldCheck, Download
 } from 'lucide-react';
 
 export default function Header() {
@@ -267,6 +267,19 @@ export default function Header() {
 
         {/* Right Action Items */}
         <div className={styles.rightActions}>
+          {/* Mascot Download Button: ONLY on Homepage navbar AND ONLY when user is logged in */}
+          {user && pathname === '/' && (
+            <a
+              href="/api/mascot/download"
+              download="Vedika-Mascot.exe"
+              className={styles.mascotDownloadBtn}
+              title="Download Vedika Desktop Mascot Companion"
+            >
+              <Download size={14} color="#00f298" />
+              <span>Vedika</span>
+            </a>
+          )}
+
 
           {/* User state toggle: Logged In Capsule vs Guest "Get Started" */}
           {user ? (
@@ -513,6 +526,20 @@ export default function Header() {
 
         {user ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {pathname === '/' && (
+              <a
+                href="/api/mascot/download"
+                download="Vedika-Mascot.exe"
+                className={styles.mobileNavLink}
+                style={{ color: '#00f298' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Download size={15} color="#00f298" />
+                  <span>Download Vedika Mascot</span>
+                </div>
+              </a>
+            )}
             <div style={{ padding: '2px 8px', fontSize: 11.5, color: '#94a3b8' }}>
               Signed in as <strong style={{ color: '#ffffff' }}>{user?.name || user?.email}</strong>
             </div>

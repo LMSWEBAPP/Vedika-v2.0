@@ -577,14 +577,24 @@ class DesktopPetApp(QObject):
         # Initialize the window layer
         self.window = TransparentWindow(self.pet, self, scale_factor=self.scale_factor)
         
+        # Initialize User Profile Manager
+        self.user_profile = UserProfileManager()
+
+        # Verify System Permissions & Vedika Account Authentication on Startup
+        if not self.user_profile.is_authenticated():
+            try:
+                from ui.login_dialog import VedikaSetupLoginDialog
+                setup_dlg = VedikaSetupLoginDialog(self.user_profile, base_url=self.get_vyomanta_base_url())
+                setup_dlg.exec()
+            except Exception as e:
+                print(f'[MainApp] Setup & Login notice: {e}')
+
         # Apply window behavior toggles
         if not self.always_on_top:
             self.window.setWindowFlags(self.window.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint)
         
         self.window.show()
 
-        # Initialize User Profile Manager & dynamic greeting
-        self.user_profile = UserProfileManager()
         dynamic_greeting = self.user_profile.generate_dynamic_greeting()
         self.pet.say(dynamic_greeting, duration=6.0)
 

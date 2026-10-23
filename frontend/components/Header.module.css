@@ -338,6 +338,34 @@
   transform: none;
 }
 
+/* Mascot Download Capsule Button (Navbar) */
+.mascotDownloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(56, 189, 248, 0.18) 100%);
+  border: 1px solid rgba(0, 242, 152, 0.45);
+  border-radius: 9999px;
+  padding: 5px 13px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 242, 152, 0.14);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mascotDownloadBtn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(56, 189, 248, 0.35) 100%);
+  border-color: #00f298;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 242, 152, 0.3);
+  color: #ffffff;
+}
+
 /* User Profile Capsule */
 .profileCapsule {
   display: flex;

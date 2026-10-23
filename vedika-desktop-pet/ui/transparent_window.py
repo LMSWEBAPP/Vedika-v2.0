@@ -461,6 +461,10 @@ class TransparentWindow(QWidget):
 
         menu.addSeparator()
 
+        # 4a-2. Account & Login Dialog
+        account_act = menu.addAction("🔐 Account & Login (Vedika LMS)")
+        account_act.triggered.connect(self.open_account_login_dialog)
+
         # 4b. Student Profile & Memory Manager Dialog
         profile_act = menu.addAction("👤 Student Profile & Memory")
         profile_act.triggered.connect(self.open_student_profile_dialog)
@@ -555,6 +559,21 @@ class TransparentWindow(QWidget):
         if self.pet:
             self.pet.say(f"Tutor Subject set to {name}! 🎓", duration=2.5)
         print(f"[TransparentWindow] Changed tutor subject to {subj}")
+
+    def open_account_login_dialog(self):
+        """Opens Setup, Permissions & Account Login Dialog."""
+        try:
+            from ui.login_dialog import VedikaSetupLoginDialog
+            dlg = VedikaSetupLoginDialog(
+                self.main_app.user_profile,
+                base_url=self.main_app.get_vyomanta_base_url(),
+                parent=self
+            )
+            if dlg.exec():
+                name = self.main_app.user_profile.profile.get('user', {}).get('name', 'Student')
+                self.pet.say(f"Welcome, {name}! Account linked.", duration=3.5)
+        except Exception as e:
+            print(f"[TransparentWindow] Error opening account dialog: {e}")
 
     def open_student_profile_dialog(self):
         """Opens the Student Profile & Memory Manager dialog."""

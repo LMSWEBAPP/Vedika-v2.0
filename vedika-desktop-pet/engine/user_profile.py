@@ -64,6 +64,37 @@ class UserProfileManager:
         except Exception as e:
             print(f"[UserProfileManager] Failed to save profile: {e}")
 
+    def is_authenticated(self):
+        user = self.profile.get('user', {})
+        return bool(user.get('is_authenticated') and (user.get('email') or user.get('token')))
+
+    def set_authenticated_user(self, user_info, token=None):
+        user = self.profile.setdefault('user', {})
+        user['is_authenticated'] = True
+        if token:
+            user['token'] = str(token)
+        if user_info.get('email'):
+            user['email'] = str(user_info['email']).strip()
+        display_name = user_info.get('full_name') or user_info.get('name')
+        if display_name:
+            user['name'] = str(display_name).strip()
+        if user_info.get('stage'):
+            user['stage'] = str(user_info['stage']).strip()
+        if user_info.get('field_of_study'):
+            user['field_of_study'] = str(user_info['field_of_study']).strip()
+        self.save_profile()
+
+        # Sync display name into SQLite MemoryManager
+        try:
+            from engine.memory import MemoryManager
+            mm = MemoryManager()
+            if user.get('name'):
+                mm.update_profile('name', user['name'])
+            if user.get('stage'):
+                mm.update_profile('stage', user['stage'])
+        except Exception as e:
+            print(f'[UserProfileManager] Sync note: {e}')
+
     def update_user_info(self, stage=None, field_of_study=None, hobbies=None, name=None, favorite_topics=None, personality_template=None):
         user = self.profile.get("user", {})
         learned = self.profile.get("learned_traits", {})

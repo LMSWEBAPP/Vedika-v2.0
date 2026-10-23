@@ -82,7 +82,7 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }) {
       });
       setSessions(all);
 
-      const activeId = localStorage.getItem(activeKey);
+      const activeId = typeof window !== 'undefined' ? (sessionStorage.getItem(activeKey) || null) : null;
       setCurrentSessionId(activeId);
     } catch (e) {
       console.error('Error loading sessions in Sidebar:', e);

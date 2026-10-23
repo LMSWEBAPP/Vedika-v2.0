@@ -53,6 +53,7 @@ def build():
         "--hidden-import=ui",
         "--hidden-import=ui.transparent_window",
         "--hidden-import=ui.log_viewer",
+        "--hidden-import=ui.login_dialog",
         "--hidden-import=google.genai",
         "--hidden-import=websockets",
         "--hidden-import=yt_dlp",

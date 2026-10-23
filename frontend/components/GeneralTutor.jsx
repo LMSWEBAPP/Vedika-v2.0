@@ -477,8 +477,9 @@ export default function GeneralTutor() {
         console.error("Failed to parse local sessions:", e);
       }
 
-      // Immediately restore active session from localStorage on refresh
-      const activeSid = localStorage.getItem('current-general-tutor-session-id');
+      // Restore active session only within the same active tab session via sessionStorage
+      try { localStorage.removeItem('current-general-tutor-session-id'); sessionStorage.removeItem('current-general-tutor-session-id'); } catch {}
+      const activeSid = typeof window !== 'undefined' ? sessionStorage.getItem('current-general-tutor-session-id') : null;
       if (activeSid && localText.length > 0) {
         const active = localText.find(s => s.id === activeSid);
         if (active && active.messages && active.messages.length > 0) {
@@ -514,7 +515,8 @@ export default function GeneralTutor() {
               setTextSessions(combined);
               try { localStorage.setItem(textSessKey, JSON.stringify(combined)); } catch {}
 
-              const targetSid = activeSid || (combined.length > 0 ? combined[0].id : null);
+              // Only restore if activeSid exists in this session; do not auto-restore previous chat on fresh visit
+              const targetSid = activeSid;
               if (targetSid) {
                 const target = combined.find(s => s.id === targetSid);
                 if (target && target.messages && target.messages.length > 0) {
@@ -548,12 +550,14 @@ export default function GeneralTutor() {
     }
   }, [topic]);
 
-  // Save currentSessionId to localStorage
+  // Save currentSessionId to sessionStorage (scoped to active tab session only)
   useEffect(() => {
-    if (currentSessionId) {
-      localStorage.setItem('current-general-tutor-session-id', currentSessionId);
-    } else {
-      localStorage.removeItem('current-general-tutor-session-id');
+    if (typeof window !== 'undefined') {
+      if (currentSessionId) {
+        sessionStorage.setItem('current-general-tutor-session-id', currentSessionId);
+      } else {
+        sessionStorage.removeItem('current-general-tutor-session-id');
+      }
     }
   }, [currentSessionId]);
 
@@ -703,7 +707,7 @@ export default function GeneralTutor() {
     setCurrentSessionId(sid);
     try {
       localStorage.setItem(textSessKey, JSON.stringify(updated));
-      localStorage.setItem('current-general-tutor-session-id', sid);
+      sessionStorage.setItem('current-general-tutor-session-id', sid);
     } catch {}
 
     if (userId) {
@@ -736,7 +740,7 @@ export default function GeneralTutor() {
       setCurrentSessionId(null);
       setSessionDocs([]);
       setTopic('');
-      try { localStorage.removeItem('current-general-tutor-session-id'); } catch {}
+      try { localStorage.removeItem('current-general-tutor-session-id'); sessionStorage.removeItem('current-general-tutor-session-id'); } catch {}
     }
 
     if (userId) {
@@ -780,7 +784,7 @@ export default function GeneralTutor() {
             const raw = localStorage.getItem(textSessKey);
             if (raw) {
               const sessions = JSON.parse(raw);
-              const sid = currentSessionId || localStorage.getItem('current-general-tutor-session-id');
+              const sid = currentSessionId || (typeof window !== 'undefined' ? sessionStorage.getItem('current-general-tutor-session-id') : null);
               const sessIdx = sessions.findIndex(s => s.id === sid);
               if (sessIdx !== -1) {
                 sessions[sessIdx].documents = updated;

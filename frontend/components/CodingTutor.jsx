@@ -719,7 +719,8 @@ export default function CodingTutor() {
       console.error("Failed to parse local sessions:", e);
     }
 
-    const activeSid = localStorage.getItem('current-coding-tutor-session-id');
+    try { localStorage.removeItem('current-coding-tutor-session-id'); sessionStorage.removeItem('current-coding-tutor-session-id'); } catch {}
+    const activeSid = typeof window !== 'undefined' ? sessionStorage.getItem('current-coding-tutor-session-id') : null;
     if (activeSid && localText.length > 0) {
       const active = localText.find(s => s.id === activeSid);
       if (active && active.messages && active.messages.length > 0) {
@@ -741,12 +742,14 @@ export default function CodingTutor() {
     }
   }, [topic]);
 
-  // Save currentSessionId to localStorage
+  // Save currentSessionId to sessionStorage (scoped to active tab session only)
   useEffect(() => {
-    if (currentSessionId) {
-      localStorage.setItem('current-coding-tutor-session-id', currentSessionId);
-    } else {
-      localStorage.removeItem('current-coding-tutor-session-id');
+    if (typeof window !== 'undefined') {
+      if (currentSessionId) {
+        sessionStorage.setItem('current-coding-tutor-session-id', currentSessionId);
+      } else {
+        sessionStorage.removeItem('current-coding-tutor-session-id');
+      }
     }
   }, [currentSessionId]);
 
@@ -820,7 +823,7 @@ export default function CodingTutor() {
       setCurrentSessionId(null);
       setSessionDocs([]);
       setTopic('');
-      try { localStorage.removeItem('current-coding-tutor-session-id'); } catch {}
+      try { localStorage.removeItem('current-coding-tutor-session-id'); sessionStorage.removeItem('current-coding-tutor-session-id'); } catch {}
     }
   }, [textSessions, textSessKey, currentSessionId]);
 
@@ -926,7 +929,7 @@ export default function CodingTutor() {
             const raw = localStorage.getItem(textSessKey);
             if (raw) {
               const sessions = JSON.parse(raw);
-              const sid = currentSessionId || localStorage.getItem('current-coding-tutor-session-id');
+              const sid = currentSessionId || (typeof window !== 'undefined' ? sessionStorage.getItem('current-coding-tutor-session-id') : null);
               const sessIdx = sessions.findIndex(s => s.id === sid);
               if (sessIdx !== -1) {
                 sessions[sessIdx].documents = updated;
