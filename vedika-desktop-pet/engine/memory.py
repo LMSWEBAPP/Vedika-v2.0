@@ -5,13 +5,17 @@ import sqlite3
 import datetime
 from typing import List, Dict, Optional
 
-ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
-if getattr(sys, 'frozen', False):
-    PET_ROOT = os.path.dirname(sys.executable)
-else:
-    PET_ROOT = os.path.dirname(ENGINE_DIR)
-DB_DIR = os.path.join(PET_ROOT, "data")
-DB_PATH = os.path.join(DB_DIR, "memory.db")
+def get_vedika_app_dir():
+    if sys.platform == 'win32':
+        base = os.getenv('APPDATA') or os.path.expanduser('~')
+    else:
+        base = os.path.expanduser('~')
+    app_dir = os.path.join(base, 'VedikaMascot')
+    os.makedirs(app_dir, exist_ok=True)
+    return app_dir
+
+DB_DIR = os.path.join(get_vedika_app_dir(), 'data')
+DB_PATH = os.path.join(DB_DIR, 'memory.db')
 
 # Basic PII regex filter to ensure sensitive personal details are never saved
 PII_PATTERNS = [

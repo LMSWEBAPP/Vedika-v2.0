@@ -19,14 +19,25 @@ def _prefer_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
 socket.getaddrinfo = _prefer_ipv4_getaddrinfo
 
 # --- Multi-Session & Crash Logging System ---
+def get_vedika_app_dir():
+    """Standard user data directory (%APPDATA%/VedikaMascot on Windows). Keeps Downloads folder clean."""
+    if sys.platform == 'win32':
+        base = os.getenv('APPDATA') or os.path.expanduser('~')
+    else:
+        base = os.path.expanduser('~')
+    app_dir = os.path.join(base, 'VedikaMascot')
+    os.makedirs(app_dir, exist_ok=True)
+    return app_dir
+
 if getattr(sys, 'frozen', False):
     EXE_DIR = os.path.dirname(sys.executable)
     BUNDLE_DIR = getattr(sys, '_MEIPASS', EXE_DIR)
 else:
     EXE_DIR = os.path.dirname(os.path.abspath(__file__))
     BUNDLE_DIR = EXE_DIR
-BASE_DIR = EXE_DIR
-LOGS_DIR = os.path.join(EXE_DIR, "logs")
+BASE_DIR = get_vedika_app_dir()
+USER_DATA_DIR = BASE_DIR
+LOGS_DIR = os.path.join(USER_DATA_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 SESSION_START_TIME = datetime.datetime.now()
@@ -35,9 +46,9 @@ CURRENT_SESSION_LOG_PATH = os.path.join(LOGS_DIR, f"session_{SESSION_TIMESTAMP_S
 CURRENT_SESSION_ERRORS_PATH = os.path.join(LOGS_DIR, f"session_{SESSION_TIMESTAMP_STR}_errors.txt")
 ERRORS_SUMMARY_TXT_PATH = os.path.join(LOGS_DIR, "errors.txt")
 LATEST_LOG_PATH = os.path.join(LOGS_DIR, "latest.log")
-LEGACY_LOG_PATH = os.path.join(BASE_DIR, "mascot.log")
+LEGACY_LOG_PATH = os.path.join(USER_DATA_DIR, "mascot.log")
 CRASH_LOG_PATH = os.path.join(LOGS_DIR, f"crash_{SESSION_TIMESTAMP_STR}.log")
-LEGACY_CRASH_PATH = os.path.join(BASE_DIR, "crash.log")
+LEGACY_CRASH_PATH = os.path.join(USER_DATA_DIR, "crash.log")
 
 def save_vedika_diagnostic_error_txt(graceful_msg: str, tech_msg: str = "", source: str = "Gemini Live API"):
     """
@@ -533,7 +544,7 @@ class DesktopPetApp(QObject):
         self.scan_assets()
         
         # Load user configurations
-        self.settings_path = os.path.join(EXE_DIR, "settings.json")
+        self.settings_path = os.path.join(USER_DATA_DIR, "settings.json")
         self.current_pet_id = "eve"
         self.scale_factor = 0.8  # Default compact scale for modern displays
         self.always_on_top = True

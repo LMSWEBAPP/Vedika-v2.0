@@ -217,6 +217,7 @@ class GeminiLiveWorker(QThread):
         self.speaker_stream = None
         self.hangover_counter = 0
         self.vad_active = False
+        self.ambient_floor = 140.0
         self.flush_speaker = False
         self.last_interruption_time = 0.0
         self.aec = BlockNLMSEchoCanceller()
@@ -987,7 +988,7 @@ class GeminiLiveWorker(QThread):
             + route_instructions +
             "3. If the user asks to switch experiments or control actions on an active page (e.g. 'switch to titration', 'show gas laws', 'switch to projectile motion', 'show cell organelles', 'switch to calculus visualizer', 'start presentation', 'clear screen'): call 'trigger_pet_action(action, target)' (e.g. action='select_experiment', target='titration').\n"
             "4. If the user asks for a hint on their current puzzle, call 'trigger_puzzle_hint'.\n"
-            "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route. When opening or navigating to the homepage, you MUST REMAIN COMPLETELY SILENT while the page is opening and the kid welcome voice is speaking. Do NOT talk over the welcome narration. Stay still in idle state until the student speaks to you.\n"
+            "5. If the user asks to 'open the website', 'open Vedika', 'open portal', or open any page without specifying an external URL: IMMEDIATELY call 'open_website' with 'https://vedika-v20c.vercel.app/' or 'navigate_webapp' with the matching route. Reply with a short friendly confirmation (e.g. 'Opening Vedika for you!') and trigger the action immediately.\n"
             "6. If the user asks to stop or pause voice chat, call 'stop_voice_chat' immediately.\n"
             "7. Trigger pet visual animations ('wave', 'jump') ONLY when the user explicitly asks for a trick or movement. Do NOT call 'play_animation' during normal dialogue or explanations.\n"
             "8. SCREEN VISION & CODE INSPECTION: When the user asks 'What is on my screen?', 'What is going on in this page?', 'Can you see what I am doing?', or asks about what is visually displayed without code context: call 'capture_user_screen'. NOTE: When the student's active code or error is ALREADY provided in your context or prompt, explain and guide the student DIRECTLY without calling 'capture_user_screen' for instant zero-latency response! Only call 'capture_user_screen' if visual inspection of the screen layout/canvas is genuinely needed.\n"

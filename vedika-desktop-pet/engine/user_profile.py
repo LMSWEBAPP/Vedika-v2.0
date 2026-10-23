@@ -4,14 +4,23 @@ import json
 import random
 import datetime
 
-if getattr(sys, 'frozen', False):
-    PROFILE_FILE = os.path.join(os.path.dirname(sys.executable), "user_profile.json")
-else:
-    PROFILE_FILE = "user_profile.json"
+def get_vedika_app_dir():
+    if sys.platform == 'win32':
+        base = os.getenv('APPDATA') or os.path.expanduser('~')
+    else:
+        base = os.path.expanduser('~')
+    app_dir = os.path.join(base, 'VedikaMascot')
+    os.makedirs(app_dir, exist_ok=True)
+    return app_dir
+
+PROFILE_FILE = os.path.join(get_vedika_app_dir(), 'user_profile.json')
 
 DEFAULT_PROFILE = {
     "user": {
-        "name": "Alex",
+        "name": "",
+        "email": "",
+        "token": "",
+        "is_authenticated": False,
         "stage": "College",  # "School", "College", "PG"
         "field_of_study": "Computer Science & Artificial Intelligence",
         "hobbies": ["Coding", "Robotics", "Reading Tech Blogs"],
@@ -36,9 +45,8 @@ class UserProfileManager:
     def load_profile(self):
         target_path = self.filepath
         if not os.path.exists(target_path):
-            bundle_p = os.path.join(getattr(sys, '_MEIPASS', ''), "user_profile.json")
-            if os.path.exists(bundle_p):
-                target_path = bundle_p
+            self.save_profile(DEFAULT_PROFILE)
+            return DEFAULT_PROFILE.copy()
 
         if os.path.exists(target_path):
             try:
@@ -66,7 +74,7 @@ class UserProfileManager:
 
     def is_authenticated(self):
         user = self.profile.get('user', {})
-        return bool(user.get('is_authenticated') and (user.get('email') or user.get('token')))
+        return bool(user.get('is_authenticated') and user.get('name') and (user.get('email') or user.get('token')))
 
     def set_authenticated_user(self, user_info, token=None):
         user = self.profile.setdefault('user', {})
