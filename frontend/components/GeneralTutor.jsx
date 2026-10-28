@@ -16,6 +16,7 @@ import {
   buildChatPrompt, buildFeaturePrompt,
   parseQuizOutput, parseFlashcardsOutput, parseInfographicOutput,
   TUTOR_SYSTEM, QUIZ_SYSTEM, FLASHCARD_SYSTEM, INFOGRAPHIC_SYSTEM, SIMPLER_SYSTEM, EXAMPLES_SYSTEM,
+  detectPromptInjection,
   MAX_TOKENS
 } from '@/lib/lms-data';
 import { generateInfographic } from '@/lib/infographicEngine';
@@ -764,6 +765,12 @@ export default function GeneralTutor() {
     simpler: SIMPLER_SYSTEM, examples: EXAMPLES_SYSTEM,
   };
 
+  // Construct a specialized academic feature system prompt that enforces educational constraints
+  const getAcademicFeatureSystem = (type) => {
+    const baseSystem = FEATURE_SYSTEMS[type] || TUTOR_SYSTEM;
+    return `${baseSystem}\n\nCRITICAL ACADEMIC RESTRICTION: You are Vedika, an academic tutor. You must ONLY generate learning materials (quizzes, flashcards, infographics, simplifications, examples) for academic, educational, or curricular concepts (Science, Math, History, Literature, Computer Science, Economics, etc.). If the requested topic is completely non-academic (e.g. celebrity gossip, gaming, pop culture, entertainment), you must return an empty response (or if returning JSON, return an empty array []).`;
+  };
+
   const FEATURE_LABELS = {
     quiz: 'Quiz', flashcards: 'Flashcards', infographic: 'Visual Summary',
     simpler: 'Simplified Explanation', examples: 'Examples',
@@ -962,6 +969,19 @@ export default function GeneralTutor() {
     const msgsWithUser = [...messages, userMsg];
     setSessionDocs([]);
 
+    if (detectPromptInjection(raw)) {
+      const aiMsg = { 
+        id: (Date.now() + 1).toString(36), 
+        role: 'ai', 
+        content: "⚠️ **Security Notice**: Your input was flagged as a potential prompt injection attempt or policy violation. To protect our academic learning environment, please enter academic or curriculum-related queries.", 
+        local: true, 
+        features: {} 
+      };
+      const next = [...msgsWithUser, aiMsg];
+      setMessages(next); saveSession(next, sid);
+      return;
+    }
+
     if (intent.type === 'greeting') {
       const aiMsg = { id: (Date.now() + 1).toString(36), role: 'ai', content: getGreetingResponse(), local: true, features: {} };
       const next = [...msgsWithUser, aiMsg];
@@ -990,9 +1010,9 @@ export default function GeneralTutor() {
       try {
         const tokens = MAX_TOKENS[length.toLowerCase()] || 2000;
         const prompt = buildFeaturePrompt(intent.feature, intent.topic, mode);
-        const system = FEATURE_SYSTEMS[intent.feature] || TUTOR_SYSTEM;
+        const system = getAcademicFeatureSystem(intent.feature);
         const text = await geminiCall(system, prompt, tokens, { sessionId: sid, userId });
-        if (!text.trim()) throw new Error('Gemini returned an empty response. Try rephrasing.');
+        if (!text.trim() || text.trim() === '[]') throw new Error('I can only generate learning materials for academic and curriculum-related topics. Please try an academic topic.');
         const features = {};
         if (intent.feature === 'quiz') features.quiz = { questions: parseQuizOutput(text), currentIdx: 0, currentAnswer: null };
         else if (intent.feature === 'flashcards') features.flashcards = { cards: parseFlashcardsOutput(text), currentIdx: 0, flipped: false };
@@ -1140,11 +1160,11 @@ export default function GeneralTutor() {
         return;
       }
 
-      const system = FEATURE_SYSTEMS[type] || TUTOR_SYSTEM;
+      const system = getAcademicFeatureSystem(type);
       const prompt = buildFeaturePrompt(type, msg.content, mode);
       const tokens = type === 'simpler' || type === 'examples' ? 1000 : 1500;
       const text = await geminiCall(system, prompt, tokens, { sessionId: currentSessionId, userId });
-      if (!text.trim()) throw new Error(`Gemini returned an empty response for ${type}. Try again.`);
+      if (!text.trim() || text.trim() === '[]') throw new Error(`Could not generate academic feature for this topic.`);
 
       setMessages(prev => {
         const next = prev.map((m, i) => {
